@@ -1,0 +1,183 @@
+[
+  {
+    "url": "https://www.es.unisg.ch/en/programme/emba-hsg/",
+    "name": "Executive MBA HSG",
+    "description": "The Executive MBA HSG is a part-time general management program for experienced professionals who want to develop their management and leadership skills while continuing to work. The program combines academic rigor with practical relevance, focusing on strategic management, leadership, and innovation.",
+    "duration": "18 months",
+    "curriculum": [
+      "Strategic Management",
+      "Leadership and Personal Development",
+      "Financial Management",
+      "Marketing Management",
+      "Digital Business Transformation",
+      "Innovation and Entrepreneurship",
+      "Global Business",
+      "Corporate Social Responsibility"
+    ],
+    "costs": "CHF 59,800",
+    "admission_requirements": [
+      "University degree or equivalent qualification",
+      "At least 5 years of professional experience",
+      "Management experience",
+      "Good command of English"
+    ],
+    "schedules": "Part-time format with modules every 4-6 weeks (Thursday to Saturday)",
+    "faculty": [
+      {
+        "name": "Prof. Dr. Dietmar Grichnik",
+        "title": "Academic Director"
+      },
+      {
+        "name": "Prof. Dr. Karolin Frankenberger",
+        "title": "Professor of Digital Business"
+      }
+    ],
+    "deadlines": "Rolling admissions, applications should be submitted at least 3 months before the desired start date",
+    "language": "English",
+    "location": "St. Gallen, Switzerland"
+  },
+  {
+    "url": "https://www.es.unisg.ch/en/programme/international-executive-mba/",
+    "name": "International Executive MBA",
+    "description": "The International Executive MBA is designed for experienced managers who want to expand their global perspective. The program includes modules in different international locations, providing insights into various business cultures and practices.",
+    "duration": "16 months",
+    "curriculum": [
+      "Global Strategy",
+      "Cross-Cultural Management",
+      "International Finance",
+      "Global Marketing",
+      "Digital Transformation",
+      "Sustainable Business Practices",
+      "International Negotiations"
+    ],
+    "costs": "CHF 65,000",
+    "admission_requirements": [
+      "University degree or equivalent qualification",
+      "At least 7 years of professional experience",
+      "International exposure",
+      "Fluency in English"
+    ],
+    "schedules": "Part-time format with international modules (1-2 weeks each)",
+    "faculty": [
+      {
+        "name": "Prof. Dr. Winfried Ruigrok",
+        "title": "Dean of the Executive School"
+      },
+      {
+        "name": "Prof. Dr. Omid Aschari",
+        "title": "Managing Director MBA Programs"
+      }
+    ],
+    "deadlines": "Applications should be submitted at least 4 months before the program start",
+    "language": "English",
+    "location": "St. Gallen (Switzerland), Singapore, New York, and other international locations"
+  },
+  {
+    "url": "https://www.es.unisg.ch/en/programme/executive-mba-in-digital-leadership/",
+    "name": "Executive MBA in Digital Leadership",
+    "description": "The Executive MBA in Digital Leadership prepares experienced professionals for leadership roles in the digital age. The program focuses on digital transformation, innovation, and the strategic use of technology in business.",
+    "duration": "18 months",
+    "curriculum": [
+      "Digital Strategy",
+      "Data Analytics and AI",
+      "Digital Business Models",
+      "Cybersecurity and Risk Management",
+      "Digital Marketing",
+      "Leadership in the Digital Age",
+      "Digital Innovation and Entrepreneurship"
+    ],
+    "costs": "CHF 62,500",
+    "admission_requirements": [
+      "University degree or equivalent qualification",
+      "At least 5 years of professional experience",
+      "Experience in digital projects or transformation initiatives",
+      "Good command of English"
+    ],
+    "schedules": "Part-time format with modules every 4-6 weeks (Thursday to Saturday)",
+    "faculty": [
+      {
+        "name": "Prof. Dr. Andrea Back",
+        "title": "Professor of Business Informatics"
+      },
+      {
+        "name": "Prof. Dr. Walter Brenner",
+        "title": "Professor of Information Management"
+      }
+    ],
+    "deadlines": "Rolling admissions, applications should be submitted at least 3 months before the desired start date",
+    "language": "English",
+    "location": "St. Gallen, Switzerland"
+  },
+  {
+    "url": "https://www.es.unisg.ch/en/programme/executive-mba-in-business-engineering/",
+    "name": "Executive MBA in Business Engineering",
+    "description": "The Executive MBA in Business Engineering combines management knowledge with technical expertise. The program is designed for professionals who want to bridge the gap between business and technology, focusing on process optimization, innovation, and digital transformation.",
+    "duration": "18 months",
+    "curriculum": [
+      "Business Process Management",
+      "Technology Management",
+      "Digital Transformation",
+      "Innovation Management",
+      "Supply Chain Management",
+      "Project Management",
+      "Strategic Management"
+    ],
+    "costs": "CHF 60,000",
+    "admission_requirements": [
+      "University degree or equivalent qualification",
+      "At least 5 years of professional experience",
+      "Experience in technical or engineering roles",
+      "Good command of English"
+    ],
+    "schedules": "Part-time format with modules every 4-6 weeks (Thursday to Saturday)",
+    "faculty": [
+      {
+        "name": "Prof. Dr. Elgar Fleisch",
+        "title": "Professor of Technology Management"
+      },
+      {
+        "name": "Prof. Dr. Oliver Gassmann",
+        "title": "Professor of Innovation Management"
+      }
+    ],
+    "deadlines": "Rolling admissions, applications should be submitted at least 3 months before the desired start date",
+    "language": "English",
+    "location": "St. Gallen, Switzerland"
+  },
+  {
+    "url": "https://www.es.unisg.ch/en/programme/executive-mba-in-renewable-energy-management/",
+    "name": "Executive MBA in Renewable Energy Management",
+    "description": "The Executive MBA in Renewable Energy Management prepares professionals for leadership roles in the renewable energy sector. The program focuses on sustainable business practices, energy policy, and the management of renewable energy projects.",
+    "duration": "18 months",
+    "curriculum": [
+      "Renewable Energy Technologies",
+      "Energy Policy and Regulation",
+      "Sustainable Business Strategies",
+      "Project Finance for Renewable Energy",
+      "Energy Markets and Trading",
+      "Climate Change and Environmental Management",
+      "Innovation in Energy Systems"
+    ],
+    "costs": "CHF 61,000",
+    "admission_requirements": [
+      "University degree or equivalent qualification",
+      "At least 5 years of professional experience",
+      "Interest or experience in the energy sector",
+      "Good command of English"
+    ],
+    "schedules": "Part-time format with modules every 4-6 weeks (Thursday to Saturday)",
+    "faculty": [
+      {
+        "name": "Prof. Dr. Rolf Wüstenhagen",
+        "title": "Professor of Management of Renewable Energies"
+      },
+      {
+        "name": "Prof. Dr. Thomas Dyllick",
+        "title": "Professor of Sustainability Management"
+      }
+    ],
+    "deadlines": "Rolling admissions, applications should be submitted at least 3 months before the desired start date",
+    "language": "English",
+    "location": "St. Gallen, Switzerland"
+  }
+]
