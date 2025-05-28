@@ -8,6 +8,9 @@ This chatbot uses web scraping to collect program information from the Universit
 
 ## Features
 
+![mermaid](https://github.com/user-attachments/assets/60eb1fc4-af51-4b84-a9e2-be5c3ec6469d)
+
+
 - Web scraping of program information from the University of St. Gallen Executive School website
 - Extraction of program details including names, duration, curriculum, costs, admission requirements, schedules, faculty info, and deadlines
 - Vector database for efficient information retrieval
