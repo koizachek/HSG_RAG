@@ -1,0 +1,49 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+
+# VS Code settings
+.vscode/
+
+# MacOS system files
+.DS_Store
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Cache and temp files
+*.tmp
+*.swp
+*.bak
+.cache/
+*.sqlite3
+*.db
+
+# Output folders
+dist/
+build/
+*.egg-info/
+
+# Pycharm
+.idea/
+
+# OS junk
+.Trashes.env
+.env
+.env

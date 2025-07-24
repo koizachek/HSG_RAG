@@ -1,0 +1,89 @@
+[
+  {
+    "url": "https://emba.unisg.ch/en/programm/emba",
+    "name": "Executive MBA HSG",
+    "description": "The Executive MBA HSG is a part-time general management program for experienced professionals who want to develop their management and leadership skills while continuing to work. The program combines academic rigor with practical relevance, focusing on strategic management, leadership, and innovation.",
+    "duration": {
+      "months": 18,
+      "original_text": "18 months"
+    },
+    "costs": {
+      "amount": 75000.0,
+      "currency": "CHF",
+      "original_text": "CHF 75,000"
+    },
+    "curriculum": [
+      "Strategic Management",
+      "Corporate Sustainability",
+      "Coding & Artificial Intelligence",
+      "Technology and Innovation Management",
+      "Global Business",
+      "Corporate Social Responsibility"
+    ],
+    "admission_requirements": [
+      "University degree or equivalent qualification",
+      "At least 2-4 years of professional experience",
+      "Management experience",
+      "Good command of English"
+    ],
+    "faculty": [
+      {
+        "name": "Cyra von Müller",
+        "title": "Senior Admissions Managerin"
+      },
+      {
+        "name": "Otto Moilanen",
+        "title": "Senior Project Manager Talent Acquisition"
+      }
+    ],
+    "schedules": "Part-time format with modules every 4-6 weeks (Thursday to Saturday)",
+    "deadlines": "Rolling admissions, applications should be submitted at least 3 months before the desired start date",
+    "language": "English",
+    "location": "St. Gallen, Switzerland and Belgium",
+    "program_id": "prog_2501"
+  },
+  {
+    "url": "https://emba.unisg.ch/en/programm/iemba",
+    "name": "International Executive MBA",
+    "description": "The International Executive MBA is designed for experienced managers who want to expand their global perspective. The program includes modules in different international locations, providing insights into various business cultures and practices.",
+    "duration": {
+      "months": 18,
+      "original_text": "16 months"
+    },
+    "costs": {
+      "amount": 75000.0,
+      "currency": "CHF",
+      "original_text": "CHF 75,000"
+    },
+    "curriculum": [
+      "Global Strategy",
+      "Cross-Cultural Management",
+      "International Finance",
+      "Global Marketing",
+      "Digital Transformation",
+      "Sustainable Business Practices",
+      "International Negotiations"
+    ],
+    "admission_requirements": [
+      "University degree or equivalent qualification",
+      "At least 7 years of professional experience",
+      "International exposure",
+      "Fluency in English"
+    ],
+    "faculty": [
+      {
+        "name": "Prof. Dr. Winfried Ruigrok",
+        "title": "Dean of the Executive School"
+      },
+      {
+        "name": "Prof. Dr. Omid Aschari",
+        "title": "Managing Director MBA Programs"
+      }
+    ],
+    "schedules": "Part-time format with international modules (1-2 weeks each)",
+    "deadlines": "Applications should be submitted at least 4 months before the program start",
+    "language": "English",
+    "location": "St. Gallen (Switzerland), Singapore, New York, and other international locations",
+    "program_id": "prog_1718"
+  }
+]
