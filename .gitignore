@@ -40,6 +40,9 @@ dist/
 build/
 *.egg-info/
 
+# Output data
+data/
+
 # Pycharm
 .idea/
 

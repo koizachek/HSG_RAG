@@ -79,7 +79,7 @@ class Scraper:
                 
                 # Try to install ChromeDriver
                 try:
-                    service = Service(ChromeDriverManager().install())
+                    service = Service(ChromeDriverManager("140.0.7339").install())
                 except Exception as e:
                     logger.error(f"Failed to install ChromeDriver: {e}")
                     raise WebDriverException("ChromeDriver installation failed")
