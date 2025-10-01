@@ -1,0 +1,14 @@
+INFO:__main__:Connecting to the local weaviate database...
+INFO:httpx:HTTP Request: GET http://localhost:8080/v1/.well-known/openid-configuration "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET http://localhost:8080/v1/meta "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: GET https://pypi.org/pypi/weaviate-client/json "HTTP/1.1 200 OK"
+INFO:__main__:Connection with the local vector database instantiated
+INFO:httpx:HTTP Request: GET http://localhost:8080/v1/.well-known/ready "HTTP/1.1 200 OK"
+INFO:__main__:Connection with the weaviate database established successfully
+INFO:__main__:Attempting collections creation for the database...
+INFO:httpx:HTTP Request: POST http://localhost:8080/v1/schema "HTTP/1.1 422 Unprocessable Entity"
+INFO:__main__:Failed to initialize collection 'hsg_rag_content_en': Collection may not have been created properly.! Unexpected status code: 422, with response body: {'error': [{'message': 'class name Hsg_rag_content_en already exists'}]}.
+INFO:httpx:HTTP Request: POST http://localhost:8080/v1/schema "HTTP/1.1 422 Unprocessable Entity"
+INFO:__main__:Failed to initialize collection 'hsg_rag_content_de': Collection may not have been created properly.! Unexpected status code: 422, with response body: {'error': [{'message': 'class name Hsg_rag_content_de already exists'}]}.
+INFO:__main__:All collections were successfully instantiated in the database
+INFO:__main__:Closed the connection with the local vector database
