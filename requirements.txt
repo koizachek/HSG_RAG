@@ -20,5 +20,8 @@ pandas>=2.0.3
 # UI
 rich>=13.5.2
 
+# Document processing pipeline
+docling >= 2.55.0
+
 # Weaviate Vector DB 
 weaviate-client >= 4.16.9

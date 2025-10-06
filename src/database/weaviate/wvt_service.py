@@ -1,5 +1,5 @@
-import weaviate as wvt, weaviate.exceptions as wex, argparse, logging
-from weaviate.classes.config import Configure
+import weaviate as wvt, weaviate.exceptions as wex, argparse, logging, os
+from weaviate.classes.config import Configure, Property, DataType
 
 logger = logging.getLogger(__name__)
 
@@ -8,7 +8,9 @@ class WeaviateService:
     Service that initializes and manages the connection to the local Weaviate vector database.
     """
     def __init__(self):
-        self._client: wvt.WeaviateClient = wvt.connect_to_local()
+        headers = {'X-OpenAI-Api-Key': os.getenv('OPENAI_API_KEY')}
+
+        self._client: wvt.WeaviateClient = wvt.connect_to_local(headers=headers)
         logger.info('Connection with the local vector database instantiated')
 
     def __del__(self):
@@ -19,6 +21,19 @@ class WeaviateService:
         return self._client.is_ready()
 
 
+def _delete_collections():
+    service = WeaviateService()
+    
+    if not service.is_connected():
+        raise wex.WeaviateConnectionError('Failed to establish a connection to the local Weaviate database!')
+    
+    for lang in ['en', 'de']:
+        collection_name = f'hsg_rag_content_{lang}'
+
+        if service._client.collections.exists(collection_name):
+            service._client.collections.delete(collection_name)
+
+
 def _checkhealth():
     service = WeaviateService()
     connection_exists = service.is_connected()
@@ -26,13 +41,9 @@ def _checkhealth():
     if not connection_exists: return 
     
     for lang in ['en', 'de']:
-        print(f"- Checking the existence of collection 'hsg_rag_content_{lang}': ", end='')
-        try:
-            service._client.collections.use(f'hsg_rag_content_{lang}')
-            print('OK!')
-        except Exception as _:
-            print('ERROR')
-
+        collection_name = f'hsg_rag_content_{lang}'
+        print(f"- Checking the existence of collection {collection_name}: {
+              'OK!' if service._client.collections.exists(collection_name) else 'ERROR' }", end='')
 
 def _create_collections():
     """
@@ -57,6 +68,10 @@ def _create_collections():
         try:
             service._client.collections.create(
                 name=collection_name,
+                properties=[
+                    Property(name='title', data_type=DataType.TEXT),
+                    Property(name='body', data_type=DataType.TEXT)
+                ],
                 vector_config=vector_config,            
                 generative_config=generative_config)
             logger.info(f"Created collection 'hsg_rag_content_en'")
@@ -67,6 +82,7 @@ def _create_collections():
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-dc', "--delete_collections", action='store_true', help='deletes all collections from the database')
     parser.add_argument('-cc', "--create_collections", action='store_true', help='initializes the collections for english and german contents separately')
     parser.add_argument('-ch', "--checkhealth", action='store_true', help='checks the connection to the database, existense of content collections...')
     
@@ -75,6 +91,9 @@ def parse_arguments():
 
 if __name__ == "__main__":
     args = parse_arguments()
+    
+    if args.delete_collections:
+        _delete_collections()
 
     if args.create_collections:
         _create_collections()
