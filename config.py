@@ -36,3 +36,7 @@ TOP_K_RETRIEVAL = 5  # Number of documents to retrieve for each query
 
 # UI settings
 MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
+
+# Data processing pipeline settings 
+CHUNK_MAX_TOKENS = 8191
+HASH_FILE_PATH = 'hashtables.json'

@@ -1,382 +1,247 @@
-"""
-Data processor for cleaning and structuring scraped program data.
-"""
-import json
-import logging
-import os
-from typing import Dict, List, Any
+import logging, os, json, hashlib
 
-import pandas as pd
+from enum import Enum
+from urllib.parse import urlparse
+from pathlib import Path
+from docling_core.types.doc.document import DoclingDocument
+from langdetect import detect
+from dataclasses import dataclass
+from transformers import AutoTokenizer
+from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
+from docling.document_converter import DocumentConverter
+from docling.chunking import HybridChunker
 
-from config import RAW_DATA_PATH, PROCESSED_DATA_PATH
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 logger = logging.getLogger(__name__)
 
+_MAX_TOKENS = 8191
+_OLLAMA_TOKENIZER = AutoTokenizer.from_pretrained("nomic-ai/nomic-embed-text-v1.5")
 
+_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), 'hashtables.json')
+
+def _get_hash(text: str) -> str:
+    return hashlib.md5(text.strip().encode("utf-8")).hexdigest()
+
+
+def _import_hashtables() -> dict:
+    hashtables = dict()
+    
+    with open(_HASH_FILE_PATH, 'a+') as f:
+        try:
+            f.seek(0)
+            hashtables = json.load(f)
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to decode the hash file {os.path.basename(_HASH_FILE_PATH)}: {e}. New hashtables will be created.")
+            hashtables['documents'] = []
+            hashtables['chunks'] = []
+    return hashtables
+
+
+def _export_hashtables(hashtables: dict):
+    """
+    Export hashtable data to the JSON file.
+
+    Args:
+        hashtables (dict): Hashtable dictionary containing documents and chunks.
+    """
+    with open(_HASH_FILE_PATH, 'w+') as f:
+        json.dump(hashtables, f)
+
+
+def _is_valid_url(url: str) -> bool:
+    if not urlparse(url).scheme:
+        url = "http://" + url
+    parsed = urlparse(url)
+    return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+
+
+def _detect_language(text: str):
+    """
+    Detect the language of the given text.
+
+    Args:
+        text (str): The text to analyze.
+
+    Returns:
+        str: Detected language code ('de' or 'en').
+    """
+    return 'de' if detect(text) == 'de' else 'en'
+
+
+def _detect_programs(text: str):
+    """
+    Identify MBA program names mentioned in the given text.
+
+    Args:
+        text (str): The text to search for program mentions.
+
+    Returns:
+        list[str]: List of detected program identifiers.
+    """
+    programms = []
+    lc_text = text.lower()
+    found = lambda txt: txt in lc_text
+    
+    if found('emba') or found('executive mba'):
+        programms.append('emba')
+
+    if found('iemba') or found('international emba') or found('international executive mba'):
+        programms.append('iemba')
+
+    if found('emba x'):
+        programms.append('emba_x')
+
+    return programms
+
+
+class ProcessingStatus(Enum):
+    NOT_FOUND         = 1
+    SUCCESS           = 2
+    FAILURE           = 3
+    DUPLICATION       = 4
+    INCORRECT_FORMAT  = 5
+    FORBIDDEN_WEBSITE = 6
+
+    
+@dataclass
+class _ChunkMetadata:
+    programs: str 
+    date: str 
+    source: str 
+    document_id: str 
+
+
+@dataclass
+class ProcessingResult:
+    status: ProcessingStatus = ProcessingStatus.SUCCESS
+    chunks: list = None
+    language: str = None
+        
+
+# TODO: Move max_tokens to config.
+# TODO: Tokenizer is dependent on the chosen embedding model, which should be determined in the config.
 class DataProcessor:
-    """Processor for cleaning and structuring scraped program data."""
-
-    def __init__(self, input_path: str = RAW_DATA_PATH, output_path: str = PROCESSED_DATA_PATH, manual_data_path: str = None):
+    """
+    Handles document processing, including conversion, chunking, language detection,
+    and hash-based deduplication.
+    """
+    def __init__(self, config: dict = None) -> None:
         """
-        Initialize the data processor.
+        Initialize the DataProcessor with converter, chunker, and hashtable.
 
         Args:
-            input_path: Path to the raw data file.
-            output_path: Path to save the processed data.
-            manual_data_path: Path to the manual data file (optional).
+            config (dict, optional): Configuration dictionary for processing options.
         """
-        self.input_path = input_path
-        self.output_path = output_path
-        self.manual_data_path = manual_data_path or os.path.join(os.path.dirname(input_path), "manual_data.json")
+        self._converter = DocumentConverter()
+        self._chunker = HybridChunker(
+            tokenizer=HuggingFaceTokenizer(
+                tokenizer=_OLLAMA_TOKENIZER,
+                max_tokens=_MAX_TOKENS
+            ), 
+            max_tokens=_MAX_TOKENS, 
+            merge_peers=True
+        )
+        self._hashtables = _import_hashtables()
 
-    def load_data(self) -> List[Dict[str, Any]]:
-        """
-        Load raw data from the input file.
 
-        Returns:
-            A list of dictionaries containing program data.
+    def process_many_documents(self, sources: list[Path | str]) -> list[ProcessingResult]:
         """
-        try:
-            with open(self.input_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            
-            # If raw data is empty, try to load manual data
-            if not data and os.path.exists(self.manual_data_path):
-                logger.info(f"Raw data is empty, loading manual data from {self.manual_data_path}")
-                with open(self.manual_data_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                logger.info(f"Loaded {len(data)} programs from {self.manual_data_path}")
-            else:
-                logger.info(f"Loaded {len(data)} programs from {self.input_path}")
-            
-            return data
-        except Exception as e:
-            logger.error(f"Error loading data: {e}")
-            
-            # If there was an error, try to load manual data as a fallback
-            try:
-                if os.path.exists(self.manual_data_path):
-                    logger.info(f"Attempting to load manual data from {self.manual_data_path}")
-                    with open(self.manual_data_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                    logger.info(f"Loaded {len(data)} programs from {self.manual_data_path}")
-                    return data
-            except Exception as e2:
-                logger.error(f"Error loading manual data: {e2}")
-            
-            return []
-
-    def save_data(self, data: List[Dict[str, Any]]) -> None:
-        """
-        Save processed data to the output file.
+        Process a list of document sources sequentially.
 
         Args:
-            data: The processed data to save.
-        """
-        try:
-            # Ensure the directory exists
-            os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
-            
-            with open(self.output_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            
-            logger.info(f"Saved {len(data)} processed programs to {self.output_path}")
-        except Exception as e:
-            logger.error(f"Error saving data to {self.output_path}: {e}")
+            sources (list[Path | str]): List of file paths or URLs to process.
 
-    def clean_text(self, text: str) -> str:
+        Returns:
+            list[ProcessingResult]: List of results for each processed document.
         """
-        Clean text by removing extra whitespace and normalizing.
+        return [self.process_document(source) for source in sources]
+
+
+    def process_document(self, source: Path | str) -> ProcessingResult:
+        """
+        Process a single document source, converting it to text, chunking, and hashing.
 
         Args:
-            text: The text to clean.
+            source (Path | str): Path to the document to process.
 
         Returns:
-            The cleaned text.
+            ProcessingResult: The result of the processing operation, including chunks and language.
         """
-        if not text or not isinstance(text, str):
-            return ""
+        if not os.path.exists(source) or not os.path.isfile(source):
+            logger.error(f"Failed to initiate processing pipeline for source {source}: file does not exist")
+            return ProcessingResult(status=ProcessingStatus.NOT_FOUND)
         
-        # Replace multiple whitespace with a single space
-        cleaned = " ".join(text.split())
-        return cleaned.strip()
-
-    def clean_list(self, items: List[str]) -> List[str]:
+        logger.info(f"Initiating processing pipeline for source {source}")
+        document = self._converter.convert(source=source).document
+        text = document.export_to_text()
+        
+        t_hash = _get_hash(text)
+        if t_hash in self._hashtables['documents']:
+            logger.warning(f"Source {source} has already been processed, terminating the pipeline")
+            return ProcessingResult(status=ProcessingStatus.DUPLICATION)
+        logger.info(f"No processing history found for source {source} with hash {t_hash}, adding to hashtables")
+        
+        metadata = _ChunkMetadata(
+            programs=_detect_programs(text),
+            source=os.path.basename(source),
+            date=os.path.getctime(source),
+            document_id=t_hash
+        )
+        prepared_chunks = self._collect_chunks(document, metadata)
+        logger.info(f"Successfully collected {len(prepared_chunks)} chunks from {source}")
+        
+        self._update_hashtables(t_hash, [chunk['chunk_id'] for chunk in prepared_chunks])
+        _export_hashtables(self._hashtables)
+        return ProcessingResult(chunks=prepared_chunks, language=_detect_language(text))
+    
+    
+    def _update_hashtables(self, document_id, chunk_ids):
         """
-        Clean a list of text items.
+        Update hashtables with a new document ID and collected chunk IDs.
 
         Args:
-            items: The list of text items to clean.
-
-        Returns:
-            The cleaned list of text items.
+            document_id (str): Hash of the processed document.
+            chunk_ids (list[str]): List of chunk hashes to add.
         """
-        if not items or not isinstance(items, list):
-            return []
-        
-        cleaned_items = [self.clean_text(item) for item in items if item]
-        return [item for item in cleaned_items if item]  # Remove empty items
+        self._hashtables['documents'].append(document_id)
+        self._hashtables['chunks'].extend(chunk_ids)
 
-    def normalize_costs(self, cost_text: str) -> Dict[str, Any]:
+
+    def _collect_chunks(self, document: DoclingDocument, metadata: _ChunkMetadata) -> list:
         """
-        Normalize cost information.
+        Collect text chunks from a document and prepare them with metadata.
 
         Args:
-            cost_text: The cost text to normalize.
+            document (DoclingDocument): The converted document object.
+            metadata (_ChunkMetadata): Metadata containing program, source, and date information.
 
         Returns:
-            A dictionary with normalized cost information.
+            list[dict]: List of chunk dictionaries containing text and metadata.
         """
-        if not cost_text or cost_text == "Not specified":
-            return {"amount": None, "currency": None, "original_text": cost_text}
-        
-        # Try to extract currency and amount
-        import re
-        
-        # Look for common currency patterns
-        currency_patterns = {
-            "CHF": r"CHF\s*([\d\',\.]+)",
-            "EUR": r"(?:€|EUR)\s*([\d\',\.]+)",
-            "USD": r"(?:\$|USD)\s*([\d\',\.]+)",
-        }
-        
-        for currency, pattern in currency_patterns.items():
-            match = re.search(pattern, cost_text, re.IGNORECASE)
-            if match:
-                # Extract the amount and clean it
-                amount_str = match.group(1)
-                # Remove thousands separators and convert to float
-                amount_str = amount_str.replace(",", "").replace("'", "")
-                try:
-                    amount = float(amount_str)
-                    return {
-                        "amount": amount,
-                        "currency": currency,
-                        "original_text": cost_text,
-                    }
-                except ValueError:
-                    pass
-        
-        # If no pattern matched, return the original text
-        return {"amount": None, "currency": None, "original_text": cost_text}
-
-    def normalize_duration(self, duration_text: str) -> Dict[str, Any]:
-        """
-        Normalize duration information.
-
-        Args:
-            duration_text: The duration text to normalize.
-
-        Returns:
-            A dictionary with normalized duration information.
-        """
-        if not duration_text or duration_text == "Not specified":
-            return {"months": None, "original_text": duration_text}
-        
-        # Try to extract duration in months
-        import re
-        
-        # Look for common duration patterns
-        month_patterns = [
-            r"(\d+)\s*months?",
-            r"(\d+)\s*month program",
-        ]
-        
-        year_patterns = [
-            r"(\d+)\s*years?",
-            r"(\d+)\s*year program",
-            r"(\d+)\s*-\s*year",
-        ]
-        
-        # Check for months first
-        for pattern in month_patterns:
-            match = re.search(pattern, duration_text, re.IGNORECASE)
-            if match:
-                try:
-                    months = int(match.group(1))
-                    return {
-                        "months": months,
-                        "original_text": duration_text,
-                    }
-                except ValueError:
-                    pass
-        
-        # Check for years and convert to months
-        for pattern in year_patterns:
-            match = re.search(pattern, duration_text, re.IGNORECASE)
-            if match:
-                try:
-                    years = int(match.group(1))
-                    months = years * 12
-                    return {
-                        "months": months,
-                        "original_text": duration_text,
-                    }
-                except ValueError:
-                    pass
-        
-        # If no pattern matched, return the original text
-        return {"months": None, "original_text": duration_text}
-
-    def process_program(self, program: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process a single program's data.
-
-        Args:
-            program: The program data to process.
-
-        Returns:
-            The processed program data.
-        """
-        processed = {}
-        
-        # Copy basic fields
-        processed["url"] = program.get("url", "")
-        processed["name"] = self.clean_text(program.get("name", "Unknown Program"))
-        processed["description"] = self.clean_text(program.get("description", ""))
-        
-        # Process duration
-        processed["duration"] = self.normalize_duration(program.get("duration", "Not specified"))
-        
-        # Process costs
-        processed["costs"] = self.normalize_costs(program.get("costs", "Not specified"))
-        
-        # Process lists
-        processed["curriculum"] = self.clean_list(program.get("curriculum", []))
-        processed["admission_requirements"] = self.clean_list(program.get("admission_requirements", []))
-        
-        # Process faculty
-        faculty = program.get("faculty", [])
-        processed_faculty = []
-        for member in faculty:
-            if isinstance(member, dict):
-                processed_faculty.append({
-                    "name": self.clean_text(member.get("name", "")),
-                    "title": self.clean_text(member.get("title", "")),
-                })
-        processed["faculty"] = processed_faculty
-        
-        # Process other fields
-        processed["schedules"] = self.clean_text(program.get("schedules", "Not specified"))
-        processed["deadlines"] = self.clean_text(program.get("deadlines", "Not specified"))
-        processed["language"] = self.clean_text(program.get("language", "Not specified"))
-        processed["location"] = self.clean_text(program.get("location", "Not specified"))
-        
-        # Add metadata
-        processed["program_id"] = f"prog_{hash(processed['url']) % 10000:04d}"
-        
-        return processed
-
-    def process_data(self) -> List[Dict[str, Any]]:
-        """
-        Process all program data.
-
-        Returns:
-            A list of processed program data.
-        """
-        raw_data = self.load_data()
-        processed_data = []
-        
-        for program in raw_data:
-            try:
-                processed_program = self.process_program(program)
-                processed_data.append(processed_program)
-            except Exception as e:
-                logger.error(f"Error processing program {program.get('name', 'Unknown')}: {e}")
-        
-        logger.info(f"Processed {len(processed_data)} programs")
-        return processed_data
-
-    def run(self) -> None:
-        """Run the data processor."""
-        logger.info("Starting data processing...")
-        processed_data = self.process_data()
-        self.save_data(processed_data)
-        logger.info("Data processing completed")
-
-    def generate_stats(self) -> Dict[str, Any]:
-        """
-        Generate statistics about the processed data.
-
-        Returns:
-            A dictionary containing statistics.
-        """
-        try:
-            processed_data = self.load_data()
-            if not processed_data:
-                return {"error": "No processed data available"}
+        chunks = [self._chunker.contextualize(chunk=c) for c in self._chunker.chunk(document)]
+        prepared_chunks = []
+        for chunk in chunks:
+            c_hash = _get_hash(chunk)
+            if c_hash in self._hashtables['chunks']:
+                logger.info(f"Found duplicated chunk from {metadata.document_id} with id {c_hash}, skipping...")
+                continue 
             
-            # Convert to DataFrame for easier analysis
-            df = pd.DataFrame(processed_data)
-            
-            # Basic stats
-            stats = {
-                "total_programs": len(df),
-                "languages": {},
-                "locations": {},
-                "duration_months": {
-                    "min": None,
-                    "max": None,
-                    "avg": None,
-                },
-                "costs": {
-                    "min": {},
-                    "max": {},
-                    "avg": {},
-                },
-            }
-            
-            # Language stats
-            if "language" in df.columns:
-                language_counts = df["language"].value_counts().to_dict()
-                stats["languages"] = language_counts
-            
-            # Location stats
-            if "location" in df.columns:
-                location_counts = df["location"].value_counts().to_dict()
-                stats["locations"] = location_counts
-            
-            # Duration stats
-            if "duration" in df.columns:
-                # Extract months from duration dictionaries
-                months = [d.get("months") for d in df["duration"] if d.get("months") is not None]
-                if months:
-                    stats["duration_months"]["min"] = min(months)
-                    stats["duration_months"]["max"] = max(months)
-                    stats["duration_months"]["avg"] = sum(months) / len(months)
-            
-            # Cost stats by currency
-            if "costs" in df.columns:
-                # Group costs by currency
-                currencies = {}
-                for cost in df["costs"]:
-                    currency = cost.get("currency")
-                    amount = cost.get("amount")
-                    if currency and amount is not None:
-                        if currency not in currencies:
-                            currencies[currency] = []
-                        currencies[currency].append(amount)
-                
-                # Calculate stats for each currency
-                for currency, amounts in currencies.items():
-                    if amounts:
-                        stats["costs"]["min"][currency] = min(amounts)
-                        stats["costs"]["max"][currency] = max(amounts)
-                        stats["costs"]["avg"][currency] = sum(amounts) / len(amounts)
-            
-            return stats
-        except Exception as e:
-            logger.error(f"Error generating stats: {e}")
-            return {"error": str(e)}
+            prepared_chunks.append({
+                'body': chunk,
+                'chunk_id': c_hash,
+                'document_id': metadata.document_id,
+                'programs': metadata.programs,
+                'date': metadata.date,
+                'source': metadata.source
+            })
+        return prepared_chunks
 
 
 if __name__ == "__main__":
-    processor = DataProcessor()
-    processor.run()
-    stats = processor.generate_stats()
-    print(json.dumps(stats, indent=2))
+    gp = GeneralProcessor()
+    result = gp.process_document("emba_X5_Brochure.pdf")
+
+    if result.status == ProcessingStatus.SUCCESS:
+        for chunk in result.chunks:
+            print('chunk ID:', chunk['chunk_id'])
+            print(chunk['body'])
+
