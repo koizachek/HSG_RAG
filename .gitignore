@@ -34,7 +34,10 @@ venv.bak/
 .cache/
 *.sqlite3
 *.db
+
+# Data files
 *.pdf
+*.json
 
 # Output folders
 dist/
