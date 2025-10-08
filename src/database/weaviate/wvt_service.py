@@ -1,29 +1,60 @@
-from weaviate.collections.collection import Collection
 import weaviate as wvt, weaviate.exceptions as wex, argparse, logging, os
+
+from time import perf_counter
+from dataclasses import dataclass
+from weaviate.collections.classes.grpc import MetadataQuery
+from weaviate.collections.collection import Collection
 from weaviate.classes.config import Configure, Property, DataType
 
 logger = logging.getLogger(__name__)
 
 AVAILABLE_LANGUAGES = ['en', 'de']
 COLLECTION_BASENAME = 'hsg_rag_content'
-get_collection_name = lambda lang: f'{COLLECTION_BASENAME}_{lang}'
+_get_collection_name = lambda lang: f'{COLLECTION_BASENAME}_{lang}'
+
+@dataclass
+class _Collection:
+    it: Collection
+    name: str
+
 
 class WeaviateService:
     """
-    Service that initializes and manages the connection to the local Weaviate vector database.
+    Provides an interface for interacting with a local Weaviate vector database.
+    Handles initialization, data import, and hybrid queries.
     """
-    def __init__(self):
+    def __init__(self) -> None:
+        """
+        Initialize the Weaviate service and establish a connection to the local database.
+
+        Raises:
+            weaviate.exceptions.WeaviateConnectionError: If the connection fails.
+        """
         headers = {'X-OpenAI-Api-Key': os.getenv('OPENAI_API_KEY')}
 
         self._client: wvt.WeaviateClient = wvt.connect_to_local(headers=headers)
         logger.info('Connection with the local vector database instantiated')
-        self._current_collection: Collection = None 
+
+        self._collections: dict[str, _Collection] = {}
+        self._current_collection: _Collection = None 
    
 
-    def select_language(self, lang: str):
+    def select_language(self, lang: str) -> None:
+        """
+        Select a language-specific collection as the active working collection.
+
+        Args:
+            lang (str): Acceptable language code.
+
+        Raises:
+            weaviate.exceptions.WeaviateConnectionError: If the specified language collection does not exist.
+        """
         if lang in AVAILABLE_LANGUAGES:
-            collection_name = get_collection_name(lang)
-            self._current_collection = self._client.collections.use(collection_name)
+            if not self._connections[lang]:
+                collection_name = _get_collection_name(lang)
+                self._connections[lang] = _Collection(it=self._client.collections.use(collection_name), name=collection_name)
+            
+            self._current_collection = self._collections[lang]
             logger.info(f"Selected collection {collection_name} as working collection")
         else:
             e = wex.WeaviateConnectionError("No collection for language '{lang}' was found in the database!")
@@ -32,6 +63,19 @@ class WeaviateService:
 
 
     def batch_import(self, data_rows: list, lang: str = None) -> list:
+        """
+        Perform a batch import of multiple objects into the current collection.
+
+        Args:
+            data_rows (list): List of dictionaries representing the data rows to import.
+            lang (str, optional): Language collection to use. If not provided, uses the current one.
+
+        Returns:
+            list[dict]: List of failed imports with error details, if any.
+
+        Raises:
+            weaviate.exceptions.WeaviateConnectionError: If no active collection is available.
+        """
         if lang: self.select_language(lang)
         if not self._current_collection:
             e = wex.WeaviateConnectionError("No working collection selected upon starting batch import!")
@@ -39,8 +83,8 @@ class WeaviateService:
             raise e
 
         import_errors = []
-        logger.info(f"Initiating batch import for {lang(data_rows)} data rows")
-        with self._current_collection.batch.fixed_size(batch_size=100, concurrent_requests=2) as batch:
+        logger.info(f"Initiating batch import for {lang(data_rows)} data rows into collection {self._current_collection.name}")
+        with self._current_collection.it.batch.fixed_size(batch_size=100, concurrent_requests=2) as batch:
             for idx, data_row in enumerate(data_rows):
                 try:
                     batch.add_object(properties=data_row)
@@ -55,56 +99,113 @@ class WeaviateService:
                         last_failed_object = self._current_collection.batch.failed_objects[-1]
                         logger.info(f"Last failure: {last_failed_object.message}")
         
-        logger.info("Batch import finished")
+        logger.info("Batch import finished for {self._current_collection.name}")
         if import_errors:
             logger.info("Total import errors: {len(import_errors)}")
         
         return import_errors
     
     
-    def query(self, query: str, limit: int = 10, lang: str = None): 
+    def query(self, query: str, query_properties: list[str] = None, limit: int = 5, distance: float = 0.25, lang: str = None) -> dict:
+        """
+        Execute a hybrid semantic and keyword query against the active collection.
+
+        Args:
+            query (str): The query string.
+            query_properties (list[str], optional): List of properties to query against.
+            limit (int, optional): Maximum number of results to return. Defaults to 5.
+            distance (float, optional): Distance threshold for the query. Defaults to 0.25.
+            lang (str, optional): Language collection to use. If not provided, uses the current one.
+
+        Returns:
+            tuple: A tuple containing the query response and elapsed time.
+
+        Raises:
+            weaviate.exceptions.WeaviateConnectionError: If no active collection is available.
+        """ 
         if lang: self.select_language(lang)
         if not self._current_collection:
             e = wex.WeaviateConnectionError("No working collection selected upon querying!")
             logger.error(e)
             raise e
+        
+        logger.info(f"Querying collection {self._current_collection.name}")
+        query_start_time = perf_counter()
+        resp = self._current_collection.it.query.hybrid(
+            query=query,
+            query_properties=query_properties,
+            distance=distance,
+            limit=limit,
+            return_metadata=MetadataQuery.full()
+        )
+        elapsed = perf_counter() - query_start_time
+        logger.info(f"Querying retrieved {len(resp.objects)} objects in {elapsed} seconds")
+
+        return (resp, elapsed)
 
 
     def __del__(self):
+        """
+        Destructor method to safely close the Weaviate client connection.
+        """
         self._client.close()
         logger.info('Closed the connection with the local vector database')
-    
+
+
     def is_connected(self):
+        """
+        Check if the client is successfully connected to the Weaviate instance.
+
+        Returns:
+            bool: True if the client is connected, False otherwise.
+        """
         return self._client.is_ready()
 
 
 def _delete_collections():
+    """
+    Delete all existing collections from the local Weaviate database.
+
+    Raises:
+        weaviate.exceptions.WeaviateConnectionError: If the connection to the database fails.
+    """
     service = WeaviateService()
     
     if not service.is_connected():
         raise wex.WeaviateConnectionError('Failed to establish a connection to the local Weaviate database!')
     
     for lang in AVAILABLE_LANGUAGES:
-        collection_name = get_collection_name(lang)
+        collection_name = _get_collection_name(lang)
 
         if service._client.collections.exists(collection_name):
             service._client.collections.delete(collection_name)
 
 
 def _checkhealth():
+    """
+    Check the connectivity and health status of the Weaviate database and its collections.
+
+    Prints the connection status and verifies the existence of collections for each supported language.
+    """
     service = WeaviateService()
     connection_exists = service.is_connected()
     print(f"- Checking the connection to the local weaviate database: {'OK!' if connection_exists else 'ERROR'}")
     if not connection_exists: return 
     
     for lang in AVAILABLE_LANGUAGES:
-        collection_name = get_collection_name(lang)
+        collection_name = _get_collection_name(lang)
         print(f"- Checking the existence of collection {collection_name}: {
               'OK!' if service._client.collections.exists(collection_name) else 'ERROR' }", end='')
 
+
 def _create_collections():
     """
-    Initializes the collections for english and german contents separately.
+    Create and initialize language-specific collections in the Weaviate database.
+
+    Each collection includes vector and generative configurations.
+
+    Raises:
+        weaviate.exceptions.WeaviateConnectionError: If the database connection fails.
     """
     logger.info('Connecting to the local weaviate database...')
     service = WeaviateService()
@@ -121,7 +222,7 @@ def _create_collections():
         api_endpoint="http://ollama:11434", model="llama3.2")
     
     for lang in AVAILABLE_LANGUAGES:
-        collection_name = get_collection_name(lang)
+        collection_name = _get_collection_name(lang)
         try:
             service._client.collections.create(
                 name=collection_name,
@@ -142,6 +243,12 @@ def _create_collections():
 
 
 def parse_arguments():
+    """
+    Parse command-line arguments for managing Weaviate collections.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-dc', "--delete_collections", action='store_true', help='deletes all collections from the database')
     parser.add_argument('-cc', "--create_collections", action='store_true', help='initializes the collections for english and german contents separately')
@@ -161,3 +268,4 @@ if __name__ == "__main__":
     
     if args.checkhealth:
         _checkhealth()
+
