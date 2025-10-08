@@ -1,6 +1,7 @@
 import logging, os, json, hashlib
 
 from enum import Enum
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 from pathlib import Path
 from docling_core.types.doc.document import DoclingDocument
@@ -183,7 +184,7 @@ class DataProcessor:
         metadata = _ChunkMetadata(
             programs=_detect_programs(text),
             source=os.path.basename(source),
-            date=os.path.getctime(source),
+            date=datetime.now().replace(tzinfo=timezone.utc),
             document_id=t_hash
         )
         prepared_chunks = self._collect_chunks(document, metadata)

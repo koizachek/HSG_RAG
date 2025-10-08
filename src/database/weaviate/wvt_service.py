@@ -17,6 +17,7 @@ COLLECTION_BASENAME = 'hsg_rag_content'
 _get_collection_name = lambda lang: f'{COLLECTION_BASENAME}_{lang}'
 _collection_names = [_get_collection_name(lang) for lang in AVAILABLE_LANGUAGES]
 
+
 @dataclass
 class _Collection:
     it: Collection
@@ -35,7 +36,7 @@ class WeaviateService:
         Raises:
             weaviate.exceptions.WeaviateConnectionError: If the connection fails.
         """
-        headers = {'X-OpenAI-Api-Key': os.getenv('OPENAI_API_KEY') or "key"}
+        headers = {'X-OpenAI-Api-Key': os.getenv('OPENAI_API_KEY') or "no-key"}
 
         self._client: wvt.WeaviateClient = wvt.connect_to_local(headers=headers)
         logger.info('Connection with the local vector database instantiated')
@@ -55,9 +56,9 @@ class WeaviateService:
             weaviate.exceptions.WeaviateConnectionError: If the specified language collection does not exist.
         """
         if lang in AVAILABLE_LANGUAGES:
-            if not self._connections[lang]:
+            if lang not in self._collections:
                 collection_name = _get_collection_name(lang)
-                self._connections[lang] = _Collection(it=self._client.collections.use(collection_name), name=collection_name)
+                self._collections[lang] = _Collection(it=self._client.collections.use(collection_name), name=collection_name)
             
             self._current_collection = self._collections[lang]
             logger.info(f"Selected collection {collection_name} as working collection")
@@ -88,7 +89,7 @@ class WeaviateService:
             raise e
 
         import_errors = []
-        logger.info(f"Initiating batch import for {lang(data_rows)} data rows into collection {self._current_collection.name}")
+        logger.info(f"Initiating batch import for {len(data_rows)} data rows into collection {self._current_collection.name}")
         with self._current_collection.it.batch.fixed_size(batch_size=100, concurrent_requests=2) as batch:
             for idx, data_row in enumerate(data_rows):
                 try:
@@ -104,7 +105,7 @@ class WeaviateService:
                         last_failed_object = self._current_collection.batch.failed_objects[-1]
                         logger.info(f"Last failure: {last_failed_object.message}")
         
-        logger.info("Batch import finished for {self._current_collection.name}")
+        logger.info(f"Batch import finished for {self._current_collection.name}")
         if import_errors:
             logger.info("Total import errors: {len(import_errors)}")
         
@@ -194,6 +195,7 @@ def _create_backup() -> None:
 def _restore_backup(backup_id: str):
     """
     Restores the state of the database from the provided backup.
+    
     Args:
         backup_id(str): ID of the backup from which the database state should be restored.
     """
@@ -318,6 +320,12 @@ def parse_arguments():
 if __name__ == "__main__":
     args = parse_arguments()
     
+    if args.create_backup:
+        _create_backup()
+
+    if args.restore_backup:
+        _restore_backup(args.restore_backup)
+
     if args.delete_collections:
         _delete_collections()
 
@@ -326,4 +334,4 @@ if __name__ == "__main__":
     
     if args.checkhealth:
         _checkhealth()
-
+    
