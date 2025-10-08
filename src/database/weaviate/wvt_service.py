@@ -1,4 +1,5 @@
-import weaviate as wvt, weaviate.exceptions as wex, argparse, logging, os
+import weaviate as wvt, weaviate.exceptions as wex 
+import argparse, logging, os, datetime
 
 from time import perf_counter
 from dataclasses import dataclass
@@ -7,10 +8,14 @@ from weaviate.collections.collection import Collection
 from weaviate.classes.config import Configure, Property, DataType
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 AVAILABLE_LANGUAGES = ['en', 'de']
+
+DB_BACKUP_BACKEND = ""
 COLLECTION_BASENAME = 'hsg_rag_content'
 _get_collection_name = lambda lang: f'{COLLECTION_BASENAME}_{lang}'
+_collection_names = [_get_collection_name(lang) for lang in AVAILABLE_LANGUAGES]
 
 @dataclass
 class _Collection:
@@ -30,7 +35,7 @@ class WeaviateService:
         Raises:
             weaviate.exceptions.WeaviateConnectionError: If the connection fails.
         """
-        headers = {'X-OpenAI-Api-Key': os.getenv('OPENAI_API_KEY')}
+        headers = {'X-OpenAI-Api-Key': os.getenv('OPENAI_API_KEY') or "key"}
 
         self._client: wvt.WeaviateClient = wvt.connect_to_local(headers=headers)
         logger.info('Connection with the local vector database instantiated')
@@ -162,6 +167,55 @@ class WeaviateService:
         return self._client.is_ready()
 
 
+def _create_backup() -> None:
+    """
+    Creates a backup instance from current weaviate database state and uploads it to selected backend storage service.
+    """
+    service = WeaviateService()
+    
+    if not service.is_connected():
+        raise wex.WeaviateConnectionError('Failed to establish a connection to the local Weaviate database!')
+    
+    backup_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
+    logger.info("Initiating backup creation for the local weaviate database")
+    try:
+        result = service._client.backup.create(
+            backup_id=f"hsg_wvtdb_backup_{backup_id}",
+            backend=DB_BACKUP_BACKEND,
+            include_collections=_collection_names,
+            wait_for_completion=True
+        )
+        logger.info(f"Creation of backup '{backup_id}' finished with response: {result}")
+    except Exception as e:
+        logger.error(f"Failed to create a backup due to an unexpected error: {e.message}")
+        raise e
+
+
+def _restore_backup(backup_id: str):
+    """
+    Restores the state of the database from the provided backup.
+    Args:
+        backup_id(str): ID of the backup from which the database state should be restored.
+    """
+    service = WeaviateService()
+    
+    if not service.is_connected():
+        raise wex.WeaviateConnectionError('Failed to establish a connection to the local Weaviate database!')
+    
+    logger.info("Initiating restoration process from the backup '{backup_id}' for the local weaviate database")
+    try:
+        result = service._client.backup.restore(
+            backup_id=backup_id,
+            backend=DB_BACKUP_BACKEND,
+            include_collections=_collection_names,
+            wait_for_completion=True,
+        )
+        logger.info(f"Restored backup '{backup_id}' with response: {result}")
+    except Exception as e:
+        logger.error(f"Failed to restore a backup due to an unexpected error: {e.message}")
+        raise e
+
+
 def _delete_collections():
     """
     Delete all existing collections from the local Weaviate database.
@@ -174,11 +228,15 @@ def _delete_collections():
     if not service.is_connected():
         raise wex.WeaviateConnectionError('Failed to establish a connection to the local Weaviate database!')
     
-    for lang in AVAILABLE_LANGUAGES:
-        collection_name = _get_collection_name(lang)
-
+    logger.info("Initiating the deletion of stored collections.")
+    for collection_name in _collection_names:
         if service._client.collections.exists(collection_name):
             service._client.collections.delete(collection_name)
+            logger.info(f"Deleted collection {collection_name}")
+        else:
+            logger.warning(f"Cannot delete collection {collection_name}: collection does not exist!")
+    
+    logger.info("Finished the deletion of stored colections")
 
 
 def _checkhealth():
@@ -189,13 +247,12 @@ def _checkhealth():
     """
     service = WeaviateService()
     connection_exists = service.is_connected()
-    print(f"- Checking the connection to the local weaviate database: {'OK!' if connection_exists else 'ERROR'}")
+    logger.info(f"Checking the connection to the local weaviate database: {'OK!' if connection_exists else 'ERROR'}")
     if not connection_exists: return 
     
-    for lang in AVAILABLE_LANGUAGES:
-        collection_name = _get_collection_name(lang)
-        print(f"- Checking the existence of collection {collection_name}: {
-              'OK!' if service._client.collections.exists(collection_name) else 'ERROR' }", end='')
+    for collection_name in _collection_names:
+        logger.info(f"Checking the existence of collection {collection_name}: "
+              f"{'OK!' if service._client.collections.exists(collection_name) else 'ERROR' }")
 
 
 def _create_collections():
@@ -221,8 +278,7 @@ def _create_collections():
     generative_config = Configure.Generative.ollama(
         api_endpoint="http://ollama:11434", model="llama3.2")
     
-    for lang in AVAILABLE_LANGUAGES:
-        collection_name = _get_collection_name(lang)
+    for collection_name in _collection_names:
         try:
             service._client.collections.create(
                 name=collection_name,
@@ -236,7 +292,7 @@ def _create_collections():
                 ],
                 vector_config=vector_config,            
                 generative_config=generative_config)
-            logger.info(f"Created collection 'hsg_rag_content_en'")
+            logger.info(f"Created collection {collection_name}")
         except Exception as e:
             logger.error(f"Failed to initialize collection '{collection_name}': {e}")
     logger.info('All collections were successfully instantiated in the database')
@@ -250,10 +306,12 @@ def parse_arguments():
         argparse.Namespace: Parsed command-line arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('-dc', "--delete_collections", action='store_true', help='deletes all collections from the database')
-    parser.add_argument('-cc', "--create_collections", action='store_true', help='initializes the collections for english and german contents separately')
-    parser.add_argument('-ch', "--checkhealth", action='store_true', help='checks the connection to the database, existense of content collections...')
-    
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-dc', "--delete_collections", action='store_true', help='deletes all collections from the database')
+    group.add_argument('-cc', "--create_collections", action='store_true', help='initializes the collections for english and german contents separately')
+    group.add_argument('-ch', "--checkhealth", action='store_true', help='checks the connection to the database, existense of content collections...')
+    group.add_argument('-cb', "--create_backup", action='store_true', help='creates a backup of the current state of the database')
+    group.add_argument('-rb', "--restore_backup", type=str, help='restores the state of the database from the provided backup_id')
     return parser.parse_args()
 
 
