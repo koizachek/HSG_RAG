@@ -1,13 +1,14 @@
 import logging, json, os
 
 from pathlib import Path
-from ..database.weaviate.wvt_service import WeaviateService
-from ..processing.processor import DataProcessor, ProcessingResult, ProcessingStatus
+from src.database.weaviate.wvt_service import WeaviateService
+from src.processing.processor import DataProcessor, ProcessingResult, ProcessingStatus
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 _HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), 'hashtables.json')
+AVAILABLE_LANGUAGES = ['en', 'de']
 
 def _import_hashtables() -> dict:
     hashtables = dict()
@@ -43,38 +44,45 @@ class ImportPipeline:
         self._hashtables_copy = None
         self._processor  = DataProcessor()
         self._wvtserv    = WeaviateService()
-
-
-    def import_document(self, source: Path | str):
-        result: ProcessingResult = self._processor.process_document(source)
-
-        if not result.status == ProcessingStatus.SUCCESS:
-            logger.error(f"Failed to process document {source}: {result.status}")
-            return
-        
-        self._save_hashtables()
-        unique_chunks = self._deduplicate(result)
+    
+    
+    def import_many_documents(self, sources: list[Path | str]):
+        unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
+        for source in sources:
+            chunks, lang = self._process_source(source)
+            if chunks:
+                unique_chunks[lang].extend(chunks)
         
         if not unique_chunks:
-            logger.warning(f"Found 0 unique chunks in document {source}, terminating the import")
-            return
-        
+            logger.warning(f"File(s) provided for the insertion do not contain any unique information. Terminating the pipeline without importing")
+            return 
+
         # TODO: add import retry functionality
-        failures = self._wvtserv.batch_import(data_rows=unique_chunks, lang=result.language)
-        for failure in failures:
-            chunk_id = failure['chunk_id']
-            if chunk_id in self._hashtables['chunks']:
-                self._hashtables['chunks'].remove(chunk_id)
+        for lang, chunks in unique_chunks.items():
+            if not chunks: continue
+
+            failures = self._wvtserv.batch_import(data_rows=chunks, lang=lang)
+            for failure in failures:
+                chunk_id = failure['chunk_id']
+                if chunk_id in self._hashtables['chunks']:
+                    self._hashtables['chunks'].remove(chunk_id)
 
         _export_hashtables(self._hashtables)
 
 
-    def _restore_hashtables(self):
-        self._hashtables = self._hashtables_copy.copy()
+    def import_document(self, source: Path | str):
+        self.import_many_documents([source])
+     
+    
+    def _process_source(self, source: Path | str) -> (list, str):
+        result: ProcessingResult = self._processor.process_document(source)
 
-
-    def _save_hashtables(self):
-        self._hashtables_copy = self._hashtables.copy()
+        if not result.status == ProcessingStatus.SUCCESS:
+            logger.error(f"Failed to process document {source}: {result.status}")
+            return [], ''
+        
+        unique_chunks = self._deduplicate(result)
+        return unique_chunks, result.language
 
 
     def _deduplicate(self, result: ProcessingResult):
@@ -83,6 +91,7 @@ class ImportPipeline:
 
         logger.info(f"Analyzing document with ID {d_id} for duplicated contents")
         if d_id in self._hashtables['documents']:
+            logger.warning(f"Document with ID {d_id} is a duplicate!")
             return unique_chunks
         
         for chunk in result.chunks:
@@ -102,4 +111,4 @@ class ImportPipeline:
 
 if __name__ == "__main__":
     pipeline = ImportPipeline()
-    pipeline.import_document('hsg.pdf')
+    pipeline.import_many_documents(['data/hsg.pdf', 'data/emba_X5.pdf'])
