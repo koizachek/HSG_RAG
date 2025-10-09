@@ -34,6 +34,7 @@ def _export_hashtables(hashtables: dict):
     """
     with open(_HASH_FILE_PATH, 'w+') as f:
         json.dump(hashtables, f)
+        logger.info("Saved successfully imported chunk IDs in the hashtables")
 
 
 class ImportPipeline:
@@ -57,10 +58,14 @@ class ImportPipeline:
         if not unique_chunks:
             logger.warning(f"Found 0 unique chunks in document {source}, terminating the import")
             return
-
-        failures = self._wvtserv.batch_import(data_rows=unique_chunks, lang=result.language)
-        print(failures)
         
+        # TODO: add import retry functionality
+        failures = self._wvtserv.batch_import(data_rows=unique_chunks, lang=result.language)
+        for failure in failures:
+            chunk_id = failure['chunk_id']
+            if chunk_id in self._hashtables['chunks']:
+                self._hashtables['chunks'].remove(chunk_id)
+
         _export_hashtables(self._hashtables)
 
 

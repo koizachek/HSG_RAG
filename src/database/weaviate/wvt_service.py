@@ -94,7 +94,7 @@ class WeaviateService:
                 try:
                     batch.add_object(properties=data_row)
                 except Exception as e:
-                    import_errors.append({'index': idx, 'data': data_row, 'error': str(e)})
+                    import_errors.append({'index': idx, 'data': data_row['chunk_id'], 'error': str(e)})
                     continue
                 
                 # Periodical checks for failed imports
@@ -105,9 +105,8 @@ class WeaviateService:
                         logger.info(f"Last failure: {last_failed_object.message}")
         
         logger.info(f"Batch import finished for {self._current_collection.name}")
-        if import_errors:
-            logger.info("Total import errors: {len(import_errors)}")
-        
+        logger.info("Total import errors: {len(import_errors)}" if import_errors else "No errors catched during importing!")
+      
         return import_errors
     
     

@@ -18,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class DataProcessor:
+class ScrapingProcessor:
     """Processor for cleaning and structuring scraped program data."""
 
     def __init__(self, input_path: str = RAW_DATA_PATH, output_path: str = PROCESSED_DATA_PATH, manual_data_path: str = None):
