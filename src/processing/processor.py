@@ -1,8 +1,7 @@
-import logging, os, json, hashlib
+import logging, os, hashlib
 
 from enum import Enum
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 from pathlib import Path
 from docling_core.types.doc.document import DoclingDocument
 from langdetect import detect
@@ -17,42 +16,9 @@ logger = logging.getLogger(__name__)
 _MAX_TOKENS = 8191
 _OLLAMA_TOKENIZER = AutoTokenizer.from_pretrained("nomic-ai/nomic-embed-text-v1.5")
 
-_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), 'hashtables.json')
 
 def _get_hash(text: str) -> str:
     return hashlib.md5(text.strip().encode("utf-8")).hexdigest()
-
-
-def _import_hashtables() -> dict:
-    hashtables = dict()
-    
-    with open(_HASH_FILE_PATH, 'a+') as f:
-        try:
-            f.seek(0)
-            hashtables = json.load(f)
-        except json.JSONDecodeError as e:
-            logger.warning(f"Failed to decode the hash file {os.path.basename(_HASH_FILE_PATH)}: {e}. New hashtables will be created.")
-            hashtables['documents'] = []
-            hashtables['chunks'] = []
-    return hashtables
-
-
-def _export_hashtables(hashtables: dict):
-    """
-    Export hashtable data to the JSON file.
-
-    Args:
-        hashtables (dict): Hashtable dictionary containing documents and chunks.
-    """
-    with open(_HASH_FILE_PATH, 'w+') as f:
-        json.dump(hashtables, f)
-
-
-def _is_valid_url(url: str) -> bool:
-    if not urlparse(url).scheme:
-        url = "http://" + url
-    parsed = urlparse(url)
-    return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
 
 def _detect_language(text: str):
@@ -98,7 +64,6 @@ class ProcessingStatus(Enum):
     NOT_FOUND         = 1
     SUCCESS           = 2
     FAILURE           = 3
-    DUPLICATION       = 4
     INCORRECT_FORMAT  = 5
     FORBIDDEN_WEBSITE = 6
 
@@ -115,17 +80,16 @@ class _ChunkMetadata:
 class ProcessingResult:
     status: ProcessingStatus = ProcessingStatus.SUCCESS
     chunks: list = None
+    document_id: str = None
     language: str = None
         
 
-# TODO: Move max_tokens to config.
-# TODO: Tokenizer is dependent on the chosen embedding model, which should be determined in the config.
 class DataProcessor:
     """
     Handles document processing, including conversion, chunking, language detection,
     and hash-based deduplication.
     """
-    def __init__(self, config: dict = None) -> None:
+    def __init__(self) -> None:
         """
         Initialize the DataProcessor with converter, chunker, and hashtable.
 
@@ -141,7 +105,6 @@ class DataProcessor:
             max_tokens=_MAX_TOKENS, 
             merge_peers=True
         )
-        self._hashtables = _import_hashtables()
 
 
     def process_many_documents(self, sources: list[Path | str]) -> list[ProcessingResult]:
@@ -173,14 +136,9 @@ class DataProcessor:
         
         logger.info(f"Initiating processing pipeline for source {source}")
         document = self._converter.convert(source=source).document
-        text = document.export_to_text()
-        
+        text = document.export_to_text() 
         t_hash = _get_hash(text)
-        if t_hash in self._hashtables['documents']:
-            logger.warning(f"Source {source} has already been processed, terminating the pipeline")
-            return ProcessingResult(status=ProcessingStatus.DUPLICATION)
-        logger.info(f"No processing history found for source {source} with hash {t_hash}, adding to hashtables")
-        
+                
         metadata = _ChunkMetadata(
             programs=_detect_programs(text),
             source=os.path.basename(source),
@@ -190,22 +148,8 @@ class DataProcessor:
         prepared_chunks = self._collect_chunks(document, metadata)
         logger.info(f"Successfully collected {len(prepared_chunks)} chunks from {source}")
         
-        self._update_hashtables(t_hash, [chunk['chunk_id'] for chunk in prepared_chunks])
-        _export_hashtables(self._hashtables)
-        return ProcessingResult(chunks=prepared_chunks, language=_detect_language(text))
+        return ProcessingResult(chunks=prepared_chunks, language=_detect_language(text), document_id=t_hash)
     
-    
-    def _update_hashtables(self, document_id, chunk_ids):
-        """
-        Update hashtables with a new document ID and collected chunk IDs.
-
-        Args:
-            document_id (str): Hash of the processed document.
-            chunk_ids (list[str]): List of chunk hashes to add.
-        """
-        self._hashtables['documents'].append(document_id)
-        self._hashtables['chunks'].extend(chunk_ids)
-
 
     def _collect_chunks(self, document: DoclingDocument, metadata: _ChunkMetadata) -> list:
         """
@@ -221,11 +165,7 @@ class DataProcessor:
         chunks = [self._chunker.contextualize(chunk=c) for c in self._chunker.chunk(document)]
         prepared_chunks = []
         for chunk in chunks:
-            c_hash = _get_hash(chunk)
-            if c_hash in self._hashtables['chunks']:
-                logger.info(f"Found duplicated chunk from {metadata.document_id} with id {c_hash}, skipping...")
-                continue 
-            
+            c_hash = _get_hash(chunk)            
             prepared_chunks.append({
                 'body': chunk,
                 'chunk_id': c_hash,

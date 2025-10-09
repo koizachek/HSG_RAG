@@ -65,7 +65,6 @@ class WeaviateService:
         else:
             e = wex.WeaviateConnectionError("No collection for language '{lang}' was found in the database!")
             logger.error(e)
-            raise e
 
 
     def batch_import(self, data_rows: list, lang: str = None) -> list:
@@ -251,7 +250,10 @@ def _checkhealth():
     connection_exists = service.is_connected()
     logger.info(f"Checking the connection to the local weaviate database: {'OK!' if connection_exists else 'ERROR'}")
     if not connection_exists: return 
-    
+
+    metainfo = service._client.get_meta()
+    logger.info(f"Cluster metadata: hostname {metainfo['hostname']}, version {metainfo['version']}, modules {metainfo['modules'].keys()}")
+
     for collection_name in _collection_names:
         logger.info(f"Checking the existence of collection {collection_name}: "
               f"{'OK!' if service._client.collections.exists(collection_name) else 'ERROR' }")
@@ -275,11 +277,7 @@ def _create_collections():
     logger.info('Connection with the weaviate database established successfully')
     logger.info('Attempting collections creation for the database...')
     
-    vector_config = Configure.Vectors.text2vec_ollama(
-        api_endpoint="http://ollama:11434", model="nomic-embed-text")
-    generative_config = Configure.Generative.ollama(
-        api_endpoint="http://ollama:11434", model="llama3.2")
-    
+    vector_config = Configure.Vectors.text2vec_transformers() 
     for collection_name in _collection_names:
         try:
             service._client.collections.create(
@@ -292,8 +290,7 @@ def _create_collections():
                     Property(name='source', data_type=DataType.TEXT),
                     Property(name='date', data_type=DataType.DATE)
                 ],
-                vector_config=vector_config,            
-                generative_config=generative_config)
+                vector_config=vector_config)
             logger.info(f"Created collection {collection_name}")
         except Exception as e:
             logger.error(f"Failed to initialize collection '{collection_name}': {e}")
@@ -310,7 +307,9 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-dc', "--delete_collections", action='store_true', help='deletes all collections from the database')
-    group.add_argument('-cc', "--create_collections", action='store_true', help='initializes the collections for english and german contents separately')
+    group.add_argument('-cc', "--create_collections", action='store_true', help='initializes the collections for different language contents separately')
+    group.add_argument('-rc', "--redo_collections", action='store_true', help='deletes and creates the collections anew')
+
     group.add_argument('-ch', "--checkhealth", action='store_true', help='checks the connection to the database, existense of content collections...')
     group.add_argument('-cb', "--create_backup", action='store_true', help='creates a backup of the current state of the database')
     group.add_argument('-rb', "--restore_backup", type=str, help='restores the state of the database from the provided backup_id')
@@ -319,19 +318,19 @@ def parse_arguments():
 
 if __name__ == "__main__":
     args = parse_arguments()
-    
+
     if args.create_backup:
         _create_backup()
 
     if args.restore_backup:
         _restore_backup(args.restore_backup)
 
-    if args.delete_collections:
+    if any([args.delete_collections, args.redo_collections]):
         _delete_collections()
 
-    if args.create_collections:
+    if any([args.create_collections, args.redo_collections]):
         _create_collections()
     
-    if args.checkhealth:
+    if any([args.checkhealth, args.create_collections, args.redo_collections]):
         _checkhealth()
     
