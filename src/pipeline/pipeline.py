@@ -1,26 +1,25 @@
 import logging, json, os
 
 from pathlib import Path
-from src.database.weaviate.wvt_service import WeaviateService
-from src.processing.processor import DataProcessor, ProcessingResult, ProcessingStatus
+from src.processing.processor import DataProcessor, ProcessingResult, ProcessingStatus, WebsiteProcessor
+from src.database.weaviate import WeaviateService
+
+from config import AVAILABLE_LANGUAGES, HASH_FILE_PATH
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), 'hashtables.json')
-AVAILABLE_LANGUAGES = ['en', 'de']
+logger.setLevel(logging.INFO)
 
 def _import_hashtables() -> dict:
     hashtables = dict()
     
-    with open(_HASH_FILE_PATH, 'a+') as f:
+    with open(HASH_FILE_PATH, 'a+') as f:
         try:
             f.seek(0)
-            logger.info(f"Loading deduplication hashtables from file {_HASH_FILE_PATH}")
+            logger.info(f"Loading deduplication hashtables from file {HASH_FILE_PATH}")
             hashtables = json.load(f)
             logger.info(f"Import pipeline loaded deduplication hashtables with {len(hashtables['documents'])} saved documents and {len(hashtables['chunks'])} saved chunks")
         except json.JSONDecodeError as e:
-            logger.warning(f"Failed to decode the hash file {os.path.basename(_HASH_FILE_PATH)}: {e}. New hashtables will be created.")
+            logger.warning(f"Failed to decode the hash file {os.path.basename(HASH_FILE_PATH)}: {e}. New hashtables will be created.")
             hashtables['documents'] = []
             hashtables['chunks'] = []
     return hashtables
@@ -33,19 +32,33 @@ def _export_hashtables(hashtables: dict):
     Args:
         hashtables (dict): Hashtable dictionary containing documents and chunks.
     """
-    with open(_HASH_FILE_PATH, 'w+') as f:
+    with open(HASH_FILE_PATH, 'w+') as f:
         json.dump(hashtables, f)
         logger.info("Saved successfully imported chunk IDs in the hashtables")
 
 
 class ImportPipeline:
     def __init__(self) -> None:
-        self._hashtables = _import_hashtables()
-        self._hashtables_copy = None
-        self._processor  = DataProcessor()
-        self._wvtserv    = WeaviateService()
-    
-    
+        self._hashtables   = _import_hashtables()
+        self._webprocessor = WebsiteProcessor()
+        self._processor    = DataProcessor()
+        self._wvtserv      = WeaviateService()
+
+
+    def scrape_website(self):
+        unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
+        for result in self._webprocessor.process():
+            chunks = self._deduplicate(result)
+            unique_chunks[result.language].extend(chunks)
+
+        if not unique_chunks:
+            logger.warning("Information provided by the HSG website does not contain any unique information. Terminating the pipeline without importing")
+            return 
+        
+        self._import_to_database(unique_chunks)
+        _export_hashtables(self._hashtables)
+
+
     def import_many_documents(self, sources: list[Path | str]):
         unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
         for source in sources:
@@ -58,6 +71,15 @@ class ImportPipeline:
             return 
 
         # TODO: add import retry functionality
+        self._import_to_database(unique_chunks)
+        _export_hashtables(self._hashtables)
+
+
+    def import_document(self, source: Path | str):
+        self.import_many_documents([source])
+     
+    
+    def _import_to_database(self, unique_chunks):
         for lang, chunks in unique_chunks.items():
             if not chunks: continue
 
@@ -67,15 +89,9 @@ class ImportPipeline:
                 if chunk_id in self._hashtables['chunks']:
                     self._hashtables['chunks'].remove(chunk_id)
 
-        _export_hashtables(self._hashtables)
 
-
-    def import_document(self, source: Path | str):
-        self.import_many_documents([source])
-     
-    
-    def _process_source(self, source: Path | str) -> (list, str):
-        result: ProcessingResult = self._processor.process_document(source)
+    def _process_source(self, source: Path | str) -> tuple[list, str]:
+        result: ProcessingResult = self._processor.process(source)
 
         if not result.status == ProcessingStatus.SUCCESS:
             logger.error(f"Failed to process document {source}: {result.status}")
@@ -111,4 +127,5 @@ class ImportPipeline:
 
 if __name__ == "__main__":
     pipeline = ImportPipeline()
-    pipeline.import_many_documents(['data/hsg.pdf', 'data/emba_X5.pdf'])
+    #pipeline.import_many_documents(['data/hsg.pdf', 'data/emba_X5.pdf'])
+    pipeline.scrape_website()

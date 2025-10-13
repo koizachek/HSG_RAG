@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Base URL for scraping
-BASE_URL = "https://emba.unisg.ch/programm/emba"
+BASE_URL = "https://emba.unisg.ch/programm"
 
 # OpenAI API configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -39,4 +39,10 @@ MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
 
 # Data processing pipeline settings 
 CHUNK_MAX_TOKENS = 8191
-HASH_FILE_PATH = 'hashtables.json'
+AVAILABLE_LANGUAGES = ['en', 'de']
+HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
+
+# Weaviate database settings 
+WEAVIATE_BACKUP_BACKEND = ''
+WEAVIATE_COLLECTION_BASENAME = 'hsg_rag_content'
+
