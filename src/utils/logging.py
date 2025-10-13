@@ -1,9 +1,7 @@
 """
 Centralized logging configuration for the Executive Education RAG Chatbot.
 """
-import logging
-import os
-import sys
+import logging, os, sys, warnings
 from pathlib import Path
 from typing import Optional
 
@@ -18,18 +16,30 @@ class ColoredFormatter(logging.Formatter):
     """Custom formatter with color support for console output."""
     
     COLORS = {
-        'DEBUG': Fore.CYAN,
-        'INFO': Fore.GREEN,
-        'WARNING': Fore.YELLOW,
-        'ERROR': Fore.RED,
+        'DEBUG':    Fore.CYAN,
+        'INFO':     Fore.GREEN,
+        'WARNING':  Fore.YELLOW,
+        'ERROR':    Fore.RED,
         'CRITICAL': Fore.MAGENTA + Style.BRIGHT,
+    }
+    ALIASES = {
+        'DEBUG':    'DEBUG',
+        'INFO':     'INFO ',
+        'WARNING':  'WARN ',
+        'ERROR':    'ERROR',
+        'CRITICAL': 'CRITC'
     }
     
     def format(self, record):
         # Add color to the level name
         if hasattr(record, 'levelname') and record.levelname in self.COLORS:
-            record.levelname = f"{self.COLORS[record.levelname]}{record.levelname}{Style.RESET_ALL}"
+            lname = record.levelname
+            record.levelname = f"{self.COLORS[lname]}{self.ALIASES[lname]}{Style.RESET_ALL}"
         
+        if hasattr(record, 'name'):
+            rname = record.name if len(record.name) <= 18 else record.name[:14] + '...'
+            record.name = f"{Fore.CYAN}{rname}{Style.RESET_ALL}"
+
         return super().format(record)
 
 
@@ -55,24 +65,23 @@ def setup_logging(
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     
     # Create logger
-    logger_name = module_name if module_name else __name__
-    logger = logging.getLogger(logger_name)
+    logger = logging.getLogger()
     
     # Avoid duplicate handlers if logger already configured
     if logger.handlers:
-        return logger
+        logger.handlers.clear()
     
     logger.setLevel(numeric_level)
     
     # Create formatters
     detailed_formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        "(%(asctime)s) %(name)s\t %(levelname)s: %(message)s",
+        datefmt="%Y.%m.%d %H:%M:%S"
     )
     
     colored_formatter = ColoredFormatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        "(%(asctime)s) %(name)s\t %(levelname)s: %(message)s",
+        datefmt="%Y.%m.%d %H:%M:%S"
     )
     
     # Set up file logging
@@ -114,7 +123,9 @@ def get_logger(module_name: str) -> logging.Logger:
     Returns:
         Logger instance
     """
-    return logging.getLogger(module_name)
+    logger = logging.getLogger(module_name)
+    logger.propagate = True       
+    return logger
 
 
 def _supports_color() -> bool:
@@ -171,8 +182,11 @@ def configure_external_loggers(level: str = "WARNING") -> None:
         'urllib3',
         'requests',
         'chromadb',
+        'docling',
+        'weaviate',
         'langchain',
         'openai',
+        'httpx'
     ]
     
     numeric_level = getattr(logging, level.upper(), logging.WARNING)
@@ -198,6 +212,8 @@ def init_logging(
     if interactive_mode is None:
         interactive_mode = detect_interactive_mode()
     
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="easyocr")
+
     # Set up root logger
     setup_logging(
         level=level,

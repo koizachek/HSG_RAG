@@ -1,13 +1,15 @@
-import logging, json, os
+import json, os
 
 from pathlib import Path
+from src.utils.logging import init_logging, get_logger
 from src.processing.processor import DataProcessor, ProcessingResult, ProcessingStatus, WebsiteProcessor
 from src.database.weaviate import WeaviateService
 
 from config import AVAILABLE_LANGUAGES, HASH_FILE_PATH
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+init_logging(interactive_mode=False)
+pipelogger = get_logger("pipeline_module")
+implogger  = get_logger("import_pipeline")
 
 def _import_hashtables() -> dict:
     hashtables = dict()
@@ -15,11 +17,11 @@ def _import_hashtables() -> dict:
     with open(HASH_FILE_PATH, 'a+') as f:
         try:
             f.seek(0)
-            logger.info(f"Loading deduplication hashtables from file {HASH_FILE_PATH}")
+            pipelogger.info(f"Loading deduplication hashtables from file {HASH_FILE_PATH}")
             hashtables = json.load(f)
-            logger.info(f"Import pipeline loaded deduplication hashtables with {len(hashtables['documents'])} saved documents and {len(hashtables['chunks'])} saved chunks")
+            pipelogger.info(f"Import pipeline loaded deduplication hashtables with {len(hashtables['documents'])} saved documents and {len(hashtables['chunks'])} saved chunks")
         except json.JSONDecodeError as e:
-            logger.warning(f"Failed to decode the hash file {os.path.basename(HASH_FILE_PATH)}: {e}. New hashtables will be created.")
+            pipelogger.warning(f"Failed to decode the hash file {os.path.basename(HASH_FILE_PATH)}: {e}. New hashtables will be created.")
             hashtables['documents'] = []
             hashtables['chunks'] = []
     return hashtables
@@ -34,7 +36,7 @@ def _export_hashtables(hashtables: dict):
     """
     with open(HASH_FILE_PATH, 'w+') as f:
         json.dump(hashtables, f)
-        logger.info("Saved successfully imported chunk IDs in the hashtables")
+        pipelogger.info("Saved successfully imported chunk IDs in the hashtables")
 
 
 class ImportPipeline:
@@ -52,7 +54,7 @@ class ImportPipeline:
             unique_chunks[result.language].extend(chunks)
 
         if not unique_chunks:
-            logger.warning("Information provided by the HSG website does not contain any unique information. Terminating the pipeline without importing")
+            implogger.warning("Information provided by the HSG website does not contain any unique information. Terminating the pipeline without importing")
             return 
         
         self._import_to_database(unique_chunks)
@@ -67,7 +69,7 @@ class ImportPipeline:
                 unique_chunks[lang].extend(chunks)
         
         if not unique_chunks:
-            logger.warning(f"File(s) provided for the insertion do not contain any unique information. Terminating the pipeline without importing")
+            implogger.warning(f"File(s) provided for the insertion do not contain any unique information. Terminating the pipeline without importing")
             return 
 
         # TODO: add import retry functionality
@@ -94,7 +96,7 @@ class ImportPipeline:
         result: ProcessingResult = self._processor.process(source)
 
         if not result.status == ProcessingStatus.SUCCESS:
-            logger.error(f"Failed to process document {source}: {result.status}")
+            implogger.error(f"Failed to process document {source}: {result.status}")
             return [], ''
         
         unique_chunks = self._deduplicate(result)
@@ -105,9 +107,9 @@ class ImportPipeline:
         d_id = result.document_id
         unique_chunks = []
 
-        logger.info(f"Analyzing document with ID {d_id} for duplicated contents")
+        implogger.info(f"Analyzing document with ID {d_id} for duplicated contents")
         if d_id in self._hashtables['documents']:
-            logger.warning(f"Document with ID {d_id} is a duplicate!")
+            implogger.warning(f"Document with ID {d_id} is a duplicate!")
             return unique_chunks
         
         for chunk in result.chunks:
@@ -121,11 +123,11 @@ class ImportPipeline:
         if not unique_chunks:
             self._hashtables['documents'].append(d_id)
         
-        logger.info(f"Found {len(unique_chunks)} unique chunks out ouf {len(result.chunks)} collected chunks")
+        implogger.info(f"Found {len(unique_chunks)} unique chunks out ouf {len(result.chunks)} collected chunks")
         return unique_chunks
 
 
 if __name__ == "__main__":
     pipeline = ImportPipeline()
-    #pipeline.import_many_documents(['data/hsg.pdf', 'data/emba_X5.pdf'])
-    pipeline.scrape_website()
+    pipeline.import_many_documents(['data/hsg.pdf', 'data/emba_X5.pdf'])
+    #pipeline.scrape_website()

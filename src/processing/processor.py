@@ -1,4 +1,4 @@
-import logging, os, re, hashlib, time
+import os, re, hashlib, time
 
 from enum import Enum
 from datetime import datetime, timezone
@@ -11,18 +11,11 @@ from docling.document_converter import DocumentConverter
 from docling.chunking import HybridChunker
 from docling_core.types.doc.document import DoclingDocument
 
+from src.utils.logging import get_logger
 from config import BASE_URL, CHUNK_MAX_TOKENS
 
-for handler in logging.root.handlers[:]:
-    logging.root.removeHandler(handler)
-
-logging.basicConfig(
-    level=logging.WARNING,
-    format='%(asctime)s [%(levelname)s] %(module)s:%(lineno)d: %(message)s'
-)
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+weblogger  = get_logger("website_processor")
+datalogger = get_logger("data_processor")
 
 _TRANSFORMERS_TOKENIZER = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 _EN_URL_PATTERN = r'\[EN\]\((https://emba\.unisg\.ch/en/[^\s)]+)\)'
@@ -169,7 +162,7 @@ class WebsiteProcessor(_ProcessorBase):
 
 
     def process(self) -> list[ProcessingResult]:
-        logger.info("Initiating scraping and processing of the HSG program pages.")
+        weblogger.info("Initiating scraping and processing of the HSG program pages.")
         urls = [BASE_URL]
         results = []
         while urls:
@@ -177,32 +170,32 @@ class WebsiteProcessor(_ProcessorBase):
             result, text = self._process_url(url)
 
             if result.status != ProcessingStatus.SUCCESS:
-                logger.warning(f"Failed to process URLs {url}.")
+                weblogger.warning(f"Failed to process URLs {url}.")
                 continue 
 
             if url == BASE_URL:
                 program_urls = _get_program_urls(text)
                 urls.extend(program_urls)
-                logger.info(f"Found following program URLs: {program_urls}.")
+                weblogger.info(f"Found following program URLs: {program_urls}.")
 
             if '/en/' not in url:
                 en_url = _get_en_version(text)
                 urls.append(en_url)
-                logger.info(f"Added an english version of the URL {en_url} to the processing list")
+                weblogger.info(f"Added an english version of the URL {en_url} to the processing list")
             
             results.append(result)
             time.sleep(2)
 
-        logger.info(f"Successfully processed {len(results)} URLs.")
+        weblogger.info(f"Successfully processed {len(results)} URLs.")
         return results 
     
 
     def _process_url(self, url: str) -> tuple[ProcessingResult, str]:
-        logger.info(f"Initiating processing pipeline for url {url}")
+        weblogger.info(f"Initiating processing pipeline for url {url}")
         try:
             document = self._converter.convert(url).document
         except Exception as e:
-            logger.error(f"Failed to load the contents of the url page {url}: {e}")
+            weblogger.error(f"Failed to load the contents of the url page {url}: {e}")
             return ProcessingResult(status=ProcessingStatus.FAILURE)
         
         text = document.export_to_text()
@@ -210,7 +203,7 @@ class WebsiteProcessor(_ProcessorBase):
         metadata.source = url
         collected_chunks = self._collect_chunks(document, metadata)
         del collected_chunks[0]
-        logger.info(f"Successfully collected {len(collected_chunks)} chunks from {url}")
+        weblogger.info(f"Successfully collected {len(collected_chunks)} chunks from {url}")
         
         return ProcessingResult(chunks=collected_chunks, language=metadata.language, document_id=metadata.document_id), text
 
@@ -245,15 +238,15 @@ class DataProcessor(_ProcessorBase):
             ProcessingResult: The result of the processing operation, including chunks and language.
         """
         if not os.path.exists(source) or not os.path.isfile(source):
-            logger.error(f"Failed to initiate processing pipeline for source {source}: file does not exist")
+            datalogger.error(f"Failed to initiate processing pipeline for source {source}: file does not exist")
             return ProcessingResult(status=ProcessingStatus.NOT_FOUND)
         
-        logger.info(f"Initiating processing pipeline for source {source}")
+        datalogger.info(f"Initiating processing pipeline for source {source}")
         document = self._converter.convert(source).document
         metadata = self._collect_metadata(document.export_to_text())
         metadata.source = os.path.basename(source)
         collected_chunks = self._collect_chunks(document, metadata)
-        logger.info(f"Successfully collected {len(collected_chunks)} chunks from {source}")
+        datalogger.info(f"Successfully collected {len(collected_chunks)} chunks from {source}")
  
         return ProcessingResult(chunks=collected_chunks, language=metadata.language, document_id=metadata.document_id)
 

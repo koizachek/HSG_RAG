@@ -1,15 +1,15 @@
 import weaviate as wvt
-import argparse, logging, os, datetime
+import argparse, os, datetime
 
 from time import perf_counter
 from weaviate.collections.classes.grpc import MetadataQuery
 from weaviate.classes.config import Configure, Property, DataType
 from weaviate.collections.collection import Collection
 
+from src.utils.logging import get_logger
 from config import WEAVIATE_BACKUP_BACKEND, WEAVIATE_COLLECTION_BASENAME, AVAILABLE_LANGUAGES
 
-logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.INFO)
+logger = get_logger("weaviate_service")
 
 _get_collection_name = lambda lang: f'{WEAVIATE_COLLECTION_BASENAME}_{lang}'
 _collection_names = [_get_collection_name(lang) for lang in AVAILABLE_LANGUAGES]
@@ -41,7 +41,7 @@ class WeaviateService:
                 logger.info("Created a connection with the local weaviate database")
                 result = func(self, *args, **kwargs)
                 self._client.close()
-                logging.info("Closed the connection with the local weaviate database")
+                logger.info("Closed the connection with the local weaviate database")
                 return result
             except Exception as e:
                 logger.exception(f"Failed to connect to the local weaviate database: {e}")
