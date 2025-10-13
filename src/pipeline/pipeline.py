@@ -11,7 +11,14 @@ init_logging(interactive_mode=False)
 pipelogger = get_logger("pipeline_module")
 implogger  = get_logger("import_pipeline")
 
+
 def _import_hashtables() -> dict:
+    """
+    Import deduplication hashtables from the JSON file.
+
+    Returns:
+        dict: Hashtable data containing document and chunk IDs.
+    """
     hashtables = dict()
     
     with open(HASH_FILE_PATH, 'a+') as f:
@@ -40,7 +47,13 @@ def _export_hashtables(hashtables: dict):
 
 
 class ImportPipeline:
+    """
+    Main pipeline class responsible for importing website and local documents
+    into the database with deduplication and language-based organization.
+    """
+
     def __init__(self) -> None:
+        """Initialize the import pipeline with processors and hashtable data."""
         self._hashtables   = _import_hashtables()
         self._webprocessor = WebsiteProcessor()
         self._processor    = DataProcessor()
@@ -48,6 +61,10 @@ class ImportPipeline:
 
 
     def scrape_website(self):
+        """
+        Scrape program pages from the website, process and deduplicate them,
+        and import unique chunks into the database.
+        """
         unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
         for result in self._webprocessor.process():
             chunks = self._deduplicate(result)
@@ -62,6 +79,13 @@ class ImportPipeline:
 
 
     def import_many_documents(self, sources: list[Path | str]):
+        """
+        Import multiple documents by processing, deduplicating, and inserting
+        unique chunks into the database.
+
+        Args:
+            sources (list[Path | str]): List of file paths or URLs to process.
+        """
         unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
         for source in sources:
             chunks, lang = self._process_source(source)
@@ -78,12 +102,25 @@ class ImportPipeline:
 
 
     def import_document(self, source: Path | str):
+        """
+        Import a single document into the database.
+
+        Args:
+            source (Path | str): Path to the document to process and import.
+        """
         self.import_many_documents([source])
      
     
     def _import_to_database(self, unique_chunks):
+        """
+        Import the processed unique chunks into the Weaviate database.
+
+        Args:
+            unique_chunks (dict): Dictionary mapping languages to lists of chunks.
+        """
         for lang, chunks in unique_chunks.items():
-            if not chunks: continue
+            if not chunks: 
+                continue
 
             failures = self._wvtserv.batch_import(data_rows=chunks, lang=lang)
             for failure in failures:
@@ -93,6 +130,16 @@ class ImportPipeline:
 
 
     def _process_source(self, source: Path | str) -> tuple[list, str]:
+        """
+        Process a single document source, deduplicate its chunks, and
+        determine its language.
+
+        Args:
+            source (Path | str): Path to the document to process.
+
+        Returns:
+            tuple[list, str]: List of unique chunks and detected language.
+        """
         result: ProcessingResult = self._processor.process(source)
 
         if not result.status == ProcessingStatus.SUCCESS:
@@ -104,6 +151,15 @@ class ImportPipeline:
 
 
     def _deduplicate(self, result: ProcessingResult):
+        """
+        Remove duplicate chunks and documents based on previously processed hashes.
+
+        Args:
+            result (ProcessingResult): The processing result containing document chunks.
+
+        Returns:
+            list[dict]: List of unique chunk dictionaries.
+        """
         d_id = result.document_id
         unique_chunks = []
 

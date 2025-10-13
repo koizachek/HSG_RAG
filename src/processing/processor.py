@@ -23,10 +23,12 @@ _PROGRAM_URL_PATTERN = r'https://emba\.unisg\.ch/(?:programm[^\s)]+|en/embax)'
 
 
 def _get_hash(text: str) -> str:
+    """Generate an MD5 hash for the given text."""
     return hashlib.md5(text.strip().encode("utf-8")).hexdigest()
 
 
 def _get_en_version(text: str):
+    """Extract the English version URL from the given text, if available."""
     result = re.search(_EN_URL_PATTERN, text)
     if result:
         return result.group(1)
@@ -34,6 +36,7 @@ def _get_en_version(text: str):
 
 
 def _get_program_urls(text: str):
+    """Find all program URLs in the given text."""
     return re.findall(_PROGRAM_URL_PATTERN, text)
 
 
@@ -119,10 +122,12 @@ class _ProcessorBase:
         )
     
     def process(self):
+        """Abstract method to be implemented by subclasses."""
         raise NotImplementedError("This method is not implemented in ProcessorBase")
 
 
     def _collect_metadata(self, text: str) -> _ChunkMetadata:
+        """Collect metadata such as programs, date, language, and document hash."""
         return _ChunkMetadata(
                 programs=_detect_programs(text),
                 date=datetime.now().replace(tzinfo=timezone.utc),
@@ -158,10 +163,17 @@ class _ProcessorBase:
 
 class WebsiteProcessor(_ProcessorBase):
     def __init__(self):
+        """Initialize the WebsiteProcessor with base processing capabilities."""
         super().__init__()
 
 
     def process(self) -> list[ProcessingResult]:
+        """
+        Scrape and process program pages from the HSG website.
+
+        Returns:
+            list[ProcessingResult]: A list of processing results for each processed URL.
+        """
         weblogger.info("Initiating scraping and processing of the HSG program pages.")
         urls = [BASE_URL]
         results = []
@@ -191,6 +203,15 @@ class WebsiteProcessor(_ProcessorBase):
     
 
     def _process_url(self, url: str) -> tuple[ProcessingResult, str]:
+        """
+        Process the content of a single URL, converting it into chunks with metadata.
+
+        Args:
+            url (str): The URL of the webpage to process.
+
+        Returns:
+            tuple[ProcessingResult, str]: The processing result and the extracted text.
+        """
         weblogger.info(f"Initiating processing pipeline for url {url}")
         try:
             document = self._converter.convert(url).document
@@ -224,7 +245,7 @@ class DataProcessor(_ProcessorBase):
         Returns:
             list[ProcessingResult]: List of results for each processed document.
         """
-        return [self.process_document(source) for source in sources]
+        return [self.process(source) for source in sources]
 
 
     def process(self, source: Path | str) -> ProcessingResult:
