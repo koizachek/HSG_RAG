@@ -7,7 +7,6 @@ from src.database.weavservice import WeaviateService
 
 from config import AVAILABLE_LANGUAGES, HASH_FILE_PATH
 
-init_logging(interactive_mode=False)
 pipelogger = get_logger("pipeline_module")
 implogger  = get_logger("import_pipeline")
 

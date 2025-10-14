@@ -1,5 +1,5 @@
 import weaviate as wvt
-import argparse, datetime
+import argparse, datetime, os
 
 from time import perf_counter
 from weaviate.classes.config import Configure, Property, DataType
@@ -7,7 +7,7 @@ from weaviate.collections.classes.grpc import MetadataQuery
 from weaviate.collections.collection import Collection
 
 from src.utils.logging import get_logger
-from config import WEAVIATE_BACKUP_BACKEND, WEAVIATE_COLLECTION_BASENAME, AVAILABLE_LANGUAGES
+from config import WEAVIATE_BACKUP_BACKEND, WEAVIATE_COLLECTION_BASENAME, AVAILABLE_LANGUAGES, HASH_FILE_PATH
 
 logger = get_logger("weaviate_service")
 
@@ -198,6 +198,10 @@ class WeaviateService:
         
         logger.info("Finished the deletion of stored colections")
    
+        if os.path.exists(HASH_FILE_PATH):
+            logger.info(f"Hashtable found on path {HASH_FILE_PATH}; deleting hash file...")
+            os.remove(HASH_FILE_PATH)
+            logger.info("Hash file deleted successfully")
 
     @_with_connection
     def _create_backup(self) -> None:
@@ -253,7 +257,9 @@ class WeaviateService:
         if not connection_exists: return 
 
         metainfo = self._client.get_meta()
-        logger.info(f"Cluster metadata: hostname {metainfo['hostname']}, version {metainfo['version']}, modules {metainfo['modules'].keys()}")
+        modules_str = ', '.join(metainfo['modules'])
+        modules_str = modules_str[:30] + '...' if len(modules_str) > 30 else modules_str
+        logger.info(f"Cluster metadata: HOSTNAME={metainfo['hostname']}, VERSION={metainfo['version']}, MODULES={modules_str}")
 
         for collection_name in _collection_names:
             logger.info(f"Checking the existence of collection {collection_name}: "

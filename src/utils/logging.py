@@ -216,7 +216,7 @@ def init_logging(
     if interactive_mode is None:
         interactive_mode = detect_interactive_mode()
     
-    warnings.filterwarnings("ignore", category=DeprecationWarning, module="easyocr")
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     # Set up root logger
     setup_logging(

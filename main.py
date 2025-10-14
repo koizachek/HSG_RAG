@@ -5,33 +5,14 @@ import argparse
 import os
 from typing import Dict, List, Any, Optional
 from dotenv import load_dotenv
-
-from src.scraper.scraper import Scraper
-from src.processing.processor import DataProcessor
-from src.database.vectordb import VectorDatabase
+from src.pipeline.pipeline import ImportPipeline
+from src.database.weavservice import WeaviateService
 from src.ui.cli import ChatbotCLI
 from src.utils.logging import init_logging, get_logger
 
 # Initialize logging
-init_logging()
-logger = get_logger('main')
-
-# Load environment variables
-load_dotenv()
-
-def check_api_key() -> bool:
-    """
-    Check if the OpenAI API key is set.
-
-    Returns:
-        True if the API key is set, False otherwise.
-    """
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        logger.error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
-        return False
-    return True
-
+init_logging(interactive_mode=False)
+logger = get_logger('main_module')
 
 def run_scraper(use_selenium: bool = True) -> None:
     """
@@ -41,57 +22,45 @@ def run_scraper(use_selenium: bool = True) -> None:
         use_selenium: Whether to use Selenium for scraping.
     """
     logger.info("Running scraper...")
-    scraper = Scraper(use_selenium=use_selenium)
-    scraper.run()
+    ImportPipeline().scrape_website()
     logger.info("Scraping completed.")
 
 
-def run_processor() -> None:
-    """Run the data processor to clean and structure the scraped data."""
-    logger.info("Running data processor...")
-    processor = DataProcessor()
-    processor.run()
+def run_importer(sources: list[str]) -> None:
+    """Run the data import pipeline.""" 
+    logger.info("Running data import pipeline..")
+    ImportPipeline().import_many_documents(sources)
     logger.info("Data processing completed.")
 
 
-def run_vectordb() -> None:
-    """Run the vector database setup to create embeddings for the processed data."""
-    if not check_api_key():
-        return
+def run_weaviate_command(command: str, backup_id: str = None):
+    """Run commands to manipulate the database contents."""
+    logger.info(f"Running database command {command}")
+    if command == 'restore' and not backup_id:
+        logger.error("Backup ID is required to initalize the restore process.")
     
-    logger.info("Running vector database setup...")
-    vector_db = VectorDatabase()
-    vector_db.run()
-    logger.info("Vector database setup completed.")
+    service = WeaviateService()
+    if command == 'backup':
+        service._create_backup()
+
+    if command == 'restore':
+        service._restore_backup(backup_id)
+
+    if command == 'delete' or command == 'redo':
+        service._delete_collections()
+
+    if command == 'init' or command == 'redo':
+        service._create_collections()
+
+    if command == 'checkhealth' or command == 'init' or command == 'redo':
+        service._checkhealth()
 
 
 def run_chatbot() -> None:
     """Run the chatbot CLI."""
-    if not check_api_key():
-        return
-    
     logger.info("Starting chatbot...")
     cli = ChatbotCLI()
     cli.run()
-
-
-def run_pipeline() -> None:
-    """Run the complete pipeline: scraping, processing, vector database setup, and chatbot."""
-    logger.info("Running complete pipeline...")
-    
-    # Run scraper
-    run_scraper()
-    
-    # Run processor
-    run_processor()
-    
-    # Run vector database setup
-    if check_api_key():
-        run_vectordb()
-    
-    # Run chatbot
-    if check_api_key():
-        run_chatbot()
 
 
 def parse_args():
@@ -99,12 +68,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="University of St. Gallen Executive Education RAG Chatbot")
     
     # Add arguments
-    parser.add_argument("--scrape", action="store_true", help="Run the scraper to collect program data")
-    parser.add_argument("--process", action="store_true", help="Run the data processor to clean and structure the scraped data")
-    parser.add_argument("--vectordb", action="store_true", help="Run the vector database setup to create embeddings for the processed data")
+    parser.add_argument("--scrape", action="store_true", help="Scrapes the data from the HSG website and imports it into the database")
+    parser.add_argument("--imports", nargs="+", help="Runs the data importing pipeline for the provided files")
+    
+    parser.add_argument("--weaviate", type=str, choices=['init', 'delete', 'redo', 'checkhealth', 'backup', 'restore'], help="Runs different database actions")
+    parser.add_argument("--backup-id", type=str, help="Required when calling the --weaviate restore command!")
+
     parser.add_argument("--chatbot", action="store_true", help="Run the chatbot CLI")
-    parser.add_argument("--pipeline", action="store_true", help="Run the complete pipeline: scraping, processing, vector database setup, and chatbot")
-    parser.add_argument("--no-selenium", action="store_true", help="Disable Selenium for scraping (use requests only)")
     
     return parser.parse_args()
 
@@ -114,26 +84,23 @@ def main():
     args = parse_args()
     
     # Check if any argument is provided
-    if not any([args.scrape, args.process, args.vectordb, args.chatbot, args.pipeline]):
+    if not any([args.scrape, args.imports, args.weaviate, args.chatbot]):
         # If no argument is provided, run the chatbot by default
         run_chatbot()
-        return
-    
+        return 
+
     # Run the specified components
-    if args.pipeline:
-        run_pipeline()
-    else:
-        if args.scrape:
-            run_scraper(use_selenium=not args.no_selenium)
-        
-        if args.process:
-            run_processor()
-        
-        if args.vectordb:
-            run_vectordb()
-        
-        if args.chatbot:
-            run_chatbot()
+    if args.scrape:
+        run_scraper()
+
+    if args.imports:
+        run_importer(args.imports)
+    
+    if args.weaviate:
+        run_weaviate_command(command=args.weaviate, backup_id=args.backup_id)
+
+    if args.chatbot:
+        run_chatbot()
 
 
 if __name__ == "__main__":
