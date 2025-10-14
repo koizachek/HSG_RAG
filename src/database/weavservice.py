@@ -1,9 +1,9 @@
 import weaviate as wvt
-import argparse, os, datetime
+import argparse, datetime
 
 from time import perf_counter
-from weaviate.collections.classes.grpc import MetadataQuery
 from weaviate.classes.config import Configure, Property, DataType
+from weaviate.collections.classes.grpc import MetadataQuery
 from weaviate.collections.collection import Collection
 
 from src.utils.logging import get_logger
@@ -34,8 +34,7 @@ class WeaviateService:
         def wrapper(self, *args, **kwargs):
             try:
                 if not self._client:
-                    headers = {'X-OpenAI-Api-Key': os.getenv('OPENAI_API_KEY') or "no-key"}
-                    self._client = wvt.connect_to_local(headers=headers)
+                    self._client = wvt.connect_to_local()
                 if not self._client.is_connected():
                     self._client.connect()
                 logger.info("Created a connection with the local weaviate database")

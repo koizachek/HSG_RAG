@@ -1,98 +1,75 @@
 """
 RAG chain implementation using LangChain.
 """
-import logging
 from typing import Dict, List, Any, Optional, Tuple
 
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.conversational_retrieval.base import BaseConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.retrievers import BaseRetriever
 
-from config import (
-    VECTORDB_PATH,
-    CHAT_MODEL,
-    OPENAI_API_KEY,
-    EMBEDDING_MODEL,
-    TOP_K_RETRIEVAL,
-)
+from config import LLMProviderConfiguration as llmconf, TOP_K_RETRIEVAL
+
+from src.rag.weaviate_retriever import WeaviateRetriever
+from src.utils.logging import get_logger
 from src.rag.prompts import (
     RAG_PROMPT,
     STANDALONE_PROMPT,
     CONDENSE_QUESTION_PROMPT,
 )
-from src.utils.logging import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger('rag_chain')
 
 
 class RAGChain:
     """RAG chain implementation using LangChain."""
 
-    def __init__(
-        self,
-        vectordb_path: str = VECTORDB_PATH,
-        collection_name: str = "programs",
-        model_name: str = CHAT_MODEL,
-        openai_api_key: str = OPENAI_API_KEY,
-        embedding_model: str = EMBEDDING_MODEL,
-        top_k: int = TOP_K_RETRIEVAL,
-    ):
+    def __init__(self, language: str = 'en'):
         """
         Initialize the RAG chain.
 
         Args:
-            vectordb_path: Path to the vector database.
             collection_name: Name of the collection to use.
             model_name: Name of the chat model to use.
-            openai_api_key: OpenAI API key.
-            embedding_model: Name of the embedding model to use.
-            top_k: Number of documents to retrieve for each query.
-        """
-        self.vectordb_path = vectordb_path
-        self.collection_name = collection_name
-        self.model_name = model_name
-        self.openai_api_key = openai_api_key
-        self.embedding_model = embedding_model
-        self.top_k = top_k
-        
-        # Initialize components
-        self.embeddings = self._init_embeddings()
-        self.vectorstore = self._init_vectorstore()
+        """ 
+        self.language = language
         self.llm = self._init_llm()
         self.memory = self._init_memory()
         self.retriever = self._init_retriever()
         self.chain = self._init_chain()
 
-    def _init_embeddings(self) -> OpenAIEmbeddings:
-        """Initialize the embeddings model."""
-        return OpenAIEmbeddings(
-            model=self.embedding_model,
-            openai_api_key=self.openai_api_key,
-        )
-
-    def _init_vectorstore(self) -> Chroma:
-        """Initialize the vector store."""
-        return Chroma(
-            persist_directory=self.vectordb_path,
-            embedding_function=self.embeddings,
-            collection_name=self.collection_name,
-        )
 
     def _init_llm(self) -> BaseChatModel:
-        """Initialize the language model."""
-        return ChatOpenAI(
-            model=self.model_name,
-            openai_api_key=self.openai_api_key,
-            temperature=0.2,
-        )
+        """Initialize the language model based on config."""
+        match llmconf.LLM_PROVIDER:
+            case 'groq':
+                from langchain_groq import ChatGroq
+                return ChatGroq(
+                    model=llmconf.get_default_model(),
+                    groq_api_key=llmconf.get_api_key(),
+                    temperature=0.2,
+                )
+            case 'openai':
+                from langchain_openai import ChatOpenAI
+                return ChatOpenAI(
+                    model=llmconf.get_default_model(),
+                    openai_api_key=llmconf.get_api_key(),
+                    temperature=0.2,
+                )
+            case 'ollama':
+                from langchain_community.llms import Ollama
+                return Ollama(
+                    model=llmconf.get_default_model(),
+                    base_url=Config.OLLAMA_BASE_URL
+                )
+            case _:
+                raise ValueError(f"Unsupported LLM provider: {llmconf.LLM_PROVIDER}")
+
 
     def _init_memory(self) -> ConversationBufferMemory:
         """Initialize the conversation memory."""
@@ -102,12 +79,11 @@ class RAGChain:
             output_key="answer",
         )
 
-    def _init_retriever(self) -> Any:
+
+    def _init_retriever(self) -> BaseRetriever:
         """Initialize the retriever with contextual compression."""
-        return self.vectorstore.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": self.top_k},
-        )
+        return WeaviateRetriever(self.language, TOP_K_RETRIEVAL)
+
 
     def _format_chat_history(self, chat_history: List[Tuple[str, str]]) -> str:
         """
@@ -120,9 +96,10 @@ class RAGChain:
             Formatted chat history string.
         """
         formatted_history = ""
-        for i, (human, ai) in enumerate(chat_history):
+        for _, (human, ai) in enumerate(chat_history):
             formatted_history += f"Human: {human}\nAI: {ai}\n"
         return formatted_history.strip()
+
 
     def _get_source_documents(self, docs: List[Document]) -> List[Dict[str, Any]]:
         """
@@ -152,6 +129,7 @@ class RAGChain:
                 seen_programs.add(program_id)
         
         return sources
+
 
     def _init_chain(self) -> BaseConversationalRetrievalChain:
         """Initialize the conversational retrieval chain."""
@@ -202,6 +180,7 @@ class RAGChain:
         
         return chain
 
+
     def query(
         self,
         query: str,
@@ -243,6 +222,7 @@ class RAGChain:
                 "source_documents": [],
             }
 
+
     def add_message_to_memory(self, human_message: str, ai_message: str) -> None:
         """
         Add a message pair to the conversation memory.
@@ -253,6 +233,7 @@ class RAGChain:
         """
         self.memory.chat_memory.add_user_message(human_message)
         self.memory.chat_memory.add_ai_message(ai_message)
+
 
     def get_chat_history(self) -> List[Tuple[str, str]]:
         """
@@ -270,6 +251,7 @@ class RAGChain:
                     history.append((messages[i].content, messages[i+1].content))
         
         return history
+
 
     def clear_memory(self) -> None:
         """Clear the conversation memory."""

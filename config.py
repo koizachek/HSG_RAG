@@ -7,13 +7,40 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Base URL for scraping
-BASE_URL = "https://emba.unisg.ch/programm"
 
-# OpenAI API configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-EMBEDDING_MODEL = "text-embedding-3-small"
-CHAT_MODEL = "gpt-4o"
+class LLMProviderConfiguration:
+    AVAIABLE_PROVIDERS = ['ollama', 'groq', 'openai']
+    LLM_PROVIDER = "ollama"
+
+    # Groq settings
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    GROQ_MODEL = "mixtral-8x7b-32768"
+
+    # OpenAI settings (keep as fallback)
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_MODEL = "gpt-3.5-turbo"
+
+    # Local/Ollama settings
+    OLLAMA_BASE_URL = "http://localhost:11434"
+    OLLAMA_MODEL = "llama3.2"
+
+    @classmethod
+    def get_default_model(cls, provider: str = None) -> str:
+        provider = provider or cls.LLM_PROVIDER
+        return {
+            "groq": cls.GROQ_MODEL,
+            "openai": cls.OPENAI_MODEL, 
+            "ollama": cls.OLLAMA_MODEL
+        }.get(provider, cls.GROQ_MODEL)
+    
+    @classmethod
+    def get_api_key(cls, provider: str = None) -> str:
+        provider = provider or cls.LLM_PROVIDER
+        return {
+            "groq": cls.GROQ_API_KEY,
+            "openai": cls.OPENAI_API_KEY
+        }.get(provider)
+
 
 # Scraper settings
 SCRAPER_TIMEOUT = 30  # seconds
@@ -41,6 +68,9 @@ MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
 CHUNK_MAX_TOKENS = 8191
 AVAILABLE_LANGUAGES = ['en', 'de']
 HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
+
+# Base URL for scraping
+BASE_URL = "https://emba.unisg.ch/programm"
 
 # Weaviate database settings 
 WEAVIATE_BACKUP_BACKEND = ''

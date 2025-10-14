@@ -3,7 +3,6 @@ Main entry point for the Executive Education RAG Chatbot.
 """
 import argparse
 import os
-import sys
 from typing import Dict, List, Any, Optional
 from dotenv import load_dotenv
 
@@ -15,7 +14,7 @@ from src.utils.logging import init_logging, get_logger
 
 # Initialize logging
 init_logging()
-logger = get_logger(__name__)
+logger = get_logger('main')
 
 # Load environment variables
 load_dotenv()
