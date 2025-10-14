@@ -34,10 +34,14 @@ class ColoredFormatter(logging.Formatter):
         # Add color to the level name
         if hasattr(record, 'levelname') and record.levelname in self.COLORS:
             lname = record.levelname
+            if hasattr(record, 'message') and lname == 'ERROR':
+                record.message = f"{self.COLORS[lname]}{record.message}{Style.RESET_ALL}"
+
             record.levelname = f"{self.COLORS[lname]}{self.ALIASES[lname]}{Style.RESET_ALL}"
-        
+            
+
         if hasattr(record, 'name'):
-            rname = record.name if len(record.name) <= 18 else record.name[:14] + '...'
+            rname = record.name if len(record.name) <= 17 else record.name[:14] + '...'
             record.name = f"{Fore.CYAN}{rname}{Style.RESET_ALL}"
 
         return super().format(record)

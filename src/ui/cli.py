@@ -14,12 +14,13 @@ from rich.table import Table
 
 from config import MAX_HISTORY
 from src.rag.chain import RAGChain
-from src.utils.logging import get_logger
+from src.utils.logging import get_logger, init_logging
 
 # Initialize colorama
 colorama.init()
 
-logger = get_logger(__name__)
+init_logging(interactive_mode=False)
+logger = get_logger('cli')
 
 # Initialize rich console
 console = Console()

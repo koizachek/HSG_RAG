@@ -188,7 +188,7 @@ class WebsiteProcessor(_ProcessorBase):
             if url == BASE_URL:
                 program_urls = _get_program_urls(text)
                 urls.extend(program_urls)
-                weblogger.info(f"Found following program URLs: {program_urls}.")
+                weblogger.info(f"Found following program URLs: {', '.join(program_urls)}.")
 
             if '/en/' not in url:
                 en_url = _get_en_version(text)
@@ -219,7 +219,7 @@ class WebsiteProcessor(_ProcessorBase):
             weblogger.error(f"Failed to load the contents of the url page {url}: {e}")
             return ProcessingResult(status=ProcessingStatus.FAILURE)
         
-        text = document.export_to_text()
+        text = document.export_to_markdown()
         metadata = self._collect_metadata(text)
         metadata.source = url
         collected_chunks = self._collect_chunks(document, metadata)
@@ -264,7 +264,7 @@ class DataProcessor(_ProcessorBase):
         
         datalogger.info(f"Initiating processing pipeline for source {source}")
         document = self._converter.convert(source).document
-        metadata = self._collect_metadata(document.export_to_text())
+        metadata = self._collect_metadata(document.export_to_markdown())
         metadata.source = os.path.basename(source)
         collected_chunks = self._collect_chunks(document, metadata)
         datalogger.info(f"Successfully collected {len(collected_chunks)} chunks from {source}")

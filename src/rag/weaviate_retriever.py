@@ -2,7 +2,7 @@ from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from src.database.weavservice import WeaviateService
 from src.utils.logging import get_logger
-from typig import List 
+from typing import List 
 
 logger = get_logger("weaviate_retriever")
 
@@ -25,10 +25,12 @@ class WeaviateRetriever(BaseRetriever):
                 query=query,
                 lang=self._language,
                 limit=self._top_k,
-                distance=0.25
             )
-            
+            logger.info(f"Finished retrieving from the database in {elapsed:2.2f} seconds")
+
             documents = []
+            if not response: return documents
+
             for obj in response.objects:
                 doc = Document(
                     page_content=obj.properties.get("body", ""),

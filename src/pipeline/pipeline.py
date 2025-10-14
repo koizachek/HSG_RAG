@@ -3,7 +3,7 @@ import json, os
 from pathlib import Path
 from src.utils.logging import init_logging, get_logger
 from src.processing.processor import DataProcessor, ProcessingResult, ProcessingStatus, WebsiteProcessor
-from src.database.weaviate import WeaviateService
+from src.database.weavservice import WeaviateService
 
 from config import AVAILABLE_LANGUAGES, HASH_FILE_PATH
 
@@ -86,6 +86,9 @@ class ImportPipeline:
         Args:
             sources (list[Path | str]): List of file paths or URLs to process.
         """
+        if len(sources) > 1:
+            implogger.info(f"Initiating the import pipeline for multiple sources: {', '.join(sources)}")
+
         unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
         for source in sources:
             chunks, lang = self._process_source(source)
@@ -185,5 +188,5 @@ class ImportPipeline:
 
 if __name__ == "__main__":
     pipeline = ImportPipeline()
-    pipeline.import_many_documents(['data/hsg.pdf', 'data/emba_X5.pdf'])
-    #pipeline.scrape_website()
+    #pipeline.import_many_documents(['data/hsg.pdf', 'data/emba_X5.pdf'])
+    pipeline.scrape_website()

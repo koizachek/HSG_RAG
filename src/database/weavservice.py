@@ -35,9 +35,11 @@ class WeaviateService:
             try:
                 if not self._client:
                     self._client = wvt.connect_to_local()
+                    logger.info("Instantiated a new weaviate client; Running checkhealth...")
+                    self._checkhealth()
                 if not self._client.is_connected():
                     self._client.connect()
-                logger.info("Created a connection with the local weaviate database")
+                    logger.info("Created a connection with the local weaviate database")
                 result = func(self, *args, **kwargs)
                 self._client.close()
                 logger.info("Closed the connection with the local weaviate database")
@@ -58,11 +60,12 @@ class WeaviateService:
         Raises:
             weaviate.exceptions.WeaviateConnectionError: If the specified language collection does not exist.
         """
-        if lang not  in AVAILABLE_LANGUAGES:
+        if lang not in AVAILABLE_LANGUAGES:
             logger.error(f"No collection for language '{lang}' was found in the database")
             return None, ''
 
         collection_name = _get_collection_name(lang)
+        logger.info(f"Using collection {collection_name}")
         return self._client.collections.use(collection_name), collection_name
 
     @_with_connection
@@ -81,7 +84,7 @@ class WeaviateService:
             weaviate.exceptions.WeaviateConnectionError: If no active collection is available.
         """
         collection, collection_name = self._select_collection(lang)
-        if not collection:
+        if collection is None:
             logger.error("No working collection selected upon starting batch import!")
             return []
 
@@ -109,7 +112,7 @@ class WeaviateService:
    
 
     @_with_connection 
-    def query(self, query: str, lang: str, query_properties: list[str] = None, limit: int = 5, distance: float = 0.25) -> dict:
+    def query(self, query: str, lang: str, query_properties: list[str] = None, limit: int = 5) -> dict:
         """
         Execute a hybrid semantic and keyword query against the active collection.
 
@@ -127,16 +130,15 @@ class WeaviateService:
             weaviate.exceptions.WeaviateConnectionError: If no active collection is available.
         """ 
         collection, collection_name = self._select_collection(lang)
-        if not collection:
+        if collection is None:
             logger.error("No working collection selected upon starting of the querying!")
-            return []
+            return [], 0
         
         logger.info(f"Querying collection {collection_name}")
         query_start_time = perf_counter()
         resp = collection.query.hybrid(
             query=query,
             query_properties=query_properties,
-            distance=distance,
             limit=limit,
             return_metadata=MetadataQuery.full()
         )

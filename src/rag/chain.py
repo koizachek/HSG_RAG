@@ -62,10 +62,10 @@ class RAGChain:
                     temperature=0.2,
                 )
             case 'ollama':
-                from langchain_community.llms import Ollama
-                return Ollama(
+                from langchain_ollama import ChatOllama
+                return ChatOllama(
                     model=llmconf.get_default_model(),
-                    base_url=Config.OLLAMA_BASE_URL
+                    base_url=llmconf.OLLAMA_BASE_URL
                 )
             case _:
                 raise ValueError(f"Unsupported LLM provider: {llmconf.LLM_PROVIDER}")

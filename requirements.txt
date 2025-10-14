@@ -1,9 +1,10 @@
 # Core dependencies
 langchain>=0.0.267
-langchain-openai>=0.0.2
-langchain-groq >= 0.3
 langchain-community>=0.0.10
 langchain-chroma>=0.1.0
+langchain-ollama >= 0.3
+langchain-openai>=0.0.2
+langchain-groq >= 0.3
 beautifulsoup4>=4.12.2
 requests>=2.31.0
 selenium>=4.11.2
