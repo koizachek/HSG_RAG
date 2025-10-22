@@ -2,19 +2,17 @@
 Main entry point for the Executive Education RAG Chatbot.
 """
 import argparse
-import os
-from typing import Dict, List, Any, Optional
-from dotenv import load_dotenv
 from src.pipeline.pipeline import ImportPipeline
 from src.database.weavservice import WeaviateService
 from src.ui.cli import ChatbotCLI
 from src.utils.logging import init_logging, get_logger
+from src.apps.chat.app import ChatbotApplication
 
 # Initialize logging
 init_logging(interactive_mode=False)
 logger = get_logger('main_module')
 
-def run_scraper(use_selenium: bool = True) -> None:
+def run_scraper() -> None:
     """
     Run the scraper to collect program data.
 
@@ -56,7 +54,14 @@ def run_weaviate_command(command: str, backup_id: str = None):
         service._checkhealth()
 
 
-def run_chatbot() -> None:
+def run_application() -> None:
+    """Run the chatbot web application."""
+    logger.info("Starting chatbot web application...")
+    app = ChatbotApplication()
+    app.run()
+
+
+def run_cli() -> None:
     """Run the chatbot CLI."""
     logger.info("Starting chatbot...")
     cli = ChatbotCLI()
@@ -74,7 +79,8 @@ def parse_args():
     parser.add_argument("--weaviate", type=str, choices=['init', 'delete', 'redo', 'checkhealth', 'backup', 'restore'], help="Runs different database actions")
     parser.add_argument("--backup-id", type=str, help="Required when calling the --weaviate restore command!")
 
-    parser.add_argument("--chatbot", action="store_true", help="Run the chatbot CLI")
+    parser.add_argument("--cli", action="store_true", help="Run the chatbot CLI")
+    parser.add_argument("--app", action="store_true", help="Run the chatbot web application")
     
     return parser.parse_args()
 
@@ -84,9 +90,9 @@ def main():
     args = parse_args()
     
     # Check if any argument is provided
-    if not any([args.scrape, args.imports, args.weaviate, args.chatbot]):
+    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.app]):
         # If no argument is provided, run the chatbot by default
-        run_chatbot()
+        run_app()
         return 
 
     # Run the specified components
@@ -99,8 +105,11 @@ def main():
     if args.weaviate:
         run_weaviate_command(command=args.weaviate, backup_id=args.backup_id)
 
-    if args.chatbot:
-        run_chatbot()
+    if args.cli:
+        run_cli()
+
+    if args.app:
+        run_application()
 
 
 if __name__ == "__main__":

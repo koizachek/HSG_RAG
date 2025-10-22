@@ -11,6 +11,7 @@ from docling.document_converter import DocumentConverter
 from docling.chunking import HybridChunker
 from docling_core.types.doc.document import DoclingDocument
 
+from src.utils.lang import detect_language
 from src.utils.logging import get_logger
 from config import BASE_URL, CHUNK_MAX_TOKENS
 
@@ -38,19 +39,6 @@ def _get_en_version(text: str):
 def _get_program_urls(text: str):
     """Find all program URLs in the given text."""
     return re.findall(_PROGRAM_URL_PATTERN, text)
-
-
-def _detect_language(text: str):
-    """
-    Detect the language of the given text.
-
-    Args:
-        text (str): The text to analyze.
-
-    Returns:
-        str: Detected language code ('de' or 'en').
-    """
-    return 'de' if detect(text) == 'de' else 'en'
 
 
 def _detect_programs(text: str):
@@ -131,7 +119,7 @@ class _ProcessorBase:
         return _ChunkMetadata(
                 programs=_detect_programs(text),
                 date=datetime.now().replace(tzinfo=timezone.utc),
-                language=_detect_language(text),
+                language=detect_language(text),
                 document_id=_get_hash(text))
 
 
