@@ -15,6 +15,9 @@ python-dotenv>=1.0.0
 tiktoken>=0.5.1
 colorama>=0.4.6
 
+# Web applications
+gradio>=5.49.1
+
 # Data processing
 numpy>=1.24.3
 pandas>=2.0.3
@@ -23,7 +26,7 @@ pandas>=2.0.3
 rich>=13.5.2
 
 # Document processing pipeline
-docling >= 2.55.0
+docling>=2.55.0
 
 # Weaviate Vector DB 
-weaviate-client >= 4.16.9
+weaviate-client>=4.16.9
