@@ -143,7 +143,7 @@ class WeaviateService:
             return_metadata=MetadataQuery.full()
         )
         elapsed = perf_counter() - query_start_time
-        logger.info(f"Querying retrieved {len(resp.objects)} objects in {elapsed} seconds")
+        logger.info(f"Querying retrieved {len(resp.objects)} objects in {elapsed:3.2f} seconds")
 
         return (resp, elapsed)
 

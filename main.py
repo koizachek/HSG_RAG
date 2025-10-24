@@ -2,15 +2,13 @@
 Main entry point for the Executive Education RAG Chatbot.
 """
 import argparse
-from src.pipeline.pipeline import ImportPipeline
-from src.database.weavservice import WeaviateService
-from src.ui.cli import ChatbotCLI
 from src.utils.logging import init_logging, get_logger
-from src.apps.chat.app import ChatbotApplication
 
 # Initialize logging
-init_logging(interactive_mode=False)
-logger = get_logger('main_module')
+def logging_startup():
+    init_logging(interactive_mode=False)
+    return get_logger('main_module')
+
 
 def run_scraper() -> None:
     """
@@ -18,7 +16,10 @@ def run_scraper() -> None:
 
     Args:
         use_selenium: Whether to use Selenium for scraping.
-    """
+    """ 
+    from src.pipeline.pipeline import ImportPipeline
+    logger = logging_startup()
+
     logger.info("Running scraper...")
     ImportPipeline().scrape_website()
     logger.info("Scraping completed.")
@@ -26,13 +27,19 @@ def run_scraper() -> None:
 
 def run_importer(sources: list[str]) -> None:
     """Run the data import pipeline.""" 
-    logger.info("Running data import pipeline..")
+    from src.pipeline.pipeline import ImportPipeline
+    logger = logging_startup()
+
+    logger.info("Running data import pipeline...")
     ImportPipeline().import_many_documents(sources)
     logger.info("Data processing completed.")
 
 
-def run_weaviate_command(command: str, backup_id: str = None):
-    """Run commands to manipulate the database contents."""
+def run_weaviate_command(command: str, backup_id: str = None): 
+    """Run commands to manipulate the database contents.""" 
+    from src.database.weavservice import WeaviateService
+    logger = logging_startup()
+
     logger.info(f"Running database command {command}")
     if command == 'restore' and not backup_id:
         logger.error("Backup ID is required to initalize the restore process.")
@@ -56,6 +63,9 @@ def run_weaviate_command(command: str, backup_id: str = None):
 
 def run_application() -> None:
     """Run the chatbot web application."""
+    from src.apps.chat.app import ChatbotApplication
+    logger = logging_startup()
+
     logger.info("Starting chatbot web application...")
     app = ChatbotApplication()
     app.run()
@@ -63,6 +73,9 @@ def run_application() -> None:
 
 def run_cli() -> None:
     """Run the chatbot CLI."""
+    from src.ui.cli import ChatbotCLI
+    logger = logging_startup()
+
     logger.info("Starting chatbot...")
     cli = ChatbotCLI()
     cli.run()

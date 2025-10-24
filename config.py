@@ -59,7 +59,7 @@ CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
 # RAG settings
-TOP_K_RETRIEVAL = 5  # Number of documents to retrieve for each query
+TOP_K_RETRIEVAL = 8  # Number of documents to retrieve for each query
 
 # UI settings
 MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
@@ -68,6 +68,7 @@ MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
 CHUNK_MAX_TOKENS = 8191
 AVAILABLE_LANGUAGES = ['en', 'de']
 HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
+DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
 
 # Base URL for scraping
 BASE_URL = "https://emba.unisg.ch/programm"

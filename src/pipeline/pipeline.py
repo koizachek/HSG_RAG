@@ -1,14 +1,25 @@
 import json, os
 
 from pathlib import Path
-from src.utils.logging import init_logging, get_logger
+from src.utils.logging import get_logger
 from src.processing.processor import DataProcessor, ProcessingResult, ProcessingStatus, WebsiteProcessor
 from src.database.weavservice import WeaviateService
 
-from config import AVAILABLE_LANGUAGES, HASH_FILE_PATH
+from config import AVAILABLE_LANGUAGES, HASH_FILE_PATH, DOCUMENTS_PATH
 
 pipelogger = get_logger("pipeline_module")
 implogger  = get_logger("import_pipeline")
+
+
+def _get_all_sources(sources) -> list[str]:
+    sources.remove('all')
+    pipelogger.info(f"Getting all sources from the soruce directory at {DOCUMENTS_PATH}...")
+    for source in os.listdir(DOCUMENTS_PATH):
+        if source in sources: continue
+        if source.endswith('.pdf'):
+            sources.append(os.path.join(DOCUMENTS_PATH, source))
+    pipelogger.info(f"Loaded {len(sources)} sources from the source directory")
+    return sources
 
 
 def _import_hashtables() -> dict:
@@ -23,11 +34,11 @@ def _import_hashtables() -> dict:
     with open(HASH_FILE_PATH, 'a+') as f:
         try:
             f.seek(0)
-            pipelogger.info(f"Loading deduplication hashtables from file {HASH_FILE_PATH}")
+            pipelogger.info(f"Loading deduplication hashtable from file {HASH_FILE_PATH}")
             hashtables = json.load(f)
-            pipelogger.info(f"Import pipeline loaded deduplication hashtables with {len(hashtables['documents'])} saved documents and {len(hashtables['chunks'])} saved chunks")
+            pipelogger.info(f"Import pipeline loaded deduplication hashtable with {len(hashtables['documents'])} sources and {len(hashtables['chunks'])} chunks")
         except json.JSONDecodeError as e:
-            pipelogger.warning(f"Failed to decode the hash file {os.path.basename(HASH_FILE_PATH)}: {e}. New hashtables will be created.")
+            pipelogger.warning(f"Failed to decode the hash file {os.path.basename(HASH_FILE_PATH)}: {e}; new hashtable will be created")
             hashtables['documents'] = []
             hashtables['chunks'] = []
     return hashtables
@@ -85,6 +96,14 @@ class ImportPipeline:
         Args:
             sources (list[Path | str]): List of file paths or URLs to process.
         """
+        if 'all' in sources:
+            implogger.info("Import list contains the 'all', all sources will be imported...")
+            sources = _get_all_sources(sources)
+        
+        if not sources:
+            implogger.warning("Import list does not contain any sources, aborting the import pipeline!")
+            return
+
         if len(sources) > 1:
             implogger.info(f"Initiating the import pipeline for multiple sources: {', '.join(sources)}")
 
@@ -98,7 +117,6 @@ class ImportPipeline:
             implogger.warning(f"File(s) provided for the insertion do not contain any unique information. Terminating the pipeline without importing")
             return 
 
-        # TODO: add import retry functionality
         self._import_to_database(unique_chunks)
         _export_hashtables(self._hashtables)
 
