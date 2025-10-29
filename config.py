@@ -7,22 +7,39 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-
 class LLMProviderConfiguration:
-    AVAIABLE_PROVIDERS = ['ollama', 'groq', 'openai']
-    LLM_PROVIDER = "ollama"
+    # The gpt-oss:20b model is preferable but takes much more space
+    # Set to False if you only have the llama3.2 installed
+    GPT_OSS_ENABLED=True
+
+    AVAIABLE_PROVIDERS = ['ollama', 'groq', 'openai', 'open_router']
+    LLM_PROVIDER = 'open_router'
 
     # Groq settings
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     GROQ_MODEL = "mixtral-8x7b-32768"
+    
+    # Open Router settings
+    OPEN_ROUTER_API_KEY = os.getenv("OPEN_ROUTER_API_KEY")
+    OPEN_ROUTER_MODEL="gpt-oss-20b:free"
 
-    # OpenAI settings (keep as fallback)
+    # OpenAI settings
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL = "gpt-3.5-turbo"
 
     # Local/Ollama settings
     OLLAMA_BASE_URL = "http://localhost:11434"
-    OLLAMA_MODEL = "llama3.2"
+    OLLAMA_MODEL = "gpt-oss:20b" if GPT_OSS_ENABLED else "llama3.2"
+    
+    @classmethod
+    def get_reasoning_support(cls, provider: str = None) -> bool:
+        provider = provider or cls.LLM_PROVIDER
+        return {
+            "groq":   True,
+            "openai": True, 
+            "open_router": True,
+            "ollama": cls.GPT_OSS_ENABLED
+        }.get(provider)
 
     @classmethod
     def get_default_model(cls, provider: str = None) -> str:
@@ -30,15 +47,17 @@ class LLMProviderConfiguration:
         return {
             "groq": cls.GROQ_MODEL,
             "openai": cls.OPENAI_MODEL, 
+            "open_router": cls.OPEN_ROUTER_MODEL,
             "ollama": cls.OLLAMA_MODEL
-        }.get(provider, cls.GROQ_MODEL)
+        }.get(provider)
     
     @classmethod
     def get_api_key(cls, provider: str = None) -> str:
         provider = provider or cls.LLM_PROVIDER
         return {
             "groq": cls.GROQ_API_KEY,
-            "openai": cls.OPENAI_API_KEY
+            "openai": cls.OPENAI_API_KEY,
+            "open_router": cls.OPEN_ROUTER_API_KEY
         }.get(provider)
 
 

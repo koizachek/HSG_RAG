@@ -3,6 +3,7 @@ Main entry point for the Executive Education RAG Chatbot.
 """
 import argparse
 from src.utils.logging import init_logging, get_logger
+from config import AVAILABLE_LANGUAGES
 
 # Initialize logging
 def logging_startup():
@@ -61,13 +62,13 @@ def run_weaviate_command(command: str, backup_id: str = None):
         service._checkhealth()
 
 
-def run_application() -> None:
+def run_application(lang: str) -> None:
     """Run the chatbot web application."""
     from src.apps.chat.app import ChatbotApplication
     logger = logging_startup()
 
     logger.info("Starting chatbot web application...")
-    app = ChatbotApplication()
+    app = ChatbotApplication(language=lang)
     app.run()
 
 
@@ -93,7 +94,7 @@ def parse_args():
     parser.add_argument("--backup-id", type=str, help="Required when calling the --weaviate restore command!")
 
     parser.add_argument("--cli", action="store_true", help="Run the chatbot CLI")
-    parser.add_argument("--app", action="store_true", help="Run the chatbot web application")
+    parser.add_argument("--app", type=str, choices=AVAILABLE_LANGUAGES, help="Run the chatbot web application")
     
     return parser.parse_args()
 
@@ -122,7 +123,7 @@ def main():
         run_cli()
 
     if args.app:
-        run_application()
+        run_application(args.app)
 
 
 if __name__ == "__main__":

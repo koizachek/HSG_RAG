@@ -18,7 +18,7 @@ from config import LLMProviderConfiguration as llmconf, TOP_K_RETRIEVAL
 from src.rag.weaviate_retriever import WeaviateRetriever
 from src.utils.logging import get_logger
 from src.rag.prompts import (
-    RAG_PROMPT,
+    get_configured_rag_prompt,
     STANDALONE_PROMPT,
     CONDENSE_QUESTION_PROMPT,
 )
@@ -54,18 +54,30 @@ class RAGChain:
                     groq_api_key=llmconf.get_api_key(),
                     temperature=0.2,
                 )
+            case 'open_router':
+                from langchain_openai import ChatOpenAI
+                return ChatOpenAI(
+                    model=llmconf.get_default_model(),
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=llmconf.get_api_key(),
+                    temperature=0.2,
+                )
             case 'openai':
                 from langchain_openai import ChatOpenAI
                 return ChatOpenAI(
                     model=llmconf.get_default_model(),
                     openai_api_key=llmconf.get_api_key(),
+                    max_tokens=1000,
                     temperature=0.2,
                 )
             case 'ollama':
                 from langchain_ollama import ChatOllama
                 return ChatOllama(
                     model=llmconf.get_default_model(),
-                    base_url=llmconf.OLLAMA_BASE_URL
+                    base_url=llmconf.OLLAMA_BASE_URL,
+                    temperature=0.2,
+                    reasoning=llmconf.get_reasoning_support(),
+                    num_predict=2048,
                 )
             case _:
                 raise ValueError(f"Unsupported LLM provider: {llmconf.LLM_PROVIDER}")
@@ -139,14 +151,16 @@ class RAGChain:
             | self.llm
             | StrOutputParser()
         )
+
+        rag_prompt = get_configured_rag_prompt(self.language)
         
         # Create a chain for answering the question based on retrieved documents
         qa_chain = (
             {
-                "context": lambda x: x["context"],
+                "context":  lambda x: x["context"],
                 "question": lambda x: x["question"],
             }
-            | ChatPromptTemplate.from_template(RAG_PROMPT.template)
+            | ChatPromptTemplate.from_template(rag_prompt.template)
             | self.llm
             | StrOutputParser()
         )
@@ -173,7 +187,7 @@ class RAGChain:
             retriever=self.retriever,
             memory=self.memory,
             condense_question_prompt=CONDENSE_QUESTION_PROMPT,
-            combine_docs_chain_kwargs={"prompt": RAG_PROMPT},
+            combine_docs_chain_kwargs={"prompt": rag_prompt},
             return_source_documents=True,
             output_key="answer",
         )
@@ -201,9 +215,7 @@ class RAGChain:
         
         try:
             # Run the chain
-            result = self.chain.invoke(
-                {"question": query, "chat_history": chat_history}
-            )
+            result = self.chain.invoke({"question": query, "chat_history": chat_history})
             
             # Extract source documents
             source_docs = result.get("source_documents", [])

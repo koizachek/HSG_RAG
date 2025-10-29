@@ -189,6 +189,7 @@ def configure_external_loggers(level: str = "WARNING") -> None:
         'docling',
         'weaviate',
         'langchain',
+        'langgraph',
         'openai',
         'httpx'
     ]

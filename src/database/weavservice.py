@@ -1,7 +1,7 @@
 import weaviate as wvt
 import argparse, datetime, os
 
-from time import perf_counter
+from time import perf_counter, sleep
 from weaviate.classes.config import Configure, Property, DataType
 from weaviate.collections.classes.grpc import MetadataQuery
 from weaviate.collections.collection import Collection
@@ -27,16 +27,31 @@ class WeaviateService:
         Raises:
             weaviate.exceptions.WeaviateConnectionError: If the connection fails.
         """
-        self._client: wvt.WeaviateClient = None 
- 
+        self._client: wvt.WeaviateClient = self._connect_to_database()
+
+
+    def _connect_to_database(self):
+        retries = 0 
+        while retries < 3:
+            try:
+                client: wvt.WeaviateClient = wvt.connect_to_local()
+                break
+            except Exception as e:
+                logger.error(f"Failed to establish a conneciton with the local weaviate database: {e}")
+                retries += 1 
+                sleep(1)
+        
+        if retries == 3:
+            logger.error(f"Failed to establish a connection with the local weaviate after 3 retries, terminating the application")
+            exit()
+
+        logger.info("Successully connected to the local weaviate database")
+        return client
+
 
     def _with_connection(func):
         def wrapper(self, *args, **kwargs):
             try:
-                if not self._client:
-                    self._client = wvt.connect_to_local()
-                    logger.info("Instantiated a new weaviate client; Running checkhealth...")
-                    self._checkhealth()
                 if not self._client.is_connected():
                     self._client.connect()
                     logger.info("Created a connection with the local weaviate database")
@@ -45,7 +60,7 @@ class WeaviateService:
                 logger.info("Closed the connection with the local weaviate database")
                 return result
             except Exception as e:
-                logger.exception(f"Failed to connect to the local weaviate database: {e}")
+                logger.exception(f"Client failed to connect to the local weaviate database: {e}")
            
         return wrapper
 

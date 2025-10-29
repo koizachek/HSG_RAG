@@ -3,7 +3,6 @@ import os, re, hashlib, time
 from enum import Enum
 from datetime import datetime, timezone
 from pathlib import Path
-from langdetect import detect
 from dataclasses import dataclass
 from transformers import AutoTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
