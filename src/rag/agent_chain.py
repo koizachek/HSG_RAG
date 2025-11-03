@@ -33,20 +33,25 @@ class ExecutiveAgentChain:
     def __init__(self, language: str = 'en') -> None:
         self._language = language 
         self._dbservice = WeaviateService()
-        self._agent, self._config = self._init_agent()
+        self._agents, self._config = self._init_agent()
         chain_logger.info(f"Initalized new Agent Chain for language '{language}'")
 
     
-    def _retrieve_context(self, query: str):
+    def _retrieve_context(self, query: str, language: str = None):
         """
-        This tool can be used by the agent to retrieve additional context from the database.
-        """
+        Send the query to the vector database to retrieve addition information about the program.
+
+        Args:
+            query: Keywords depicting information you want to retrieve 
+            language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
+        """ 
+        lang = language or self._language
         chain_logger.info("Agent is retrieving documents from the database...")
         chain_logger.info(f"Retrieval query: {query}")
         try:
             response, _ = self._dbservice.query(
                 query=query, 
-                lang=self._language, 
+                lang=lang, 
                 limit=TOP_K_RETRIEVAL,
             )
             serialized = '\n\n'.join(
@@ -61,34 +66,87 @@ class ExecutiveAgentChain:
         except Exception as e:
             chain_logger.error(f"Agent failed to retrieve documents from the database: {e}")
             return ""
+   
+
+    def _call_emba_agent(self, query: str):
+        """
+        Invokes the EMBA support agent to retrieve more detailed information about the EMBA program.
+        
+        Args:
+            query: Query to the EMBA support agent. Provide collected user data in the query if possible.
+        """
+        chain_logger.info("Lead agent called the EMBA agent")
+        chain_logger.info(f"Lead query: {query}")
+        response = self._query(agent=self._agents['emba'], messages=[HumanMessage(query)])
+        chain_logger.info(f"EMBA agent response: {response}")
+        return response
     
+
+    def _call_iemba_agent(self, query: str):
+        """
+        Invokes the IEMBA support agent to retrieve more detailed information about the IEMBA program.
+        
+        Args:
+            query: Query to the IEMBA support agent. Provide collected user data in the query if possible.
+        """
+        chain_logger.info("Lead agent called the IEMBA agent") 
+        chain_logger.info(f"Lead query: {query}")
+        response = self._query(agent=self._agents['iemba'], messages=[HumanMessage(query)])
+        chain_logger.info(f"IEMBA agent response: {response}")
+        return response
+
+
+    def _call_embax_agent(self, query: str):
+        """
+        Invokes the EMBA X support agent to retrieve more detailed information about the EMBA X program.
+        
+        Args:
+            query: Query to the EMBA X support agent. Provide collected user data in the query if possible.
+        """
+        chain_logger.info("Lead agent called the EMBA X agent") 
+        chain_logger.info(f"Lead query: {query}")
+        response = self._query(agent=self._agents['embax'], messages=[HumanMessage(query)])
+        chain_logger.info(f"EMBA X agent response: {response}")
+        return response
+
 
     def _init_agent(self):
         config: RunnableConfig = {
             'configurable': {'thread_id': 0}
         }
-        agent = create_agent(
-            model=self._get_agent_model(),
-            tools=self._init_agent_tools(),
-            state_schema=LeadInformationState,
-            system_prompt=get_configured_agent_prompt(self._language),
-            checkpointer=InMemorySaver(),
-            middleware=[
-                SummarizationMiddleware(
-                    model=self._get_summarization_model(),
-                    max_tokens_before_summary=1000,
-                    messages_to_keep=20,
-                ),
-            ],
-        )
+        checkpointer = InMemorySaver()
+        agents = {
+            'lead': create_agent(
+                model=self._get_agent_model(),
+                tools=[
+                    tool(self._retrieve_context),
+                    tool(self._call_emba_agent),
+                    tool(self._call_iemba_agent),
+                    tool(self._call_embax_agent)
+                ],
+                state_schema=LeadInformationState,
+                system_prompt=get_configured_agent_prompt('lead', language=self._language),
+                checkpointer=checkpointer,
+                middleware=[
+                    SummarizationMiddleware(
+                        model=self._get_summarization_model(),
+                        max_tokens_before_summary=1000,
+                        messages_to_keep=20,
+                )]),
+        }
+        for agent in ['emba', 'iemba', 'embax']:
+            agents[agent]=create_agent(
+                model=self._get_agent_model(),
+                tools=[tool(self._retrieve_context)],
+                state_schema=LeadInformationState,
+                system_prompt=get_configured_agent_prompt(agent, language=self._language),
+                checkpointer=checkpointer,
+            )    
 
-        return agent, config
+        return agents, config
    
 
-    def _init_agent_tools(self):
-        return [
-            tool(self._retrieve_context)
-        ]
+
 
     def _get_summarization_model(self) -> BaseChatModel:
         # TODO: Find less powerful and quick alternatives to accompany the main models
@@ -147,9 +205,10 @@ class ExecutiveAgentChain:
         return self._query([HumanMessage(query)])
 
 
-    def _query(self, messages: list) -> str:
+    def _query(self, messages: list, agent=None) -> str:
         try:
-            result: AIMessage = self._agent.invoke(
+            call_agent = agent or self._agents['lead']
+            result: AIMessage = call_agent.invoke(
                 {"messages": messages},
                 config=self._config,
             )
