@@ -1,16 +1,22 @@
 from langchain.agents import create_agent, AgentState
-from langchain.agents.middleware import SummarizationMiddleware
 from langchain.tools import tool
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, AnyMessage
-
-from langgraph.checkpoint.memory import InMemorySaver
+from langchain_core.messages import (
+        HumanMessage, 
+        AIMessage, 
+        SystemMessage, 
+        AnyMessage,
+)
+from langchain.agents.middleware import (
+        SummarizationMiddleware,
+        ToolCallLimitMiddleware,
+)
 
 from typing_extensions import TypedDict
 
 from src.database.weavservice import WeaviateService
 from src.utils.logging import get_logger 
-from src.rag.prompts import get_configured_agent_prompt
+from src.rag.prompts import PromptConfigurator as promptconf
 from config import LLMProviderConfiguration as llmconf, TOP_K_RETRIEVAL
 
 chain_logger = get_logger('agent_chain')
@@ -68,7 +74,7 @@ class ExecutiveAgentChain:
             return ""
    
 
-    def _call_emba_agent(self, query: str):
+    def _call_emba_agent(self, query: str) -> str:
         """
         Invokes the EMBA support agent to retrieve more detailed information about the EMBA program.
         
@@ -82,7 +88,7 @@ class ExecutiveAgentChain:
         return response
     
 
-    def _call_iemba_agent(self, query: str):
+    def _call_iemba_agent(self, query: str) -> str:
         """
         Invokes the IEMBA support agent to retrieve more detailed information about the IEMBA program.
         
@@ -96,7 +102,7 @@ class ExecutiveAgentChain:
         return response
 
 
-    def _call_embax_agent(self, query: str):
+    def _call_embax_agent(self, query: str) -> str:
         """
         Invokes the EMBA X support agent to retrieve more detailed information about the EMBA X program.
         
@@ -114,33 +120,60 @@ class ExecutiveAgentChain:
         config: RunnableConfig = {
             'configurable': {'thread_id': 0}
         }
-        checkpointer = InMemorySaver()
+        summarization_middleware = SummarizationMiddleware(
+            model=self._get_summarization_model(),
+            max_tokens_before_summary=1000,
+            messages_to_keep=5,
+            summary_prompt=promptconf.get_summarization_prompt(),
+            summary_prefix=promptconf.get_summary_prefix(),
+        )
+        tool_call_limiter_middleware = ToolCallLimitMiddleware(
+            run_limit=1
+        )
         agents = {
             'lead': create_agent(
                 model=self._get_agent_model(),
                 tools=[
-                    tool(self._retrieve_context),
-                    tool(self._call_emba_agent),
-                    tool(self._call_iemba_agent),
-                    tool(self._call_embax_agent)
+                    tool(
+                        name_or_callable='call_emba_agent',
+                        runnable=self._call_emba_agent,
+                        return_direct=False,
+                        parse_docstring=True,
+                    ),
+                    tool(
+                        name_or_callable='call_iemba_agent',
+                        runnable=self._call_iemba_agent,
+                        return_direct=False,
+                        parse_docstring=True,
+                    ),
+                    tool(
+                        name_or_callable='call_embax_agent',
+                        runnable=self._call_embax_agent,
+                        return_direct=False,
+                        parse_docstring=True,
+                    ),
                 ],
                 state_schema=LeadInformationState,
-                system_prompt=get_configured_agent_prompt('lead', language=self._language),
-                checkpointer=checkpointer,
+                system_prompt=promptconf.get_configured_agent_prompt('lead', language=self._language),
                 middleware=[
-                    SummarizationMiddleware(
-                        model=self._get_summarization_model(),
-                        max_tokens_before_summary=1000,
-                        messages_to_keep=20,
-                )]),
+                    summarization_middleware, 
+                    tool_call_limiter_middleware,
+                ]),
         }
         for agent in ['emba', 'iemba', 'embax']:
             agents[agent]=create_agent(
                 model=self._get_agent_model(),
-                tools=[tool(self._retrieve_context)],
+                tools=[
+                    tool(
+                        name_or_callable='retrieve_context',
+                        runnable=self._retrieve_context,
+                        return_direct=False,
+                        parse_docstring=True,
+                    )
+                ],
                 state_schema=LeadInformationState,
-                system_prompt=get_configured_agent_prompt(agent, language=self._language),
-                checkpointer=checkpointer,
+                system_prompt=promptconf.get_configured_agent_prompt(agent, language=self._language),
+                middleware=[tool_call_limiter_middleware],
             )    
 
         return agents, config
@@ -149,7 +182,6 @@ class ExecutiveAgentChain:
 
 
     def _get_summarization_model(self) -> BaseChatModel:
-        # TODO: Find less powerful and quick alternatives to accompany the main models
         return self._get_agent_model()
 
 
