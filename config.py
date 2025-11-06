@@ -39,7 +39,7 @@ class LLMProviderConfiguration:
     # DEFINE YOUR MAIN MODEL PROVIDER HERE 
     # Some unified interfaces such as Groq or Open Router provide access to other providers
     # such as OpenAI or Deepseek. When using interfaces define the provider you want to gain access to. 
-    LLM_PROVIDER = LLMProvider(base='open_router', sub='nvidia')
+    LLM_PROVIDER = LLMProvider(base='open_router').with_sub('meituan')
     
     # -------------------- Some predefined models for available providers ----------------------
 
@@ -49,7 +49,7 @@ class LLMProviderConfiguration:
     
     # Open Router settings
     OPEN_ROUTER_API_KEY = os.getenv("OPEN_ROUTER_API_KEY")
-    OPEN_ROUTER_MODEL="gpt-oss-20b:free"
+    OPEN_ROUTER_MODEL="meituan/longcat-flash-chat:free"
     OPEN_ROUTER_BASE_URL="https://openrouter.ai/api/v1"
 
     # OpenAI settings
@@ -79,7 +79,7 @@ class LLMProviderConfiguration:
                 }
             case 'open_router':
                 return {
-                    provider.with_sub('meituan'):  "meituan/longcat-flash-chat:free",
+                    provider.with_sub('openai'):  "gpt-oss-20b:free",
                     provider.with_sub('alibaba'):  "alibaba/tongyi-deepresearch-30b-a3b:free",
                     # Currently unusable because has no tool support
                     #provider.with_sub('deepseek'): "deepseek/deepseek-chat-v3.1:free",
@@ -129,7 +129,7 @@ CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
 # Agent Chain settings 
-MAX_MODEL_RETRIES = 1
+MAX_MODEL_RETRIES = 3
 
 # RAG settings
 TOP_K_RETRIEVAL = 8  # Number of documents to retrieve for each query

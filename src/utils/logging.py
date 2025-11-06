@@ -1,7 +1,8 @@
 """
 Centralized logging configuration for the Executive Education RAG Chatbot.
 """
-import logging, os, sys, warnings
+from threading import Lock
+import logging, os, sys, warnings, copy
 from pathlib import Path
 from typing import Optional
 
@@ -10,6 +11,27 @@ from colorama import Fore, Style
 
 # Initialize colorama for cross-platform color support
 colorama.init()
+
+class CodeBlockFormatter(logging.Formatter):
+    ALIASES = {
+        'DEBUG':    'DEBUG',
+        'INFO':     'INFO ',
+        'WARNING':  'WARN ',
+        'ERROR':    'ERROR',
+        'CRITICAL': 'CRITC'
+    }
+
+    def format(self, record):
+        if hasattr(record, 'levelname') and record.levelname in self.ALIASES:
+            record.levelname = self.ALIASES[record.levelname]
+
+        if hasattr(record, 'name'):
+            rname = record.name 
+            if len(rname) <= 17: rname += ' '*(17-len(rname))
+            else: rname = rname[14:] + '...'
+            record.name = rname
+        
+        return super().format(record)
 
 
 class ColoredFormatter(logging.Formatter):
@@ -47,6 +69,27 @@ class ColoredFormatter(logging.Formatter):
         return super().format(record)
 
 
+class CachedLogHandler(logging.Handler):
+    def __init__(self, level = 0) -> None:
+        super().__init__(level)
+        self._cache = []
+        self._max_lines = 50
+        self._lock = Lock()
+
+
+    def emit(self, record):
+        record_copy = copy.copy(record)
+        msg = self.format(record_copy)
+        with self._lock:
+            self._cache.append(msg)
+
+    def get_logs(self):
+        with self._lock:
+            return '\n'.join(self._cache)
+
+
+cached_log_handler: CachedLogHandler = CachedLogHandler()
+
 def setup_logging(
     level: str = "INFO",
     log_file: Optional[str] = None,
@@ -65,6 +108,8 @@ def setup_logging(
     Returns:
         Configured logger instance
     """
+    global cached_log_handler
+
     # Convert string level to logging constant
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     
@@ -87,6 +132,10 @@ def setup_logging(
         "(%(asctime)s) %(name)s\t %(levelname)s: %(message)s",
         datefmt="%Y.%m.%d %H:%M:%S"
     )
+
+    codeblock_formatter = CodeBlockFormatter(
+       "%(levelname)s %(name)s\t : %(message)s", 
+    )
     
     # Set up file logging
     if log_file or interactive_mode:
@@ -101,6 +150,10 @@ def setup_logging(
         file_handler.setFormatter(detailed_formatter)
         logger.addHandler(file_handler)
     
+    # Set up the cached log handler for gradio Code block output
+    cached_log_handler.setLevel(numeric_level)
+    cached_log_handler.setFormatter(codeblock_formatter)
+
     # Set up console logging (unless in interactive mode)
     if not interactive_mode:
         console_handler = logging.StreamHandler(sys.stdout)
@@ -112,6 +165,7 @@ def setup_logging(
         else:
             console_handler.setFormatter(detailed_formatter)
         
+        logger.addHandler(cached_log_handler)
         logger.addHandler(console_handler)
     
     return logger

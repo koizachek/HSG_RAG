@@ -39,7 +39,8 @@ class ExecutiveAgentChain:
         Args:
             query: Keywords depicting information you want to retrieve 
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
-        """ 
+        """
+        chain_logger.info("Retrieve context tool called")
         lang = language or self._language
         try:
             response, _ = self._dbservice.query(
@@ -108,27 +109,23 @@ class ExecutiveAgentChain:
             summary_prefix=promptconf.get_summary_prefix(),
         )
         tool_retrieve_context = tool(
-            name_or_callable='retrieve_context',
-            runnable=self._retrieve_context,
+            self._retrieve_context,
             return_direct=False,
             parse_docstring=True,
         )
         tools_agent_calling = [
             tool(
-                name_or_callable='call_emba_agent',
-                runnable=self._call_emba_agent,
+                self._call_emba_agent,
                 return_direct=False,
                 parse_docstring=True,
             ),
             tool(
-                name_or_callable='call_iemba_agent',
-                runnable=self._call_iemba_agent,
+                self._call_iemba_agent,
                 return_direct=False,
                 parse_docstring=True,
             ),
             tool(
-                name_or_callable='call_embax_agent',
-                runnable=self._call_embax_agent,
+                self._call_embax_agent,
                 return_direct=False,
                 parse_docstring=True,
             ),

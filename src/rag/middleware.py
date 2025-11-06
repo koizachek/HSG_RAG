@@ -1,4 +1,3 @@
-from langchain.tools import tool
 from langchain.tools.tool_node import ToolCallRequest
 from langchain.chat_models import BaseChatModel
 from langchain.agents.middleware import (
@@ -77,14 +76,12 @@ class AgentChainMiddleware:
         try:
             context: AgentContext = request.runtime.context or AgentContext(agent_name="Agent")
             tool_call = request.tool_call 
-            try:
-                tool_logger.info(f"{context.agent_name} is attempting to use tool '{tool_call['name']}'...")
-                result = handler(request)
-                tool_logger.info(f"Tool use successfull, returning the result...")
-                return result
-            except Exception as e:
-                tool_logger.error(f"Error in the tool call wrapper: {e}")
-                raise e
+            tool_logger.info(f"{context.agent_name} is attempting to use tool '{tool_call['name']}'...")
+            tool_logger.info("Tool call is happening")
+            result = handler(request)
+            tool_logger.info(f"Tool use successfull, returning the result...")
+            return result
         except Exception as e:
-            tool_logger.error(f"COMPLETELY UNEXPECTED ERROR!!!: {e}")
-
+            tool_logger.error(f"Error in the tool call wrapper: {e}")
+            raise e
+       
