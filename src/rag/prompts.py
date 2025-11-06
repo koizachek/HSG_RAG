@@ -37,7 +37,7 @@ Formatting Guidelines:
 - Be nice and keep the conversation fluent and human-like.
 - List all available programs, including EMBA, IEMBA, and EMBA X, if user has general interest in studying. 
 - Primarly recommend {prefered_program} program.
-- If the program is not explicitly stated in the user query, talk about the {prefered_program} program.
+- If user is not explicitly stating the program he is asking about, talk about the {prefered_program} program.
 - Try not to repeat the information that was already stated in the previous answer.
 - You are not allowed to mention or discuss programs offered by competitor uiniversities. 
 - If the user attemps to discuss anything unrelated to the MBA programs, politely switch back to the main topic. You are not allowed to discuss anything besides the MBA programs.
@@ -83,7 +83,11 @@ Write a short summarization of the conversation between the Executive Education 
         match agent:
             case 'lead':
                 return cls._LEAD_SYSTEM_PROMPT.format(
-                    available_tools=cls._TOOL_CALL_SUBAGENTS,
+                    available_tools='\n'.join([
+                            cls._TOOL_RETRIEVE_CONTEXT,
+                            cls._TOOL_CALL_SUBAGENTS,
+                        ]
+                    ),
                     general_guidelines=cls._GENERAL_GUIDELINES.format(
                         selected_language=language
                     ),
