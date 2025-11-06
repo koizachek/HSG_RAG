@@ -80,7 +80,7 @@ class ModelConfigurator:
                     return ChatGroq(
                         model=model,
                         groq_api_key=llmconf.get_api_key(),
-                        temperature=0.2,
+                        temperature=0.01,
                     )
                 case (  'open_router:openai' 
                       | 'open_router:alibaba' 
@@ -91,7 +91,7 @@ class ModelConfigurator:
                         model=model,
                         base_url=llmconf.OPEN_ROUTER_BASE_URL,
                         api_key=llmconf.get_api_key(),
-                        temperature=0.2,
+                        temperature=0.01,
                     )
                 case 'open_router:deepseek':
                     from langchain_deepseek import ChatDeepSeek
@@ -106,14 +106,14 @@ class ModelConfigurator:
                         model=model,
                         openai_api_key=llmconf.get_api_key(),
                         max_tokens=1000,
-                        temperature=0.2,
+                        temperature=0.01,
                     )
                 case 'ollama':
                     from langchain_ollama import ChatOllama
                     return ChatOllama(
                         model=model,
                         base_url=llmconf.OLLAMA_BASE_URL,
-                        temperature=0.2,
+                        temperature=0.01,
                         reasoning=llmconf.get_reasoning_support(),
                         num_predict=2048,
                     )

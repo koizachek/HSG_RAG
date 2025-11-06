@@ -40,7 +40,7 @@ class ExecutiveAgentChain:
             query: Keywords depicting information you want to retrieve 
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
         """
-        chain_logger.info("Retrieve context tool called")
+        print('called retrieve_context')
         lang = language or self._language
         try:
             response, _ = self._dbservice.query(
@@ -57,7 +57,7 @@ class ExecutiveAgentChain:
             )
             return serialized
         except Exception as _:
-            return ""
+            return ''
    
 
     def _call_emba_agent(self, query: str) -> str:
@@ -95,7 +95,7 @@ class ExecutiveAgentChain:
 
     def _init_agents(self):
         config: RunnableConfig = {
-            'configurable': {'thread_id': 1}
+            'configurable': {'thread_id': 0}
         }
         checkpointer = InMemorySaver()
         fallback_middleware = ModelFallbackMiddleware(
@@ -109,23 +109,27 @@ class ExecutiveAgentChain:
             summary_prefix=promptconf.get_summary_prefix(),
         )
         tool_retrieve_context = tool(
-            self._retrieve_context,
+            name_or_callable='retrieve_context',
+            runnable=self._retrieve_context,
             return_direct=False,
             parse_docstring=True,
         )
         tools_agent_calling = [
             tool(
-                self._call_emba_agent,
+                name_or_callable='call_emba_agent',
+                runnable=self._call_emba_agent,
                 return_direct=False,
                 parse_docstring=True,
             ),
             tool(
-                self._call_iemba_agent,
+                name_or_callable='call_iemba_agent',
+                runnable=self._call_iemba_agent,
                 return_direct=False,
                 parse_docstring=True,
             ),
             tool(
-                self._call_embax_agent,
+                name_or_callable='call_embax_agent',
+                runnable=self._call_embax_agent,
                 return_direct=False,
                 parse_docstring=True,
             ),
@@ -161,8 +165,7 @@ class ExecutiveAgentChain:
                 ],
                 checkpointer=checkpointer,
                 context_schema=AgentContext,
-            ) 
-
+            )
         return agents, config
    
 

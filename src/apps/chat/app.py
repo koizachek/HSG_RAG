@@ -22,16 +22,17 @@ class ChatbotApplication:
         
         with self._app:
             with gr.Row():
-                with gr.Column(scale=3):
+                with gr.Row(scale=3):
                     gr.ChatInterface(
                         chatbot=chatbot,
                         fn=self._chat,
                         title="Executive Education Adviser",
                         type='messages',
                     )
-                with gr.Column(scale=1):
+                with gr.Row(scale=1):
                     log_window = gr.Code(
-                        label='Console Log', 
+                        label='Console Log',
+                        lines=30,
                         max_lines=30, 
                         show_line_numbers=False,
                     )

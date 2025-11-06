@@ -79,7 +79,8 @@ class LLMProviderConfiguration:
                 }
             case 'open_router':
                 return {
-                    provider.with_sub('openai'):  "gpt-oss-20b:free",
+                    provider: "openrouter/polaris-alpha",
+                    provider.with_sub('openai'):   "gpt-oss-20b:free",
                     provider.with_sub('alibaba'):  "alibaba/tongyi-deepresearch-30b-a3b:free",
                     # Currently unusable because has no tool support
                     #provider.with_sub('deepseek'): "deepseek/deepseek-chat-v3.1:free",

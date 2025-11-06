@@ -2,6 +2,7 @@ from langchain.tools.tool_node import ToolCallRequest
 from langchain.chat_models import BaseChatModel
 from langchain.agents.middleware import (
         ModelRequest,
+        ModelResponse,
 
         wrap_model_call,
         wrap_tool_call,
@@ -31,7 +32,7 @@ class AgentChainMiddleware:
             return cls._tool_wrapper_middleware
 
         cls._tool_wrapper_middleware = wrap_tool_call(cls._tool_call_wrapper)
-        tool_logger.info(f"Initialized tool call wrapper")
+        tool_logger.info(f"Initialized tool call wrapper with call inspection")
         return cls._tool_wrapper_middleware
 
     
@@ -52,9 +53,22 @@ class AgentChainMiddleware:
         model_logger.info(f"{context.agent_name} is attempting to call model '{model.model_name}'...")
         for attempt in range(1, MAX_MODEL_RETRIES+1):
             try:
-                result = handler(request)
+                response: ModelResponse = handler(request)
                 model_logger.info(f"Recieved response from model after {attempt} attempt{'s' if attempt > 1 else ''}")
-                return result
+                result = response.result[0]
+                
+                # Check if any errors occured during tool call execution.
+                # Some errors might be fatal, making the model unusable in the agent chain
+                if hasattr(result, 'invalid_tool_calls') and result.invalid_tool_calls:
+                    for invalid_call in result.invalid_tool_calls:
+                        fail_reason = invalid_call.get('error', 'Unknown').replace('\n', '')
+                        model_logger.warning(f"Failed tool call: {invalid_call['name']}, error: {fail_reason}, retrying the call...")
+                        if 'JSONDecodeError' in fail_reason:
+                            model_logger.error(f"Model does not support current tool call architecture! Switching to the fallback model...")
+                            raise Exception("Unsupported model") 
+                
+                else:
+                    return response
             except OpenAIError as e:
                 match e:
                     case InternalServerError():
@@ -73,15 +87,13 @@ class AgentChainMiddleware:
 
     @staticmethod
     def _tool_call_wrapper(request: ToolCallRequest, handler):
-        try:
-            context: AgentContext = request.runtime.context or AgentContext(agent_name="Agent")
-            tool_call = request.tool_call 
-            tool_logger.info(f"{context.agent_name} is attempting to use tool '{tool_call['name']}'...")
-            tool_logger.info("Tool call is happening")
-            result = handler(request)
-            tool_logger.info(f"Tool use successfull, returning the result...")
-            return result
-        except Exception as e:
-            tool_logger.error(f"Error in the tool call wrapper: {e}")
-            raise e
-       
+        context: AgentContext = request.runtime.context or AgentContext(agent_name="Agent")
+        
+        tool_call = request.tool_call
+        tool_logger.info(f"{context.agent_name} is calling tool: {tool_call['name']}")
+        tool_logger.info(f"Tool arguments: {tool_call.get('args', {})}")
+        
+        response = handler(request) 
+        tool_logger.info(f"Recieved response from tool call")
+        
+        return response       
