@@ -37,7 +37,7 @@ class ExecutiveAgentChain:
         Send the query to the vector database to retrieve additional information about the program.
 
         Args:
-            query: Keywords depicting information you want to retrieve 
+            query: Keywords depicting information you want to retrieve in the primary language. 
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
         """
         print('called retrieve_context')
@@ -179,7 +179,7 @@ class ExecutiveAgentChain:
     def query(self, query: str) -> str:
         return self._query(
             agent=self._agents['lead'],
-            messages=[HumanMessage(query)],
+            messages=[HumanMessage(query), SystemMessage("You MUST call the retrieve_context tool before answering!")],
         )
 
 

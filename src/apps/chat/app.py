@@ -54,4 +54,4 @@ class ChatbotApplication:
 
 
     def run(self):
-        self._app.launch()
+        self._app.launch(share=True)

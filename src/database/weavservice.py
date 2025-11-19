@@ -7,45 +7,56 @@ from weaviate.collections.classes.grpc import MetadataQuery
 from weaviate.collections.collection import Collection
 
 from src.utils.logging import get_logger
-from config import WEAVIATE_BACKUP_BACKEND, WEAVIATE_COLLECTION_BASENAME, AVAILABLE_LANGUAGES, HASH_FILE_PATH
+from config import WeaviateConfiguration as wvtconf, AVAILABLE_LANGUAGES, HASH_FILE_PATH
 
 logger = get_logger("weaviate_service")
 
-_get_collection_name = lambda lang: f'{WEAVIATE_COLLECTION_BASENAME}_{lang}'
+_get_collection_name = lambda lang: f'{wvtconf.WEAVIATE_COLLECTION_BASENAME}_{lang}'
 _collection_names = [_get_collection_name(lang) for lang in AVAILABLE_LANGUAGES]
 
 
 class WeaviateService:
     """
-    Provides an interface for interacting with a local Weaviate vector database.
+    Provides an interface for interacting with the Weaviate vector database.
     Handles initialization, data import, and hybrid queries.
     """
     def __init__(self) -> None:
         """
-        Initialize the Weaviate service and establish a connection to the local database.
+        Initialize the Weaviate service and establish a connection to the database.
 
         Raises:
             weaviate.exceptions.WeaviateConnectionError: If the connection fails.
         """
+        self._connection_type = 'local' if wvtconf.is_local() else 'cloud'
         self._client: wvt.WeaviateClient = self._connect_to_database()
 
 
     def _connect_to_database(self):
         retries = 0 
+        client: wvt.WeaviateClient
         while retries < 3:
             try:
-                client: wvt.WeaviateClient = wvt.connect_to_local()
+                if wvtconf.is_local():
+                    client = wvt.connect_to_local() 
+                else: 
+                    client = wvt.connect_to_weaviate_cloud(
+                        cluster_url=wvtconf.CLUSTER_URL,
+                        auth_credentials=wvtconf.WEAVIATE_API_KEY,
+                        headers={
+                            "X-HuggingFace-Api-Key": wvtconf.HUGGING_FACE_API_KEY,
+                        },
+                    ) 
                 break
             except Exception as e:
-                logger.error(f"Failed to establish a conneciton with the local weaviate database: {e}")
+                logger.error(f"Failed to establish a conneciton with the {self._connection_type} weaviate database: {e}")
                 retries += 1 
                 sleep(1)
         
         if retries == 3:
-            logger.error(f"Failed to establish a connection with the local weaviate after 3 retries, terminating the application")
+            logger.error(f"Failed to establish a connection with the {self._connection_type} weaviate after 3 retries, terminating the application")
             exit()
 
-        logger.info("Successully connected to the local weaviate database")
+        logger.info(f"Successully connected to the {self._connection_type} weaviate database")
         return client
 
 
@@ -54,13 +65,13 @@ class WeaviateService:
             try:
                 if not self._client.is_connected():
                     self._client.connect()
-                    logger.info("Created a connection with the local weaviate database")
+                    logger.info(f"Created a connection with the {self._connection_type} weaviate database")
                 result = func(self, *args, **kwargs)
                 self._client.close()
-                logger.info("Closed the connection with the local weaviate database")
+                logger.info(f"Closed the connection with the {self._connection_type} weaviate database")
                 return result
             except Exception as e:
-                logger.exception(f"Client failed to connect to the local weaviate database: {e}")
+                logger.exception(f"Client failed to connect to the {self._connection_type} weaviate database: {e}")
            
         return wrapper
 
@@ -175,7 +186,13 @@ class WeaviateService:
         """ 
         logger.info('Attempting collections creation for the database...')
         
-        vector_config = Configure.Vectors.text2vec_transformers() 
+        vector_config = (Configure.Vectors.text2vec_transformers() if wvtconf.is_local() 
+                         else Configure.Vectors.text2vec_huggingface(
+                                name='hsg_rag_embeddings',
+                                source_properties=['body'],
+                                model="sentence-transformers/all-MiniLM-L6-v2",
+                             ))
+        successful_creations = 0
         for collection_name in _collection_names:
             try:
                 self._client.collections.create(
@@ -190,15 +207,17 @@ class WeaviateService:
                     ],
                     vector_config=vector_config)
                 logger.info(f"Created collection {collection_name}")
+                successful_creations += 1
             except Exception as e:
                 logger.error(f"Failed to initialize collection '{collection_name}': {e}")
-        logger.info('All collections were successfully instantiated in the database')
+        if successful_creations == len(_collection_names):
+            logger.info('All collections were successfully instantiated in the database')
 
 
     @_with_connection
     def _delete_collections(self):
         """
-        Delete all existing collections from the local Weaviate database.
+        Delete all existing collections from the Weaviate database.
 
         Raises:
             weaviate.exceptions.WeaviateConnectionError: If the connection to the database fails.
@@ -224,11 +243,11 @@ class WeaviateService:
         Creates a backup instance from current weaviate database state and uploads it to selected backend storage service.
         """        
         backup_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
-        logger.info("Initiating backup creation for the local weaviate database")
+        logger.info(f"Initiating backup creation for the {self._connection_type} weaviate database")
         try:
             result = self._client.backup.create(
                 backup_id=f"hsg_wvtdb_backup_{backup_id}",
-                backend=WEAVIATE_BACKUP_BACKEND,
+                backend=wvtconf.WEAVIATE_BACKUP_BACKEND,
                 include_collections=_collection_names,
                 wait_for_completion=True
             )
@@ -246,11 +265,11 @@ class WeaviateService:
         Args:
             backup_id(str): ID of the backup from which the database state should be restored.
         """        
-        logger.info("Initiating restoration process from the backup '{backup_id}' for the local weaviate database")
+        logger.info("Initiating restoration process from the backup '{backup_id}' for the {self._connection_type} weaviate database")
         try:
             result = self._client.backup.restore(
                 backup_id=backup_id,
-                backend=WEAVIATE_BACKUP_BACKEND,
+                backend=wvtconf.WEAVIATE_BACKUP_BACKEND,
                 include_collections=_collection_names,
                 wait_for_completion=True,
             )
@@ -268,13 +287,14 @@ class WeaviateService:
         Prints the connection status and verifies the existence of collections for each supported language.
         """
         connection_exists = self._client.is_connected()
-        logger.info(f"Checking the connection to the local weaviate database: {'OK!' if connection_exists else 'ERROR'}")
+        logger.info(f"Checking the connection to the {self._connection_type} weaviate database: {'OK!' if connection_exists else 'ERROR'}")
         if not connection_exists: return 
 
         metainfo = self._client.get_meta()
         modules_str = ', '.join(metainfo['modules'])
         modules_str = modules_str[:30] + '...' if len(modules_str) > 30 else modules_str
-        logger.info(f"Cluster metadata: HOSTNAME={metainfo['hostname']}, VERSION={metainfo['version']}, MODULES={modules_str}")
+        if wvtconf.is_local():
+            logger.info(f"Cluster metadata: HOSTNAME={metainfo['hostname']}, VERSION={metainfo['version']}, MODULES={modules_str}")
 
         for collection_name in _collection_names:
             logger.info(f"Checking the existence of collection {collection_name}: "

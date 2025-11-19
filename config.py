@@ -39,7 +39,7 @@ class LLMProviderConfiguration:
     # DEFINE YOUR MAIN MODEL PROVIDER HERE 
     # Some unified interfaces such as Groq or Open Router provide access to other providers
     # such as OpenAI or Deepseek. When using interfaces define the provider you want to gain access to. 
-    LLM_PROVIDER = LLMProvider(base='open_router').with_sub('meituan')
+    LLM_PROVIDER = LLMProvider('openai')
     
     # -------------------- Some predefined models for available providers ----------------------
 
@@ -79,9 +79,10 @@ class LLMProviderConfiguration:
                 }
             case 'open_router':
                 return {
-                    provider: "openrouter/polaris-alpha",
-                    provider.with_sub('openai'):   "gpt-oss-20b:free",
+                    provider.with_sub('openai'):   "gpt-oss-20b",
+                    provider.with_sub('openai'):   "gpt-oss-120b",
                     provider.with_sub('alibaba'):  "alibaba/tongyi-deepresearch-30b-a3b:free",
+                    provider: "openrouter/polaris-alpha",
                     # Currently unusable because has no tool support
                     #provider.with_sub('deepseek'): "deepseek/deepseek-chat-v3.1:free",
                 }
@@ -119,6 +120,21 @@ class LLMProviderConfiguration:
         }.get(provider.base)
 
 
+# Weaviate database settings 
+class WeaviateConfiguration:
+    LOCAL_DATABASE = False
+    WEAVIATE_BACKUP_BACKEND = ''
+    WEAVIATE_COLLECTION_BASENAME = 'hsg_rag_content'
+    
+    # Weaviate Cloud settings
+    CLUSTER_URL = "r2vd9fuvrcjvx7idsvta.c0.europe-west3.gcp.weaviate.cloud"
+    WEAVIATE_API_KEY = os.getenv('WEAVIATE_API_KEY')
+    HUGGING_FACE_API_KEY = os.getenv('HUGGING_FACE_API_KEY')
+
+    @classmethod 
+    def is_local(cls) -> bool:
+        return cls.LOCAL_DATABASE
+
 # Data paths
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 RAW_DATA_PATH = os.path.join(DATA_DIR, "raw_data.json")
@@ -146,8 +162,3 @@ DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
 
 # Base URL for scraping
 BASE_URL = "https://emba.unisg.ch/programm"
-
-# Weaviate database settings 
-WEAVIATE_BACKUP_BACKEND = ''
-WEAVIATE_COLLECTION_BASENAME = 'hsg_rag_content'
-
