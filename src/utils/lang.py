@@ -8,7 +8,13 @@ def detect_language(text: str):
         text (str): The text to analyze.
 
     Returns:
-        str: Detected language code ('de' or 'en').
+        str: Detected language code.
     """
     return 'de' if detect(text) == 'de' else 'en'
     
+
+def get_language_name(code: str):
+    return {
+        'en': "English",
+        'de': "German",
+    }.get(code, 'English')

@@ -53,20 +53,30 @@ executive_ed/
    ```
    OPENAI_API_KEY=your_openai_api_key
    ```
+   Following variables are required when Weaviate Cloud is used.
+   Add them to the `.env` file:
+   ```
+   WEAVIATE_API_KEY=your_weaviate_api_key
+   HUGGING_FACE_API_KEY=your_hf_api_key
+   ```
+   Check `.env.example` for all required variables.
+    
 
 ## Usage
 
-1. Run the scraper to collect program data:
+1. Run the gradio application with the virtual environment activated:
    ```
-   python main.py --scrape
+   python main.py --app de
    ```
-
-2. Start the chatbot:
+   If you want to know the full set of tools, run this command:
    ```
-   python main.py
+   python main.py --help
    ```
-
-3. Ask questions specifically about the Executive MBA HSG program at the University of St. Gallen.
+2. Open the application using the local URL shown in the terminal:
+   ```
+   * Running on local URL:  http://127.0.0.1:7861
+   ```
+3. Start asking your questions to the assistant!
 
 ## Some Example Queries ENGLISH/GERMAN
 

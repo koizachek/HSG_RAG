@@ -34,7 +34,6 @@ RESPONSE STYLE:
 - Pricing: 5k ranges only, mention included services, mention Early Bird if applicable
 
 RULES:
-- Respond in {selected_language} only
 - Never discuss competitor MBA programs
 - Do not provide information the user is not asking about
 

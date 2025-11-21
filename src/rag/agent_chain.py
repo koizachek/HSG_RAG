@@ -15,6 +15,7 @@ from src.rag.middleware import AgentChainMiddleware as chainmdw
 from src.rag.prompts import PromptConfigurator as promptconf
 from src.rag.models import ModelConfigurator as modelconf
 
+from src.utils.lang import detect_language, get_language_name
 from src.utils.logging import get_logger 
 from config import TOP_K_RETRIEVAL
 
@@ -177,7 +178,10 @@ class ExecutiveAgentChain:
    
 
     def generate_greeting(self) -> str:
-        self._conversation_history.append(SystemMessage("Generate a greeting message and introduce yourself."))
+        self._conversation_history.extend([
+            SystemMessage("Generate a short greeting message and introduce yourself. 30 words max."),
+            SystemMessage(f"Respond in {get_language_name(self._language)} language."),
+        ])
         response = self._query(
             agent=self._agents['lead'], 
             messages=self._conversation_history,
@@ -187,7 +191,10 @@ class ExecutiveAgentChain:
 
 
     def query(self, query: str) -> str:
-        self._conversation_history.append(HumanMessage(query))
+        self._conversation_history.extend([
+            HumanMessage(query),
+            SystemMessage(f"Respond in {get_language_name(detect_language(query))} language."),
+        ])
         response = self._query(
             agent=self._agents['lead'],
             messages=self._conversation_history,
