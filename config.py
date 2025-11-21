@@ -54,7 +54,7 @@ class LLMProviderConfiguration:
 
     # OpenAI settings
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    OPENAI_MODEL = "gpt-5"
+    OPENAI_MODEL = "gpt-5.1"
     
     # The gpt-oss:20b model is preferable but takes much more space
     # Set to False if you only have the llama3.2 installed
@@ -149,7 +149,7 @@ CHUNK_OVERLAP = 200
 MAX_MODEL_RETRIES = 3
 
 # RAG settings
-TOP_K_RETRIEVAL = 8  # Number of documents to retrieve for each query
+TOP_K_RETRIEVAL = 4  # Number of documents to retrieve for each query
 
 # UI settings
 MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history

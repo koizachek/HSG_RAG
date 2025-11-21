@@ -67,8 +67,8 @@ class WeaviateService:
                     self._client.connect()
                     logger.info(f"Created a connection with the {self._connection_type} weaviate database")
                 result = func(self, *args, **kwargs)
-                self._client.close()
-                logger.info(f"Closed the connection with the {self._connection_type} weaviate database")
+                # self._client.close()
+                # logger.info(f"Closed the connection with the {self._connection_type} weaviate database")
                 return result
             except Exception as e:
                 logger.exception(f"Client failed to connect to the {self._connection_type} weaviate database: {e}")
@@ -93,6 +93,7 @@ class WeaviateService:
         collection_name = _get_collection_name(lang)
         logger.info(f"Using collection {collection_name}")
         return self._client.collections.use(collection_name), collection_name
+
 
     @_with_connection
     def batch_import(self, data_rows: list, lang: str) -> list:

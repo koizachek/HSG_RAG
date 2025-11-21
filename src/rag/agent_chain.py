@@ -5,12 +5,8 @@ from langchain_core.messages import (
     AIMessage, 
     SystemMessage, 
 )
-from langchain.agents.middleware import (
-    SummarizationMiddleware,
-    ModelFallbackMiddleware,
-)
+from langchain.agents.middleware import ModelFallbackMiddleware
 
-from langgraph.checkpoint.memory import InMemorySaver
 
 from src.database.weavservice import WeaviateService
 
@@ -29,6 +25,7 @@ class ExecutiveAgentChain:
         self._language = language 
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
+        self._conversation_history = []
         chain_logger.info(f"Initalized new Agent Chain for language '{language}'")
 
 
@@ -40,7 +37,6 @@ class ExecutiveAgentChain:
             query: Keywords depicting information you want to retrieve in the primary language. 
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
         """
-        print('called retrieve_context')
         lang = language or self._language
         try:
             response, _ = self._dbservice.query(
@@ -67,9 +63,17 @@ class ExecutiveAgentChain:
         Args:
             query: Query to the EMBA support agent. Provide collected user data in the query if possible.
         """
-        response = self._query(agent=self._agents['emba'], messages=[HumanMessage(query)])
-        return response
-    
+        try:
+            response = self._query(
+                agent=self._agents['emba'], 
+                messages=[HumanMessage(query)],
+                thread_id=f"emba_{hash(query)}",
+            )
+            return response
+        except Exception as e:
+            chain_logger.error(f"EMBA Agent error: {e}")
+            return "Unable to retrieve EMBA information at this time."
+
 
     def _call_iemba_agent(self, query: str) -> str:
         """
@@ -78,9 +82,16 @@ class ExecutiveAgentChain:
         Args:
             query: Query to the IEMBA support agent. Provide collected user data in the query if possible.
         """
-        response = self._query(agent=self._agents['iemba'], messages=[HumanMessage(query)])
-        return response
-
+        try:
+            response = self._query(
+                agent=self._agents['iemba'], 
+                messages=[HumanMessage(query)],
+                thread_id=f"emba_{hash(query)}",
+            )
+            return response
+        except Exception as e:
+            chain_logger.error(f"IEMBA Agent error: {e}")
+            return "Unable to retrieve IEMBA information at this time."
 
     def _call_embax_agent(self, query: str) -> str:
         """
@@ -89,24 +100,23 @@ class ExecutiveAgentChain:
         Args:
             query: Query to the EMBA X support agent. Provide collected user data in the query if possible.
         """
-        response = self._query(agent=self._agents['embax'], messages=[HumanMessage(query)])
-        return response
-
+        try:
+            response = self._query(
+                agent=self._agents['embax'], 
+                messages=[HumanMessage(query)],
+                thread_id=f"emba_{hash(query)}",
+            )
+            return response
+        except Exception as e:
+            chain_logger.error(f"EMBA X Agent error: {e}")
+            return "Unable to retrieve EMBA X information at this time."
 
     def _init_agents(self):
         config: RunnableConfig = {
             'configurable': {'thread_id': 0}
         }
-        checkpointer = InMemorySaver()
         fallback_middleware = ModelFallbackMiddleware(
             *modelconf.get_fallback_models()
-        )
-        summarization_middleware = SummarizationMiddleware(
-            model=modelconf.get_summarization_model(),
-            max_tokens_before_summary=1000,
-            messages_to_keep=5,
-            summary_prompt=promptconf.get_summarization_prompt(),
-            summary_prefix=promptconf.get_summary_prefix(),
         )
         tool_retrieve_context = tool(
             name_or_callable='retrieve_context',
@@ -138,23 +148,21 @@ class ExecutiveAgentChain:
             'lead': create_agent(
                 name="Lead Agent",
                 model=modelconf.get_main_agent_model(),
-                tools=tools_agent_calling + [tool_retrieve_context],
+                tools=tools_agent_calling,
                 state_schema=LeadInformationState,
                 system_prompt=promptconf.get_configured_agent_prompt('lead', language=self._language),
                 middleware=[
-                    fallback_middleware,
-                    summarization_middleware,
                     chainmdw.get_tool_wrapper(),
                     chainmdw.get_model_wrapper(),
+                    fallback_middleware,
                 ],
-                checkpointer=checkpointer,
                 context_schema=AgentContext,
             ),            
         }
         for agent in ['emba', 'iemba', 'embax']:
             agents[agent]=create_agent(
                 name=f"{agent.upper()} Agent",
-                model=modelconf.get_main_agent_model(),
+                model=modelconf.get_subagent_model(),
                 tools=[tool_retrieve_context],
                 state_schema=LeadInformationState,
                 system_prompt=promptconf.get_configured_agent_prompt(agent, language=self._language),
@@ -163,35 +171,44 @@ class ExecutiveAgentChain:
                     chainmdw.get_tool_wrapper(),
                     chainmdw.get_model_wrapper(),
                 ],
-                checkpointer=checkpointer,
                 context_schema=AgentContext,
             )
         return agents, config
    
 
     def generate_greeting(self) -> str:
-        return self._query(
+        self._conversation_history.append(SystemMessage("Generate a greeting message and introduce yourself."))
+        response = self._query(
             agent=self._agents['lead'], 
-            messages=[SystemMessage("Generate a greeting message and introduce yourself.")],
-        ) 
+            messages=self._conversation_history,
+        )
+        self._conversation_history.append(AIMessage(response))
+        return response
 
 
     def query(self, query: str) -> str:
-        return self._query(
+        self._conversation_history.append(HumanMessage(query))
+        response = self._query(
             agent=self._agents['lead'],
-            messages=[HumanMessage(query), SystemMessage("You MUST call the retrieve_context tool before answering!")],
+            messages=self._conversation_history,
         )
+        self._conversation_history.append(AIMessage(response))
+        return response
 
 
-    def _query(self, agent, messages: list) -> str:
+    def _query(self, agent, messages: list, thread_id: str = None) -> str:
         try:
+            config = self._config.copy()
+            config['configurable']['thread_id'] = thread_id or 0
+                
             result: AIMessage = agent.invoke(
                 {"messages": messages},
-                config=self._config,
+                config=config,
                 context=AgentContext(agent_name=agent.name),
             )
             response = result['messages'][-1]
             return response.text
         except Exception as e:
-            chain_logger.error(f"Failed to invoke the agent: {e.body['message']}")
-            return "I'm sorry, I cannot provide a helpful response right now. Please contact the tech support or try again later."
+            error_msg = e.body['message'] if hasattr(e, 'body') else str(e)
+            chain_logger.error(f"Failed to invoke the agent: {error_msg}")
+            return "I'm sorry, I cannot provide a helpful response right now. Please contact tech support or try again later."

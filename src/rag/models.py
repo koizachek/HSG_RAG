@@ -7,6 +7,7 @@ logger = get_logger("model_config")
 
 class ModelConfigurator:
     _main_model_instance: BaseChatModel = None
+    _subagent_model_instance: BaseChatModel = None
     _fallback_models_instances: list[BaseChatModel] = None
     _summarization_model_instance: BaseChatModel = None
     
@@ -24,6 +25,22 @@ class ModelConfigurator:
         except Exception as e:
             logger.error(f"Failed to initialize the summarization model: {e}")
             raise e
+
+    @classmethod
+    def get_subagent_model(cls) -> BaseChatModel:
+        if cls._subagent_model_instance:
+            return cls._subagent_model_instance
+        
+        from langchain_openai import ChatOpenAI
+        cls._subagent_model_instance = ChatOpenAI(
+            model='gpt-5.1',
+            openai_api_key=llmconf.get_api_key(),
+            max_tokens=3072,
+            temperature=0.01,
+            timeout=60,
+            request_timeout=60,
+        )
+        return cls._subagent_model_instance
 
 
     @classmethod
@@ -105,8 +122,10 @@ class ModelConfigurator:
                     return ChatOpenAI(
                         model=model,
                         openai_api_key=llmconf.get_api_key(),
-                        max_tokens=1000,
+                        max_tokens=3072,
                         temperature=0.01,
+                        timeout=60,
+                        request_timeout=60,
                     )
                 case 'ollama':
                     from langchain_ollama import ChatOllama

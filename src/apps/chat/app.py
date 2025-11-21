@@ -50,14 +50,14 @@ class ChatbotApplication:
             def initalize_agent(language):
                 agent = ExecutiveAgentChain(language=language)
                 greeting = agent.generate_greeting()
-                return agent, greeting
+                return agent, [{"role": "assistant", "content": greeting}]
 
             def switch_language(new_language):
                 new_agent, greeting = initalize_agent(new_language)
                 return (
                     new_agent,
                     new_language,
-                    [{"role": "assistant", "content": greeting}]
+                    greeting,
                 )
             
             lang_selector.change(
@@ -80,16 +80,17 @@ class ChatbotApplication:
             )
 
             reset_button.click(
-                fn=lambda: switch_language(lang_state.value),
+                fn=switch_language,
+                inputs=[lang_state],
                 outputs=[agent_state, lang_state, chatbot],
                 queue=False,
             )
-
-            # Initialize the agent for the selected language 
-            initial_agent, initial_greeting = initalize_agent(language)
-            agent_state.value = initial_agent 
-            chatbot.value = [{"role": "assistant", "content": initial_greeting}]
- 
+            
+            # Initialize the agent chain on the app startup
+            self._app.load(
+                fn=lambda: initalize_agent(language),
+                outputs=[agent_state, chatbot],
+            )
 
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
         if agent is None:
