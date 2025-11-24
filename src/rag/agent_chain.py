@@ -14,20 +14,45 @@ from src.rag.utilclasses import *
 from src.rag.middleware import AgentChainMiddleware as chainmdw
 from src.rag.prompts import PromptConfigurator as promptconf
 from src.rag.models import ModelConfigurator as modelconf
+from src.rag.input_handler import InputHandler
+from src.rag.response_formatter import ResponseFormatter
+from src.rag.scope_guardian import ScopeGuardian
 
 from src.utils.lang import detect_language, get_language_name
 from src.utils.logging import get_logger 
-from config import TOP_K_RETRIEVAL
+from config import (
+    TOP_K_RETRIEVAL,
+    LOCK_LANGUAGE_AFTER_FIRST_MESSAGE,
+    TRACK_USER_PROFILE,
+    ENABLE_RESPONSE_CHUNKING
+)
 
 chain_logger = get_logger('agent_chain')
 
 class ExecutiveAgentChain:
     def __init__(self, language: str = 'en') -> None:
-        self._language = language 
+        self._initial_language = language
+        self._language = language
+        self._user_language = None  # Will be locked after first user message
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
         self._conversation_history = []
-        chain_logger.info(f"Initalized new Agent Chain for language '{language}'")
+        
+        # Initialize conversation state
+        self._conversation_state: ConversationState = {
+            'user_language': None,
+            'user_name': None,
+            'years_experience': None,
+            'qualification_level': None,
+            'program_interest': [],
+            'topics_discussed': [],
+            'preferences_known': False
+        }
+        
+        # Track scope violations for escalation
+        self._scope_violation_count = 0
+        
+        chain_logger.info(f"Initialized new Agent Chain for language '{language}'")
 
 
     def _retrieve_context(self, query: str, language: str = None):
@@ -191,16 +216,104 @@ class ExecutiveAgentChain:
 
 
     def query(self, query: str) -> str:
-        self._conversation_history.extend([
-            HumanMessage(query),
-            SystemMessage(f"Respond in {get_language_name(detect_language(query))} language."),
-        ])
+        """
+        Process user query with input handling, scope checking, and response formatting.
+        
+        Args:
+            query: User input
+            
+        Returns:
+            Formatted response
+        """
+        # Step 1: Process input (handle numeric inputs, validation)
+        processed_query, is_valid = InputHandler.process_input(
+            query,
+            [msg for msg in self._conversation_history if isinstance(msg, (HumanMessage, AIMessage))]
+        )
+        
+        if not is_valid or not processed_query:
+            chain_logger.warning(f"Invalid input received: '{query}'")
+            return "I didn't quite understand that. Could you please rephrase your question?"
+        
+        # Log if input was interpreted
+        if processed_query != query:
+            chain_logger.info(f"Interpreted input '{query}' as '{processed_query}'")
+        
+        # Step 2: Lock language on first user message
+        if LOCK_LANGUAGE_AFTER_FIRST_MESSAGE and self._user_language is None:
+            self._user_language = detect_language(processed_query)
+            self._conversation_state['user_language'] = self._user_language
+            self._language = self._user_language
+            chain_logger.info(f"Locked conversation language to '{self._user_language}'")
+        
+        # Use locked language or current language
+        response_language = self._user_language or self._language
+        
+        # Step 3: Check scope before querying agent
+        scope_type = ScopeGuardian.check_scope(processed_query, response_language)
+        
+        if scope_type != 'on_topic':
+            chain_logger.info(f"Out-of-scope query detected: {scope_type}")
+            self._scope_violation_count += 1
+            
+            # Check if should escalate
+            should_escalate, escalation_type = ScopeGuardian.should_escalate(
+                processed_query,
+                scope_type,
+                self._scope_violation_count
+            )
+            
+            if should_escalate:
+                redirect_msg = ScopeGuardian.get_escalation_message(
+                    escalation_type,
+                    response_language
+                )
+            else:
+                redirect_msg = ScopeGuardian.get_redirect_message(
+                    scope_type,
+                    response_language
+                )
+            
+            # Add to history
+            self._conversation_history.append(HumanMessage(processed_query))
+            self._conversation_history.append(AIMessage(redirect_msg))
+            
+            return redirect_msg
+        
+        # Reset violation count on valid topic
+        self._scope_violation_count = 0
+        
+        # Step 4: Build messages with locked language
+        self._conversation_history.append(HumanMessage(processed_query))
+        
+        # Add language instruction (use locked language)
+        language_instruction = SystemMessage(
+            f"Respond in {get_language_name(response_language)} language."
+        )
+        
+        # Step 5: Query agent
         response = self._query(
             agent=self._agents['lead'],
-            messages=self._conversation_history,
+            messages=self._conversation_history + [language_instruction],
         )
-        self._conversation_history.append(AIMessage(response))
-        return response
+        
+        # Step 6: Format response (remove tables, chunk if needed)
+        if ENABLE_RESPONSE_CHUNKING:
+            formatted_response = ResponseFormatter.format_response(
+                response,
+                agent_type='lead',
+                enable_chunking=True
+            )
+        else:
+            formatted_response = ResponseFormatter.remove_tables(response)
+        
+        # Clean up response
+        formatted_response = ResponseFormatter.clean_response(formatted_response)
+        
+        # Add to history
+        self._conversation_history.append(AIMessage(formatted_response))
+        
+        return formatted_response
 
 
     def _query(self, agent, messages: list, thread_id: str = None) -> str:

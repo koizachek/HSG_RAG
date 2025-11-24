@@ -88,15 +88,30 @@ class ChatbotApplication:
 
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
         if agent is None:
-            return "Error: Agent not initialized!"
+            logger.error("Agent not initialized")
+            return ["I apologize, but the chatbot is not properly initialized. Please refresh the page or contact support."]
+        
         answers = []
         try:
+            # Log user input
+            logger.info(f"Processing user query: {message[:100]}...")
+            
+            # Query agent (now includes input handling, scope checking, and formatting)
             response = agent.query(query=message)
-            logger.info("Recieved response from the agent, diplaying answer in the application")
+            
+            logger.info(f"Received and formatted response from agent ({len(response)} chars)")
             answers.append(response)
+            
         except Exception as e:
-            logger.error(f"Error processing query: {e}")
-            answers.append("") 
+            logger.error(f"Error processing query: {e}", exc_info=True)
+            
+            # Provide helpful error message instead of empty string
+            error_message = (
+                "I apologize, but I encountered an error processing your request. "
+                "Please try rephrasing your question or contact our admissions team for assistance."
+            )
+            answers.append(error_message)
+        
         return answers
 
 

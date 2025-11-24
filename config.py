@@ -157,6 +157,15 @@ TOP_K_RETRIEVAL = 4  # Number of documents to retrieve for each query
 # UI settings
 MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
 
+# Response formatting settings
+MAX_RESPONSE_WORDS_LEAD = 200  # Maximum words for lead agent responses
+MAX_RESPONSE_WORDS_SUBAGENT = 300  # Maximum words for subagent responses
+ENABLE_RESPONSE_CHUNKING = True  # Break long responses into multiple turns
+
+# Conversation state settings
+TRACK_USER_PROFILE = True  # Track user preferences and avoid repetition
+LOCK_LANGUAGE_AFTER_FIRST_MESSAGE = True  # Don't change language mid-conversation
+
 # Data processing pipeline settings 
 CHUNK_MAX_TOKENS = 8191
 AVAILABLE_LANGUAGES = ['en', 'de']
