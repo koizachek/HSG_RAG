@@ -2,8 +2,13 @@
 Main entry point for the Executive Education RAG Chatbot.
 """
 import argparse
+import langsmith
+from langsmith import traceable
 from src.utils.logging import init_logging, get_logger
 from config import AVAILABLE_LANGUAGES
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Initialize logging
 def logging_startup():

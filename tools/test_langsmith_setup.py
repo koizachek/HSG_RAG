@@ -1,5 +1,7 @@
 import os
 from langsmith import Client
+from dotenv import load_dotenv
+load_dotenv()
 
 print("Tracing:", os.getenv("LANGSMITH_TRACING"))
 print("Project:", os.getenv("LANGSMITH_PROJECT"))

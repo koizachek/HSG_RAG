@@ -13,6 +13,12 @@ python-dotenv>=1.0.0
 tiktoken>=0.5.1
 colorama>=0.4.6
 
+# Language detection
+langdetect>=1.0.9
+
+# Transformers for tokenization
+transformers>=4.34.0
+
 # Web applications
 gradio>=5.49.1
 
