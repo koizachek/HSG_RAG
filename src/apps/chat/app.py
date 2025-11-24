@@ -21,14 +21,8 @@ class ChatbotApplication:
                     interactive=True,
                 )
                 reset_button = gr.Button("Reset Conversation")
-                            
-            chatbot: gr.Chatbot = gr.Chatbot(
-                value=[],
-                type='messages'
-            )
             
-            gr.ChatInterface(
-                chatbot=chatbot,
+            chat = gr.ChatInterface(
                 fn=lambda msg, history, agent: self._chat( 
                     message=msg,
                     history=history,
@@ -62,34 +56,34 @@ class ChatbotApplication:
             
             lang_selector.change(
                 fn=clear_chat_immediate,
-                outputs=[chatbot],
-                queue=False,
+                outputs=[chat.chatbot_value],
+                queue=True,
             )
 
             lang_selector.change(
                 fn=on_lang_change,
                 inputs=[lang_selector],
-                outputs=[agent_state, lang_state, chatbot],
+                outputs=[agent_state, lang_state, chat.chatbot_value],
                 queue=True,
             )
 
             reset_button.click(
                 fn=clear_chat_immediate,
-                outputs=[chatbot],
-                queue=False,
+                outputs=[chat.chatbot_value],
+                queue=True,
             )
 
             reset_button.click(
                 fn=switch_language,
                 inputs=[lang_state],
-                outputs=[agent_state, lang_state, chatbot],
-                queue=False,
+                outputs=[agent_state, lang_state, chat.chatbot_value],
+                queue=True,
             )
             
             # Initialize the agent chain on the app startup
             self._app.load(
                 fn=lambda: initalize_agent(language),
-                outputs=[agent_state, chatbot],
+                outputs=[agent_state, chat.chatbot_value],
             )
 
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
