@@ -141,6 +141,9 @@ RAW_DATA_PATH = os.path.join(DATA_DIR, "raw_data.json")
 PROCESSED_DATA_PATH = os.path.join(DATA_DIR, "processed_data.json")
 VECTORDB_PATH = os.path.join(DATA_DIR, "vectordb")
 
+# Determines when the text is considered German during the language detection
+LANG_AMBIGUITY_THRESHOLD = 0.6
+
 # Vector database settings
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200

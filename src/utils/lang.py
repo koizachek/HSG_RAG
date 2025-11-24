@@ -1,16 +1,26 @@
-from langdetect import detect 
+from langdetect import DetectorFactory, detect_langs
+from src.utils.logging import get_logger
+
+from config import LANG_AMBIGUITY_THRESHOLD
+
+logger = get_logger('lang_utils')
+DetectorFactory.seed = 0
 
 def detect_language(text: str):
     """
-    Detect the language of the given text.
+    Detects if the provided text is written in German or in some other language. 
+    In case of ambiguous input returns 'en'.
 
     Args:
         text (str): The text to analyze.
 
     Returns:
-        str: Detected language code.
+        str: 'de' if the detection certanty is more than 0.6, else 'en'.
     """
-    return 'de' if detect(text) == 'de' else 'en'
+    found_langs = detect_langs(text)
+    top_lang = found_langs[0]
+    logger.info(f'Found following languages in the text: {found_langs}')
+    return 'de' if top_lang.lang == 'de' and top_lang.prob >= LANG_AMBIGUITY_THRESHOLD else 'en'
     
 
 def get_language_name(code: str):
