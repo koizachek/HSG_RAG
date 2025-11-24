@@ -36,7 +36,7 @@ RESPONSE STYLE:
 RULES:
 - Never discuss competitor MBA programs
 - Do not provide information the user is not asking about
-
+- Give preference to the {recommended_programs}, recommend {prog_pronoun} and and talk about {prog_pronoun} first
 - Do not ask too many questions at once
 - If user asks unrelated topics, redirect to MBA discussion
 - Never make admission predictions — refer to admissions team
@@ -68,7 +68,14 @@ Keep to 150 words max."""
         match agent:
             case 'lead':
                 return cls._LEAD_SYSTEM_PROMPT.format(
-                    selected_language=selected_language
+                    recommended_programs={
+                        'de': 'EMBA program',
+                        'en': 'IEMBA and EMBA X programs'
+                    }.get(language, 'en'),
+                    prog_pronoun={
+                        'de': 'it',
+                        'en': 'them'
+                    }.get(language, 'en')
                 )
             case _:
                 return cls._PROGRAM_SYSTEM_PROMPT.format(
