@@ -17,6 +17,7 @@ colorama>=0.4.6
 gradio>=5.49.1
 
 # Data processing
+langchain
 numpy>=1.24.3
 pandas>=2.0.3
 
