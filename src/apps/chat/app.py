@@ -1,3 +1,4 @@
+import os
 import gradio as gr
 from src.rag.agent_chain import ExecutiveAgentChain 
 from src.utils.logging import get_logger, cached_log_handler
@@ -86,6 +87,11 @@ class ChatbotApplication:
                 outputs=[agent_state, chat.chatbot_value],
             )
 
+    @property
+    def app(self) -> gr.Blocks:
+        """Expose underlying Gradio Blocks for external runners (e.g., HF Spaces)."""
+        return self._app
+
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
         if agent is None:
             logger.error("Agent not initialized")
@@ -116,4 +122,8 @@ class ChatbotApplication:
 
 
     def run(self):
-        self._app.launch(share=False)
+        self._app.launch(
+            share=os.getenv("GRADIO_SHARE", "false").lower() == "true",
+            server_name=os.getenv("SERVER_NAME", "0.0.0.0"),
+            server_port=int(os.getenv("PORT", 7860)),
+        )

@@ -158,8 +158,8 @@ TOP_K_RETRIEVAL = 4  # Number of documents to retrieve for each query
 MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
 
 # Response formatting settings
-MAX_RESPONSE_WORDS_LEAD = 200  # Maximum words for lead agent responses
-MAX_RESPONSE_WORDS_SUBAGENT = 300  # Maximum words for subagent responses
+MAX_RESPONSE_WORDS_LEAD = 100  # Maximum words for lead agent responses
+MAX_RESPONSE_WORDS_SUBAGENT = 200  # Maximum words for subagent responses
 ENABLE_RESPONSE_CHUNKING = True  # Break long responses into multiple turns
 
 # Conversation state settings
