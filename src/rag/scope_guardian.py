@@ -100,8 +100,8 @@ class ScopeGuardian:
         """
         messages = {
             'off_topic': {
-                'en': "I'm here to help with questions about HSG Executive MBA programs (EMBA, IEMBA, and EMBA X). I'd be happy to discuss program details, admissions requirements, or help you find the right program for your goals. What would you like to know about our programs?",
-                'de': "Ich bin hier, um Fragen zu den HSG Executive MBA-Programmen (EMBA, IEMBA und EMBA X) zu beantworten. Gerne helfe ich Ihnen bei Programmdetails, Zulassungsvoraussetzungen oder dabei, das richtige Programm für Ihre Ziele zu finden. Was möchten Sie über unsere Programme wissen?"
+                'en': "I'm here to help with questions about HSG Executive MBA programs (EMBA, IEMBA, and emba X). I'd be happy to discuss program details, admissions requirements, or help you find the right program for your goals. What would you like to know about our programs?",
+                'de': "Ich bin hier, um Fragen zu den HSG Executive MBA-Programmen (EMBA, IEMBA und emba X) zu beantworten. Gerne helfe ich Ihnen bei Programmdetails, Zulassungsvoraussetzungen oder dabei, das richtige Programm für Ihre Ziele zu finden. Was möchten Sie über unsere Programme wissen?"
             },
             'financial_planning': {
                 'en': "For detailed financial planning, payment options, or scholarship applications, I recommend contacting our admissions team directly. They can provide personalized guidance on financing options and available support.\n\nWould you like me to provide general information about program costs and what's included?",
@@ -164,8 +164,8 @@ class ScopeGuardian:
                 'de': "Ich möchte Sie mit unserem Zulassungsteam verbinden, das Ihre Anliegen besser bearbeiten kann. Bitte kontaktieren Sie diese unter [Zulassungskontaktinfo]."
             },
             'escalate_off_topic': {
-                'en': "For questions outside program information, our admissions team would be the best resource. You can reach them at [admissions contact info].\n\nIs there anything specific about the EMBA, IEMBA, or EMBA X programs I can help you with?",
-                'de': "Für Fragen außerhalb der Programminformationen ist unser Zulassungsteam die beste Anlaufstelle. Sie erreichen diese unter [Zulassungskontaktinfo].\n\nGibt es etwas Spezifisches über die EMBA-, IEMBA- oder EMBA X-Programme, bei dem ich Ihnen helfen kann?"
+                'en': "For questions outside program information, our admissions team would be the best resource. You can reach them at [admissions contact info].\n\nIs there anything specific about the EMBA, IEMBA, or emba X programs I can help you with?",
+                'de': "Für Fragen außerhalb der Programminformationen ist unser Zulassungsteam die beste Anlaufstelle. Sie erreichen diese unter [Zulassungskontaktinfo].\n\nGibt es etwas Spezifisches über die EMBA-, IEMBA- oder emba X-Programme, bei dem ich Ihnen helfen kann?"
             },
             'escalate_financial': {
                 'en': "Our admissions team can provide detailed guidance on financing options, payment plans, and scholarships. Please contact them directly for personalized financial planning support.",

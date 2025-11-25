@@ -14,11 +14,17 @@ class State(TypedDict):
 
 class ConversationState(TypedDict):
     """Tracks user profile and conversation context"""
+    user_id: str  # Unique session identifier
     user_language: str | None  # Locked after first message
-    user_name: str | None
-    years_experience: int | None
+    user_name: str | None  # User's name extracted from conversation
+    experience_years: int | None  # Years of professional experience
+    leadership_years: int | None  # Years of leadership experience
+    field: str | None  # Professional field/industry
+    interest: str | None  # Content interests
     qualification_level: str | None  # "bachelor", "master", "MBA", etc.
     program_interest: list[str]  # ["EMBA", "IEMBA", "EMBAX"]
+    suggested_program: str | None  # Recommended program based on conversation
+    handover_requested: bool | None  # True if appointment requested, False if declined, None if session active
     topics_discussed: list[str]  # Track what's been covered
     preferences_known: bool  # Whether we have enough context
     

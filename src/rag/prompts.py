@@ -89,7 +89,7 @@ Keep to 100 words max."""
                 return cls._LEAD_SYSTEM_PROMPT.format(
                     recommended_programs={
                         'de': 'EMBA program',
-                        'en': 'IEMBA and EMBA X programs'
+                        'en': 'IEMBA and emba X programs'
                     }.get(language, 'en'),
                     prog_pronoun={
                         'de': 'it',
