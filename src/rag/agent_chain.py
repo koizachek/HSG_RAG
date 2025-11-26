@@ -84,13 +84,7 @@ class ExecutiveAgentChain:
                 lang=lang, 
                 limit=TOP_K_RETRIEVAL,
             )
-            serialized = '\n\n'.join(
-                ("Source: {source}\nPrograms: {programs}\nContent: {content}".format(
-                    source=doc.properties.get('source', 'unknown'),
-                    programs=', '.join(doc.properties.get('programs', 'unknown')),
-                    content=doc.properties.get('body', ''))) 
-                for doc in response.objects
-            )
+            serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
             return serialized
         except Exception as e:
             raise e

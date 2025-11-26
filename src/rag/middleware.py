@@ -121,8 +121,14 @@ class AgentChainMiddleware:
                 'timestamp': datetime.now().isoformat(),
             }
 
+            import json
+            error_content = f"""Failed to use tool: {str(e)}
+
+Error details:
+{json.dumps(artifact, indent=2)}"""
+
             return ToolMessage(
-                content=f"Failed to use tool, reason: {str(e)}",
+                content=error_content,
                 tool_call_id=tool_call['id'],
                 artifact=artifact,
             )
