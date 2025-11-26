@@ -92,8 +92,8 @@ class ExecutiveAgentChain:
                 for doc in response.objects
             )
             return serialized
-        except Exception as _:
-            return ''
+        except Exception as e:
+            raise e
    
 
     def _call_emba_agent(self, query: str) -> str:
@@ -112,7 +112,7 @@ class ExecutiveAgentChain:
             return response
         except Exception as e:
             chain_logger.error(f"EMBA Agent error: {e}")
-            return "Unable to retrieve EMBA information at this time."
+            raise RuntimeError("Unable to retrieve EMBA information at this time.")
 
 
     def _call_iemba_agent(self, query: str) -> str:
@@ -131,7 +131,8 @@ class ExecutiveAgentChain:
             return response
         except Exception as e:
             chain_logger.error(f"IEMBA Agent error: {e}")
-            return "Unable to retrieve IEMBA information at this time."
+            raise RuntimeError("Unable to retrieve IEMBA information at this time.")
+
 
     def _call_embax_agent(self, query: str) -> str:
         """
@@ -149,7 +150,8 @@ class ExecutiveAgentChain:
             return response
         except Exception as e:
             chain_logger.error(f"emba X Agent error: {e}")
-            return "Unable to retrieve EMBA X information at this time."
+            raise RuntimeError("Unable to retrieve emba X information at this time.")
+
 
     def _init_agents(self):
         config: RunnableConfig = {

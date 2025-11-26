@@ -1,3 +1,4 @@
+from datetime import datetime
 from langchain.tools.tool_node import ToolCallRequest
 from langchain.chat_models import BaseChatModel
 from langchain.agents.middleware import (
@@ -7,7 +8,7 @@ from langchain.agents.middleware import (
         wrap_model_call,
         wrap_tool_call,
 )
-from langchain_core.messages import content
+from langchain_core.messages import ToolMessage
 from openai import (
     BadRequestError,
     OpenAIError, 
@@ -104,11 +105,24 @@ class AgentChainMiddleware:
         
         tool_call = request.tool_call
         tool_logger.info(f"{context.agent_name} is calling tool: {tool_call['name']} with tool call id {tool_call['id']}")
-        
-        response = handler(request) 
-        tool_logger.info(f"Recieved response from tool call")
-        
-        if not response.content:
-            tool_logger.warning("Tool returned nothing! This might be an issue on the tool side.")
+        try:
+            response = handler(request)
+            tool_logger.info(f"Recieved response from tool call {tool_call['id']}") 
+            if not response.content:
+                tool_logger.warning("Tool returned nothing! This might be an issue on the tool side.")
+            return response       
+        except Exception as e:
+            tool_logger.error(f"Failed to use tool {tool_call['name']} with id {tool_call['id']}")
+            artifact = {
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+                'tool_name': tool_call['name'],
+                'tool_args': tool_call['args'],
+                'timestamp': datetime.now().isoformat(),
+            }
 
-        return response       
+            return ToolMessage(
+                content=f"Failed to use tool, reason: {str(e)}",
+                tool_call_id=tool_call['id'],
+                artifact=artifact,
+            )

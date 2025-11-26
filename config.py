@@ -130,6 +130,11 @@ class WeaviateConfiguration:
     CLUSTER_URL = "r2vd9fuvrcjvx7idsvta.c0.europe-west3.gcp.weaviate.cloud"
     WEAVIATE_API_KEY = os.getenv('WEAVIATE_API_KEY')
     HUGGING_FACE_API_KEY = os.getenv('HUGGING_FACE_API_KEY')
+    
+    # Custom timeouts for Cloud connection (in seconds)
+    INIT_TIMEOUT   = 10 
+    QUERY_TIMEOUT  = 3 
+    INSERT_TIMEOUT = 120
 
     @classmethod 
     def is_local(cls) -> bool:
