@@ -5,10 +5,12 @@ from src.utils.logging import get_logger, cached_log_handler
 
 logger = get_logger("chatbot_app")
 
+CSS_PATH = "frontend/style.css"
+
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
-        self._app = gr.Blocks()
-     
+        self._app = gr.Blocks()       
+        
         with self._app:
             # Initial state variables
             agent_state = gr.State(None)
@@ -128,25 +130,9 @@ class ChatbotApplication:
 
 
     def run(self):
-        my_css = """
-            #lang-toggle {
-                position: absolute; 
-                top: 50px;  
-                z-index: 100;
-                transform: scale(0.75);
-                pointer-events: none;
-                transform-origin: top left;
-            }
-            
-            #lang-toggle label {
-                pointer-events: auto;
-                cursor: pointer;
-            }
-        """
-        
         self._app.launch(
             share=os.getenv("GRADIO_SHARE", "false").lower() == "true",
             server_name=os.getenv("SERVER_NAME", "0.0.0.0"),
             server_port=int(os.getenv("PORT", 7860)),
-            css=my_css
+            css_paths=[CSS_PATH] if os.path.exists(CSS_PATH) else None,
         )
