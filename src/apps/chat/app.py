@@ -7,7 +7,7 @@ logger = get_logger("chatbot_app")
 
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
-        self._app = gr.Blocks(fill_height=True, fill_width=True)
+        self._app = gr.Blocks()
      
         with self._app:
             # Initial state variables
@@ -147,6 +147,6 @@ class ChatbotApplication:
         self._app.launch(
             share=os.getenv("GRADIO_SHARE", "false").lower() == "true",
             server_name=os.getenv("SERVER_NAME", "0.0.0.0"),
-            server_port=int(os.getenv("PORT", 7862)),
+            server_port=int(os.getenv("PORT", 7860)),
             css=my_css
         )
