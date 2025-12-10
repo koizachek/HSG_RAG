@@ -1,11 +1,11 @@
 #lang-toggle {
-                position: absolute; 
-                top: 50px;  
-                z-index: 100;
-                transform: scale(0.75);
-                pointer-events: none;
-                transform-origin: top left;
-            }
+    position: absolute; 
+    top: 50px;  
+    z-index: 100;
+    transform: scale(0.75);
+    pointer-events: none;
+    transform-origin: top left;
+}
             
 #lang-toggle label {
     pointer-events: auto;
