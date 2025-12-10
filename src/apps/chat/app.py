@@ -7,39 +7,45 @@ logger = get_logger("chatbot_app")
 
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
-        self._app = gr.Blocks()
+        self._app = gr.Blocks(fill_height=True, fill_width=True)
      
         with self._app:
             # Initial state variables
             agent_state = gr.State(None)
             lang_state  = gr.State(language)
+             
+            reset_button = gr.Button("Reset Conversation")
             
-            with gr.Row():
-                lang_selector = gr.Radio(
-                    choices=["Deutsch", "English"],
-                    value="English" if language == 'en' else 'Deutsch',
-                    label="Selected Language",
-                    interactive=True,
+            # Chat interface
+            with gr.Column():
+                chatbot = gr.Chatbot(show_label=False)
+                chat = gr.ChatInterface(
+                    fn=lambda msg, history, agent: self._chat( 
+                        message=msg,
+                        history=history,
+                        agent=agent,
+                    ),
+                    chatbot=chatbot,
+                    additional_inputs=[agent_state],
+                    title="Executive Education Adviser",
+                    #type='messages',
                 )
-                reset_button = gr.Button("Reset Conversation")
+                
+                lang_selector = gr.Radio(
+                    choices=["DE", "EN"],
+                    value="EN" if language == 'en' else 'DE',
+                    interactive=True,
+                    show_label=False,
+                    container=False,
+                    elem_id="lang-toggle",
+                )
+
             
-            chat = gr.ChatInterface(
-                fn=lambda msg, history, agent: self._chat( 
-                    message=msg,
-                    history=history,
-                    agent=agent,
-                ),
-                additional_inputs=[agent_state],
-                title="Executive Education Adviser",
-                type='messages',
-            )
-
-
             def clear_chat_immediate():
                 return []
             
             def on_lang_change(language):
-                lang_code = 'en' if language == 'English' else 'de'
+                lang_code = 'en' if language == 'EN' else 'de'
                 return switch_language(lang_code)
             
             def initalize_agent(language):
@@ -122,8 +128,25 @@ class ChatbotApplication:
 
 
     def run(self):
+        my_css = """
+            #lang-toggle {
+                position: absolute; 
+                top: 50px;  
+                z-index: 100;
+                transform: scale(0.75);
+                pointer-events: none;
+                transform-origin: top left;
+            }
+            
+            #lang-toggle label {
+                pointer-events: auto;
+                cursor: pointer;
+            }
+        """
+        
         self._app.launch(
             share=os.getenv("GRADIO_SHARE", "false").lower() == "true",
             server_name=os.getenv("SERVER_NAME", "0.0.0.0"),
-            server_port=int(os.getenv("PORT", 7860)),
+            server_port=int(os.getenv("PORT", 7862)),
+            css=my_css
         )
