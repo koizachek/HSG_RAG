@@ -127,7 +127,7 @@ class WeaviateConfiguration:
     WEAVIATE_COLLECTION_BASENAME = 'hsg_rag_content'
     
     # Weaviate Cloud settings
-    CLUSTER_URL = "r2vd9fuvrcjvx7idsvta.c0.europe-west3.gcp.weaviate.cloud"
+    CLUSTER_URL = "re8m1fsmtik1boqhywox9a.c0.europe-west3.gcp.weaviate.cloud"
     WEAVIATE_API_KEY = os.getenv('WEAVIATE_API_KEY')
     HUGGING_FACE_API_KEY = os.getenv('HUGGING_FACE_API_KEY')
     

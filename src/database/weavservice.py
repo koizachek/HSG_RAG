@@ -1,7 +1,5 @@
-import collections
 import weaviate as wvt
-import argparse, datetime, os
-
+import datetime, os
 from threading import Lock
 
 from time import perf_counter, sleep
