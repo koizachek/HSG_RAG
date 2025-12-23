@@ -73,6 +73,18 @@ Keep to 100 words max."""
     
     _SUMMARY_PREFIX_PROMPT = "Conversation Summary:"
 
+    _QUALITY_SCORING_PROMPT = """You are performing a quick evaluation of an AI response from an Executive Education Advisor agent for HSG EMBA, IEMBA and emba X programs. Rate the response on a scale 0.0-1.0 on these categories: format adherence, context awareness, pricing adherence, scope compliance and general rules. Deduct points for violations of the agent's guidelines.
+
+Rules for categories:
+- Format adherence: short paragraphs or bullet points, no tables, bold keywords, maximum 100 words.
+- Content awareness: focuses on programs listed in user query, single numbers in user query interpreted as years of experience.
+- Pricing adherence: Prices in range CHF 75'000 - 110'000, mentions included services, mentions Early Bird discount if possible, does not provide detailed financial planning, redirects to admissions team for detailed information.
+- Scope compliance: redirects to MBA if user query is off-topic, discusses only program details and admissions process, suggests contacting admissions team if possible.
+- General rules: no competitive MBA programs mentioned, no admission predictions, no marketing language or undefined claims; if Agent is uncertain, it should recommend contacting the admissions team.
+
+User query: {query}
+AI response: {response}"""
+
     @classmethod
     def get_summarization_prompt(cls):
         return cls._SUMMARIZATION_PROMPT
@@ -101,3 +113,7 @@ Keep to 100 words max."""
                     program_name=agent.upper(),
                     selected_language=selected_language,
                 )
+
+    @classmethod
+    def get_quality_scoring_prompt(cls, query: str, response: str) -> str:
+        return cls._QUALITY_SCORING_PROMPT.format(query=query, response=response)

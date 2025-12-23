@@ -132,8 +132,8 @@ class WeaviateConfiguration:
     HUGGING_FACE_API_KEY = os.getenv('HUGGING_FACE_API_KEY')
     
     # Custom timeouts for Cloud connection (in seconds)
-    INIT_TIMEOUT   = 10 
-    QUERY_TIMEOUT  = 3 
+    INIT_TIMEOUT   = 60 
+    QUERY_TIMEOUT  = 10 
     INSERT_TIMEOUT = 120
 
     @classmethod 
@@ -166,6 +166,9 @@ MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
 MAX_RESPONSE_WORDS_LEAD = 100  # Maximum words for lead agent responses
 MAX_RESPONSE_WORDS_SUBAGENT = 200  # Maximum words for subagent responses
 ENABLE_RESPONSE_CHUNKING = True  # Break long responses into multiple turns
+
+# Evaluation of agent response quality 
+ENABLE_EVALUATE_RESPONSE_QUALITY = False
 
 # Conversation state settings
 TRACK_USER_PROFILE = True  # Track user preferences and avoid repetition

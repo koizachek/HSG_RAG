@@ -1,3 +1,4 @@
+from langsmith import traceable
 from langchain.tools import tool
 from langchain.agents import create_agent
 from langchain_core.messages import (
@@ -22,6 +23,7 @@ from src.rag.models import ModelConfigurator as modelconf
 from src.rag.input_handler import InputHandler
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
+from src.rag.quality_score_handler import QualityEvaluationResult, QualityScoreHandler
 
 from src.utils.lang import detect_language, get_language_name
 from src.utils.logging import get_logger 
@@ -29,7 +31,8 @@ from config import (
     TOP_K_RETRIEVAL,
     LOCK_LANGUAGE_AFTER_FIRST_MESSAGE,
     TRACK_USER_PROFILE,
-    ENABLE_RESPONSE_CHUNKING
+    ENABLE_RESPONSE_CHUNKING,
+    ENABLE_EVALUATE_RESPONSE_QUALITY,
 )
 
 chain_logger = get_logger('agent_chain')
@@ -42,6 +45,9 @@ class ExecutiveAgentChain:
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
         self._conversation_history = []
+
+        if ENABLE_EVALUATE_RESPONSE_QUALITY:
+            self._quality_handler = QualityScoreHandler()
         
         # Generate unique user ID for this session
         self._user_id = str(uuid.uuid4())
@@ -431,7 +437,7 @@ class ExecutiveAgentChain:
         self._conversation_history.append(AIMessage(response))
         return response
 
-
+    @traceable
     def query(self, query: str) -> str:
         """
         Process user query with input handling, scope checking, and response formatting.
@@ -527,10 +533,15 @@ class ExecutiveAgentChain:
         # Clean up response
         formatted_response = ResponseFormatter.clean_response(formatted_response)
         
+        # Step 7: Evaluate response quality 
+        if ENABLE_EVALUATE_RESPONSE_QUALITY:
+            quality_evaluation: QualityEvaluationResult = self._quality_handler.evaluate_response_quality(query, formatted_response)
+            chain_logger.info(f"Recieved quality score: {quality_evaluation.overall_score:1.2f}")
+
         # Add to history
         self._conversation_history.append(AIMessage(formatted_response))
         
-        # Step 7: Update conversation state and log profile if tracking is enabled
+        # Step 8: Update conversation state and log profile if tracking is enabled
         if TRACK_USER_PROFILE:
             self._update_conversation_state(processed_query, formatted_response)
             # Log profile every 5 messages or when program is suggested
