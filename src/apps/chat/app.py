@@ -14,7 +14,8 @@ class ChatbotApplication:
         with self._app:
             # Initial state variables
             agent_state = gr.State(None)
-            lang_state  = gr.State(language)
+            
+            lang_storage = gr.BrowserState(language)
              
             reset_button = gr.Button("Reset Conversation")
             
@@ -35,7 +36,7 @@ class ChatbotApplication:
                 
                 lang_selector = gr.Radio(
                     choices=["DE", "EN"],
-                    value="EN" if language == 'en' else 'DE',
+                    value=language.upper(),
                     interactive=True,
                     show_label=False,
                     container=False,
@@ -47,7 +48,7 @@ class ChatbotApplication:
                 return []
             
             def on_lang_change(language):
-                lang_code = 'en' if language == 'EN' else 'de'
+                lang_code = language.lower()
                 return switch_language(lang_code)
             
             def initalize_agent(language):
@@ -72,7 +73,7 @@ class ChatbotApplication:
             lang_selector.change(
                 fn=on_lang_change,
                 inputs=[lang_selector],
-                outputs=[agent_state, lang_state, chat.chatbot_value],
+                outputs=[agent_state, lang_storage, chat.chatbot_value],
                 queue=True,
             )
 
@@ -84,10 +85,18 @@ class ChatbotApplication:
 
             reset_button.click(
                 fn=switch_language,
-                inputs=[lang_state],
-                outputs=[agent_state, lang_state, chat.chatbot_value],
+                inputs=[lang_storage],
+                outputs=[agent_state, lang_storage, chat.chatbot_value],
                 queue=True,
             )
+            
+            @gr.on([lang_selector.change], inputs=[lang_selector], outputs=[lang_storage])
+            def save_to_local_storage(selected_lang):
+                return selected_lang
+            
+            @self._app.load(inputs=[lang_storage], outputs=[lang_selector])
+            def load_language_from_local_storage(saved_lang):
+                return saved_lang.upper()
             
             # Initialize the agent chain on the app startup
             self._app.load(
