@@ -16,13 +16,14 @@ class ChatbotApplication:
             agent_state = gr.State(None)
             
             lang_storage = gr.BrowserState(language)
+            chat_storage = gr.BrowserState(None)
              
             reset_button = gr.Button("Reset Conversation")
             
             # Chat interface
             with gr.Column():
                 chatbot = gr.Chatbot(show_label=False)
-                chat = gr.ChatInterface(
+                chat_interface = gr.ChatInterface(
                     fn=lambda msg, history, agent: self._chat( 
                         message=msg,
                         history=history,
@@ -45,7 +46,7 @@ class ChatbotApplication:
 
             
             def clear_chat_immediate():
-                return []
+                return [], None
             
             def on_lang_change(language):
                 lang_code = language.lower()
@@ -54,7 +55,19 @@ class ChatbotApplication:
             def initalize_agent(language):
                 agent = ExecutiveAgentChain(language=language)
                 greeting = agent.generate_greeting()
-                return agent, [{"role": "assistant", "content": greeting}]
+                return agent, [text_msg("assistant", greeting)]
+            
+            def init_session(saved_lang, saved_chat):
+                lang = (saved_lang or language).lower()
+                agent = ExecutiveAgentChain(language=lang)
+
+                if saved_chat:
+                    history = saved_chat
+                else:
+                    greeting = agent.generate_greeting()
+                    history = [text_msg("assistant", greeting)]
+
+                return agent, lang.upper(), history, history
 
             def switch_language(new_language):
                 new_agent, greeting = initalize_agent(new_language)
@@ -64,44 +77,47 @@ class ChatbotApplication:
                     greeting,
                 )
             
-            lang_selector.change(
+            def text_msg(role: str, text: str):
+                return {"role": role, "content": [{"type": "text", "text": text}]}
+            
+            lang_selector.input(
                 fn=clear_chat_immediate,
-                outputs=[chat.chatbot_value],
+                outputs=[chatbot, chat_storage],
                 queue=True,
             )
 
-            lang_selector.change(
+            lang_selector.input(
                 fn=on_lang_change,
                 inputs=[lang_selector],
-                outputs=[agent_state, lang_storage, chat.chatbot_value],
+                outputs=[agent_state, lang_storage, chatbot],
                 queue=True,
             )
 
             reset_button.click(
                 fn=clear_chat_immediate,
-                outputs=[chat.chatbot_value],
+                outputs=[chatbot, chat_storage],
                 queue=True,
             )
 
             reset_button.click(
                 fn=switch_language,
                 inputs=[lang_storage],
-                outputs=[agent_state, lang_storage, chat.chatbot_value],
+                outputs=[agent_state, lang_storage, chatbot],
                 queue=True,
             )
             
-            @gr.on([lang_selector.change], inputs=[lang_selector], outputs=[lang_storage])
+            @gr.on([lang_selector.input], inputs=[lang_selector], outputs=[lang_storage])
             def save_to_local_storage(selected_lang):
                 return selected_lang
-            
-            @self._app.load(inputs=[lang_storage], outputs=[lang_selector])
-            def load_language_from_local_storage(saved_lang):
-                return saved_lang.upper()
-            
-            # Initialize the agent chain on the app startup
+
+            @gr.on([chatbot.change], inputs=[chatbot], outputs=[chat_storage])
+            def save_chat_to_chat_storage(curr_chat):
+                return curr_chat
+
             self._app.load(
-                fn=lambda: initalize_agent(language),
-                outputs=[agent_state, chat.chatbot_value],
+                fn=init_session,
+                inputs=[lang_storage, chat_storage],
+                outputs=[agent_state, lang_selector, chatbot, chat_interface.chatbot_value],
             )
 
     @property
@@ -109,12 +125,11 @@ class ChatbotApplication:
         """Expose underlying Gradio Blocks for external runners (e.g., HF Spaces)."""
         return self._app
 
-    def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
+    def _chat(self, message: str, history, agent: ExecutiveAgentChain):
         if agent is None:
             logger.error("Agent not initialized")
-            return ["I apologize, but the chatbot is not properly initialized. Please refresh the page or contact support."]
-        
-        answers = []
+            return "I apologize, but the chatbot is not properly initialized. Please refresh the page or contact support."
+    
         try:
             # Log user input
             logger.info(f"Processing user query: {message[:100]}...")
@@ -123,19 +138,14 @@ class ChatbotApplication:
             response = agent.query(query=message)
             
             logger.info(f"Received and formatted response from agent ({len(response)} chars)")
-            answers.append(response)
-            
+            return response
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
-            
-            # Provide helpful error message instead of empty string
-            error_message = (
+            return (
                 "I apologize, but I encountered an error processing your request. "
                 "Please try rephrasing your question or contact our admissions team for assistance."
             )
-            answers.append(error_message)
-        
-        return answers
+
 
 
     def run(self):
