@@ -93,7 +93,7 @@ class ChatbotApplication:
                     greeting = agent.generate_greeting()
                     history = [text_msg("assistant", greeting)]
                 
-                # Get prompt buttons
+                # Get prompt buttons labels
                 labels_prompt_btns = BOT_PROMPTS[lang]
 
                 return agent, lang.upper(), history, history, *labels_prompt_btns
