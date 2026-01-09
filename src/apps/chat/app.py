@@ -87,14 +87,12 @@ class ChatbotApplication:
                 lang = (saved_lang or language).lower()
                 print("Initializing session with language:", lang)
                 agent = ExecutiveAgentChain(language=lang)
-
+               
                 # Load chat history
-                if saved_chat or saved_chat != []:
+                if saved_chat is not None and len(saved_chat) > 0:
                     history = saved_chat
-                    print("Loaded saved chat history with", len(history), "messages.")
                 else:
                     greeting = agent.generate_greeting()
-                    print("Generated new greeting for chat.")
                     history = [text_msg("assistant", greeting)]
                 
                 # Get prompt buttons labels
@@ -103,7 +101,7 @@ class ChatbotApplication:
                 # Load message box text
                 msg_box_text = saved_msg_text or ""
 
-                return agent, lang.upper(), history, history, *labels_prompt_btns, msg_box_text
+                return agent, lang.upper(), history, *labels_prompt_btns, msg_box_text
 
             def switch_language(new_language):
                 new_agent, greeting = initalize_agent(new_language)
@@ -121,14 +119,14 @@ class ChatbotApplication:
             
             def text_msg(role: str, text: str):
                 return {"role": role, "content": [{"type": "text", "text": text}]}
-            
-            lang_selector.input(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
-            lang_selector.input(fn=on_lang_change, inputs=[lang_selector], outputs=[agent_state, lang_storage, chatbot], queue=True)
+
+            lang_selector.input(fn=clear_chat_immediate, outputs=[chat_interface.chatbot, chat_storage], queue=True)
+            lang_selector.input(fn=on_lang_change, inputs=[lang_selector], outputs=[agent_state, lang_storage, chat_interface.chatbot], queue=True)
             lang_selector.input(fn=change_lang_of_prompts, inputs=[lang_selector], outputs=prompt_buttons, queue=True)
 
-            reset_button.click(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
-            reset_button.click(fn=switch_language, inputs=[lang_storage], outputs=[agent_state, lang_storage, chatbot], queue=True)
-
+            reset_button.click(fn=clear_chat_immediate, outputs=[chat_interface.chatbot, chat_storage], queue=True)
+            reset_button.click(fn=switch_language, inputs=[lang_storage], outputs=[agent_state, lang_storage, chat_interface.chatbot], queue=True)
+            
             for idx, btn in enumerate(prompt_buttons):
                 btn.click(fn=pick_prompt, inputs=[lang_storage, gr.State(idx)], outputs=[msg_box], queue=True)
 
@@ -136,14 +134,14 @@ class ChatbotApplication:
             def save_msg_box_to_chat_storage(msg_box_text):
                 return msg_box_text
 
-            @gr.on([chatbot.change], inputs=[chatbot], outputs=[chat_storage])
+            @gr.on([chat_interface.chatbot.change], inputs=[chat_interface.chatbot], outputs=[chat_storage])
             def save_chat_to_chat_storage(curr_chat):
                 return curr_chat
 
             self._app.load(
                 fn=init_session,
                 inputs=[lang_storage, chat_storage, msg_box_storage],
-                outputs=[agent_state, lang_selector, chatbot, chat_interface.chatbot_value, *prompt_buttons, msg_box],
+                outputs=[agent_state, lang_selector, chat_interface.chatbot, *prompt_buttons, msg_box],
             )
 
     @property
