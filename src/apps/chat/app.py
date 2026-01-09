@@ -33,6 +33,9 @@ class ChatbotApplication:
             reset_button = gr.Button("Reset Conversation")
             
             with gr.Column():
+                #Title
+                gr.Text("Executive Education Adviser")
+                
                 # Prompt suggestions
                 with gr.Row():
                     prompt_buttons = [
@@ -109,7 +112,7 @@ class ChatbotApplication:
             
             lang_selector.input(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
             lang_selector.input(fn=on_lang_change, inputs=[lang_selector], outputs=[agent_state, lang_storage, chatbot], queue=True)
-            lang_selector.input(fn=change_lang_of_prompts, inputs=[lang_selector], outputs=[bt_prompt1, bt_prompt2, bt_prompt3], queue=True)
+            lang_selector.input(fn=change_lang_of_prompts, inputs=[lang_selector], outputs=[prompt_buttons], queue=True)
 
             reset_button.click(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
             reset_button.click(fn=switch_language, inputs=[lang_storage], outputs=[agent_state, lang_storage, chatbot], queue=True)
