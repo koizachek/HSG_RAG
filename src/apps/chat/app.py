@@ -147,7 +147,6 @@ class ChatbotApplication:
             )
 
 
-
     def run(self):
         self._app.launch(
             share=os.getenv("GRADIO_SHARE", "false").lower() == "true",
