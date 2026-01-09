@@ -34,7 +34,7 @@ class ChatbotApplication:
             
             with gr.Column():
                 #Title
-                gr.Text("Executive Education Adviser")
+                gr.Markdown("## Executive Education Adviser", elem_id="title")
                 
                 # Prompt suggestions
                 with gr.Row():
@@ -82,16 +82,21 @@ class ChatbotApplication:
                 return agent, [text_msg("assistant", greeting)]
             
             def init_session(saved_lang, saved_chat):
+                # init agent
                 lang = (saved_lang or language).lower()
                 agent = ExecutiveAgentChain(language=lang)
 
+                # Load chat history
                 if saved_chat:
                     history = saved_chat
                 else:
                     greeting = agent.generate_greeting()
                     history = [text_msg("assistant", greeting)]
+                
+                # Get prompt buttons
+                labels_prompt_btns = BOT_PROMPTS[lang]
 
-                return agent, lang.upper(), history, history
+                return agent, lang.upper(), history, history, *labels_prompt_btns
 
             def switch_language(new_language):
                 new_agent, greeting = initalize_agent(new_language)
@@ -112,7 +117,7 @@ class ChatbotApplication:
             
             lang_selector.input(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
             lang_selector.input(fn=on_lang_change, inputs=[lang_selector], outputs=[agent_state, lang_storage, chatbot], queue=True)
-            lang_selector.input(fn=change_lang_of_prompts, inputs=[lang_selector], outputs=[prompt_buttons], queue=True)
+            lang_selector.input(fn=change_lang_of_prompts, inputs=[lang_selector], outputs=prompt_buttons, queue=True)
 
             reset_button.click(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
             reset_button.click(fn=switch_language, inputs=[lang_storage], outputs=[agent_state, lang_storage, chatbot], queue=True)
@@ -131,7 +136,7 @@ class ChatbotApplication:
             self._app.load(
                 fn=init_session,
                 inputs=[lang_storage, chat_storage],
-                outputs=[agent_state, lang_selector, chatbot, chat_interface.chatbot_value],
+                outputs=[agent_state, lang_selector, chatbot, chat_interface.chatbot_value, *prompt_buttons],
             )
 
     @property

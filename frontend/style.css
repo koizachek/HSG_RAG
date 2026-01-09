@@ -11,3 +11,7 @@
     pointer-events: auto;
     cursor: pointer;
 }
+
+#title {
+    text-align: center;
+}
