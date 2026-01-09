@@ -7,6 +7,18 @@ logger = get_logger("chatbot_app")
 
 CSS_PATH = "frontend/style.css"
 
+DE_BOT_PROMPTS = ['Welches Programm passt zu meinem persönlichen Hintergrund?',
+                  'Was sind die Unterschiede zwischen den drei Programmen?',
+                  'Welche Voraussetzungen muss ein Bewerber erfüllen?']
+
+EN_BOT_PROMPTS = ['What program suits my personal background?',
+                  'What are the differences between all three programs?',
+                  'Which requirements does an applicant has to fulfill?']
+
+BOT_PROMPTS = {'de': DE_BOT_PROMPTS,
+               'en': EN_BOT_PROMPTS}
+
+
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
         self._app = gr.Blocks()       
@@ -20,29 +32,39 @@ class ChatbotApplication:
              
             reset_button = gr.Button("Reset Conversation")
             
-            # Chat interface
             with gr.Column():
-                chatbot = gr.Chatbot(show_label=False)
-                chat_interface = gr.ChatInterface(
-                    fn=lambda msg, history, agent: self._chat( 
-                        message=msg,
-                        history=history,
-                        agent=agent,
-                    ),
-                    chatbot=chatbot,
-                    additional_inputs=[agent_state],
-                    title="Executive Education Adviser",
-                    #type='messages',
-                )
                 
-                lang_selector = gr.Radio(
-                    choices=["DE", "EN"],
-                    value=language.upper(),
-                    interactive=True,
-                    show_label=False,
-                    container=False,
-                    elem_id="lang-toggle",
-                )
+                # Prompt suggestions
+                with gr.Row():
+                    bt_prompt1 = gr.Button(BOT_PROMPTS[language.lower()][0])
+                    bt_prompt2 = gr.Button(BOT_PROMPTS[language.lower()][1])
+                    bt_prompt3 = gr.Button(BOT_PROMPTS[language.lower()][2])
+
+                # Chat area
+                with gr.Column():
+                    msg_box = gr.Textbox(container=False, submit_btn=True)
+                    chatbot = gr.Chatbot(show_label=False)
+                    chat_interface = gr.ChatInterface(
+                        fn=lambda msg, history, agent: self._chat( 
+                            message=msg,
+                            history=history,
+                            agent=agent,
+                        ),
+                        chatbot=chatbot,
+                        textbox=msg_box,
+                        additional_inputs=[agent_state],
+                        #title="Executive Education Adviser",
+                        #type='messages',
+                    )
+
+                    lang_selector = gr.Radio(
+                        choices=["DE", "EN"],
+                        value=language.upper(),
+                        interactive=True,
+                        show_label=False,
+                        container=False,
+                        elem_id="lang-toggle",
+                    )
 
             
             def clear_chat_immediate():
@@ -77,38 +99,29 @@ class ChatbotApplication:
                     greeting,
                 )
             
+            def pick_prompt(lang, prompt_idx):
+                return BOT_PROMPTS[lang.lower()][prompt_idx]
+
+            def change_lang_of_prompts(selected_lang):
+                return BOT_PROMPTS[selected_lang.lower()]
+            
             def text_msg(role: str, text: str):
                 return {"role": role, "content": [{"type": "text", "text": text}]}
             
-            lang_selector.input(
-                fn=clear_chat_immediate,
-                outputs=[chatbot, chat_storage],
-                queue=True,
-            )
+            lang_selector.input(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
+            lang_selector.input(fn=on_lang_change, inputs=[lang_selector], outputs=[agent_state, lang_storage, chatbot], queue=True)
+            lang_selector.input(fn=change_lang_of_prompts, inputs=[lang_selector], outputs=[bt_prompt1, bt_prompt2, bt_prompt3], queue=True)
 
-            lang_selector.input(
-                fn=on_lang_change,
-                inputs=[lang_selector],
-                outputs=[agent_state, lang_storage, chatbot],
-                queue=True,
-            )
+            reset_button.click(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
+            reset_button.click(fn=switch_language, inputs=[lang_storage], outputs=[agent_state, lang_storage, chatbot], queue=True)
 
-            reset_button.click(
-                fn=clear_chat_immediate,
-                outputs=[chatbot, chat_storage],
-                queue=True,
-            )
+            bt_prompt1.click(fn=pick_prompt, inputs=[lang_storage, gr.State(0)], outputs=[msg_box], queue=True)
+            bt_prompt2.click(fn=pick_prompt, inputs=[lang_storage, gr.State(1)], outputs=[msg_box], queue=True)
+            bt_prompt3.click(fn=pick_prompt, inputs=[lang_storage, gr.State(2)], outputs=[msg_box], queue=True)
 
-            reset_button.click(
-                fn=switch_language,
-                inputs=[lang_storage],
-                outputs=[agent_state, lang_storage, chatbot],
-                queue=True,
-            )
-            
             @gr.on([lang_selector.input], inputs=[lang_selector], outputs=[lang_storage])
             def save_to_local_storage(selected_lang):
-                return selected_lang
+                return selected_lang.lower()
 
             @gr.on([chatbot.change], inputs=[chatbot], outputs=[chat_storage])
             def save_chat_to_chat_storage(curr_chat):
