@@ -33,12 +33,11 @@ class ChatbotApplication:
             reset_button = gr.Button("Reset Conversation")
             
             with gr.Column():
-                
                 # Prompt suggestions
                 with gr.Row():
-                    bt_prompt1 = gr.Button(BOT_PROMPTS[language.lower()][0])
-                    bt_prompt2 = gr.Button(BOT_PROMPTS[language.lower()][1])
-                    bt_prompt3 = gr.Button(BOT_PROMPTS[language.lower()][2])
+                    prompt_buttons = [
+                        gr.Button(label) for label in BOT_PROMPTS[language.lower()]
+                    ]
 
                 # Chat area
                 with gr.Column():
@@ -115,9 +114,8 @@ class ChatbotApplication:
             reset_button.click(fn=clear_chat_immediate, outputs=[chatbot, chat_storage], queue=True)
             reset_button.click(fn=switch_language, inputs=[lang_storage], outputs=[agent_state, lang_storage, chatbot], queue=True)
 
-            bt_prompt1.click(fn=pick_prompt, inputs=[lang_storage, gr.State(0)], outputs=[msg_box], queue=True)
-            bt_prompt2.click(fn=pick_prompt, inputs=[lang_storage, gr.State(1)], outputs=[msg_box], queue=True)
-            bt_prompt3.click(fn=pick_prompt, inputs=[lang_storage, gr.State(2)], outputs=[msg_box], queue=True)
+            for idx, btn in enumerate(prompt_buttons):
+                btn.click(fn=pick_prompt, inputs=[lang_storage, gr.State(idx)], outputs=[msg_box], queue=True)
 
             @gr.on([lang_selector.input], inputs=[lang_selector], outputs=[lang_storage])
             def save_to_local_storage(selected_lang):
