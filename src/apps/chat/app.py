@@ -29,6 +29,7 @@ class ChatbotApplication:
             
             lang_storage = gr.BrowserState(language)
             chat_storage = gr.BrowserState(None)
+            msg_box_storage = gr.BrowserState(None)
              
             reset_button = gr.Button("Reset Conversation")
             
@@ -81,22 +82,28 @@ class ChatbotApplication:
                 greeting = agent.generate_greeting()
                 return agent, [text_msg("assistant", greeting)]
             
-            def init_session(saved_lang, saved_chat):
+            def init_session(saved_lang, saved_chat, saved_msg_text):
                 # init agent
                 lang = (saved_lang or language).lower()
+                print("Initializing session with language:", lang)
                 agent = ExecutiveAgentChain(language=lang)
 
                 # Load chat history
-                if saved_chat:
+                if saved_chat or saved_chat != []:
                     history = saved_chat
+                    print("Loaded saved chat history with", len(history), "messages.")
                 else:
                     greeting = agent.generate_greeting()
+                    print("Generated new greeting for chat.")
                     history = [text_msg("assistant", greeting)]
                 
                 # Get prompt buttons labels
                 labels_prompt_btns = BOT_PROMPTS[lang]
+                
+                # Load message box text
+                msg_box_text = saved_msg_text or ""
 
-                return agent, lang.upper(), history, history, *labels_prompt_btns
+                return agent, lang.upper(), history, history, *labels_prompt_btns, msg_box_text
 
             def switch_language(new_language):
                 new_agent, greeting = initalize_agent(new_language)
@@ -125,9 +132,9 @@ class ChatbotApplication:
             for idx, btn in enumerate(prompt_buttons):
                 btn.click(fn=pick_prompt, inputs=[lang_storage, gr.State(idx)], outputs=[msg_box], queue=True)
 
-            @gr.on([lang_selector.input], inputs=[lang_selector], outputs=[lang_storage])
-            def save_to_local_storage(selected_lang):
-                return selected_lang.lower()
+            @gr.on([msg_box.change], inputs=[msg_box], outputs=[msg_box_storage])
+            def save_msg_box_to_chat_storage(msg_box_text):
+                return msg_box_text
 
             @gr.on([chatbot.change], inputs=[chatbot], outputs=[chat_storage])
             def save_chat_to_chat_storage(curr_chat):
@@ -135,8 +142,8 @@ class ChatbotApplication:
 
             self._app.load(
                 fn=init_session,
-                inputs=[lang_storage, chat_storage],
-                outputs=[agent_state, lang_selector, chatbot, chat_interface.chatbot_value, *prompt_buttons],
+                inputs=[lang_storage, chat_storage, msg_box_storage],
+                outputs=[agent_state, lang_selector, chatbot, chat_interface.chatbot_value, *prompt_buttons, msg_box],
             )
 
     @property
