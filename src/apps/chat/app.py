@@ -71,7 +71,7 @@ class ChatbotApplication:
 
             
             def clear_chat_immediate():
-                return [], None
+                return [], [], None
             
             def on_lang_change(language):
                 lang_code = language.lower()
@@ -100,7 +100,7 @@ class ChatbotApplication:
                 # Load message box text
                 msg_box_text = saved_msg_text or ""
 
-                return agent, lang.upper(), history, *labels_prompt_btns, msg_box_text
+                return agent, lang.upper(), history, history, *labels_prompt_btns, msg_box_text
 
             def switch_language(new_language):
                 new_agent, greeting = initalize_agent(new_language)
@@ -108,6 +108,7 @@ class ChatbotApplication:
                     new_agent,
                     new_language,
                     greeting,
+                    greeting
                 )
             
             def pick_prompt(lang, prompt_idx):
@@ -119,13 +120,13 @@ class ChatbotApplication:
             def text_msg(role: str, text: str):
                 return {"role": role, "content": [{"type": "text", "text": text}]}
 
-            lang_selector.input(fn=clear_chat_immediate, outputs=[chat_interface.chatbot, chat_storage], queue=True)
-            lang_selector.input(fn=on_lang_change, inputs=[lang_selector], outputs=[agent_state, lang_storage, chat_interface.chatbot], queue=True)
+            lang_selector.input(fn=clear_chat_immediate, outputs=[chatbot, chat_interface.chatbot_value, chat_storage], queue=True)
+            lang_selector.input(fn=on_lang_change, inputs=[lang_selector], outputs=[agent_state, lang_storage, chatbot, chat_interface.chatbot_value], queue=True)
             lang_selector.input(fn=change_lang_of_prompts, inputs=[lang_selector], outputs=prompt_buttons, queue=True)
 
-            reset_button.click(fn=clear_chat_immediate, outputs=[chat_interface.chatbot, chat_storage], queue=True)
-            reset_button.click(fn=switch_language, inputs=[lang_storage], outputs=[agent_state, lang_storage, chat_interface.chatbot], queue=True)
-            
+            reset_button.click(fn=clear_chat_immediate, outputs=[chatbot, chat_interface.chatbot_value, chat_storage], queue=True)
+            reset_button.click(fn=switch_language, inputs=[lang_storage], outputs=[agent_state, lang_storage, chatbot, chat_interface.chatbot_value], queue=True)
+
             for idx, btn in enumerate(prompt_buttons):
                 btn.click(fn=pick_prompt, inputs=[lang_storage, gr.State(idx)], outputs=[msg_box], queue=True)
 
@@ -133,14 +134,14 @@ class ChatbotApplication:
             def save_msg_box_to_chat_storage(msg_box_text):
                 return msg_box_text
 
-            @gr.on([chat_interface.chatbot.change], inputs=[chat_interface.chatbot], outputs=[chat_storage])
-            def save_chat_to_chat_storage(curr_chat):
-                return curr_chat
+            @gr.on([chatbot.change], inputs=[chatbot, chat_interface.chatbot_value], outputs=[chat_storage, chat_interface.chatbot_value])
+            def save_chat_to_chat_storage(curr_chat, curr_chat_value):
+                return curr_chat, curr_chat_value
 
             self._app.load(
                 fn=init_session,
                 inputs=[lang_storage, chat_storage, msg_box_storage],
-                outputs=[agent_state, lang_selector, chat_interface.chatbot, *prompt_buttons, msg_box],
+                outputs=[agent_state, lang_selector, chatbot, chat_interface.chatbot_value, *prompt_buttons, msg_box],
             )
 
     @property
@@ -148,33 +149,26 @@ class ChatbotApplication:
         """Expose underlying Gradio Blocks for external runners (e.g., HF Spaces)."""
         return self._app
 
-    def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
-       if agent is None:
-           logger.error("Agent not initialized")
-           return ["I apologize, but the chatbot is not properly initialized. Please refresh the page or contact support."]
-       
-       answers = []
-       try:
-           # Log user input
-           logger.info(f"Processing user query: {message[:100]}...")
-           
-           # Query agent (now includes input handling, scope checking, and formatting)
-           response = agent.query(query=message)
-           
-           logger.info(f"Received and formatted response from agent ({len(response)} chars)")
-           answers.append(response)
-           
-       except Exception as e:
-           logger.error(f"Error processing query: {e}", exc_info=True)
-           
-           # Provide helpful error message instead of empty string
-           error_message = (
-               "I apologize, but I encountered an error processing your request. "
-               "Please try rephrasing your question or contact our admissions team for assistance."
-           )
-           answers.append(error_message)
-       
-       return answers
+    def _chat(self, message: str, history, agent: ExecutiveAgentChain):
+        if agent is None:
+            logger.error("Agent not initialized")
+            return "I apologize, but the chatbot is not properly initialized. Please refresh the page or contact support."
+    
+        try:
+            # Log user input
+            logger.info(f"Processing user query: {message[:100]}...")
+            
+            # Query agent (now includes input handling, scope checking, and formatting)
+            response = agent.query(query=message)
+            
+            logger.info(f"Received and formatted response from agent ({len(response)} chars)")
+            return response
+        except Exception as e:
+            logger.error(f"Error processing query: {e}", exc_info=True)
+            return (
+                "I apologize, but I encountered an error processing your request. "
+                "Please try rephrasing your question or contact our admissions team for assistance."
+            )
 
 
     def run(self):
