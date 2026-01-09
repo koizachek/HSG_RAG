@@ -85,7 +85,6 @@ class ChatbotApplication:
             def init_session(saved_lang, saved_chat, saved_msg_text):
                 # init agent
                 lang = (saved_lang or language).lower()
-                print("Initializing session with language:", lang)
                 agent = ExecutiveAgentChain(language=lang)
                
                 # Load chat history
@@ -149,26 +148,33 @@ class ChatbotApplication:
         """Expose underlying Gradio Blocks for external runners (e.g., HF Spaces)."""
         return self._app
 
-    def _chat(self, message: str, history, agent: ExecutiveAgentChain):
-        if agent is None:
-            logger.error("Agent not initialized")
-            return "I apologize, but the chatbot is not properly initialized. Please refresh the page or contact support."
-    
-        try:
-            # Log user input
-            logger.info(f"Processing user query: {message[:100]}...")
-            
-            # Query agent (now includes input handling, scope checking, and formatting)
-            response = agent.query(query=message)
-            
-            logger.info(f"Received and formatted response from agent ({len(response)} chars)")
-            return response
-        except Exception as e:
-            logger.error(f"Error processing query: {e}", exc_info=True)
-            return (
-                "I apologize, but I encountered an error processing your request. "
-                "Please try rephrasing your question or contact our admissions team for assistance."
-            )
+    def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
+       if agent is None:
+           logger.error("Agent not initialized")
+           return ["I apologize, but the chatbot is not properly initialized. Please refresh the page or contact support."]
+       
+       answers = []
+       try:
+           # Log user input
+           logger.info(f"Processing user query: {message[:100]}...")
+           
+           # Query agent (now includes input handling, scope checking, and formatting)
+           response = agent.query(query=message)
+           
+           logger.info(f"Received and formatted response from agent ({len(response)} chars)")
+           answers.append(response)
+           
+       except Exception as e:
+           logger.error(f"Error processing query: {e}", exc_info=True)
+           
+           # Provide helpful error message instead of empty string
+           error_message = (
+               "I apologize, but I encountered an error processing your request. "
+               "Please try rephrasing your question or contact our admissions team for assistance."
+           )
+           answers.append(error_message)
+       
+       return answers
 
 
     def run(self):
