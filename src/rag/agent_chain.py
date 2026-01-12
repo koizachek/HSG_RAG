@@ -7,6 +7,7 @@ from langchain_core.messages import (
     SystemMessage, 
 )
 from langchain.agents.middleware import ModelFallbackMiddleware
+from langchain.agents.structured_output import ProviderStrategy
 
 import uuid
 import json
@@ -104,12 +105,12 @@ class ExecutiveAgentChain:
             query: Query to the EMBA support agent. Provide collected user data in the query if possible.
         """
         try:
-            response = self._query(
+            structured_response = self._query(
                 agent=self._agents['emba'], 
                 messages=[HumanMessage(query)],
                 thread_id=f"emba_{hash(query)}",
             )
-            return response
+            return structured_response.response
         except Exception as e:
             chain_logger.error(f"EMBA Agent error: {e}")
             raise RuntimeError("Unable to retrieve EMBA information at this time.")
@@ -123,12 +124,12 @@ class ExecutiveAgentChain:
             query: Query to the IEMBA support agent. Provide collected user data in the query if possible.
         """
         try:
-            response = self._query(
+            structured_response = self._query(
                 agent=self._agents['iemba'], 
                 messages=[HumanMessage(query)],
                 thread_id=f"emba_{hash(query)}",
             )
-            return response
+            return structured_response.response
         except Exception as e:
             chain_logger.error(f"IEMBA Agent error: {e}")
             raise RuntimeError("Unable to retrieve IEMBA information at this time.")
@@ -142,12 +143,12 @@ class ExecutiveAgentChain:
             query: Query to the emba X support agent. Provide collected user data in the query if possible.
         """
         try:
-            response = self._query(
+            structured_response = self._query(
                 agent=self._agents['embax'], 
                 messages=[HumanMessage(query)],
                 thread_id=f"emba_{hash(query)}",
             )
-            return response
+            return structured_response.response
         except Exception as e:
             chain_logger.error(f"emba X Agent error: {e}")
             raise RuntimeError("Unable to retrieve emba X information at this time.")
@@ -199,6 +200,9 @@ class ExecutiveAgentChain:
                     fallback_middleware,
                 ],
                 context_schema=AgentContext,
+                response_format=ProviderStrategy(
+                    StructuredAgentResponse
+                ),
             ),            
         }
         for agent in ['emba', 'iemba', 'embax']:
@@ -430,12 +434,13 @@ class ExecutiveAgentChain:
             SystemMessage("Generate a short greeting message and introduce yourself. 30 words max."),
             SystemMessage(f"Respond in {get_language_name(self._language)} language."),
         ])
-        response = self._query(
+        structured_response = self._query(
             agent=self._agents['lead'], 
             messages=self._conversation_history,
         )
-        self._conversation_history.append(AIMessage(response))
-        return response
+        message = structured_response.response
+        self._conversation_history.append(AIMessage(message))
+        return message
 
     @traceable
     def query(self, query: str) -> str:
@@ -515,24 +520,25 @@ class ExecutiveAgentChain:
         )
         
         # Step 5: Query agent
-        response = self._query(
+        structured_response = self._query(
             agent=self._agents['lead'],
             messages=self._conversation_history + [language_instruction],
         )
+        message = structured_response.response
         
         # Step 6: Format response (remove tables, chunk if needed)
         if ENABLE_RESPONSE_CHUNKING:
             formatted_response = ResponseFormatter.format_response(
-                response,
+                message,
                 agent_type='lead',
                 enable_chunking=True
             )
         else:
-            formatted_response = ResponseFormatter.remove_tables(response)
+            formatted_response = ResponseFormatter.remove_tables(message)
         
         # Clean up response
         formatted_response = ResponseFormatter.clean_response(formatted_response)
-        
+
         # Step 7: Evaluate response quality 
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
             quality_evaluation: QualityEvaluationResult = self._quality_handler.evaluate_response_quality(query, formatted_response)
@@ -553,7 +559,7 @@ class ExecutiveAgentChain:
         return formatted_response
 
 
-    def _query(self, agent, messages: list, thread_id: str = None) -> str:
+    def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
         try:
             config = self._config.copy()
             config['configurable']['thread_id'] = thread_id or 0
@@ -563,9 +569,17 @@ class ExecutiveAgentChain:
                 config=config,
                 context=AgentContext(agent_name=agent.name),
             )
-            response = result['messages'][-1]
-            return response.text
+            response = result.get(
+                'structured_response',
+                StructuredAgentResponse(
+                    response=result['messages'][-1].text, 
+                    confidence_score=0.5)
+            )
+            return response
         except Exception as e:
             error_msg = e.body['message'] if hasattr(e, 'body') else str(e)
             chain_logger.error(f"Failed to invoke the agent: {error_msg}")
-            return "I'm sorry, I cannot provide a helpful response right now. Please contact tech support or try again later."
+            return StructuredAgentResponse(
+                response="I'm sorry, I cannot provide a helpful response right now. Please contact tech support or try again later.",
+                confidence_score=0.0
+            )

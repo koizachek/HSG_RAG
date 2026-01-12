@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 from langchain.agents import AgentState
 from langchain_core.messages import AnyMessage
@@ -6,6 +7,12 @@ from langchain_core.messages import AnyMessage
 @dataclass
 class AgentContext:
     agent_name: str
+
+
+class StructuredAgentResponse(BaseModel):
+    response:         str   = Field(description="Main response to the query")
+    confidence_score: float = Field("Value in range 0.0 to 1.0 that determines how confident the agent is in it's response based on the accumulated information")
+
 
 class State(TypedDict):
     messages: list[AnyMessage]
