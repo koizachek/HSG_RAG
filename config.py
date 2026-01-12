@@ -123,9 +123,13 @@ class LLMProviderConfiguration:
 # Weaviate database settings 
 class WeaviateConfiguration:
     LOCAL_DATABASE = False
-    WEAVIATE_BACKUP_BACKEND = ''
     WEAVIATE_COLLECTION_BASENAME = 'hsg_rag_content'
     
+    # Weaviate backup settings
+    AVAILABLE_BACKUP_METHODS = ['manual', 'filesystem', 's3']
+    BACKUP_METHOD = 'manual'
+    BACKUP_PATH = os.getenv('WEAVIATE_BACKUP_PATH')
+
     # Weaviate Cloud settings
     CLUSTER_URL = os.getenv('WEAVIATE_CLUSTER_URL')
     WEAVIATE_API_KEY = os.getenv('WEAVIATE_API_KEY')

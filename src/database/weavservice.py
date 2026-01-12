@@ -1,3 +1,4 @@
+from os.path import exists
 import weaviate as wvt
 import datetime, os
 from threading import Lock
@@ -359,25 +360,65 @@ class WeaviateService:
 
     def _create_backup(self) -> None:
         """
-        Create a backup of the current database state.
-        
-        Uploads backup to configured backend storage.         
+        Create a backup of the current database state and stores it under selected backup provider. 
         """
         try:
+            if not wvtconf.BACKUP_METHOD:
+                raise ValueError('Backup method is not selected!')
+            if wvtconf.BACKUP_METHOD not in wvtconf.AVAILABLE_BACKUP_METHODS:
+                raise ValueError(f"Selected backup method 'wvtconf.BACKUP_METHOD' is not supported!")
+            if not wvtconf.BACKUP_PATH:
+                raise ValueError("Backup directory is not set!")
+            os.makedirs(wvtconf.BACKUP_PATH, exist_ok=True)
+
             client = self._init_client()
-            backup_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
-            logger.info(f"Initiating backup creation for {self._connection_type} database")
+            backup_id = f"backup_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}"
+            logger.info(f"Initiating backup creation for {self._connection_type} database...")
             
             with self._client_lock:
-                result = client.backup.create(
-                    backup_id=f"hsg_wvtdb_backup_{backup_id}",
-                    backend=wvtconf.WEAVIATE_BACKUP_BACKEND,
-                    include_collections=_collection_names,
-                    wait_for_completion=True
-                )
-            
+                match wvtconf.BACKUP_METHOD:
+                    case 'manual':
+                        import json 
+                        
+                        backup_path = os.path.join(wvtconf.BACKUP_PATH, backup_id)
+                        os.makedirs(backup_path)
+  
+                        schema_backup = []
+                        objects_backup = {}
+
+                        for c in client.collections.list_all(simple=False):
+                            coll = client.collections.get(c)
+                            cfg = coll.config.get().to_dict()
+                            schema_backup.append(cfg)
+         
+                            objects_backup[c] = []
+                            for obj in coll.iterator(include_vector=True):
+                                objects_backup[c].append({
+                                    "uuid": obj.uuid,
+                                    "properties": obj.properties,
+                                    "vector": obj.vector,
+                                })
+                        
+                        schema_backup_path = os.path.join(backup_path, 'schema.json')
+                        with open(schema_backup_path, 'w', encoding='utf-8') as f:
+                            json.dump(schema_backup, f, indent=2, default=str)
+                        
+                        objects_backup_path = os.path.join(backup_path, 'objects.json')
+                        with open(objects_backup_path, 'w', encoding='utf-8') as f:
+                            json.dump(objects_backup, f, indent=2, default=str)
+                    case 's3':
+                        client.backup.create(
+                            backup_id=backup_id,
+                            backend="s3",
+                            include_collections=_collection_names,
+                            wait_for_completion=True,
+                        ) 
+                    case _:
+                        raise NotImplementedError()
+
+                
             self._last_query_time = perf_counter()
-            logger.info(f"Backup '{backup_id}' created successfully: {result}")
+            logger.info(f"Backup '{backup_id}' created successfully")
             
         except Exception as e:
             logger.error(f"Backup creation failed: {e}")
@@ -396,20 +437,69 @@ class WeaviateService:
         Raises:
             Exception if backup restoration fails
         """
+        self._delete_collections()
+
         try:
+            if not wvtconf.BACKUP_METHOD:
+                raise ValueError('Backup method is not selected!')
+            if wvtconf.BACKUP_METHOD not in wvtconf.AVAILABLE_BACKUP_METHODS:
+                raise ValueError(f"Selected backup method 'wvtconf.BACKUP_METHOD' is not supported!")
+            if not wvtconf.BACKUP_PATH:
+                raise ValueError("Backup directory is not set!")
+            os.makedirs(wvtconf.BACKUP_PATH, exist_ok=True)
+            
+            backup_path = os.path.join(wvtconf.BACKUP_PATH, backup_id)
+            if not os.path.exists(backup_path):
+                raise RuntimeError(f"Directory for backup 'backup_id' does not exist in the backup directory!")  
+            schema_backup_path = os.path.join(backup_path, 'schema.json')
+            if not os.path.exists(schema_backup_path):
+                raise RuntimeError(f"Schema backup is missing in the backup directory!")
+            objects_backup_path = os.path.join(backup_path, 'objects.json')
+            if not os.path.exists(objects_backup_path):
+                raise RuntimeError(f"Objects backup is missing in the backup directory!")
+            
             client = self._init_client()
-            logger.info(f"Initiating restoration from backup '{backup_id}' for {self._connection_type} database")
+            logger.info(f"Initiating restoration from backup '{backup_id}' for {self._connection_type} database...")
             
             with self._client_lock:
-                result = client.backup.restore(
-                    backup_id=backup_id,
-                    backend=wvtconf.WEAVIATE_BACKUP_BACKEND,
-                    include_collections=_collection_names,
-                    wait_for_completion=True,
-                )
-            
+                match wvtconf.BACKUP_METHOD:
+                    case 'manual':
+                        import json
+
+                        with open(schema_backup_path) as f:
+                            schemas = json.load(f)
+                            for cfg in schemas: 
+                                client.collections.create_from_dict(cfg)
+
+                        with open(objects_backup_path) as f:
+                            data = json.load(f)
+                            for name, objs in data.items():
+                                logger.info(f"Restoring collection '{name}' with {len(objs)} objects...")
+                                coll = client.collections.get(name)
+                                
+                                with coll.batch.dynamic() as batch:
+                                    for o in objs:
+                                        o['properties']['date'] = o['properties']['date'] \
+                                                .replace(" ", "T").replace("+00:00", "Z")
+                                        batch.add_object(
+                                            uuid=o["uuid"],
+                                            properties=o["properties"],
+                                            vector=o["vector"]
+                                        )
+                                logger.info(f"Collection '{name}' restored successfully")
+                    case 's3':                        
+                        client.backup.restore(
+                            backup_id=backup_id,
+                            backend="s3",
+                            wait_for_completion=True,
+                            roles_restore="all",
+                            users_restore="all",
+                        )
+                    case _:
+                        raise NotImplementedError()
+
             self._last_query_time = perf_counter()
-            logger.info(f"Backup '{backup_id}' restored successfully: {result}")
+            logger.info(f"Backup '{backup_id}' restored successfully")
             
         except Exception as e:
             error_msg = str(e).lower()
