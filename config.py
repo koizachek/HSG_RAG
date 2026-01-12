@@ -127,12 +127,12 @@ class WeaviateConfiguration:
     WEAVIATE_COLLECTION_BASENAME = 'hsg_rag_content'
     
     # Weaviate Cloud settings
-    CLUSTER_URL = "re8m1fsmtik1boqhywox9a.c0.europe-west3.gcp.weaviate.cloud"
+    CLUSTER_URL = os.getenv('WEAVIATE_CLUSTER_URL')
     WEAVIATE_API_KEY = os.getenv('WEAVIATE_API_KEY')
     HUGGING_FACE_API_KEY = os.getenv('HUGGING_FACE_API_KEY')
     
     # Custom timeouts for Cloud connection (in seconds)
-    INIT_TIMEOUT   = 60 
+    INIT_TIMEOUT   = 90 
     QUERY_TIMEOUT  = 10 
     INSERT_TIMEOUT = 120
 

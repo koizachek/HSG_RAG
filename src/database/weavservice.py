@@ -128,12 +128,12 @@ class WeaviateService:
                     break
                 except Exception as e:
                     last_exception = e
-                    logger.error(f"Failed to establish connection: {e}")
+                    logger.warning(f"Failed to establish connection on try {retries}: {e}")
                     retries += 1 
                     sleep(1)
             
             if retries == 3:
-                logger.error(f"Failed after 3 retries!")
+                logger.error(f"Failed to establish connection after 3 retries!")
                 raise last_exception
 
             logger.info(f"Successully connected to the {self._connection_type} weaviate database")

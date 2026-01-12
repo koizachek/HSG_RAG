@@ -59,6 +59,7 @@ HSG_RAG/
    ```
    OPENAI_API_KEY=your_openai_api_key
    WEAVIATE_API_KEY=your_weaviate_api_key
+   WEAVIATE_CLUSTER_URL=your_weaviate_rest_endpoint_url
    HUGGING_FACE_API_KEY=your_hf_api_key
    ```
    
@@ -121,6 +122,7 @@ python main.py --app de  # or --app en for English
 Configure these in your HuggingFace Space settings:
 - `OPENAI_API_KEY` - OpenAI API access
 - `WEAVIATE_API_KEY` - Weaviate Cloud database access
+- `WEAVIATE_CLUSTER_URL` - REST endpoint of the Weaviate Cloud cluster
 - `HUGGING_FACE_API_KEY` - For embeddings (if using cloud Weaviate)
 - `LANGSMITH_TRACING` - (optional) Enable LangSmith tracing for debugging
 - `LANGSMITH_API_KEY` - (optional) LangSmith API key
