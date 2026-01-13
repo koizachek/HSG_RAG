@@ -1,70 +1,13 @@
 import os
+
 import gradio as gr
-from gradio import ChatMessage
+
+from config import MAX_CONVERSATION_TURNS
+from src.apps.chat.constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.utils.logging import get_logger
 
 logger = get_logger("chatbot_app")
-
-FALLBACK_RESPONSE = {
-    "en": [
-        (
-            "I'm sorry, but I couldn't find any information in my records that matches your request, "
-            "so I can't answer it with confidence. Could you please rephrase your question?\n\n"
-            "Alternatively, you can book an appointment with a student services advisor using the links below."
-        ),
-        ChatMessage(
-            role="assistant",
-            content="https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-            metadata={
-                "title": "Cyra von Müller, Head of Recruitment & Admissions – EMBA HSG Program"
-            },
-        ),
-        ChatMessage(
-            role="assistant",
-            content="https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-            metadata={
-                "title": "Kristin Fuchs, Head of Recruitment & Admissions – International EMBA HSG Program"
-            },
-        ),
-        ChatMessage(
-            role="assistant",
-            content="https://calendly.com/teyuna-giger-unisg",
-            metadata={
-                "title": "Teyuna Giger, Head of Recruitment & Admissions – EMBA ETH HSG (emba X) Program"
-            },
-        ),
-    ],
-    "de": [
-        (
-            "Es tut mir leid, aber ich konnte in meinen Unterlagen keine Informationen finden, "
-            "die zu Ihrer Anfrage passen, sodass ich sie nicht mit ausreichender Sicherheit beantworten kann. "
-            "Könnten Sie Ihre Frage bitte umformulieren?\n\n"
-            "Alternativ können Sie über die untenstehenden Links einen Termin bei der Studienberatung buchen."
-        ),
-        ChatMessage(
-            role="assistant",
-            content="https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-            metadata={
-                "title": "Cyra von Müller, Leitung Rekrutierung & Zulassung – EMBA HSG Programm"
-            },
-        ),
-        ChatMessage(
-            role="assistant",
-            content="https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-            metadata={
-                "title": "Kristin Fuchs, Leitung Rekrutierung & Zulassung – Internationales EMBA HSG Programm"
-            },
-        ),
-        ChatMessage(
-            role="assistant",
-            content="https://calendly.com/teyuna-giger-unisg",
-            metadata={
-                "title": "Teyuna Giger, Leitung Rekrutierung & Zulassung – EMBA ETH HSG (emba X) Programm"
-            },
-        ),
-    ],
-}
 
 
 class ChatbotApplication:
@@ -160,6 +103,9 @@ class ChatbotApplication:
             return [
                 "I apologize, but the chatbot is not properly initialized. Please refresh the page or contact support."]
 
+        if len(history) >= MAX_CONVERSATION_TURNS:
+            return [CONVERSATION_END_MESSAGE[language]] + APPOINTMENT_LINKS[language]
+
         answers = []
         try:
             # Log user input
@@ -174,7 +120,8 @@ class ChatbotApplication:
             logger.info(f"Received and formatted response from agent ({len(response)} chars)")
 
             if confidence_score <= 0.3:
-                answers.extend(FALLBACK_RESPONSE[language])
+                answers.append(FALLBACK_MESSAGE[language])
+                answers.extend(APPOINTMENT_LINKS[language])
             else:
                 answers.append(response)
 

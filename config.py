@@ -177,6 +177,7 @@ ENABLE_EVALUATE_RESPONSE_QUALITY = False
 # Conversation state settings
 TRACK_USER_PROFILE = True  # Track user preferences and avoid repetition
 LOCK_LANGUAGE_AFTER_FIRST_MESSAGE = True  # Don't change language mid-conversation
+MAX_CONVERSATION_TURNS = 15 # End conversation after max turns reached
 
 # Data processing pipeline settings 
 CHUNK_MAX_TOKENS = 8191
