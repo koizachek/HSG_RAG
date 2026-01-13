@@ -33,51 +33,70 @@ CONVERSATION_END_MESSAGE = {
     ),
 }
 
+
+def create_appt_button(url, title, lang_text):
+    return (
+        f'<a href="{url}" class="appointment-btn" '
+        f'style="display: block; background-color: #f3f4f6; border: 1px solid #d1d5db; '
+        f'padding: 8px 16px; border-radius: 6px; cursor: pointer; '
+        f'color: #374151; font-weight: 600; width: 100%; text-align: left; '
+        f'margin-top: 5px; text-decoration: none;">'
+        f'📅 {lang_text}: {title}'
+        f'</a>'
+    )
+
+
 APPOINTMENT_LINKS = {
     "en": [
         ChatMessage(
             role="assistant",
-            content="https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-            metadata={
-                "title": "Cyra von Müller, Head of Recruitment & Admissions – EMBA HSG Program"
-            },
+            content=create_appt_button(
+                "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
+                "Cyra von Müller",
+                "Book Appointment"
+            ),
         ),
         ChatMessage(
             role="assistant",
-            content="https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-            metadata={
-                "title": "Kristin Fuchs, Head of Recruitment & Admissions – International EMBA HSG Program"
-            },
+            content=create_appt_button(
+                "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
+                "Kristin Fuchs",
+                "Book Appointment"
+            ),
         ),
         ChatMessage(
             role="assistant",
-            content="https://calendly.com/teyuna-giger-unisg",
-            metadata={
-                "title": "Teyuna Giger, Head of Recruitment & Admissions – EMBA ETH HSG (emba X) Program"
-            },
+            content=create_appt_button(
+                "https://calendly.com/teyuna-giger-unisg",
+                "Teyuna Giger",
+                "Book Appointment"
+            ),
         ),
     ],
     "de": [
         ChatMessage(
             role="assistant",
-            content="https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-            metadata={
-                "title": "Cyra von Müller, Leitung Rekrutierung & Zulassung – EMBA HSG Programm"
-            },
+            content=create_appt_button(
+                "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
+                "Cyra von Müller",
+                "Termin buchen"
+            ),
         ),
         ChatMessage(
             role="assistant",
-            content="https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-            metadata={
-                "title": "Kristin Fuchs, Leitung Rekrutierung & Zulassung – Internationales EMBA HSG Programm"
-            },
+            content=create_appt_button(
+                "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
+                "Kristin Fuchs",
+                "Termin buchen"
+            ),
         ),
         ChatMessage(
             role="assistant",
-            content="https://calendly.com/teyuna-giger-unisg",
-            metadata={
-                "title": "Teyuna Giger, Leitung Rekrutierung & Zulassung – EMBA ETH HSG (emba X) Programm"
-            },
+            content=create_appt_button(
+                "https://calendly.com/teyuna-giger-unisg",
+                "Teyuna Giger",
+                "Termin buchen"
+            ),
         ),
     ],
 }
