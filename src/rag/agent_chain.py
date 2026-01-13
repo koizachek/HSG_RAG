@@ -553,7 +553,7 @@ class ExecutiveAgentChain:
                     self._conversation_state.get('suggested_program')):
                 self._log_user_profile()
 
-        return StructuredAgentResponse(response=formatted_response, confidence_score=structured_response.confidence_score)
+        return StructuredAgentResponse(response=formatted_response, confidence_score=quality_evaluation)
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
         try:

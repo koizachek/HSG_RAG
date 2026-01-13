@@ -162,7 +162,7 @@ class ChatbotApplication:
             confidence_score = structured_response.confidence_score
             logger.info(f"Evaluated Confidence Score: {confidence_score}")
 
-            if confidence_score <= 1:
+            if confidence_score <= 0.3:
                 answers.append(FALLBACK_MESSAGE[language])
                 answers.extend(APPOINTMENT_LINKS[language])
             else:

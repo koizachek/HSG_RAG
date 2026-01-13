@@ -172,7 +172,7 @@ MAX_RESPONSE_WORDS_SUBAGENT = 200  # Maximum words for subagent responses
 ENABLE_RESPONSE_CHUNKING = True  # Break long responses into multiple turns
 
 # Evaluation of agent response quality 
-ENABLE_EVALUATE_RESPONSE_QUALITY = False
+ENABLE_EVALUATE_RESPONSE_QUALITY = True
 
 # Conversation state settings
 TRACK_USER_PROFILE = True  # Track user preferences and avoid repetition
