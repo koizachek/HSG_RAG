@@ -2,9 +2,9 @@ from langsmith import traceable
 from langchain.tools import tool
 from langchain.agents import create_agent
 from langchain_core.messages import (
-    HumanMessage, 
-    AIMessage, 
-    SystemMessage, 
+    HumanMessage,
+    AIMessage,
+    SystemMessage,
 )
 from langchain.agents.middleware import ModelFallbackMiddleware
 from langchain.agents.structured_output import ProviderStrategy
@@ -27,7 +27,7 @@ from src.rag.scope_guardian import ScopeGuardian
 from src.rag.quality_score_handler import QualityEvaluationResult, QualityScoreHandler
 
 from src.utils.lang import detect_language, get_language_name
-from src.utils.logging import get_logger 
+from src.utils.logging import get_logger
 from config import (
     TOP_K_RETRIEVAL,
     LOCK_LANGUAGE_AFTER_FIRST_MESSAGE,
@@ -37,6 +37,7 @@ from config import (
 )
 
 chain_logger = get_logger('agent_chain')
+
 
 class ExecutiveAgentChain:
     def __init__(self, language: str = 'en') -> None:
@@ -49,10 +50,10 @@ class ExecutiveAgentChain:
 
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
             self._quality_handler = QualityScoreHandler()
-        
+
         # Generate unique user ID for this session
         self._user_id = str(uuid.uuid4())
-        
+
         # Initialize conversation state with user profile tracking
         self._conversation_state: ConversationState = {
             'user_id': self._user_id,
@@ -69,12 +70,11 @@ class ExecutiveAgentChain:
             'topics_discussed': [],
             'preferences_known': False
         }
-        
+
         # Track scope violations for escalation
         self._scope_violation_count = 0
-        
-        chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
 
+        chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
 
     def _retrieve_context(self, query: str, language: str = None):
         """
@@ -87,15 +87,14 @@ class ExecutiveAgentChain:
         lang = language or self._language
         try:
             response, _ = self._dbservice.query(
-                query=query, 
-                lang=lang, 
+                query=query,
+                lang=lang,
                 limit=TOP_K_RETRIEVAL,
             )
             serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
             return serialized
         except Exception as e:
             raise e
-   
 
     def _call_emba_agent(self, query: str) -> str:
         """
@@ -106,7 +105,7 @@ class ExecutiveAgentChain:
         """
         try:
             structured_response = self._query(
-                agent=self._agents['emba'], 
+                agent=self._agents['emba'],
                 messages=[HumanMessage(query)],
                 thread_id=f"emba_{hash(query)}",
             )
@@ -114,7 +113,6 @@ class ExecutiveAgentChain:
         except Exception as e:
             chain_logger.error(f"EMBA Agent error: {e}")
             raise RuntimeError("Unable to retrieve EMBA information at this time.")
-
 
     def _call_iemba_agent(self, query: str) -> str:
         """
@@ -125,7 +123,7 @@ class ExecutiveAgentChain:
         """
         try:
             structured_response = self._query(
-                agent=self._agents['iemba'], 
+                agent=self._agents['iemba'],
                 messages=[HumanMessage(query)],
                 thread_id=f"emba_{hash(query)}",
             )
@@ -133,7 +131,6 @@ class ExecutiveAgentChain:
         except Exception as e:
             chain_logger.error(f"IEMBA Agent error: {e}")
             raise RuntimeError("Unable to retrieve IEMBA information at this time.")
-
 
     def _call_embax_agent(self, query: str) -> str:
         """
@@ -144,7 +141,7 @@ class ExecutiveAgentChain:
         """
         try:
             structured_response = self._query(
-                agent=self._agents['embax'], 
+                agent=self._agents['embax'],
                 messages=[HumanMessage(query)],
                 thread_id=f"emba_{hash(query)}",
             )
@@ -152,7 +149,6 @@ class ExecutiveAgentChain:
         except Exception as e:
             chain_logger.error(f"emba X Agent error: {e}")
             raise RuntimeError("Unable to retrieve emba X information at this time.")
-
 
     def _init_agents(self):
         config: RunnableConfig = {
@@ -203,10 +199,10 @@ class ExecutiveAgentChain:
                 response_format=ProviderStrategy(
                     StructuredAgentResponse
                 ),
-            ),            
+            ),
         }
         for agent in ['emba', 'iemba', 'embax']:
-            agents[agent]=create_agent(
+            agents[agent] = create_agent(
                 name=f"{agent.upper()} Agent",
                 model=modelconf.get_subagent_model(),
                 tools=[tool_retrieve_context],
@@ -220,7 +216,7 @@ class ExecutiveAgentChain:
                 context_schema=AgentContext,
             )
         return agents, config
-   
+
     def _extract_experience_years(self, conversation: str) -> int | None:
         """Extract years of professional experience from conversation text."""
         # Look for patterns like "10 years", "5 years experience", etc.
@@ -253,7 +249,7 @@ class ExecutiveAgentChain:
         """Extract professional field/industry from conversation text."""
         # Common fields mentioned in executive education
         fields = [
-            'finance', 'banking', 'technology', 'tech', 'IT', 'healthcare', 
+            'finance', 'banking', 'technology', 'tech', 'IT', 'healthcare',
             'consulting', 'manufacturing', 'retail', 'marketing', 'sales',
             'engineering', 'pharma', 'telecommunications', 'energy',
             'Finanzwesen', 'Technologie', 'Gesundheitswesen', 'Beratung'  # German
@@ -274,8 +270,8 @@ class ExecutiveAgentChain:
             'Strategie', 'Innovation', 'Führung', 'Digitalisierung'  # German
         ]
         conversation_lower = conversation.lower()
-        found_interests = [interest for interest in interests 
-                          if interest.lower() in conversation_lower]
+        found_interests = [interest for interest in interests
+                           if interest.lower() in conversation_lower]
         return ', '.join(found_interests) if found_interests else None
 
     def _extract_name(self, conversation: str) -> str | None:
@@ -311,15 +307,15 @@ class ExecutiveAgentChain:
     def _determine_suggested_program(self) -> str | None:
         """Determine recommended program based on user profile."""
         state = self._conversation_state
-        
+
         # If program interest was explicitly mentioned
         if state['program_interest']:
             return state['program_interest'][0]
-        
+
         # Make recommendation based on profile
         experience = state.get('experience_years', 0) or 0
         leadership = state.get('leadership_years', 0) or 0
-        
+
         # EMBA: 5+ years experience, 2+ years leadership
         if experience >= 5 and leadership >= 2:
             return 'EMBA'
@@ -327,64 +323,64 @@ class ExecutiveAgentChain:
         elif experience >= 3:
             return 'IEMBA'
         # EMBA X: Digital/Innovation focus
-        elif state.get('interest') and any(kw in state.get('interest', '').lower() 
+        elif state.get('interest') and any(kw in state.get('interest', '').lower()
                                            for kw in ['digital', 'innovation', 'technology']):
             return 'EMBA X'
-        
+
         return None
 
     def _update_conversation_state(self, user_query: str, agent_response: str) -> None:
         """Update conversation state by extracting information from the conversation."""
         if not TRACK_USER_PROFILE:
             return
-        
+
         # Combine query and response for analysis
         conversation_text = f"{user_query} {agent_response}"
-        
+
         # Extract profile information
         if not self._conversation_state.get('experience_years'):
             exp_years = self._extract_experience_years(conversation_text)
             if exp_years:
                 self._conversation_state['experience_years'] = exp_years
                 chain_logger.info(f"Extracted experience years: {exp_years}")
-        
+
         if not self._conversation_state.get('leadership_years'):
             lead_years = self._extract_leadership_years(conversation_text)
             if lead_years:
                 self._conversation_state['leadership_years'] = lead_years
                 chain_logger.info(f"Extracted leadership years: {lead_years}")
-        
+
         if not self._conversation_state.get('field'):
             field = self._extract_field(conversation_text)
             if field:
                 self._conversation_state['field'] = field
                 chain_logger.info(f"Extracted field: {field}")
-        
+
         if not self._conversation_state.get('interest'):
             interest = self._extract_interest(conversation_text)
             if interest:
                 self._conversation_state['interest'] = interest
                 chain_logger.info(f"Extracted interest: {interest}")
-        
+
         # Extract name
         if not self._conversation_state.get('user_name'):
             name = self._extract_name(conversation_text)
             if name:
                 self._conversation_state['user_name'] = name
                 chain_logger.info(f"Extracted name: {name}")
-        
+
         # Detect handover request
         if self._detect_handover_request(conversation_text):
             self._conversation_state['handover_requested'] = True
             chain_logger.info("Handover request detected")
-        
+
         # Check for program mentions
         programs = ['EMBA', 'IEMBA', 'EMBA X']
         for program in programs:
             if program.lower() in conversation_text.lower():
                 if program not in self._conversation_state['program_interest']:
                     self._conversation_state['program_interest'].append(program)
-        
+
         # Update suggested program
         suggested = self._determine_suggested_program()
         if suggested and not self._conversation_state.get('suggested_program'):
@@ -395,12 +391,12 @@ class ExecutiveAgentChain:
         """Log user profile to JSON file."""
         if not TRACK_USER_PROFILE:
             return
-        
+
         try:
             # Create logs directory if it doesn't exist
             log_dir = os.path.join('logs', 'user_profiles')
             os.makedirs(log_dir, exist_ok=True)
-            
+
             # Create profile data
             profile_data = {
                 'user_id': self._conversation_state['user_id'],
@@ -415,17 +411,17 @@ class ExecutiveAgentChain:
                 'user_language': self._conversation_state.get('user_language'),
                 'program_interest': self._conversation_state.get('program_interest', []),
             }
-            
+
             # Log file path with timestamp
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             log_file = os.path.join(log_dir, f'profile_{self._user_id}_{timestamp}.json')
-            
+
             # Write to file
             with open(log_file, 'w', encoding='utf-8') as f:
                 json.dump(profile_data, f, indent=2, ensure_ascii=False)
-            
+
             chain_logger.info(f"User profile logged to {log_file}")
-            
+
         except Exception as e:
             chain_logger.error(f"Failed to log user profile: {e}")
 
@@ -435,7 +431,7 @@ class ExecutiveAgentChain:
             SystemMessage(f"Respond in {get_language_name(self._language)} language."),
         ])
         structured_response = self._query(
-            agent=self._agents['lead'], 
+            agent=self._agents['lead'],
             messages=self._conversation_history,
         )
         message = structured_response.response
@@ -443,7 +439,7 @@ class ExecutiveAgentChain:
         return message
 
     @traceable
-    def query(self, query: str) -> str:
+    def query(self, query: str) -> StructuredAgentResponse:
         """
         Process user query with input handling, scope checking, and response formatting.
         
@@ -458,39 +454,39 @@ class ExecutiveAgentChain:
             query,
             [msg for msg in self._conversation_history if isinstance(msg, (HumanMessage, AIMessage))]
         )
-        
+
         if not is_valid or not processed_query:
             chain_logger.warning(f"Invalid input received: '{query}'")
             return "I didn't quite understand that. Could you please rephrase your question?"
-        
+
         # Log if input was interpreted
         if processed_query != query:
             chain_logger.info(f"Interpreted input '{query}' as '{processed_query}'")
-        
+
         # Step 2: Lock language on first user message
         if LOCK_LANGUAGE_AFTER_FIRST_MESSAGE and self._user_language is None:
             self._user_language = detect_language(processed_query)
             self._conversation_state['user_language'] = self._user_language
             self._language = self._user_language
             chain_logger.info(f"Locked conversation language to '{self._user_language}'")
-        
+
         # Use locked language or current language
         response_language = self._user_language or self._language
-        
+
         # Step 3: Check scope before querying agent
         scope_type = ScopeGuardian.check_scope(processed_query, response_language)
-        
+
         if scope_type != 'on_topic':
             chain_logger.info(f"Out-of-scope query detected: {scope_type}")
             self._scope_violation_count += 1
-            
+
             # Check if should escalate
             should_escalate, escalation_type = ScopeGuardian.should_escalate(
                 processed_query,
                 scope_type,
                 self._scope_violation_count
             )
-            
+
             if should_escalate:
                 redirect_msg = ScopeGuardian.get_escalation_message(
                     escalation_type,
@@ -501,31 +497,31 @@ class ExecutiveAgentChain:
                     scope_type,
                     response_language
                 )
-            
+
             # Add to history
             self._conversation_history.append(HumanMessage(processed_query))
             self._conversation_history.append(AIMessage(redirect_msg))
-            
+
             return redirect_msg
-        
+
         # Reset violation count on valid topic
         self._scope_violation_count = 0
-        
+
         # Step 4: Build messages with locked language
         self._conversation_history.append(HumanMessage(processed_query))
-        
+
         # Add language instruction (use locked language)
         language_instruction = SystemMessage(
             f"Respond in {get_language_name(response_language)} language."
         )
-        
+
         # Step 5: Query agent
         structured_response = self._query(
             agent=self._agents['lead'],
             messages=self._conversation_history + [language_instruction],
         )
         message = structured_response.response
-        
+
         # Step 6: Format response (remove tables, chunk if needed)
         if ENABLE_RESPONSE_CHUNKING:
             formatted_response = ResponseFormatter.format_response(
@@ -535,35 +531,35 @@ class ExecutiveAgentChain:
             )
         else:
             formatted_response = ResponseFormatter.remove_tables(message)
-        
+
         # Clean up response
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
         # Step 7: Evaluate response quality 
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
-            quality_evaluation: QualityEvaluationResult = self._quality_handler.evaluate_response_quality(query, formatted_response)
+            quality_evaluation: QualityEvaluationResult = self._quality_handler.evaluate_response_quality(query,
+                                                                                                          formatted_response)
             chain_logger.info(f"Recieved quality score: {quality_evaluation.overall_score:1.2f}")
 
         # Add to history
         self._conversation_history.append(AIMessage(formatted_response))
-        
+
         # Step 8: Update conversation state and log profile if tracking is enabled
         if TRACK_USER_PROFILE:
             self._update_conversation_state(processed_query, formatted_response)
             # Log profile every 5 messages or when program is suggested
             message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
-            if (message_count % 5 == 0 or 
-                self._conversation_state.get('suggested_program')):
+            if (message_count % 5 == 0 or
+                    self._conversation_state.get('suggested_program')):
                 self._log_user_profile()
-        
-        return formatted_response
 
+        return StructuredAgentResponse(response=formatted_response, confidence_score=structured_response.confidence_score)
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
         try:
             config = self._config.copy()
             config['configurable']['thread_id'] = thread_id or 0
-                
+
             result: AIMessage = agent.invoke(
                 {"messages": messages},
                 config=config,
@@ -572,7 +568,7 @@ class ExecutiveAgentChain:
             response = result.get(
                 'structured_response',
                 StructuredAgentResponse(
-                    response=result['messages'][-1].text, 
+                    response=result['messages'][-1].text,
                     confidence_score=0.5)
             )
             return response

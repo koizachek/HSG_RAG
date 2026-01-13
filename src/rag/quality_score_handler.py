@@ -26,7 +26,7 @@ class QualityScoreHandler:
     def __init__(self) -> None:
         self._smith_client = Client()
         self._model = modconf.get_confidence_scoring_model()
-        self._model = self._model.with_structured_output(ConfidenceEvaluationResult)
+        self._model = self._model.with_structured_output(QualityEvaluationResult)
 
 
     def evaluate_response_quality(self, query: str, response: str) -> QualityEvaluationResult:
@@ -36,7 +36,7 @@ class QualityScoreHandler:
         try:
             time_start = perf_counter()
             logger.info("Evaluating the response quality...")
-            evaluation: ConfidenceEvaluationResult = self._model.invoke(messages)
+            evaluation: QualityEvaluationResult = self._model.invoke(messages)
             time_elapsed = perf_counter() - time_start
             logger.info(f"Finished confidence evaluation in {time_elapsed:1.3} sec")
 
