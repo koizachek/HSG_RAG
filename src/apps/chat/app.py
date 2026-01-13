@@ -38,6 +38,15 @@ function() {
 }
 """
 
+JS_CLEAR = """
+function() {
+    const el = document.getElementById('consultation-iframe-container');
+    if (el) {
+        el.innerHTML = '';
+    }
+}
+"""
+
 
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
@@ -99,6 +108,7 @@ class ChatbotApplication:
                 fn=clear_chat_immediate,
                 outputs=[chat.chatbot_value, iframe_container],
                 queue=True,
+                js=JS_CLEAR
             )
 
             lang_selector.change(
@@ -112,6 +122,7 @@ class ChatbotApplication:
                 fn=clear_chat_immediate,
                 outputs=[chat.chatbot_value, iframe_container],
                 queue=True,
+                js=JS_CLEAR
             )
 
             reset_button.click(
