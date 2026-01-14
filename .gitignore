@@ -58,3 +58,4 @@ data/
 #idk
 --source-branch
 --source-repo
+/.gradio/certificate.pem

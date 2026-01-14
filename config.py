@@ -172,11 +172,12 @@ MAX_RESPONSE_WORDS_SUBAGENT = 200  # Maximum words for subagent responses
 ENABLE_RESPONSE_CHUNKING = True  # Break long responses into multiple turns
 
 # Evaluation of agent response quality 
-ENABLE_EVALUATE_RESPONSE_QUALITY = False
+ENABLE_EVALUATE_RESPONSE_QUALITY = True
 
 # Conversation state settings
 TRACK_USER_PROFILE = True  # Track user preferences and avoid repetition
 LOCK_LANGUAGE_AFTER_FIRST_MESSAGE = True  # Don't change language mid-conversation
+MAX_CONVERSATION_TURNS = 15 # End conversation after max turns reached
 
 # Data processing pipeline settings 
 CHUNK_MAX_TOKENS = 8191
