@@ -158,15 +158,13 @@ class ChatbotApplication:
             logger.info(f"Processing user query: {message[:100]}...")
 
             structured_response = agent.query(query=message)
-            response = structured_response.response
-            confidence_score = structured_response.confidence_score
-            logger.info(f"Evaluated Confidence Score: {confidence_score}")
+            response = structured_response["response"]
+            confidence_fallback = structured_response["confidence_fallback"]
 
-            if confidence_score <= 0.3:
-                answers.append(FALLBACK_MESSAGE[language])
+            answers.append(response)
+
+            if confidence_fallback:
                 answers.extend(APPOINTMENT_LINKS[language])
-            else:
-                answers.append(response)
 
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)

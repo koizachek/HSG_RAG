@@ -15,6 +15,7 @@ import os
 import re
 from datetime import datetime
 
+from src.apps.chat.constants import CONFIDENCE_FALLBACK_MESSAGE, LANGUAGE_FALLBACK_MESSAGE
 from src.database.weavservice import WeaviateService
 
 from src.rag.utilclasses import *
@@ -439,7 +440,7 @@ class ExecutiveAgentChain:
         return message
 
     @traceable
-    def query(self, query: str) -> StructuredAgentResponse:
+    def query(self, query: str) -> dict:
         """
         Process user query with input handling, scope checking, and response formatting.
         
@@ -511,16 +512,17 @@ class ExecutiveAgentChain:
         self._conversation_history.append(HumanMessage(processed_query))
 
         # Add language instruction (use locked language)
-        language_instruction = SystemMessage(
-            f"Respond in {get_language_name(response_language)} language."
-        )
+        # language_instruction = SystemMessage(
+        #     f"Respond in {get_language_name(response_language)} language."
+        # )
 
         # Step 5: Query agent
         structured_response = self._query(
             agent=self._agents['lead'],
-            messages=self._conversation_history + [language_instruction],
+            messages=self._conversation_history, # + language_instruction
         )
         message = structured_response.response
+        chain_logger.info(f"Detected Language: {structured_response.language}")
 
         # Step 6: Format response (remove tables, chunk if needed)
         if ENABLE_RESPONSE_CHUNKING:
@@ -535,11 +537,19 @@ class ExecutiveAgentChain:
         # Clean up response
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
-        # Step 7: Evaluate response quality 
+        # Step 7: Evaluate response quality
+        confidence_fallback = False
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
             quality_evaluation: QualityEvaluationResult = self._quality_handler.evaluate_response_quality(query,
-                                                                                                          formatted_response)
+                                                                            formatted_response)
+            if quality_evaluation.overall_score < 0.3:
+                confidence_fallback = True
+                formatted_response = CONFIDENCE_FALLBACK_MESSAGE[self._language]
             chain_logger.info(f"Recieved quality score: {quality_evaluation.overall_score:1.2f}")
+
+        if structured_response.language not in ["en", "de"]:
+            formatted_response = LANGUAGE_FALLBACK_MESSAGE[self._language]
+            confidence_fallback = False
 
         # Add to history
         self._conversation_history.append(AIMessage(formatted_response))
@@ -553,7 +563,7 @@ class ExecutiveAgentChain:
                     self._conversation_state.get('suggested_program')):
                 self._log_user_profile()
 
-        return StructuredAgentResponse(response=formatted_response, confidence_score=quality_evaluation.overall_score)
+        return {"response": formatted_response, "confidence_fallback": confidence_fallback}
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
         try:
@@ -569,7 +579,8 @@ class ExecutiveAgentChain:
                 'structured_response',
                 StructuredAgentResponse(
                     response=result['messages'][-1].text,
-                    confidence_score=0.5)
+                    confidence_score=0.5,
+                    language=self._language)
             )
             return response
         except Exception as e:
@@ -577,5 +588,6 @@ class ExecutiveAgentChain:
             chain_logger.error(f"Failed to invoke the agent: {error_msg}")
             return StructuredAgentResponse(
                 response="I'm sorry, I cannot provide a helpful response right now. Please contact tech support or try again later.",
-                confidence_score=0.0
+                confidence_score=0.0,
+                language="",
             )

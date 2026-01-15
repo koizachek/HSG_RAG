@@ -60,7 +60,9 @@ RULES:
 - Do NOT ask multiple questions at once
 - Never make admission predictions — always refer to admissions team
 - If uncertain about details, offer to connect user with admissions team
-- Avoid marketing language or unverified claims"""
+- Avoid marketing language or unverified claims
+
+Detect the language the user is writing in or explicitly requests to speak in, and return its ISO language code (e.g., en, de, fa, ru) in the language field."""
 
     _SUMMARIZATION_PROMPT = """Summarize the conversation concisely:
 
