@@ -66,13 +66,12 @@ class ChatbotApplication:
                 reset_button = gr.Button("Reset Conversation")
 
             chat = gr.ChatInterface(
-                fn=lambda msg, history, agent, lang: self._chat(
+                fn=lambda msg, history, agent: self._chat(
                     message=msg,
                     history=history,
                     agent=agent,
-                    language=lang,
                 ),
-                additional_inputs=[agent_state, lang_state],
+                additional_inputs=[agent_state],
                 title="Executive Education Adviser",
                 type='messages',
             )
@@ -143,15 +142,10 @@ class ChatbotApplication:
         """Expose underlying Gradio Blocks for external runners (e.g., HF Spaces)."""
         return self._app
 
-    def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain, language: str):
+    def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
         if agent is None:
             logger.error("Agent not initialized")
             return ["I apologize, but the chatbot is not properly initialized."]
-
-        if len(history) >= MAX_CONVERSATION_TURNS:
-            response_list = [CONVERSATION_END_MESSAGE[language]]
-            response_list.extend(APPOINTMENT_LINKS[language])
-            return response_list
 
         answers = []
         try:
@@ -160,10 +154,12 @@ class ChatbotApplication:
             structured_response = agent.query(query=message)
             response = structured_response["response"]
             confidence_fallback = structured_response["confidence_fallback"]
+            max_turns_reached = structured_response["max_turns_reached"]
+            language = structured_response["language"]
 
             answers.append(response)
 
-            if confidence_fallback:
+            if confidence_fallback or max_turns_reached:
                 answers.extend(APPOINTMENT_LINKS[language])
 
         except Exception as e:

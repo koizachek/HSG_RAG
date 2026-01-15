@@ -23,7 +23,7 @@ LANGUAGE_FALLBACK_MESSAGE = {
     ),
     "de": (
         "Es tut mir leid, ich kann nur auf Englisch oder Deutsch antworten. "
-        "Möchten Sie unser Gespräch auf Englisch fortführen?"
+        "Möchten Sie unser Gespräch auf Deutsch fortführen?"
     ),
 }
 

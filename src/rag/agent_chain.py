@@ -1,3 +1,4 @@
+from langchain_core.runnables import RunnableConfig
 from langsmith import traceable
 from langchain.tools import tool
 from langchain.agents import create_agent
@@ -15,7 +16,7 @@ import os
 import re
 from datetime import datetime
 
-from src.apps.chat.constants import CONFIDENCE_FALLBACK_MESSAGE, LANGUAGE_FALLBACK_MESSAGE
+from src.apps.chat.constants import CONFIDENCE_FALLBACK_MESSAGE, LANGUAGE_FALLBACK_MESSAGE, CONVERSATION_END_MESSAGE
 from src.database.weavservice import WeaviateService
 
 from src.rag.utilclasses import *
@@ -34,7 +35,7 @@ from config import (
     LOCK_LANGUAGE_AFTER_FIRST_MESSAGE,
     TRACK_USER_PROFILE,
     ENABLE_RESPONSE_CHUNKING,
-    ENABLE_EVALUATE_RESPONSE_QUALITY,
+    ENABLE_EVALUATE_RESPONSE_QUALITY, MAX_CONVERSATION_TURNS,
 )
 
 chain_logger = get_logger('agent_chain')
@@ -45,6 +46,7 @@ class ExecutiveAgentChain:
         self._initial_language = language
         self._language = language
         self._user_language = None  # Will be locked after first user message
+        self.fallback_language = None
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
         self._conversation_history = []
@@ -427,16 +429,13 @@ class ExecutiveAgentChain:
             chain_logger.error(f"Failed to log user profile: {e}")
 
     def generate_greeting(self) -> str:
-        self._conversation_history.extend([
-            SystemMessage("Generate a short greeting message and introduce yourself. 30 words max."),
-            SystemMessage(f"Respond in {get_language_name(self._language)} language."),
-        ])
         structured_response = self._query(
             agent=self._agents['lead'],
-            messages=self._conversation_history,
+            messages=[HumanMessage("Generate a short greeting message and introduce yourself. 30 words max."),
+                      HumanMessage(f"Respond in {get_language_name(self._language)} language."),
+                      ],
         )
         message = structured_response.response
-        self._conversation_history.append(AIMessage(message))
         return message
 
     @traceable
@@ -450,6 +449,11 @@ class ExecutiveAgentChain:
         Returns:
             Formatted response
         """
+
+        if len(self._conversation_history) >= MAX_CONVERSATION_TURNS * 2:
+            response = CONVERSATION_END_MESSAGE[self.fallback_language or self._initial_language]
+            return {"response": response, "confidence_fallback": False, "max_turns_reached": True, "language": self.fallback_language or self._initial_language}
+
         # Step 1: Process input (handle numeric inputs, validation)
         processed_query, is_valid = InputHandler.process_input(
             query,
@@ -519,7 +523,7 @@ class ExecutiveAgentChain:
         # Step 5: Query agent
         structured_response = self._query(
             agent=self._agents['lead'],
-            messages=self._conversation_history, # + language_instruction
+            messages=self._conversation_history,  # + language_instruction
         )
         message = structured_response.response
         chain_logger.info(f"Detected Language: {structured_response.language}")
@@ -541,15 +545,18 @@ class ExecutiveAgentChain:
         confidence_fallback = False
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
             quality_evaluation: QualityEvaluationResult = self._quality_handler.evaluate_response_quality(query,
-                                                                            formatted_response)
+                                                                                                          formatted_response)
             if quality_evaluation.overall_score < 0.3:
                 confidence_fallback = True
-                formatted_response = CONFIDENCE_FALLBACK_MESSAGE[self._language]
+                formatted_response = CONFIDENCE_FALLBACK_MESSAGE[self.fallback_language or self._initial_language]
             chain_logger.info(f"Recieved quality score: {quality_evaluation.overall_score:1.2f}")
 
         if structured_response.language not in ["en", "de"]:
-            formatted_response = LANGUAGE_FALLBACK_MESSAGE[self._language]
+            formatted_response = LANGUAGE_FALLBACK_MESSAGE[
+                self.fallback_language or self._initial_language]
             confidence_fallback = False
+        elif self.fallback_language is None:
+            self.fallback_language = structured_response.language
 
         # Add to history
         self._conversation_history.append(AIMessage(formatted_response))
@@ -563,7 +570,7 @@ class ExecutiveAgentChain:
                     self._conversation_state.get('suggested_program')):
                 self._log_user_profile()
 
-        return {"response": formatted_response, "confidence_fallback": confidence_fallback}
+        return {"response": formatted_response, "confidence_fallback": confidence_fallback, "max_turns_reached": False, "language": self.fallback_language or self._initial_language}
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
         try:
