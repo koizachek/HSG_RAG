@@ -195,7 +195,7 @@ class TestLanguageLocking:
         agent = ExecutiveAgentChain(language='en')
         
         # First query in German
-        response1 = agent.query("Hallo, ich interessiere mich für das EMBA Programm").response
+        response1 = agent.query("Hallo, ich interessiere mich für das EMBA Programm")["response"]
         
         # Language should now be locked to German
         assert agent._user_language == 'de'
@@ -215,7 +215,7 @@ class TestUserAcceptanceScenarios:
         agent.generate_greeting()
         
         # User asks about requirements in German
-        response = agent.query("Welche Voraussetzungen brauche ich für das EMBA Programm?").response
+        response = agent.query("Welche Voraussetzungen brauche ich für das EMBA Programm?")["response"]
         
         # Response should be in German
         assert any(word in response.lower() for word in ['bachelor', 'master', 'jahre', 'erfahrung'])
@@ -230,7 +230,7 @@ class TestUserAcceptanceScenarios:
         agent = ExecutiveAgentChain(language='de')
         agent.generate_greeting()
         
-        response = agent.query("Was kostet das EMBA Programm?").response
+        response = agent.query("Was kostet das EMBA Programm?")["response"]
         
         # Should mention price range
         assert 'CHF' in response or 'Kosten' in response.lower()
@@ -249,7 +249,7 @@ class TestEdgeCases:
         agent = ExecutiveAgentChain(language='en')
         
         # Mixed language should be handled gracefully
-        response = agent.query("Hello I want to know über das EMBA program").response
+        response = agent.query("Hello I want to know über das EMBA program")["response"]
         
         # Should receive a response (not crash)
         assert len(response) > 0
@@ -259,7 +259,7 @@ class TestEdgeCases:
         """Test single character or word inputs"""
         agent = ExecutiveAgentChain(language='en')
         
-        response = agent.query("hi").response
+        response = agent.query("hi")["response"]
         
         # Should handle gracefully
         assert len(response) > 0
@@ -268,7 +268,7 @@ class TestEdgeCases:
         """Test handling of special characters"""
         agent = ExecutiveAgentChain(language='en')
         
-        response = agent.query("Cost??? $$$ EMBA!!!!").response
+        response = agent.query("Cost??? $$$ EMBA!!!!")["response"]
         
         # Should handle and respond appropriately
         assert len(response) > 0

@@ -2,7 +2,7 @@ from gradio import ChatMessage
 
 """ Constants for Gradio app """
 
-FALLBACK_MESSAGE = {
+CONFIDENCE_FALLBACK_MESSAGE = {
     "en": (
         "I'm sorry, but I couldn't find any information in my records that matches your request, "
         "so I can't answer it with confidence. Could you please rephrase your question?\n\n"
@@ -13,6 +13,17 @@ FALLBACK_MESSAGE = {
         "die zu Ihrer Anfrage passen, sodass ich sie nicht mit ausreichender Sicherheit beantworten kann. "
         "Könnten Sie Ihre Frage bitte umformulieren?\n\n"
         "Alternativ können Sie über die untenstehenden Links einen Termin bei der Studienberatung buchen."
+    ),
+}
+
+LANGUAGE_FALLBACK_MESSAGE = {
+    "en": (
+        "I am sorry, I can only reply in English or German. "
+        "Would you like to continue our conversation in English?"
+    ),
+    "de": (
+        "Es tut mir leid, ich kann nur auf Englisch oder Deutsch antworten. "
+        "Möchten Sie unser Gespräch auf Englisch fortführen?"
     ),
 }
 
