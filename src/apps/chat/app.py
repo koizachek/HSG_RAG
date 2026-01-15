@@ -4,6 +4,7 @@ from config import MAX_CONVERSATION_TURNS
 from src.apps.chat.constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.utils.logging import get_logger
+from utils.cache.cache import Cache
 
 logger = get_logger("chatbot_app")
 
@@ -51,6 +52,7 @@ function() {
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
         self._app = gr.Blocks(js=JS_LISTENER)
+        self._cache = Cache.get_cache_strategy()
 
         with self._app:
             agent_state = gr.State(None)
@@ -156,6 +158,13 @@ class ChatbotApplication:
         answers = []
         try:
             logger.info(f"Processing user query: {message[:100]}...")
+            
+            if self._cache is not None:
+                cache_key = f"{language}_response_{message}"
+                cached_response = self._cache.get(cache_key)
+                if cached_response:
+                    logger.info("Cache hit for user query.")
+                    return [cached_response]
 
             structured_response = agent.query(query=message)
             response = structured_response.response

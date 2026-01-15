@@ -185,5 +185,10 @@ AVAILABLE_LANGUAGES = ['en', 'de']
 HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
 DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
 
+# Caching settings
+CASHE_STRATEGY = 'REDIS' # Options: 'REDIS', 'LOCAL'
+TTL_CACHE = 86400 # Time to live for cache entries in seconds (1 day = 86400 seconds)
+MAX_SIZE_CACHE = 1000
+
 # Base URL for scraping
 BASE_URL = "https://emba.unisg.ch/programm"
