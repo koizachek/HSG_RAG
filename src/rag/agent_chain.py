@@ -568,8 +568,9 @@ class ExecutiveAgentChain:
             response = result.get(
                 'structured_response',
                 StructuredAgentResponse(
-                    response=result['messages'][-1].text,
-                    confidence_score=0.5)
+                    response=result['messages'][-1].text, 
+                    confidence_score=0.5,
+                    language=self._language)
             )
             return response
         except Exception as e:

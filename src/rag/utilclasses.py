@@ -11,7 +11,8 @@ class AgentContext:
 
 class StructuredAgentResponse(BaseModel):
     response:         str   = Field(description="Main response to the query")
-    confidence_score: float = Field("Value in range 0.0 to 1.0 that determines how confident the agent is in it's response based on the accumulated information")
+    confidence_score: float = Field(description="Value in range 0.0 to 1.0 that determines how confident the agent is in it's response based on the accumulated information")
+    language:         str   = Field(description="The language code of the language in which the human message is written, e.g. 'en', 'de', etc.")
 
 
 class State(TypedDict):
