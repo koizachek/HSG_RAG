@@ -62,7 +62,7 @@ RULES:
 - If uncertain about details, offer to connect user with admissions team
 - Avoid marketing language or unverified claims
 
-Analyze the language in which the user message is written and save it's language code, eg. 'en', 'de', etc. in the language field."""
+Detect the language the user is writing in or explicitly requests to speak in, and return its ISO language code (e.g., en, de, fa, ru) in the language field."""
 
     _SUMMARIZATION_PROMPT = """Summarize the conversation concisely:
 
