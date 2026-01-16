@@ -62,7 +62,7 @@ RULES:
 - If uncertain about details, offer to connect user with admissions team
 - Avoid marketing language or unverified claims
 
-Detect the language the user is writing in or explicitly requests to speak in, and return its ISO language code (e.g., en, de, fa, ru) in the language field. Respond in that same language only if it is English (en) or German (de)."""
+Detect the language the user is writing in or explicitly requests to speak in, and return its ISO language code (e.g., en, de, fa, ru) in the language field. Respond ONLY in the user's language if it is English (en) or German (de)."""
 
     _SUMMARIZATION_PROMPT = """Summarize the conversation concisely:
 
