@@ -120,18 +120,21 @@ class ChatbotApplication:
             cache_key = f"{preprocess_resp.language}:{preprocess_resp.processed_query}"
             
             if preprocess_resp.response is None: # check cache only if no pre-process response
+                logger.info("Checking cache for processed query")
                 cached_answer = self._cache.get(cache_key)
                 if cached_answer:
                     # Cache hit - return cached answer
+                    logger.info("Cache hit for processed query")
                     final_response = LeadAgentQueryResponse(
                         response=cached_answer,
                         language=preprocess_resp.language,
                     )
                 else:
                     # Cache miss agent will proceed to answer
-                    logger.info("Cache miss for processed query.")
+                    logger.info("Cache miss for processed query")
             elif preprocess_resp.response is not None:
                 # Preprocess provided a direct response no need to call the agent
+                logger.info("Using preprocessed response")
                 final_response = preprocess_resp
             
             if final_response is None:
@@ -147,6 +150,7 @@ class ChatbotApplication:
             
             if final_response.should_cache:
                 # Store the final response in cache
+                logger.info("Caching response for processed query")
                 self._cache.set(cache_key, final_response.response)
 
         except Exception as e:
