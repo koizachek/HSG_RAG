@@ -486,7 +486,7 @@ class ExecutiveAgentChain:
                 processed_query=processed_query
             )
 
-        # 4. Scope Check (Jetzt mit der korrekten Sprache!)
+        # 4. Scope Check
         scope_type = ScopeGuardian.check_scope(processed_query, current_language)
 
         if scope_type != 'on_topic':
@@ -502,7 +502,6 @@ class ExecutiveAgentChain:
             else:
                 redirect_msg = ScopeGuardian.get_redirect_message(scope_type, current_language)
 
-            # Nur bei Fehler/Redirect schreiben wir hier schon in die History
             self._conversation_history.append(HumanMessage(processed_query))
             self._conversation_history.append(AIMessage(redirect_msg))
 

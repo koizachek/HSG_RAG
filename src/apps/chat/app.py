@@ -5,7 +5,7 @@ from src.const.agent_response_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.logging import get_logger
-from src.utils.cache.cache import Cache
+from src.cache.cache import Cache
 
 logger = get_logger("chatbot_app")
 cache_logger = get_logger("cache_chatbot_app")
