@@ -14,9 +14,5 @@ class CacheStrategy(ABC):
         pass
 
     @abstractmethod
-    def exists(self, key) -> bool:
-        pass
-
-    @abstractmethod
     def clear_cache(self):
         pass

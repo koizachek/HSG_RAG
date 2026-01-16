@@ -93,7 +93,16 @@ class ChatbotApplication:
 
             def initalize_agent(language):
                 agent = ExecutiveAgentChain(language=language)
-                greeting = agent.generate_greeting()
+                
+                greeting_key = f"{language}_greeting"
+                greeting = None
+                
+                if self._cache is not None and self._cache.get(greeting_key):
+                    greeting = self._cache.get(greeting_key)
+                else:
+                    greeting = agent.generate_greeting()
+                    self._cache.set(greeting_key, greeting)
+                
                 return agent, [{"role": "assistant", "content": greeting}]
 
             def switch_language(new_language):

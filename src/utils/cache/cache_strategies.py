@@ -12,9 +12,6 @@ class RedisCache(CacheStrategy):
 
     def set(self, key, value):
         self.redis_client.setex(key, TTL, value)
-
-    def exists(self, key) -> bool:
-        return self.redis_client.exists(key)
     
     def clear_cache(self):
         self.redis_client.flushdb()
@@ -22,13 +19,10 @@ class RedisCache(CacheStrategy):
 
 class LocalCache(CacheStrategy):
     def __init__(self):
-        self.cache = TTLCache(maxsize=MAX_SIZE, ttl=TTL)  # 1 day TTL
-
-    def get(self, key):
-        return self.cache.get(key, None)
+        self.cache = TTLCache(maxsize=MAX_SIZE, ttl=TTL)
 
     def set(self, key, value):
         self.cache[key] = value
 
-    def exists(self, key) -> bool:
-        return key in self.cache
+    def clear_cache(self):
+        self.cache.clear()
