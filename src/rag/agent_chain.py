@@ -84,7 +84,7 @@ class ExecutiveAgentChain:
             query: Keywords depicting information you want to retrieve in the primary language. 
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
         """
-        lang = language or self._initial_language
+        lang = language if language in ['en', 'de'] else self._initial_language
         try:
             response, _ = self._dbservice.query(
                 query=query,
