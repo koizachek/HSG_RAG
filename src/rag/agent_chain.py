@@ -13,6 +13,7 @@ import uuid
 import json
 import os
 import re
+import random
 from datetime import datetime
 
 from src.database.weavservice import WeaviateService
@@ -27,7 +28,6 @@ from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.quality_score_handler import QualityEvaluationResult, QualityScoreHandler
 
-from src.utils.lang import get_language_name
 from src.utils.logging import get_logger
 from config import (
     TOP_K_RETRIEVAL,
@@ -426,15 +426,8 @@ class ExecutiveAgentChain:
             chain_logger.error(f"Failed to log user profile: {e}")
 
     def generate_greeting(self) -> str:
-        structured_response = self._query(
-            agent=self._agents['lead'],
-            messages = [
-                HumanMessage("Generate a short greeting message and introduce yourself. 30 words max."),
-                HumanMessage(f"Respond in {get_language_name(self._initial_language)} language."),
-            ],
-        )
-        message = structured_response.response
-        return message
+        greeting_message = random.choice(GREETING_MESSAGES[self._stored_language])
+        return greeting_message
 
     @traceable
     def query(self, query: str) -> LeadAgentQueryResponse:
