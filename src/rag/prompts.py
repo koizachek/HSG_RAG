@@ -60,9 +60,7 @@ RULES:
 - Do NOT ask multiple questions at once
 - Never make admission predictions — always refer to admissions team
 - If uncertain about details, offer to connect user with admissions team
-- Avoid marketing language or unverified claims
-
-Detect the language the user is writing in or explicitly requests to speak in, and return its ISO language code (e.g., en, de, fa, ru) in the language field. Respond ONLY in the user's language if it is English (en) or German (de)."""
+- Avoid marketing language or unverified claims"""
 
     _SUMMARIZATION_PROMPT = """Summarize the conversation concisely:
 
@@ -86,6 +84,15 @@ Rules for categories:
 
 User query: {query}
 AI response: {response}"""
+
+    _LANGUAGE_DETECTOR_PROMPT = """Detect the language the user is writing in or explicitly requests to speak in, and return its ISO language code (e.g., en, de, fa, ru) in the language field.
+
+User query: {query}
+"""
+    
+    @classmethod 
+    def get_language_detector_prompt(cls, query):
+        return cls._LANGUAGE_DETECTOR_PROMPT.format(query=query)
 
     @classmethod
     def get_summarization_prompt(cls):

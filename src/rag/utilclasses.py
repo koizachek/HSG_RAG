@@ -17,7 +17,6 @@ class LeadAgentQueryResponse:
 
 class StructuredAgentResponse(BaseModel):
     response:         str   = Field(description="Main response to the query.")
-    language:         str = Field(description="The ISO language code detected from the user's message or the language the user explicitly requests to speak in (e.g., 'en', 'de', 'fa', 'ru').")
     confidence_score: float = Field("Value in range 0.0 to 1.0 that determines how confident the agent is in it's response based on the accumulated information.")
     
 

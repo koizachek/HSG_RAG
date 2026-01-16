@@ -5,6 +5,7 @@ from langchain.agents import create_agent
 from langchain_core.messages import (
     HumanMessage,
     AIMessage,
+    SystemMessage,
 )
 from langchain.agents.middleware import ModelFallbackMiddleware
 from langchain.agents.structured_output import ProviderStrategy
@@ -27,8 +28,10 @@ from src.rag.input_handler import InputHandler
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.quality_score_handler import QualityEvaluationResult, QualityScoreHandler
+from src.rag.language_detection import LanguageDetector
 
 from src.utils.logging import get_logger
+from src.utils.lang import get_language_name
 from config import (
     TOP_K_RETRIEVAL,
     TRACK_USER_PROFILE,
@@ -47,9 +50,11 @@ class ExecutiveAgentChain:
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
         self._conversation_history = []
-
+        
+        # AI-middlewares
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
             self._quality_handler = QualityScoreHandler()
+        self._language_detector = LanguageDetector()
 
         # Generate unique user ID for this session
         self._user_id = str(uuid.uuid4())
@@ -84,7 +89,7 @@ class ExecutiveAgentChain:
             query: Keywords depicting information you want to retrieve in the primary language. 
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
         """
-        lang = language or self._initial_language
+        lang = language if language in ['en', 'de'] else self._initial_language
         try:
             response, _ = self._dbservice.query(
                 query=query,
@@ -459,8 +464,8 @@ class ExecutiveAgentChain:
         if not is_valid or not processed_query:
             chain_logger.warning(f"Invalid input received: '{query}'")
             return LeadAgentQueryResponse(
-                response = NOT_VALID_QUERY_MESSAGE[self._stored_language],
-                language = response_language,
+                response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
+                language=response_language,
             )
 
         # Log if input was interpreted
@@ -497,31 +502,46 @@ class ExecutiveAgentChain:
             self._conversation_history.append(AIMessage(redirect_msg))
 
             return LeadAgentQueryResponse(
-                response = redirect_msg,
-                language = response_language,
+                response=redirect_msg,
+                language=response_language,
             )
 
         # Reset violation count on valid topic
         self._scope_violation_count = 0
-
-        # Step 3: Build messages with locked language
+       
+        # Append user query to conversation history before querying 
         self._conversation_history.append(HumanMessage(processed_query))
 
-        # Step 4: Query agent
+        # Step 3: Detect query language using the language detector
+        detected_language = self._language_detector.detect_language(processed_query)
+        chain_logger.info(f"Detected query language: {detected_language}")
+        self._conversation_state['user_language'] = detected_language
+        
+        # Store the query language if it's valid; return fallback message otherwise
+        if detected_language in ['de', 'en']:
+            self._stored_language = detected_language
+            response_language = detected_language
+        else:
+            chain_logger.info("User query is not in a valid language, switching to fallback message...")
+            fallback_message = LANGUAGE_FALLBACK_MESSAGE[response_language]
+            self._conversation_history.append(AIMessage(fallback_message))
+
+            return LeadAgentQueryResponse(
+                response=fallback_message,
+                language=response_language,
+            )
+
+        # Step 4: Build messages with locked language
+        language_instruction = SystemMessage(f"Respond in {get_language_name(response_language)} language.")
+
+        # Step 5: Query agent
         structured_response = self._query(
             agent=self._agents['lead'],
-            messages=self._conversation_history, 
+            messages=self._conversation_history + [language_instruction], 
         )
         agent_response = structured_response.response
-        
-        chain_logger.info(f"User language detected by lead agent: {structured_response.language}")
-        self._conversation_state['user_language'] = structured_response.language
 
-        if structured_response.language in ['de', 'en']:
-            self._stored_language = structured_response.language
-            response_language = structured_response.language
-
-        # Step 5: Format response (remove tables, chunk if needed)
+        # Step 6: Format response (remove tables, chunk if needed)
         if ENABLE_RESPONSE_CHUNKING:
             formatted_response = ResponseFormatter.format_response(
                 agent_response,
@@ -534,32 +554,26 @@ class ExecutiveAgentChain:
         # Clean up response
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
-        # Step 6: Language fallback mechanisms and response quality evaluation
+        # Step 7: Language fallback mechanisms and response quality evaluation
         confidence_fallback = False
-        if structured_response.language not in ["en", "de"]:
-            chain_logger.info("User query is not in a valid language, switching to fallback message...")
-            formatted_response = LANGUAGE_FALLBACK_MESSAGE[response_language]
-
-        elif ENABLE_EVALUATE_RESPONSE_QUALITY:
+        if ENABLE_EVALUATE_RESPONSE_QUALITY:
             quality_evaluation: QualityEvaluationResult = self._quality_handler. \
                 evaluate_response_quality(query, formatted_response)
+            chain_logger.info(f"Lead agent response recieved quality score of {quality_evaluation.overall_score:1.2f}")
 
             if quality_evaluation.overall_score < 0.3:
                 confidence_fallback = True
                 formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
-            
-            chain_logger.info(f"Lead agent response recieved quality score of {quality_evaluation.overall_score:1.2f}")
- 
+             
         # Add to history
         self._conversation_history.append(AIMessage(formatted_response))
 
-        # Step 7: Update conversation state and log profile if tracking is enabled
+        # Step 8: Update conversation state and log profile if tracking is enabled
         if TRACK_USER_PROFILE:
             self._update_conversation_state(processed_query, formatted_response)
             # Log profile every 5 messages or when program is suggested
             message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
-            if (message_count % 5 == 0 or
-                    self._conversation_state.get('suggested_program')):
+            if (message_count % 5 == 0 or self._conversation_state.get('suggested_program')):
                 self._log_user_profile()
 
         return LeadAgentQueryResponse(
