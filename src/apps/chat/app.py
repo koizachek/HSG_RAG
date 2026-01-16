@@ -5,7 +5,7 @@ from src.const.agent_response_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.logging import get_logger
-from utils.cache.cache import Cache
+from src.utils.cache.cache import Cache
 
 logger = get_logger("chatbot_app")
 
@@ -13,7 +13,7 @@ class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
         self._app = gr.Blocks(js=JS_LISTENER)
         self._language = language
-        self._cache = Cache.get_cache_strategy()
+        self._cache = Cache.get_cache()
 
         with self._app:
             agent_state = gr.State(None)
@@ -54,16 +54,7 @@ class ChatbotApplication:
 
             def initalize_agent(language):
                 agent = ExecutiveAgentChain(language=language)
-                
-                greeting_key = f"{language}_greeting"
-                greeting = None
-                
-                if self._cache is not None and self._cache.get(greeting_key):
-                    greeting = self._cache.get(greeting_key)
-                else:
-                    greeting = agent.generate_greeting()
-                    self._cache.set(greeting_key, greeting)
-                
+                greeting = agent.generate_greeting()
                 return agent, [{"role": "assistant", "content": greeting}]
 
             def switch_language(new_language):
@@ -122,13 +113,41 @@ class ChatbotApplication:
         answers = []
         try:
             logger.info(f"Processing user query: {message[:100]}...")
-
-            lead_resp: LeadAgentQueryResponse = agent.query(query=message)
-            answers.append(lead_resp.response)
-            self._language = lead_resp.language
-
-            if lead_resp.confidence_fallback or lead_resp.max_turns_reached:
+            
+            preprocess_resp = agent.preprocess_query(message)
+            final_response: LeadAgentQueryResponse = None
+            
+            cache_key = f"{preprocess_resp.language}:{preprocess_resp.processed_query}"
+            
+            if preprocess_resp.response is None: # check cache only if no pre-process response
+                cached_answer = self._cache.get(cache_key)
+                if cached_answer:
+                    # Cache hit - return cached answer
+                    final_response = LeadAgentQueryResponse(
+                        response=cached_answer,
+                        language=preprocess_resp.language,
+                    )
+                else:
+                    # Cache miss agent will proceed to answer
+                    logger.info("Cache miss for processed query.")
+            elif preprocess_resp.response is not None:
+                # Preprocess provided a direct response no need to call the agent
+                final_response = preprocess_resp
+            
+            if final_response is None:
+                # Agent needs to answer the processed query
+                lead_resp: LeadAgentQueryResponse = agent.agent_query(preprocess_resp.processed_query)
+                final_response = lead_resp
+            
+            answers.append(final_response.response)
+            self._language = final_response.language
+            
+            if final_response.confidence_fallback or final_response.max_turns_reached:
                 answers.extend(APPOINTMENT_LINKS[self._language])
+            
+            if final_response.should_cache:
+                # Store the final response in cache
+                self._cache.set(cache_key, final_response.response)
 
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
