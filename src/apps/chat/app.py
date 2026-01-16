@@ -8,6 +8,7 @@ from src.utils.logging import get_logger
 from src.utils.cache.cache import Cache
 
 logger = get_logger("chatbot_app")
+cache_logger = get_logger("cache_chatbot_app")
 
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
@@ -120,21 +121,21 @@ class ChatbotApplication:
             cache_key = f"{preprocess_resp.language}:{preprocess_resp.processed_query}"
             
             if preprocess_resp.response is None: # check cache only if no pre-process response
-                logger.info("Checking cache for processed query")
+                cache_logger.info("CHECKING cache for processed query")
                 cached_answer = self._cache.get(cache_key)
                 if cached_answer:
                     # Cache hit - return cached answer
-                    logger.info("Cache hit for processed query")
+                    cache_logger.info("Cache HIT for processed query")
                     final_response = LeadAgentQueryResponse(
                         response=cached_answer,
                         language=preprocess_resp.language,
                     )
                 else:
                     # Cache miss agent will proceed to answer
-                    logger.info("Cache miss for processed query")
+                    cache_logger.info("Cache MISS for processed query")
             elif preprocess_resp.response is not None:
                 # Preprocess provided a direct response no need to call the agent
-                logger.info("Using preprocessed response")
+                cache_logger.info("Using preprocessed response")
                 final_response = preprocess_resp
             
             if final_response is None:
@@ -150,7 +151,7 @@ class ChatbotApplication:
             
             if final_response.should_cache:
                 # Store the final response in cache
-                logger.info("Caching response for processed query")
+                cache_logger.info("CACHING response for processed query")
                 self._cache.set(cache_key, final_response.response)
 
         except Exception as e:
