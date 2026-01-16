@@ -1,56 +1,17 @@
 import os
 import gradio as gr
-from config import MAX_CONVERSATION_TURNS
+from src.apps.chat.js import JS_LISTENER, JS_CLEAR
 from src.apps.chat.constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
+from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.logging import get_logger
 
 logger = get_logger("chatbot_app")
 
-JS_LISTENER = """
-function() {
-    document.addEventListener('click', function(e) {
-        // 1. Use .closest() to find the <a> tag even if user clicks the text/icon inside it
-        const target = e.target.closest('a.appointment-btn');
-
-        if (target) {
-            // 2. Prevent the link from opening in a new tab/window
-            e.preventDefault();
-
-            // 3. Get the URL from the standard href attribute
-            const url = target.getAttribute('href');
-            const container = document.getElementById('consultation-iframe-container');
-
-            if (container) {
-                container.innerHTML = `
-                    <div style="margin-top: 20px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-                        <div style="background: #f9fafb; padding: 10px; font-weight: bold; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between;">
-                            <span>Appointment Booking</span>
-                            <button onclick="document.getElementById('consultation-iframe-container').innerHTML=''" style="cursor: pointer; color: red;">✕ Close</button>
-                        </div>
-                        <iframe src="${url}" width="100%" height="600px" frameborder="0"></iframe>
-                    </div>
-                `;
-                container.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-    });
-}
-"""
-
-JS_CLEAR = """
-function() {
-    const el = document.getElementById('consultation-iframe-container');
-    if (el) {
-        el.innerHTML = '';
-    }
-}
-"""
-
-
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
         self._app = gr.Blocks(js=JS_LISTENER)
+        self._language = language
 
         with self._app:
             agent_state = gr.State(None)
@@ -133,7 +94,7 @@ class ChatbotApplication:
 
             # Initialize the agent chain on the app startup
             self._app.load(
-                fn=lambda: initalize_agent(language),
+                fn=lambda: initalize_agent(self._language),
                 outputs=[agent_state, chat.chatbot_value],
             )
 
@@ -151,16 +112,12 @@ class ChatbotApplication:
         try:
             logger.info(f"Processing user query: {message[:100]}...")
 
-            structured_response = agent.query(query=message)
-            response = structured_response["response"]
-            confidence_fallback = structured_response["confidence_fallback"]
-            max_turns_reached = structured_response["max_turns_reached"]
-            language = structured_response["language"]
+            lead_resp: LeadAgentQueryResponse = agent.query(query=message)
+            answers.append(lead_resp.response)
+            self._language = lead_resp.language
 
-            answers.append(response)
-
-            if confidence_fallback or max_turns_reached:
-                answers.extend(APPOINTMENT_LINKS[language])
+            if lead_resp.confidence_fallback or lead_resp.max_turns_reached:
+                answers.extend(APPOINTMENT_LINKS[self._language])
 
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
