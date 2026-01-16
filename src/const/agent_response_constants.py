@@ -2,6 +2,16 @@ from gradio import ChatMessage
 
 """ Constants for Gradio app """
 
+QUERY_EXCEPTION_MESSAGE = {
+    "en": "I'm sorry, I cannot provide a helpful response right now. Please contact tech support or try again later.",
+    "de": "Es tut mir leid, ich kann im Moment keine hilfreiche Antwort geben. Bitte wenden Sie sich an den technischen Support oder versuchen Sie es später erneut.",
+}
+
+NOT_VALID_QUERY_MESSAGE = {
+    "en": "I didn't quite understand that. Could you please rephrase your question?",
+    "de": "Das habe ich nicht ganz verstanden. Könnten Sie Ihre Frage bitte anders formulieren?",
+}
+
 CONFIDENCE_FALLBACK_MESSAGE = {
     "en": (
         "I'm sorry, but I couldn't find any information in my records that matches your request, "

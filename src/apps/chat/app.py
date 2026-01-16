@@ -1,7 +1,7 @@
 import os
 import gradio as gr
 from src.apps.chat.js import JS_LISTENER, JS_CLEAR
-from src.apps.chat.constants import *
+from src.const.agent_response_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.logging import get_logger

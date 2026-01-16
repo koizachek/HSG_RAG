@@ -15,14 +15,10 @@ import os
 import re
 from datetime import datetime
 
-from src.apps.chat.constants import (
-        CONFIDENCE_FALLBACK_MESSAGE, 
-        LANGUAGE_FALLBACK_MESSAGE, 
-        CONVERSATION_END_MESSAGE
-)
 from src.database.weavservice import WeaviateService
 
 from src.rag.utilclasses import *
+from src.const.agent_response_constants import *
 from src.rag.middleware import AgentChainMiddleware as chainmdw
 from src.rag.prompts import PromptConfigurator as promptconf
 from src.rag.models import ModelConfigurator as modelconf
@@ -31,11 +27,10 @@ from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.quality_score_handler import QualityEvaluationResult, QualityScoreHandler
 
-from src.utils.lang import detect_language, get_language_name
+from src.utils.lang import get_language_name
 from src.utils.logging import get_logger
 from config import (
     TOP_K_RETRIEVAL,
-    LOCK_LANGUAGE_AFTER_FIRST_MESSAGE,
     TRACK_USER_PROFILE,
     ENABLE_RESPONSE_CHUNKING,
     ENABLE_EVALUATE_RESPONSE_QUALITY, 
@@ -48,7 +43,7 @@ chain_logger = get_logger('agent_chain')
 class ExecutiveAgentChain:
     def __init__(self, language: str = 'en') -> None:
         self._initial_language  = language
-        self._fallback_language = language
+        self._stored_language = language
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
         self._conversation_history = []
@@ -453,7 +448,7 @@ class ExecutiveAgentChain:
             Formatted response
         """
         # Select fallback language if language was changed by previous query
-        response_language = self._fallback_language 
+        response_language = self._stored_language 
 
         if len(self._conversation_history) >= MAX_CONVERSATION_TURNS * 2:
             return LeadAgentQueryResponse(
@@ -471,7 +466,7 @@ class ExecutiveAgentChain:
         if not is_valid or not processed_query:
             chain_logger.warning(f"Invalid input received: '{query}'")
             return LeadAgentQueryResponse(
-                response = "I didn't quite understand that. Could you please rephrase your question?",
+                response = NOT_VALID_QUERY_MESSAGE[self._stored_language],
                 language = response_language,
             )
 
@@ -530,7 +525,7 @@ class ExecutiveAgentChain:
         self._conversation_state['user_language'] = structured_response.language
 
         if structured_response.language in ['de', 'en']:
-            self._fallback_language = structured_response.language
+            self._stored_language = structured_response.language
             response_language = structured_response.language
 
         # Step 5: Format response (remove tables, chunk if needed)
@@ -603,7 +598,7 @@ class ExecutiveAgentChain:
             error_msg = e.body['message'] if hasattr(e, 'body') else str(e)
             chain_logger.error(f"Failed to invoke the agent: {error_msg}")
             return StructuredAgentResponse(
-                response="I'm sorry, I cannot provide a helpful response right now. Please contact tech support or try again later.",
+                response=QUERY_EXCEPTION_MESSAGE[self._stored_language],
                 confidence_score=0.0,
                 language=self._initial_language,
             )
