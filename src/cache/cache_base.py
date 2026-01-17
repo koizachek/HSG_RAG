@@ -6,11 +6,11 @@ class CacheStrategy(ABC):
     """
     
     @abstractmethod
-    def get(self, key):
+    def set(self, key: str, value: dict, language: str):
         pass
 
     @abstractmethod
-    def set(self, key, value):
+    def get(self, key: str, language: str):
         pass
 
     @abstractmethod
