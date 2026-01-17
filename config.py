@@ -189,6 +189,7 @@ DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
 CACHE_STRATEGY = 'REDIS' # Options: 'REDIS', 'LOCAL'
 TTL_CACHE = 86400 # Time to live for cache entries in seconds (1 day = 86400 seconds)
 MAX_SIZE_CACHE = 1000
+CACHE_ENABLED = True
 
 # Base URL for scraping
 BASE_URL = "https://emba.unisg.ch/programm"

@@ -6,6 +6,7 @@ from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.logging import get_logger
 from src.cache.cache import Cache
+from config import CACHE_ENABLED
 
 logger = get_logger("chatbot_app")
 cache_logger = get_logger("cache_chatbot_app")
@@ -14,7 +15,8 @@ class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
         self._app = gr.Blocks(js=JS_LISTENER)
         self._language = language
-        self._cache = Cache.get_cache()
+        if CACHE_ENABLED:
+            self._cache = Cache.get_cache()
 
         with self._app:
             agent_state = gr.State(None)
@@ -117,41 +119,39 @@ class ChatbotApplication:
             
             preprocess_resp = agent.preprocess_query(message)
             final_response: LeadAgentQueryResponse = None
-            
-            cache_key = f"{preprocess_resp.language}:{preprocess_resp.processed_query}"
-            
-            if preprocess_resp.response is None: # check cache only if no pre-process response
+
+            if preprocess_resp.response:
+                # Answer comes from preprocessing step
+                cache_logger.info("Using preprocessed response")
+                final_response = preprocess_resp
+            elif CACHE_ENABLED:
                 cache_logger.info("CHECKING cache for processed query")
+                
+                cache_key = f"{preprocess_resp.language}:{preprocess_resp.processed_query}"
                 cached_answer = self._cache.get(cache_key)
+
                 if cached_answer:
-                    # Cache hit - return cached answer
-                    cache_logger.info("Cache HIT for processed query")
+                    cache_logger.info("Cache HIT")
+                    # Wir verpacken den Text aus dem Cache wieder in ein Objekt
                     final_response = LeadAgentQueryResponse(
                         response=cached_answer,
                         language=preprocess_resp.language,
                     )
                 else:
-                    # Cache miss agent will proceed to answer
-                    cache_logger.info("Cache MISS for processed query")
-            elif preprocess_resp.response is not None:
-                # Preprocess provided a direct response no need to call the agent
-                cache_logger.info("Using preprocessed response")
-                final_response = preprocess_resp
-            
-            if final_response is None:
-                # Agent needs to answer the processed query
-                lead_resp: LeadAgentQueryResponse = agent.agent_query(preprocess_resp.processed_query)
-                final_response = lead_resp
-            
+                    cache_logger.info("Cache MISS")
+
+            # 4. Agent Query if no cached or preprocessed response
+            if not final_response:
+                final_response = agent.agent_query(preprocess_resp.processed_query)
+
             answers.append(final_response.response)
             self._language = final_response.language
-            
+
             if final_response.confidence_fallback or final_response.max_turns_reached:
-                answers.extend(APPOINTMENT_LINKS[self._language])
-            
+                answers.extend(APPOINTMENT_LINKS.get(self._language, []))
+
             if final_response.should_cache:
-                # Store the final response in cache
-                cache_logger.info("CACHING response for processed query")
+                cache_logger.info("CACHING new response")
                 self._cache.set(cache_key, final_response.response)
 
         except Exception as e:
