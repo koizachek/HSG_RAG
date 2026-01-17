@@ -155,8 +155,8 @@ class ChatbotApplication:
             if final_response.should_cache and CACHE_ENABLED:
                 cache_logger.info("CACHING new response")
                 self._cache.set(
-                    key=processed_q,          # Geändert von user_query zu key
-                    value=final_response.response, # Geändert von response zu value
+                    key=processed_q,   
+                    value=final_response.response,
                     language=current_lang
                 )
 
