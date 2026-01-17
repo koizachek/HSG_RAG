@@ -15,8 +15,7 @@ class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
         self._app = gr.Blocks(js=JS_LISTENER)
         self._language = language
-        if CACHE_ENABLED:
-            self._cache = Cache.get_cache()
+        self._cache = Cache.get_cache()
 
         with self._app:
             agent_state = gr.State(None)
