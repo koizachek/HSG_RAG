@@ -72,6 +72,7 @@ def run_weaviate_command(command: str, backup_id: str = None):
 
 
 def clear_cache():
+    logger = logging_startup()
     cache = Cache.get_cache()
     if cache:
         cache.clear_cache()
