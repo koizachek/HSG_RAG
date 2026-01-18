@@ -6,7 +6,6 @@ from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.logging import get_logger
 from src.cache.cache import Cache
-from config import CACHE_ENABLED
 
 logger = get_logger("chatbot_app")
 cache_logger = get_logger("cache_chatbot_app")
@@ -127,7 +126,7 @@ class ChatbotApplication:
                 cache_logger.info("Using preprocessed response")
                 final_response = preprocess_resp
                 
-            elif CACHE_ENABLED:
+            elif Cache._settings["enabled"]:
                 # Check cache for existing response
                 cache_logger.info("CHECKING cache...")
                 cached_text = self._cache.get(processed_q, language=current_lang)
@@ -151,7 +150,7 @@ class ChatbotApplication:
             if final_response.confidence_fallback or final_response.max_turns_reached:
                 answers.extend(APPOINTMENT_LINKS.get(self._language, []))
 
-            if final_response.should_cache and CACHE_ENABLED:
+            if final_response.should_cache and Cache._settings["enabled"]:
                 cache_logger.info("CACHING new response")
                 self._cache.set(
                     key=processed_q,   

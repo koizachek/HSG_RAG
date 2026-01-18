@@ -144,6 +144,21 @@ class WeaviateConfiguration:
     def is_local(cls) -> bool:
         return cls.LOCAL_DATABASE
 
+# Cache settings
+class CacheConfig:
+    LOCAL_HOST = "localhost"
+    LOCAL_PORT = 6379
+    LOCAL_PASS = os.getenv("REDIS_LOCAL_PASSWORD", "")
+
+    CLOUD_HOST = os.getenv("REDIS_CLOUD_HOST")
+    CLOUD_PORT = int(os.getenv("REDIS_CLOUD_PORT", 6379))
+    CLOUD_PASS = os.getenv("REDIS_CLOUD_PASSWORD")
+
+    CACHE_MODE = "local"  # 'local' or 'cloud'
+
+    TTL_CACHE = 86400
+    MAX_SIZE_CACHE = 1000
+
 # Data paths
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 RAW_DATA_PATH = os.path.join(DATA_DIR, "raw_data.json")
@@ -184,12 +199,6 @@ CHUNK_MAX_TOKENS = 8191
 AVAILABLE_LANGUAGES = ['en', 'de']
 HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
 DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
-
-# Caching settings
-CACHE_STRATEGY = 'REDIS' # Options: 'REDIS', 'LOCAL'
-TTL_CACHE = 86400 # Time to live for cache entries in seconds (1 day = 86400 seconds)
-MAX_SIZE_CACHE = 1000
-CACHE_ENABLED = True
 
 # Base URL for scraping
 BASE_URL = "https://emba.unisg.ch/programm"
