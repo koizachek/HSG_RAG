@@ -36,6 +36,6 @@ docling>=2.55.0
 # Weaviate Vector DB 
 weaviate-client>=4.16.9
 
+# Cache 
 cachetools>=5.0.0
-
 redis>=4.5.5

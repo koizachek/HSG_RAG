@@ -156,7 +156,7 @@ class CacheConfig:
 
     CACHE_MODE = "cloud"  # 'local' or 'cloud'
 
-    TTL_CACHE = 86400
+    TTL_CACHE = 86400 # 86400 seconds = 24 hours
     MAX_SIZE_CACHE = 1000
 
 # Data paths
