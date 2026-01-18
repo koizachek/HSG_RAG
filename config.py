@@ -154,7 +154,7 @@ class CacheConfig:
     CLOUD_PORT = int(os.getenv("REDIS_CLOUD_PORT", 6379))
     CLOUD_PASS = os.getenv("REDIS_CLOUD_PASSWORD")
 
-    CACHE_MODE = "local"  # 'local' or 'cloud'
+    CACHE_MODE = "cloud"  # 'local' or 'cloud'
 
     TTL_CACHE = 86400
     MAX_SIZE_CACHE = 1000
