@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 class CacheStrategy(ABC):
     """
@@ -6,7 +7,7 @@ class CacheStrategy(ABC):
     """
     
     @abstractmethod
-    def set(self, key: str, value: dict, language: str):
+    def set(self, key: str, value: Any, language: str):
         pass
 
     @abstractmethod
