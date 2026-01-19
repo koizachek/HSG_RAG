@@ -154,7 +154,10 @@ class CacheConfig:
     CLOUD_PORT = int(os.getenv("REDIS_CLOUD_PORT", 6379))
     CLOUD_PASS = os.getenv("REDIS_CLOUD_PASSWORD")
 
-    CACHE_MODE = "cloud"  # 'local' or 'cloud'
+    CACHE_LOCAL = "local"
+    CACHE_CLOUD = "cloud"
+    CACHE_DICT = "dict"
+    CACHE_MODE = "cloud"  # 'local' or 'cloud' or 'dict' set here the default cache mode
 
     TTL_CACHE = 86400 # 86400 seconds = 24 hours
     MAX_SIZE_CACHE = 1000

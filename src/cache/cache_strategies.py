@@ -8,8 +8,8 @@ from src.utils.logging import get_logger
 logger = get_logger(__name__)
 
 class RedisCache(CacheStrategy):
-    def __init__(self, host, port, password, type):
-        service = RedisService(host, port, password, type)
+    def __init__(self, host, port, password, mode):
+        service = RedisService(host, port, password, mode)
         self.client = service.get_client()
 
     def set(self, key: str, value: dict, language: str):

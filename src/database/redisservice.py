@@ -9,14 +9,14 @@ class RedisService:
     _instance = None
     _init_lock = Lock()
 
-    def __new__(cls, host, port, password, type):
+    def __new__(cls, host, port, password, mode):
         if cls._instance is None:
             with cls._init_lock:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, host, port, password, type):
+    def __init__(self, host, port, password, mode):
         if hasattr(self, '_initialized') and self._initialized:
             return
         
@@ -24,7 +24,7 @@ class RedisService:
         self._host = host
         self._port = port
         self._password = password 
-        self.type = type   
+        self.mode = mode   
         
         self._connect()
 
@@ -42,7 +42,7 @@ class RedisService:
                 socket_timeout=2
             )
             self._client.ping()
-            logger.info(f"Successfully connected to Redis! {self.type}")
+            logger.info(f"Successfully connected to Redis! {self.mode}")
         except Exception as e:
             logger.error(f"Redis connection failed: {e}")
             self._client = None
