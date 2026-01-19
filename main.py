@@ -121,6 +121,8 @@ def main():
     
     # Load cache settings with the cache args
     Cache.configure(args.cache_mode, args.no_cache)
+    
+    must_clear_cache = False
 
     # Check if any argument is provided
     if not any([args.scrape, args.imports, args.weaviate, args.cli, args.no_cache, args.app]):
@@ -130,15 +132,19 @@ def main():
 
     # Run the specified components
     if args.scrape:
+        must_clear_cache = True
         run_scraper()
 
     if args.imports:
+        must_clear_cache = True
         run_importer(args.imports)
 
     if args.weaviate:
+        if args.weaviate in ["init", "redo", "restore"]:
+            must_clear_cache = True
         run_weaviate_command(command=args.weaviate, backup_id=args.backup_id)
     
-    if args.clear_cache:
+    if args.clear_cache or must_clear_cache:
         clear_cache()
 
     if args.app:
