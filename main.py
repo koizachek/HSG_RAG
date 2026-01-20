@@ -79,21 +79,55 @@ def run_application(lang: str) -> None:
     app.run()
 
 
+def run_dbapp() -> None:
+    """Run the database application."""
+    from src.apps.dbapp.app import DatabaseApplication
+    logger = logging_startup()
+    logger.info("Starting database application...")
+    app = DatabaseApplication()
+    app.run()
+
+
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="University of St. Gallen Executive Education RAG Chatbot")
 
     # Add arguments
-    parser.add_argument("--scrape", action="store_true",
-                        help="Scrapes the data from the HSG website and imports it into the database")
-    parser.add_argument("--imports", nargs="+", help="Runs the data importing pipeline for the provided files")
-
-    parser.add_argument("--weaviate", type=str, choices=['init', 'delete', 'redo', 'checkhealth', 'backup', 'restore'],
-                        help="Runs different database actions")
-    parser.add_argument("--backup-id", type=str, help="Required when calling the --weaviate restore command!")
-
-    parser.add_argument("--cli", action="store_true", help="Run the chatbot CLI")
-    parser.add_argument("--app", type=str, choices=AVAILABLE_LANGUAGES, help="Run the chatbot web application")
+    parser.add_argument(
+        "--scrape", 
+        action="store_true",
+        help="Scrapes the data from the HSG website and imports it into the database"
+    )
+    parser.add_argument(
+        "--imports", 
+        nargs="+", 
+        help="Runs the data importing pipeline for the provided files"
+    )
+    parser.add_argument(
+        "--weaviate", 
+        type=str, choices=['init', 'delete', 'redo', 'checkhealth', 'backup', 'restore'],
+        help="Runs different database actions"
+    )
+    parser.add_argument(
+        "--backup-id", 
+        type=str, 
+        help="Required when calling the --weaviate restore command!"
+    )
+    parser.add_argument(
+        "--cli", 
+        action="store_true", 
+        help="Run the chatbot CLI"
+    )
+    parser.add_argument(
+        "--app", 
+        type=str, choices=AVAILABLE_LANGUAGES, 
+        help="Run the chatbot web application"
+    )
+    parser.add_argument(
+        "--dbapp", 
+        action="store_true", 
+        help="Run the database management application"
+    )
 
     return parser.parse_args()
 
@@ -103,7 +137,7 @@ def main():
     args = parse_args()
 
     # Check if any argument is provided
-    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.app]):
+    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.app, args.dbapp]):
         # If no argument is provided, run the chatbot by default
         run_application()
         return
@@ -120,6 +154,9 @@ def main():
 
     if args.app:
         run_application(args.app)
+
+    if args.dbapp:
+        run_dbapp()
 
 
 if __name__ == "__main__":

@@ -357,9 +357,11 @@ class WeaviateService:
             raise e
 
 
-    def _create_backup(self) -> None:
+    def _create_backup(self) -> str:
         """
-        Create a backup of the current database state and stores it under selected backup provider. 
+        Create a backup of the current database state and stores it under selected backup provider.
+
+        Returns: backup id of the created backup.
         """
         try:
             if not wvtconf.BACKUP_METHOD:
@@ -384,6 +386,9 @@ class WeaviateService:
   
                         schema_backup = []
                         objects_backup = {}
+                        data_backup = {
+                            'creation_date': datetime.datetime.now().isoformat(),
+                        }
 
                         for c in client.collections.list_all(simple=False):
                             coll = client.collections.get(c)
@@ -405,6 +410,11 @@ class WeaviateService:
                         objects_backup_path = os.path.join(backup_path, 'objects.json')
                         with open(objects_backup_path, 'w', encoding='utf-8') as f:
                             json.dump(objects_backup, f, indent=2, default=str)
+
+                        data_backup_path = os.path.join(backup_path, 'data.json')
+                        with open(data_backup_path, 'w', encoding='utf-8') as f:
+                            json.dump(data_backup, f, indent=2, default=str)
+
                     case 's3':
                         client.backup.create(
                             backup_id=backup_id,
@@ -419,6 +429,7 @@ class WeaviateService:
             self._last_query_time = perf_counter()
             logger.info(f"Backup '{backup_id}' created successfully")
             
+            return backup_id
         except Exception as e:
             logger.error(f"Backup creation failed: {e}")
             raise e
