@@ -1,7 +1,7 @@
-import os, re, hashlib, time
+import os, re, hashlib, time, json
+import importlib.util 
 
 from enum import Enum
-from datetime import datetime, timezone
 from pathlib import Path
 from dataclasses import dataclass
 from transformers import AutoTokenizer
@@ -12,7 +12,7 @@ from docling_core.types.doc.document import DoclingDocument
 
 from src.utils.lang import detect_language
 from src.utils.logging import get_logger
-from config import BASE_URL, CHUNK_MAX_TOKENS
+from config import BASE_URL, CHUNK_MAX_TOKENS, WeaviateConfiguration as wvtconf
 
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
@@ -20,11 +20,6 @@ datalogger = get_logger("data_processor")
 _TRANSFORMERS_TOKENIZER = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 _EN_URL_PATTERN = r'\[EN\]\((https://emba\.unisg\.ch/en/[^\s)]+)\)'
 _PROGRAM_URL_PATTERN = r'https://emba\.unisg\.ch/(?:programm[^\s)]+|en/embax)'
-
-
-def _get_hash(text: str) -> str:
-    """Generate an MD5 hash for the given text."""
-    return hashlib.md5(text.strip().encode("utf-8")).hexdigest()
 
 
 def _get_en_version(text: str):
@@ -40,53 +35,17 @@ def _get_program_urls(text: str):
     return re.findall(_PROGRAM_URL_PATTERN, text)
 
 
-def _detect_programs(text: str):
-    """
-    Identify MBA program names mentioned in the given text.
-
-    Args:
-        text (str): The text to search for program mentions.
-
-    Returns:
-        list[str]: List of detected program identifiers.
-    """
-    programms = []
-    lc_text = text.lower()
-    found = lambda txt: txt in lc_text
-    
-    if found('emba') or found('executive mba'):
-        programms.append('emba')
-
-    if found('iemba') or found('international emba') or found('international executive mba'):
-        programms.append('iemba')
-
-    if found('emba x'):
-        programms.append('emba_x')
-
-    return programms
-
-
 class ProcessingStatus(Enum):
     NOT_FOUND         = 1
     SUCCESS           = 2
     FAILURE           = 3
     INCORRECT_FORMAT  = 5
 
-    
-@dataclass
-class _ChunkMetadata:
-    programs: str 
-    date: str 
-    document_id: str 
-    language: str
-    source: str = None
-
 
 @dataclass
 class ProcessingResult:
     status: ProcessingStatus = ProcessingStatus.SUCCESS
     chunks: list = None
-    document_id: str = None
     language: str = None
         
 
@@ -107,22 +66,60 @@ class _ProcessorBase:
             max_tokens=CHUNK_MAX_TOKENS, 
             merge_peers=True
         )
-    
+        self._strategies = self._load_strategies()
+
+
+    def _load_strategies(self):
+        properties = {}
+        strategies = {}
+        
+        os.makedirs(wvtconf.PROPERTIES_PATH, exist_ok=True)
+        os.makedirs(wvtconf.STRATEGIES_PATH, exist_ok=True)
+        properties_path = os.path.join(wvtconf.PROPERTIES_PATH, 'properties.json')
+        if not os.path.exists(properties_path):
+            raise ValueError(f"Properties file does not exist under {properties_path}! Ensure that the database interface was opened at least once!")
+
+        with open(properties_path) as f:
+            properties = json.load(f)
+
+        for prop in properties.keys():
+            strat_file = f'strat_{prop}.py'
+            strat_path = os.path.join(wvtconf.STRATEGIES_PATH, strat_file)
+            if not os.path.exists(strat_path):
+                raise ValueError(f"Could not find strategy for property {prop}!")
+
+            spec = importlib.util.spec_from_file_location(
+                name=prop,
+                location=strat_path
+            )
+            strategy = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(strategy)
+
+            if not hasattr(strategy, 'run'):
+                raise ValueError(f"Strategy '{strat_file}' has no 'run' function!")
+
+            strategies[prop] = strategy
+
+        return strategies
+        
+
     def process(self):
         """Abstract method to be implemented by subclasses."""
         raise NotImplementedError("This method is not implemented in ProcessorBase")
 
+    
+    def _prepare_chunks(self, document_name: str, document_content: str, chunks: list[str]) -> list[dict]:
+        prepared_chunks = []
+        for chunk in chunks:
+            prepared_chunk = {}
+            for prop, strat in self._strategies.items():
+                prepared_chunk[prop] = strat.run(document_name, document_content, chunk)
+            prepared_chunks.append(prepared_chunk)
 
-    def _collect_metadata(self, text: str) -> _ChunkMetadata:
-        """Collect metadata such as programs, date, language, and document hash."""
-        return _ChunkMetadata(
-                programs=_detect_programs(text),
-                date=datetime.now().replace(tzinfo=timezone.utc),
-                language=detect_language(text),
-                document_id=_get_hash(text))
+        return prepared_chunks
 
 
-    def _collect_chunks(self, document: DoclingDocument, metadata: _ChunkMetadata) -> list:
+    def _collect_chunks(self, document: DoclingDocument) -> list[str]:
         """
         Collect text chunks from a document and prepare them with metadata.
 
@@ -133,19 +130,8 @@ class _ProcessorBase:
         Returns:
             list[dict]: List of chunk dictionaries containing text and metadata.
         """
-        chunks = [self._chunker.contextualize(chunk=c) for c in self._chunker.chunk(document)]
-        prepared_chunks = []
-        for chunk in chunks:
-            c_hash = _get_hash(chunk)            
-            prepared_chunks.append({
-                'body': chunk,
-                'chunk_id': c_hash,
-                'document_id': metadata.document_id,
-                'programs': metadata.programs,
-                'date': metadata.date,
-                'source': metadata.source
-            })
-        return prepared_chunks
+        collected_chunks = [self._chunker.contextualize(chunk=c) for c in self._chunker.chunk(document)]
+        return collected_chunks
 
 
 class WebsiteProcessor(_ProcessorBase):
@@ -206,14 +192,19 @@ class WebsiteProcessor(_ProcessorBase):
             weblogger.error(f"Failed to load the contents of the url page {url}: {e}")
             return ProcessingResult(status=ProcessingStatus.FAILURE)
         
-        text = document.export_to_markdown()
-        metadata = self._collect_metadata(text)
-        metadata.source = url
-        collected_chunks = self._collect_chunks(document, metadata)
+        document_name = url
+        document_content = document.export_to_markdown()
+        collected_chunks = self._collect_chunks(document)
         del collected_chunks[0]
-        weblogger.info(f"Successfully collected {len(collected_chunks)} chunks from {url}")
         
-        return ProcessingResult(chunks=collected_chunks, language=metadata.language, document_id=metadata.document_id), text
+        prepared_chunks = self._prepare_chunks(document_name, document_content, collected_chunks)
+        
+        weblogger.info(f"Successfully collected {len(prepared_chunks)} chunks from {url}")
+        
+        return ProcessingResult(
+            chunks=collected_chunks, 
+            language=detect_language(document_content), 
+        )
 
 
 class DataProcessor(_ProcessorBase):
@@ -251,12 +242,19 @@ class DataProcessor(_ProcessorBase):
         
         datalogger.info(f"Initiating processing pipeline for source {source}")
         document = self._converter.convert(source).document
-        metadata = self._collect_metadata(document.export_to_markdown())
-        metadata.source = os.path.basename(source)
-        collected_chunks = self._collect_chunks(document, metadata)
-        datalogger.info(f"Successfully collected {len(collected_chunks)} chunks from {source}")
- 
-        return ProcessingResult(chunks=collected_chunks, language=metadata.language, document_id=metadata.document_id)
+        
+        document_name = os.path.basename(source)
+        document_content = document.export_to_markdown()
+        collected_chunks = self._collect_chunks(document)
+
+        prepared_chunks = self._prepare_chunks(document_name, document_content, collected_chunks)
+
+        datalogger.info(f"Successfully collected {len(prepared_chunks)} chunks from {document_name}")
+
+        return ProcessingResult(
+            chunks=prepared_chunks, 
+            language=detect_language(document_content), 
+        )
 
 
 if __name__ == "__main__":

@@ -68,6 +68,7 @@ class ImportPipeline:
         self._webprocessor = WebsiteProcessor()
         self._processor    = DataProcessor()
         self._wvtserv      = WeaviateService()
+        self._saved_ids    = self._wvtserv._get_chunk_ids()
 
 
     def scrape_website(self):

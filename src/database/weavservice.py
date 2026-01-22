@@ -355,6 +355,19 @@ class WeaviateService:
             logger.error(f"Collections deletion failed: {e}")
             self._client = None
             raise e
+    
+
+    # def _extract_chunk_ids() -> dict:
+    #     client = self._init_client()
+    #     try:
+    #         ids = {}
+    #         with self._client_lock:
+    #             for c in client.collections.list_all(simple=False):
+    #                 coll = client.collections.get(c)
+    #                 lang_key = 'de' if '_de' in coll.config.get().to_dict()['class'] else 'en' 
+    #                 ids[lang_key] = []
+    #                 for obj in coll.iterator(include_vector=False):
+    #                     ids[]
 
 
     def _extract_data(self) -> dict:

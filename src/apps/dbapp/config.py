@@ -2,6 +2,7 @@ import os, json
 
 from tkinter import *
 from tkinter import ttk
+from src.utils.stratutils.generator import generate_strategy
 from src.database.weavservice import WeaviateService
 from config import WeaviateConfiguration as wvtconf
 
@@ -25,21 +26,32 @@ class SchemaConfigurationFrame:
         loaded_strats = os.listdir(wvtconf.STRATEGIES_PATH)
         strategies = {}
 
-        for prop in self._schema.keys():
-            strategy_file = f"strat_{prop}.py"
+        for name, prop in self._schema.items():
+            strategy_file = f"strat_{name}.py"
             file_path = os.path.join(wvtconf.STRATEGIES_PATH, strategy_file)
             strategy_content = ""
             
             if strategy_file not in loaded_strats:
-                open(file_path, 'x')
+                strategy_content = generate_strategy(name, prop)
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(strategy_content)
             else:
                 with open(file_path) as f:
                     strategy_content = f.read()
 
-            strategies[prop] = strategy_content
+            strategies[name] = strategy_content
 
         return strategies
-            
+
+
+    def _save_strategy(self, name, strategy) -> None:
+        os.makedirs(wvtconf.STRATEGIES_PATH, exist_ok=True)
+        self._strategies[name] = strategy
+
+        file_path = os.path.join(wvtconf.STRATEGIES_PATH, f"strat_{name}.py")
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(strategy)
+
 
     def _load_schema_data(self) -> dict:
         schema = self._service._extract_data()['schema'][0]
@@ -139,7 +151,7 @@ class SchemaConfigurationFrame:
             row_delete_button = ttk.Button(table_frame, text='Delete', 
                 command=lambda n=name: self._delete_property(n, refresh_callback))
             row_strategy_button = ttk.Button(table_frame, text='Strategy', 
-                command=lambda n=name, p=prop: self._handle_strategy(n, p)) 
+                command=lambda n=name: self._handle_strategy(n)) 
 
             row_name_label.grid(row=idx, column=0, sticky='ew', ipadx=25)
             row_type_label.grid(row=idx, column=1, sticky='ew', ipadx=25)
@@ -151,14 +163,31 @@ class SchemaConfigurationFrame:
             row_strategy_button.grid(row=idx, column=7, sticky='ew')
     
     
-    def _handle_strategy(self, n, p):
+    def _handle_strategy(self, n):
         dialog = Toplevel()
         dialog.title(f"Property {n} strategy")
-        dialog.geometry("600x700")
+        dialog.geometry("700x400")
+
+        field_frame = ttk.Frame(dialog)
+        field_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)  
+
+        scrollbar = Scrollbar(field_frame, orient=VERTICAL)
+        scrollbar.pack(side=RIGHT, fill=Y)
 
         strategy = self._strategies[n]
-        edit_field = Text(dialog, width=590, height=600)
-        edit_field.pack()
+        edit_field = Text(field_frame, width=80, height=15, wrap=WORD, yscrollcommand=scrollbar.set)  
+        edit_field.insert(END, strategy)
+        edit_field.pack(side=LEFT, fill=BOTH, expand=True)
+
+        scrollbar.config(command=edit_field.yview)  
+
+        def commit():
+            new_strategy = edit_field.get("1.0", END).strip()  
+            self._save_strategy(n, new_strategy) 
+            dialog.destroy()  
+
+        
+        ttk.Button(dialog, text="Save", command=commit).pack(side=BOTTOM, anchor=S, pady=10)
 
     
     def _delete_property(self, name, refresh_callback):
