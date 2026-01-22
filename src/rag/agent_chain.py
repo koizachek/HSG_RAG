@@ -448,7 +448,7 @@ class ExecutiveAgentChain:
         # Select fallback language if language was changed by previous query
         response_language = self._stored_language 
 
-        if len(self._conversation_history) >= MAX_CONVERSATION_TURNS * 2:
+        if len(self._conversation_history) >= MAX_CONVERSATION_TURNS:
             return LeadAgentQueryResponse(
                 response = CONVERSATION_END_MESSAGE[response_language],
                 language = response_language,
