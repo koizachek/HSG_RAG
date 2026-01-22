@@ -85,6 +85,15 @@ Rules for categories:
 User query: {query}
 AI response: {response}"""
 
+    _LANGUAGE_DETECTOR_PROMPT = """Detect the language the user is writing in or explicitly requests to speak in, and return its ISO language code (e.g., en, de, fa, ru) in the language field.
+
+User query: {query}
+"""
+    
+    @classmethod 
+    def get_language_detector_prompt(cls, query):
+        return cls._LANGUAGE_DETECTOR_PROMPT.format(query=query)
+
     @classmethod
     def get_summarization_prompt(cls):
         return cls._SUMMARIZATION_PROMPT
