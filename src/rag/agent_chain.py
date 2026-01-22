@@ -554,6 +554,11 @@ class ExecutiveAgentChain:
         # Clean up response
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
+        # Detect if user is requesting an appointment
+        appointment_requested = self._detect_handover_request(processed_query)
+        if appointment_requested:
+            chain_logger.info("User is requesting appointment - will show appointment buttons")
+
         # Step 7: Language fallback mechanisms and response quality evaluation
         confidence_fallback = False
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
@@ -580,6 +585,7 @@ class ExecutiveAgentChain:
             response = formatted_response,
             language = response_language,
             confidence_fallback = confidence_fallback,
+            appointment_requested = appointment_requested,
         )
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:

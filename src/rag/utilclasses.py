@@ -10,10 +10,11 @@ class AgentContext:
 
 @dataclass
 class LeadAgentQueryResponse:
-    response: str 
-    language: str 
-    confidence_fallback: bool = False 
+    response: str
+    language: str
+    confidence_fallback: bool = False
     max_turns_reached: bool = False
+    appointment_requested: bool = False
 
 class StructuredAgentResponse(BaseModel):
     response:         str   = Field(description="Main response to the query.")
