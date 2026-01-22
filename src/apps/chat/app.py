@@ -116,7 +116,7 @@ class ChatbotApplication:
             answers.append(lead_resp.response)
             self._language = lead_resp.language
 
-            if lead_resp.confidence_fallback or lead_resp.max_turns_reached:
+            if lead_resp.confidence_fallback or lead_resp.max_turns_reached or lead_resp.appointment_requested:
                 answers.extend(APPOINTMENT_LINKS[self._language])
 
         except Exception as e:
