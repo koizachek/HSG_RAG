@@ -190,7 +190,7 @@ class ExecutiveAgentChain:
         ]
         agents = {
             'lead': create_agent(
-                name="Lead Agent",
+                name="lead_agent",
                 model=modelconf.get_main_agent_model(),
                 tools=tools_agent_calling,
                 state_schema=LeadInformationState,
@@ -208,7 +208,7 @@ class ExecutiveAgentChain:
         }
         for agent in ['emba', 'iemba', 'embax']:
             agents[agent] = create_agent(
-                name=f"{agent.upper()} Agent",
+                name=f"{agent}_agent",
                 model=modelconf.get_subagent_model(),
                 tools=[tool_retrieve_context],
                 state_schema=LeadInformationState,

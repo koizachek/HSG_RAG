@@ -70,7 +70,7 @@ RULES:
 4. Next steps/recommendations
 
 Keep to 100 words max."""
-    
+
     _SUMMARY_PREFIX_PROMPT = "Conversation Summary:"
 
     _QUALITY_SCORING_PROMPT = """You are performing a quick evaluation of an AI response from an Executive Education Advisor agent for HSG EMBA, IEMBA and emba X programs. Rate the response on a scale 0.0-1.0 on these categories: format adherence, context awareness, pricing adherence, scope compliance and general rules. Deduct points for violations of the agent's guidelines.
@@ -89,8 +89,8 @@ AI response: {response}"""
 
 User query: {query}
 """
-    
-    @classmethod 
+
+    @classmethod
     def get_language_detector_prompt(cls, query):
         return cls._LANGUAGE_DETECTOR_PROMPT.format(query=query)
 
