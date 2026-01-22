@@ -81,12 +81,13 @@ class ExecutiveAgentChain:
 
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
 
-    def _retrieve_context(self, query: str, language: str = None):
+    def _retrieve_context(self, query: str, program: str, language: str = None):
         """
         Send the query to the vector database to retrieve additional information about the program.
 
         Args:
-            query: Keywords depicting information you want to retrieve in the primary language. 
+            query: Keywords depicting information you want to retrieve in the primary language.
+            program: Name of the program (either 'emba', 'iemba' or 'emba x') for which the information is requested.
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
         """
         lang = language if language in ['en', 'de'] else self._initial_language
@@ -95,6 +96,9 @@ class ExecutiveAgentChain:
                 query=query,
                 lang=lang,
                 limit=TOP_K_RETRIEVAL,
+                property_filters={
+                    'programs': [program],
+                },
             )
             serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
             return serialized

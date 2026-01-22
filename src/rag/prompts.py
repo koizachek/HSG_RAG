@@ -1,7 +1,7 @@
 class PromptConfigurator:
     _PROGRAM_SYSTEM_PROMPT = """You are a {program_name} support agent.
 
-CRITICAL: Call retrieve_context(query) FIRST and only ONCE, then answer from the results only.
+CRITICAL: Call retrieve_context(query, program, language) FIRST and only ONCE, then answer from the results only.
 
 RESPONSE FORMAT:
 - Answer ONLY what the user directly asked
