@@ -1,4 +1,5 @@
 import os, shutil
+from datetime import datetime
 
 from tkinter import *
 from tkinter import ttk
@@ -15,10 +16,10 @@ def _load_backup_files():
     
     return backups
 
-def init_backups_frame(root: Tk, service: WeaviateService):
+def init_backups_frame(parent, service: WeaviateService) -> ttk.Frame:
         backups = _load_backup_files()
         
-        main_frame = ttk.Frame(root)
+        main_frame = ttk.Frame(parent)
         main_frame.pack(fill=BOTH, expand=True)
 
         tree_frame = ttk.Frame(main_frame)
@@ -95,12 +96,12 @@ def init_backups_frame(root: Tk, service: WeaviateService):
             bk = backup.to_treeformat()
             parent = tree.insert('', 0 if not date_reverse_sort else END, 
                 text=bk['id'],
-                value=bk['date']
+                values=bk['date']
             )
             for collection in bk['collections']:
                 tree.insert(parent, END,
                     text=collection['name'],
-                    value=collection['size'],
+                    values=collection['size'],
                 )
 
         for backup in backups:
@@ -163,9 +164,9 @@ def init_backups_frame(root: Tk, service: WeaviateService):
                 return 
 
             item_id = selected[0]
-            is_root = tree.parent(item_id) == ''
-            restore_bkp_btn.state(['!disabled' if is_root else 'disabled'])
-            delete_bkp_btn.state(['!disabled' if is_root else 'disabled'])
+            is_parent = tree.parent(item_id) == ''
+            restore_bkp_btn.state(['!disabled' if is_parent else 'disabled'])
+            delete_bkp_btn.state(['!disabled' if is_parent else 'disabled'])
         
         tree.bind("<<TreeviewSelect>>", on_item_selection)
 

@@ -357,6 +357,34 @@ class WeaviateService:
             raise e
 
 
+    def _extract_data(self) -> dict:
+        client = self._init_client()
+        try:
+            schema = []
+            objects = {}
+            with self._client_lock:
+                for c in client.collections.list_all(simple=False):
+                    coll = client.collections.get(c)
+                    cfg = coll.config.get().to_dict()
+                    schema.append(cfg)
+
+                    objects[c] = []
+                    for obj in coll.iterator(include_vector=True):
+                        objects[c].append({
+                            "uuid": obj.uuid,
+                            "properties": obj.properties,
+                            "vector": obj.vector,
+                        })
+
+            return {
+                'schema':  schema,
+                'objects': objects,
+            }
+        except Exception as e:
+            logger.error(f"Failed to extract data from database: {e}")
+            raise e
+
+
     def _create_backup(self) -> str:
         """
         Create a backup of the current database state and stores it under selected backup provider.
@@ -372,58 +400,44 @@ class WeaviateService:
                 raise ValueError("Backup directory is not set!")
             os.makedirs(wvtconf.BACKUP_PATH, exist_ok=True)
 
-            client = self._init_client()
             backup_id = f"backup_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}"
             logger.info(f"Initiating backup creation for {self._connection_type} database...")
             
-            with self._client_lock:
-                match wvtconf.BACKUP_METHOD:
-                    case 'manual':
-                        import json 
-                        
-                        backup_path = os.path.join(wvtconf.BACKUP_PATH, backup_id)
-                        os.makedirs(backup_path)
-  
-                        schema_backup = []
-                        objects_backup = {}
-                        data_backup = {
-                            'creation_date': datetime.datetime.now().isoformat(),
-                        }
+            match wvtconf.BACKUP_METHOD:
+                case 'manual':
+                    import json 
+                    
+                    backup_path = os.path.join(wvtconf.BACKUP_PATH, backup_id)
+                    os.makedirs(backup_path)
+                    
+                    db_data = self._extract_data()
+                    data_backup = {
+                        'creation_date': datetime.datetime.now().isoformat(),
+                    }
+                    
+                    schema_backup_path = os.path.join(backup_path, 'schema.json')
+                    with open(schema_backup_path, 'w', encoding='utf-8') as f:
+                        json.dump(db_data['schema'], f, indent=2, default=str)
+                    
+                    objects_backup_path = os.path.join(backup_path, 'objects.json')
+                    with open(objects_backup_path, 'w', encoding='utf-8') as f:
+                        json.dump(db_data['objects'], f, indent=2, default=str)
 
-                        for c in client.collections.list_all(simple=False):
-                            coll = client.collections.get(c)
-                            cfg = coll.config.get().to_dict()
-                            schema_backup.append(cfg)
-         
-                            objects_backup[c] = []
-                            for obj in coll.iterator(include_vector=True):
-                                objects_backup[c].append({
-                                    "uuid": obj.uuid,
-                                    "properties": obj.properties,
-                                    "vector": obj.vector,
-                                })
-                        
-                        schema_backup_path = os.path.join(backup_path, 'schema.json')
-                        with open(schema_backup_path, 'w', encoding='utf-8') as f:
-                            json.dump(schema_backup, f, indent=2, default=str)
-                        
-                        objects_backup_path = os.path.join(backup_path, 'objects.json')
-                        with open(objects_backup_path, 'w', encoding='utf-8') as f:
-                            json.dump(objects_backup, f, indent=2, default=str)
+                    data_backup_path = os.path.join(backup_path, 'data.json')
+                    with open(data_backup_path, 'w', encoding='utf-8') as f:
+                        json.dump(data_backup, f, indent=2, default=str)
 
-                        data_backup_path = os.path.join(backup_path, 'data.json')
-                        with open(data_backup_path, 'w', encoding='utf-8') as f:
-                            json.dump(data_backup, f, indent=2, default=str)
-
-                    case 's3':
+                case 's3':
+                    client = self._init_client()
+                    with self._client_lock:
                         client.backup.create(
                             backup_id=backup_id,
                             backend="s3",
                             include_collections=_collection_names,
                             wait_for_completion=True,
                         ) 
-                    case _:
-                        raise NotImplementedError()
+                case _:
+                    raise NotImplementedError()
 
                 
             self._last_query_time = perf_counter()
