@@ -102,7 +102,7 @@ def parse_args():
     parser.add_argument("--backup-id", type=str, help="Required when calling the --weaviate restore command!")
     
     parser.add_argument("--cache-mode", type=str, choices=['local', 'cloud', 'dict'], default=CacheConfig.CACHE_MODE,
-                        help="Defines whether to use the local or cloud Redis database")
+                        help="Defines whether to use the local or cloud Redis database or the special python dict as cache")
     
     parser.add_argument("--no-cache", action="store_true", help="Deactivates the caching mechanism")
     
