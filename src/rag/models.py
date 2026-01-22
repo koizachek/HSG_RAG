@@ -11,8 +11,28 @@ class ModelConfigurator:
     _fallback_models_instances: list[BaseChatModel] = None
     _summarization_model_instance: BaseChatModel = None
     _confidence_scoring_model_instance: BaseChatModel = None 
-
+    _language_detector_model_instance: BaseChatModel = None
     
+    @classmethod 
+    def get_language_detector_model(cls) -> BaseChatModel:
+        if cls._confidence_scoring_model_instance:
+            return cls._confidence_scoring_model_instance
+        try:
+            from langchain_openai import ChatOpenAI
+            cls._language_detector_model_instance = ChatOpenAI(
+                model='gpt-4o-mini',
+                openai_api_key=llmconf.get_api_key(),
+                max_tokens=3072,
+                temperature=0.00,
+                timeout=60,
+                request_timeout=60,
+            )
+            logger.info(f"Initialized language detection model")
+            return cls._language_detector_model_instance
+        except Exception as e:
+            logger.error(f"Failed to initialize language detection model: {e}")
+            raise e
+
     @classmethod
     def get_confidence_scoring_model(cls) -> BaseChatModel:
         if cls._confidence_scoring_model_instance:

@@ -198,12 +198,12 @@ class TestLanguageLocking:
         response1 = agent.query("Hallo, ich interessiere mich für das EMBA Programm").response
         
         # Language should now be locked to German
-        assert agent._user_language == 'de'
+        assert agent._stored_language == 'de'
         assert agent._conversation_state['user_language'] == 'de'
         
         # Subsequent English query should still get German response
         # (language is locked)
-        assert agent._language == 'de'
+        assert agent._stored_language == 'de'
 
 
 class TestUserAcceptanceScenarios:

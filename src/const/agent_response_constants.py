@@ -2,7 +2,34 @@ from gradio import ChatMessage
 
 """ Constants for Gradio app """
 
-FALLBACK_MESSAGE = {
+GREETING_MESSAGES = {
+        "en": [
+            "Hello and welcome! I’m your Executive Education Advisor for the HSG Executive MBA programs (**IEMBA**, **emba X**, and **EMBA**). How can I best support your MBA planning today?",
+            "Hello and welcome! I’m your Executive Education Advisor for the University of St.Gallen’s Executive MBA programs (**IEMBA**, **emba X**, **EMBA**). How can I support your MBA planning today?",
+            "Hello and welcome! I’m your Executive Education Advisor for the HSG Executive MBA programs (**EMBA**, **IEMBA**, **emba X**). How can I help you with your EMBA journey today?",
+            "Hello and welcome! I’m your Executive Education Advisor for the University of St.Gallen’s EMBA programs, here to help you navigate our **EMBA**, **IEMBA**, and **emba X** options.",
+            "Hello and welcome. I’m your Executive Education Advisor for the University of St.Gallen’s Executive MBA programs, here to help you assess fit and navigate the **EMBA**, **IEMBA**, and **emba X** options.",
+        ],
+        "de": [
+            "Guten Tag! Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme und unterstütze Sie gerne bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
+            "Guten Tag, ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**). Ich unterstütze Sie bei Programmwahl, Ablauf und Zulassungsfragen.",
+            "Guten Tag und herzlich willkommen! Ich bin Ihr Executive Education Advisor für die HSG Executive MBA Programme und unterstütze Sie gern bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
+            "Guten Tag, ich bin Ihr Executive-Education-Berater für die HSG Executive MBA-Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei Programmwahl und Zulassungsfragen.",
+            "Guten Tag! Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei Programmwahl und Zulassungsfragen.",
+        ]
+}
+
+QUERY_EXCEPTION_MESSAGE = {
+    "en": "I'm sorry, I cannot provide a helpful response right now. Please contact tech support or try again later.",
+    "de": "Es tut mir leid, ich kann im Moment keine hilfreiche Antwort geben. Bitte wenden Sie sich an den technischen Support oder versuchen Sie es später erneut.",
+}
+
+NOT_VALID_QUERY_MESSAGE = {
+    "en": "I didn't quite understand that. Could you please rephrase your question?",
+    "de": "Das habe ich nicht ganz verstanden. Könnten Sie Ihre Frage bitte anders formulieren?",
+}
+
+CONFIDENCE_FALLBACK_MESSAGE = {
     "en": (
         "I'm sorry, but I couldn't find any information in my records that matches your request, "
         "so I can't answer it with confidence. Could you please rephrase your question?\n\n"
@@ -13,6 +40,17 @@ FALLBACK_MESSAGE = {
         "die zu Ihrer Anfrage passen, sodass ich sie nicht mit ausreichender Sicherheit beantworten kann. "
         "Könnten Sie Ihre Frage bitte umformulieren?\n\n"
         "Alternativ können Sie über die untenstehenden Links einen Termin bei der Studienberatung buchen."
+    ),
+}
+
+LANGUAGE_FALLBACK_MESSAGE = {
+    "en": (
+        "I am sorry, I can only reply in English or German. "
+        "Would you like to continue our conversation in English?"
+    ),
+    "de": (
+        "Es tut mir leid, ich kann nur auf Englisch oder Deutsch antworten. "
+        "Möchten Sie unser Gespräch auf Deutsch fortführen?"
     ),
 }
 

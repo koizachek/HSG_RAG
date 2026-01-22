@@ -8,11 +8,17 @@ from langchain_core.messages import AnyMessage
 class AgentContext:
     agent_name: str
 
+@dataclass
+class LeadAgentQueryResponse:
+    response: str 
+    language: str 
+    confidence_fallback: bool = False 
+    max_turns_reached: bool = False
 
 class StructuredAgentResponse(BaseModel):
-    response:         str   = Field(description="Main response to the query")
-    confidence_score: float = Field("Value in range 0.0 to 1.0 that determines how confident the agent is in it's response based on the accumulated information")
-
+    response:         str   = Field(description="Main response to the query.")
+    confidence_score: float = Field("Value in range 0.0 to 1.0 that determines how confident the agent is in it's response based on the accumulated information.")
+    
 
 class State(TypedDict):
     messages: list[AnyMessage]

@@ -1,56 +1,17 @@
 import os
 import gradio as gr
-from config import MAX_CONVERSATION_TURNS
-from src.apps.chat.constants import *
+from src.apps.chat.js import JS_LISTENER, JS_CLEAR
+from src.const.agent_response_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
+from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.logging import get_logger
 
 logger = get_logger("chatbot_app")
 
-JS_LISTENER = """
-function() {
-    document.addEventListener('click', function(e) {
-        // 1. Use .closest() to find the <a> tag even if user clicks the text/icon inside it
-        const target = e.target.closest('a.appointment-btn');
-
-        if (target) {
-            // 2. Prevent the link from opening in a new tab/window
-            e.preventDefault();
-
-            // 3. Get the URL from the standard href attribute
-            const url = target.getAttribute('href');
-            const container = document.getElementById('consultation-iframe-container');
-
-            if (container) {
-                container.innerHTML = `
-                    <div style="margin-top: 20px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-                        <div style="background: #f9fafb; padding: 10px; font-weight: bold; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between;">
-                            <span>Appointment Booking</span>
-                            <button onclick="document.getElementById('consultation-iframe-container').innerHTML=''" style="cursor: pointer; color: red;">✕ Close</button>
-                        </div>
-                        <iframe src="${url}" width="100%" height="600px" frameborder="0"></iframe>
-                    </div>
-                `;
-                container.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-    });
-}
-"""
-
-JS_CLEAR = """
-function() {
-    const el = document.getElementById('consultation-iframe-container');
-    if (el) {
-        el.innerHTML = '';
-    }
-}
-"""
-
-
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
         self._app = gr.Blocks(js=JS_LISTENER)
+        self._language = language
 
         with self._app:
             agent_state = gr.State(None)
@@ -66,13 +27,12 @@ class ChatbotApplication:
                 reset_button = gr.Button("Reset Conversation")
 
             chat = gr.ChatInterface(
-                fn=lambda msg, history, agent, lang: self._chat(
+                fn=lambda msg, history, agent: self._chat(
                     message=msg,
                     history=history,
                     agent=agent,
-                    language=lang,
                 ),
-                additional_inputs=[agent_state, lang_state],
+                additional_inputs=[agent_state],
                 title="Executive Education Adviser",
                 type='messages',
             )
@@ -134,7 +94,7 @@ class ChatbotApplication:
 
             # Initialize the agent chain on the app startup
             self._app.load(
-                fn=lambda: initalize_agent(language),
+                fn=lambda: initalize_agent(self._language),
                 outputs=[agent_state, chat.chatbot_value],
             )
 
@@ -143,30 +103,21 @@ class ChatbotApplication:
         """Expose underlying Gradio Blocks for external runners (e.g., HF Spaces)."""
         return self._app
 
-    def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain, language: str):
+    def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
         if agent is None:
             logger.error("Agent not initialized")
             return ["I apologize, but the chatbot is not properly initialized."]
-
-        if len(history) >= MAX_CONVERSATION_TURNS:
-            response_list = [CONVERSATION_END_MESSAGE[language]]
-            response_list.extend(APPOINTMENT_LINKS[language])
-            return response_list
 
         answers = []
         try:
             logger.info(f"Processing user query: {message[:100]}...")
 
-            structured_response = agent.query(query=message)
-            response = structured_response.response
-            confidence_score = structured_response.confidence_score
-            logger.info(f"Evaluated Confidence Score: {confidence_score}")
+            lead_resp: LeadAgentQueryResponse = agent.query(query=message)
+            answers.append(lead_resp.response)
+            self._language = lead_resp.language
 
-            if confidence_score <= 0.3:
-                answers.append(FALLBACK_MESSAGE[language])
-                answers.extend(APPOINTMENT_LINKS[language])
-            else:
-                answers.append(response)
+            if lead_resp.confidence_fallback or lead_resp.max_turns_reached:
+                answers.extend(APPOINTMENT_LINKS[self._language])
 
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
