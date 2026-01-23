@@ -429,7 +429,7 @@ class WeaviateService:
                 raise ValueError("Backup directory is not set!")
             os.makedirs(wvtconf.BACKUP_PATH, exist_ok=True)
 
-            backup_id = f"backup_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}"
+            backup_id = f"backup_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}"
             logger.info(f"Initiating backup creation for {self._connection_type} database...")
             
             match wvtconf.BACKUP_METHOD:
