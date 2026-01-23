@@ -6,6 +6,8 @@ import langsmith
 from langsmith import traceable
 from src.utils.logging import init_logging, get_logger
 from config import AVAILABLE_LANGUAGES
+from src.cache.cache import Cache
+from config import CacheConfig
 
 from dotenv import load_dotenv
 
@@ -69,6 +71,13 @@ def run_weaviate_command(command: str, backup_id: str = None):
         service._checkhealth()
 
 
+def clear_cache():
+    logger = logging_startup()
+    cache = Cache.get_cache()
+    if cache:
+        cache.clear_cache()
+
+
 def run_application(lang: str) -> None:
     """Run the chatbot web application."""
     from src.apps.chat.app import ChatbotApplication
@@ -93,41 +102,25 @@ def parse_args():
     parser = argparse.ArgumentParser(description="University of St. Gallen Executive Education RAG Chatbot")
 
     # Add arguments
-    parser.add_argument(
-        "--scrape", 
-        action="store_true",
-        help="Scrapes the data from the HSG website and imports it into the database"
-    )
-    parser.add_argument(
-        "--imports", 
-        nargs="+", 
-        help="Runs the data importing pipeline for the provided files"
-    )
-    parser.add_argument(
-        "--weaviate", 
-        type=str, choices=['init', 'delete', 'redo', 'checkhealth', 'backup', 'restore'],
-        help="Runs different database actions"
-    )
-    parser.add_argument(
-        "--backup-id", 
-        type=str, 
-        help="Required when calling the --weaviate restore command!"
-    )
-    parser.add_argument(
-        "--cli", 
-        action="store_true", 
-        help="Run the chatbot CLI"
-    )
-    parser.add_argument(
-        "--app", 
-        type=str, choices=AVAILABLE_LANGUAGES, 
-        help="Run the chatbot web application"
-    )
-    parser.add_argument(
-        "--dbapp", 
-        action="store_true", 
-        help="Run the database management application"
-    )
+    parser.add_argument("--scrape", action="store_true",
+                        help="Scrapes the data from the HSG website and imports it into the database")
+    parser.add_argument("--imports", nargs="+", help="Runs the data importing pipeline for the provided files")
+
+    parser.add_argument("--weaviate", type=str, choices=['init', 'delete', 'redo', 'checkhealth', 'backup', 'restore'],
+                        help="Runs different database actions")
+    parser.add_argument("--backup-id", type=str, help="Required when calling the --weaviate restore command!")
+
+    parser.add_argument("--cache-mode", type=str, choices=['local', 'cloud', 'dict'], default=CacheConfig.CACHE_MODE,
+                        help="Defines whether to use the local or cloud Redis database or the special python dict as cache")
+
+    parser.add_argument("--no-cache", action="store_true", help="Deactivates the caching mechanism")
+
+    parser.add_argument("--clear-cache", action="store_true",
+                        help="Clears the cache")
+
+    parser.add_argument("--cli", action="store_true", help="Run the chatbot CLI")
+    parser.add_argument("--app", type=str, choices=AVAILABLE_LANGUAGES, help="Run the chatbot web application")
+    parser.add_argument("--dbapp", action="store_true", help="Run the database management application")
 
     return parser.parse_args()
 
@@ -135,22 +128,34 @@ def parse_args():
 def main():
     """Main entry point for the application."""
     args = parse_args()
+    
+    # Load cache settings with the cache args
+    Cache.configure(args.cache_mode, args.no_cache)
+    
+    must_clear_cache = False
 
     # Check if any argument is provided
-    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.app, args.dbapp]):
+    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.no_cache, args.app, args.dbapp]):
         # If no argument is provided, run the chatbot by default
         run_application()
         return
 
-        # Run the specified components
+    # Run the specified components
     if args.scrape:
+        must_clear_cache = True
         run_scraper()
 
     if args.imports:
+        must_clear_cache = True
         run_importer(args.imports)
 
     if args.weaviate:
+        if args.weaviate in ["init", "redo", "restore"]:
+            must_clear_cache = True
         run_weaviate_command(command=args.weaviate, backup_id=args.backup_id)
+    
+    if args.clear_cache or must_clear_cache:
+        clear_cache()
 
     if args.app:
         run_application(args.app)
