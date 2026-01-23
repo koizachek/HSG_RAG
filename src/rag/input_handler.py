@@ -144,3 +144,4 @@ class InputHandler:
             return interpreted, True
         
         return normalized, True
+    
