@@ -142,8 +142,8 @@ class ChatbotApplication:
             answers.append(final_response.response)
             self._language = final_response.language
 
-            if final_response.confidence_fallback or final_response.max_turns_reached:
-                answers.extend(APPOINTMENT_LINKS.get(self._language, []))
+            if lead_resp.confidence_fallback or lead_resp.max_turns_reached or lead_resp.appointment_requested:
+                answers.extend(APPOINTMENT_LINKS[self._language])
 
             if final_response.should_cache and Cache._settings["enabled"]:
                 # Caching new response
