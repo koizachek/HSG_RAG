@@ -229,10 +229,12 @@ class WeaviateService:
 
         Args:
             query (str): The query string.
-            query_properties (list[str], optional): List of properties to query against.
-        limit (int, optional): Maximum number of results to return. Defaults to 5.
-            distance (float, optional): Distance threshold for the query. Defaults to 0.25.
             lang (str, optional): Language collection to use. If not provided, uses the current one.
+            property_filters (dict[str, any]): Key-value pairs for metadata filtering. Keys correspond
+            to document properties (e.g., 'program', 'topic'), and values are the required matches.
+            Multiple filters are combined using logical AND.
+            limit (int, optional): Maximum number of results to return. Defaults to 5.
+
 
         Returns:
             tuple: A tuple containing the query response and elapsed time.
