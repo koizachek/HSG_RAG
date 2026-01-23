@@ -2,6 +2,7 @@ import os, json
 
 from tkinter import *
 from tkinter import ttk
+from src.apps.dbapp.framebase import CustomFrameBase
 from src.utils.stratutils.generator import generate_strategy
 from src.database.weavservice import WeaviateService
 from config import WeaviateConfiguration as wvtconf
@@ -13,10 +14,9 @@ def _dump_schema(schema):
         json.dump(schema, f, indent=2, default=str)
 
 
-class SchemaConfigurationFrame:
+class SchemaConfigurationFrame(CustomFrameBase):
     def __init__(self, parent, service: WeaviateService) -> None:
-        self._parent  = parent
-        self._service = service
+        super().__init__(parent, service)
         self._schema = self._load_schema_data()
         self._strategies = self._load_strategies()
     

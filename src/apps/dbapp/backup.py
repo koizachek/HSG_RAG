@@ -4,6 +4,7 @@ from datetime import datetime
 from tkinter import *
 from tkinter import ttk
 from src.database.weavservice import WeaviateService
+from src.apps.dbapp.framebase import CustomFrameBase
 from src.apps.dbapp.utilclasses import BackupData
 from config import WeaviateConfiguration as wvtconf
 
@@ -16,10 +17,15 @@ def _load_backup_files():
     
     return backups
 
-def init_backups_frame(parent, service: WeaviateService) -> ttk.Frame:
-        backups = _load_backup_files()
+class BackupsFrame(CustomFrameBase):
+    def __init__(self, parent, service: WeaviateService):
+        super().__init__(parent, service)
+        self._backups = _load_backup_files()
+
+    def init(self) -> ttk.Frame:
+        self._backups = _load_backup_files()
         
-        main_frame = ttk.Frame(parent)
+        main_frame = ttk.Frame(self._parent)
         main_frame.pack(fill=BOTH, expand=True)
 
         tree_frame = ttk.Frame(main_frame)
@@ -104,16 +110,16 @@ def init_backups_frame(parent, service: WeaviateService) -> ttk.Frame:
                     values=collection['size'],
                 )
 
-        for backup in backups:
+        for backup in self._backups:
             insert_backup(backup)
         sort_by_date()
            
         def create_backup():
             print_info(f"Creating new backup...")
-            backup_id = service._create_backup()
+            backup_id = self._service._create_backup()
 
             backup = BackupData(backup_id)
-            backups.append(backup)
+            self._backups.append(backup)
             insert_backup(backup)
             print_success(f"Successfully created new backup {backup._backup_id}!")
 
@@ -122,7 +128,7 @@ def init_backups_frame(parent, service: WeaviateService) -> ttk.Frame:
             backup = tree.item(item_id)
             
             print_info(f"Restoring backup {backup['text']}...")
-            service._restore_backup('backup_' + backup['text'])
+            self._service._restore_backup('backup_' + backup['text'])
             print_success(f"Successfully restored backup {backup['text']}!")
         
         def delete_backup():
