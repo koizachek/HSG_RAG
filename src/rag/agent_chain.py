@@ -443,8 +443,7 @@ class ExecutiveAgentChain:
         # Remember fallback language
         current_language = self._stored_language 
 
-        # 1. Turn Limit Check
-        if len(self._conversation_history) >= MAX_CONVERSATION_TURNS * 2:
+        if len(self._conversation_history) >= MAX_CONVERSATION_TURNS:
             return LeadAgentQueryResponse(
                 response = CONVERSATION_END_MESSAGE[current_language],
                 language = current_language,
@@ -552,7 +551,12 @@ class ExecutiveAgentChain:
 
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
-        # 5. Quality Evaluation
+        # Detect if user is requesting an appointment
+        appointment_requested = self._detect_handover_request(processed_query)
+        if appointment_requested:
+            chain_logger.info("User is requesting appointment - will show appointment buttons")
+
+        # Step 7: Language fallback mechanisms and response quality evaluation
         confidence_fallback = False
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
             quality_evaluation: QualityEvaluationResult = self._quality_handler. \
@@ -581,6 +585,7 @@ class ExecutiveAgentChain:
             confidence_fallback = confidence_fallback,
             should_cache = False if confidence_fallback else True,
             processed_query = preprocessed_query
+            appointment_requested = appointment_requested,
         )
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
