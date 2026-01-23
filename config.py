@@ -144,6 +144,24 @@ class WeaviateConfiguration:
     def is_local(cls) -> bool:
         return cls.LOCAL_DATABASE
 
+# Cache settings
+class CacheConfig:
+    LOCAL_HOST = "localhost"
+    LOCAL_PORT = 6379
+    LOCAL_PASS = os.getenv("REDIS_LOCAL_PASSWORD", "")
+
+    CLOUD_HOST = os.getenv("REDIS_CLOUD_HOST")
+    CLOUD_PORT = int(os.getenv("REDIS_CLOUD_PORT", 6379))
+    CLOUD_PASS = os.getenv("REDIS_CLOUD_PASSWORD")
+
+    CACHE_LOCAL = "local"
+    CACHE_CLOUD = "cloud"
+    CACHE_DICT = "dict"
+    CACHE_MODE = "cloud"  # 'local' or 'cloud' or 'dict' set here the default cache mode
+
+    TTL_CACHE = 86400 # 86400 seconds = 24 hours
+    MAX_SIZE_CACHE = 1000
+
 # Data paths
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 RAW_DATA_PATH = os.path.join(DATA_DIR, "raw_data.json")

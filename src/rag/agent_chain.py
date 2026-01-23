@@ -435,27 +435,23 @@ class ExecutiveAgentChain:
         return greeting_message
 
     @traceable
-    def query(self, query: str) -> LeadAgentQueryResponse:
+    def preprocess_query(self, query: str) -> LeadAgentQueryResponse:
         """
-        Process user query with input handling, scope checking, and response formatting.
-        
-        Args:
-            query: User input
-            
-        Returns:
-            Formatted response
+        Phase 1: Validation, Scope-Check and language detection.
+        Does not call the agent directly.
         """
-        # Select fallback language if language was changed by previous query
-        response_language = self._stored_language 
+        # Remember fallback language
+        current_language = self._stored_language 
 
         if len(self._conversation_history) >= MAX_CONVERSATION_TURNS:
             return LeadAgentQueryResponse(
-                response = CONVERSATION_END_MESSAGE[response_language],
-                language = response_language,
+                response = CONVERSATION_END_MESSAGE[current_language],
+                language = current_language,
                 max_turns_reached = True,
+                processed_query = query
             ) 
 
-        # Step 1: Process input (handle numeric inputs, validation)
+        # 2. Input Processing
         processed_query, is_valid = InputHandler.process_input(
             query,
             [msg for msg in self._conversation_history if isinstance(msg, (HumanMessage, AIMessage))]
@@ -465,97 +461,98 @@ class ExecutiveAgentChain:
             chain_logger.warning(f"Invalid input received: '{query}'")
             return LeadAgentQueryResponse(
                 response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
-                language=response_language,
+                language=current_language,
+                processed_query=query
             )
 
-        # Log if input was interpreted
+        # Log check
         if processed_query != query:
             chain_logger.info(f"Interpreted input '{query}' as '{processed_query}'")
 
-        # Step 2: Check scope before querying agent
-        scope_type = ScopeGuardian.check_scope(processed_query, response_language)
+        # 3. Language Detection
+        detected_language = self._language_detector.detect_language(processed_query)
+        self._conversation_state['user_language'] = detected_language
+        
+        # Language validation
+        if detected_language in ['de', 'en']:
+            self._stored_language = detected_language
+            current_language = detected_language
+        else:
+            chain_logger.info("Invalid language detected.")
+            return LeadAgentQueryResponse(
+                response=LANGUAGE_FALLBACK_MESSAGE[current_language],
+                language=current_language,
+                processed_query=processed_query
+            )
+
+        # 4. Scope Check
+        scope_type = ScopeGuardian.check_scope(processed_query, current_language)
 
         if scope_type != 'on_topic':
             chain_logger.info(f"Out-of-scope query detected: {scope_type}")
             self._scope_violation_count += 1
 
-            # Check if should escalate
             should_escalate, escalation_type = ScopeGuardian.should_escalate(
-                processed_query,
-                scope_type,
-                self._scope_violation_count
+                processed_query, scope_type, self._scope_violation_count
             )
 
             if should_escalate:
-                redirect_msg = ScopeGuardian.get_escalation_message(
-                    escalation_type,
-                    response_language
-                )
+                redirect_msg = ScopeGuardian.get_escalation_message(escalation_type, current_language)
             else:
-                redirect_msg = ScopeGuardian.get_redirect_message(
-                    scope_type,
-                    response_language
-                )
+                redirect_msg = ScopeGuardian.get_redirect_message(scope_type, current_language)
 
-            # Add to history
             self._conversation_history.append(HumanMessage(processed_query))
             self._conversation_history.append(AIMessage(redirect_msg))
 
             return LeadAgentQueryResponse(
                 response=redirect_msg,
-                language=response_language,
+                language=current_language,
+                processed_query=processed_query
             )
 
-        # Reset violation count on valid topic
+        # Response = None indicates that agent needs to answer the processed query
+        return LeadAgentQueryResponse(
+            response=None, 
+            processed_query=processed_query,
+            language=current_language
+        )
+    
+    @traceable
+    def agent_query(self, preprocessed_query: str) -> LeadAgentQueryResponse:
+        """
+        Phase 2: Execute agent.
+        Takes the ALREADY validated query from the preprocessing phase.
+        """
+        # Reset violation count 
         self._scope_violation_count = 0
-       
-        # Append user query to conversation history before querying 
-        self._conversation_history.append(HumanMessage(processed_query))
-
-        # Step 3: Detect query language using the language detector
-        detected_language = self._language_detector.detect_language(processed_query)
-        chain_logger.info(f"Detected query language: {detected_language}")
-        self._conversation_state['user_language'] = detected_language
         
-        # Store the query language if it's valid; return fallback message otherwise
-        if detected_language in ['de', 'en']:
-            self._stored_language = detected_language
-            response_language = detected_language
-        else:
-            chain_logger.info("User query is not in a valid language, switching to fallback message...")
-            fallback_message = LANGUAGE_FALLBACK_MESSAGE[response_language]
-            self._conversation_history.append(AIMessage(fallback_message))
+        response_language = self._stored_language
+       
+        # 1. History Update 
+        self._conversation_history.append(HumanMessage(preprocessed_query))
 
-            return LeadAgentQueryResponse(
-                response=fallback_message,
-                language=response_language,
-            )
-
-        # Step 4: Build messages with locked language
+        # 2. System instruction
         language_instruction = SystemMessage(f"Respond in {get_language_name(response_language)} language.")
 
-        # Step 5: Query agent
+        # 3. Agent Call
         structured_response = self._query(
             agent=self._agents['lead'],
             messages=self._conversation_history + [language_instruction], 
         )
         agent_response = structured_response.response
 
-        # Step 6: Format response (remove tables, chunk if needed)
+        # 4. Formatting
         if ENABLE_RESPONSE_CHUNKING:
             formatted_response = ResponseFormatter.format_response(
-                agent_response,
-                agent_type='lead',
-                enable_chunking=True
+                agent_response, agent_type='lead', enable_chunking=True
             )
         else:
             formatted_response = ResponseFormatter.remove_tables(agent_response)
 
-        # Clean up response
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
         # Detect if user is requesting an appointment
-        appointment_requested = self._detect_handover_request(processed_query)
+        appointment_requested = self._detect_handover_request(preprocessed_query)
         if appointment_requested:
             chain_logger.info("User is requesting appointment - will show appointment buttons")
 
@@ -563,8 +560,9 @@ class ExecutiveAgentChain:
         confidence_fallback = False
         if ENABLE_EVALUATE_RESPONSE_QUALITY:
             quality_evaluation: QualityEvaluationResult = self._quality_handler. \
-                evaluate_response_quality(query, formatted_response)
-            chain_logger.info(f"Lead agent response recieved quality score of {quality_evaluation.overall_score:1.2f}")
+                evaluate_response_quality(preprocessed_query, formatted_response)
+            
+            chain_logger.info(f"Quality Score: {quality_evaluation.overall_score:1.2f}")
 
             if quality_evaluation.overall_score < 0.3:
                 confidence_fallback = True
@@ -573,10 +571,10 @@ class ExecutiveAgentChain:
         # Add to history
         self._conversation_history.append(AIMessage(formatted_response))
 
-        # Step 8: Update conversation state and log profile if tracking is enabled
+        # 6. Profiling
         if TRACK_USER_PROFILE:
-            self._update_conversation_state(processed_query, formatted_response)
-            # Log profile every 5 messages or when program is suggested
+            self._update_conversation_state(preprocessed_query, formatted_response)
+            
             message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
             if (message_count % 5 == 0 or self._conversation_state.get('suggested_program')):
                 self._log_user_profile()
@@ -585,6 +583,8 @@ class ExecutiveAgentChain:
             response = formatted_response,
             language = response_language,
             confidence_fallback = confidence_fallback,
+            should_cache = False if confidence_fallback else True,
+            processed_query = preprocessed_query,
             appointment_requested = appointment_requested,
         )
 
