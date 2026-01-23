@@ -17,7 +17,6 @@ class LeadAgentQueryResponse:
     max_turns_reached: bool = False
     should_cache: bool = False
     appointment_requested: bool = False
-  
 
 class StructuredAgentResponse(BaseModel):
     response:         str   = Field(description="Main response to the query.")

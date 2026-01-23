@@ -1,3 +1,4 @@
+from functools import reduce
 import weaviate as wvt
 import datetime, os
 from threading import Lock
@@ -7,6 +8,7 @@ from weaviate.classes.config import Configure, Property, DataType
 from weaviate.collections.classes.grpc import MetadataQuery
 from weaviate.collections.collection import Collection
 from weaviate.classes.init import AdditionalConfig, Timeout
+from weaviate.classes.query import Filter
 from weaviate.config import AdditionalConfig
 
 from src.utils.logging import get_logger
@@ -207,18 +209,28 @@ class WeaviateService:
             raise e  
 
         return import_errors
+    
+    @staticmethod
+    def _create_property_filter(prop, values) -> Filter:
+        match prop:
+            case 'programs':
+                return Filter.by_property('programs').contains_any(values)
+            case _:
+                return None
 
 
-    def query(self, query: str, lang: str, query_properties: list[str] = None, limit: int = 5) -> dict:
+    def query(self, query: str, lang: str, property_filters: dict[str], limit: int = 5) -> dict:
         """
         Execute a hybrid semantic and keyword query against the active collection with automatic reconnection on idle timeout.
 
         Args:
             query (str): The query string.
-            query_properties (list[str], optional): List of properties to query against.
-            limit (int, optional): Maximum number of results to return. Defaults to 5.
-            distance (float, optional): Distance threshold for the query. Defaults to 0.25.
             lang (str, optional): Language collection to use. If not provided, uses the current one.
+            property_filters (dict[str, any]): Key-value pairs for metadata filtering. Keys correspond
+            to document properties (e.g., 'program', 'topic'), and values are the required matches.
+            Multiple filters are combined using logical AND.
+            limit (int, optional): Maximum number of results to return. Defaults to 5.
+
 
         Returns:
             tuple: A tuple containing the query response and elapsed time.
@@ -228,7 +240,11 @@ class WeaviateService:
         """
         retry_count = 0 
         max_retries = 2
-        
+            
+        filters = [self._create_property_filter(prop, values) 
+                   for prop, values in property_filters.items()] if property_filters else None
+        filters = reduce(lambda f1, f2: f1 & f2, filters)
+
         while retry_count < max_retries:
             try:
                 collection, collection_name = self._select_collection(lang)
@@ -242,7 +258,7 @@ class WeaviateService:
                 with self._client_lock:
                     resp = collection.query.hybrid(
                         query=query,
-                        query_properties=query_properties,
+                        filters=filters,
                         limit=limit,
                         return_metadata=MetadataQuery.full()
                     )
