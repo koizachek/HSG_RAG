@@ -552,7 +552,7 @@ class ExecutiveAgentChain:
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
         # Detect if user is requesting an appointment
-        appointment_requested = self._detect_handover_request(processed_query)
+        appointment_requested = self._detect_handover_request(preprocessed_query)
         if appointment_requested:
             chain_logger.info("User is requesting appointment - will show appointment buttons")
 
@@ -584,7 +584,7 @@ class ExecutiveAgentChain:
             language = response_language,
             confidence_fallback = confidence_fallback,
             should_cache = False if confidence_fallback else True,
-            processed_query = preprocessed_query
+            processed_query = preprocessed_query,
             appointment_requested = appointment_requested,
         )
 
