@@ -56,18 +56,25 @@ def _export_hashtables(hashtables: dict):
         pipelogger.info("Saved successfully imported chunk IDs in the hashtables")
 
 
+def _logging_callback_placeholder(msg):
+    pass
+
+
 class ImportPipeline:
     """
     Main pipeline class responsible for importing website and local documents
     into the database with deduplication and language-based organization.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, logging_callback = None) -> None:
         """Initialize the import pipeline with processors and hashtable data."""
         self._hashtables   = _import_hashtables()
         self._webprocessor = WebsiteProcessor()
         self._processor    = DataProcessor()
         self._wvtserv      = WeaviateService()
+        # self._saved_ids    = self._wvtserv._get_chunk_ids()
+        
+        self.logging_callback = logging_callback or _logging_callback_placeholder
 
 
     def scrape_website(self):
@@ -109,7 +116,10 @@ class ImportPipeline:
 
         unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
         for source in sources:
+            filename = os.path.basename(source)
+            self.logging_callback(f'Processing {filename}...')
             chunks, lang = self._process_source(source)
+            self.logging_callback(f'DONE!\nCollected {len(chunks)} chunks.\n', filename)
             if chunks:
                 unique_chunks[lang].extend(chunks)
         
@@ -166,8 +176,8 @@ class ImportPipeline:
             implogger.error(f"Failed to process document {source}: {result.status}")
             return [], ''
         
-        unique_chunks = self._deduplicate(result)
-        return unique_chunks, result.language
+        # unique_chunks = self._deduplicate(result)
+        return result.chunks, result.language
 
 
     def _deduplicate(self, result: ProcessingResult):

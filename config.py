@@ -128,7 +128,11 @@ class WeaviateConfiguration:
     # Weaviate backup settings
     AVAILABLE_BACKUP_METHODS = ['manual', 'filesystem', 's3']
     BACKUP_METHOD = 'manual'
-    BACKUP_PATH = os.getenv('WEAVIATE_BACKUP_PATH')
+
+    # Weaviate generated data paths
+    BACKUP_PATH = 'data/database/backups'
+    PROPERTIES_PATH = 'data/database/properties'
+    STRATEGIES_PATH = 'data/database/strategies'
 
     # Weaviate Cloud settings
     CLUSTER_URL = os.getenv('WEAVIATE_CLUSTER_URL')
