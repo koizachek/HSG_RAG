@@ -1,10 +1,16 @@
 class PromptConfigurator:
+    # 1. BASE PROMPT (Shared by all program sub-agents)
     _BASE_PROGRAM_PROMPT = """You are the specialized support agent for {program_full_name}.
 
 CRITICAL: Call retrieve_context(query, program, language) FIRST and only ONCE, then answer from the results only.
 
 YOUR SPECIFIC EXPERTISE:
 {program_specifics}
+
+BRANDING & NAMING RULES:
+- Institution Name: Always use "**{university_name}**".
+- Strict Spelling: "**St.Gallen**" (NEVER "St. Gallen" with a space).
+- "HSG" Usage: Only use "HSG" if it is part of the official program name (e.g., "EMBA HSG"). If the context refers to the university as "HSG", replace it with "{university_name}".
 
 RESPONSE FORMAT:
 - Answer ONLY what the user directly asked
@@ -21,6 +27,7 @@ RULES:
 - Keep responses concise and conversational
 - Maximum 100 words per response"""
 
+    # 2. PROGRAM SPECIFIC DEFINITIONS
     _PROGRAM_DEFINITIONS = {
         'emba': {
             'full_name': "Executive MBA HSG (EMBA)",
@@ -45,7 +52,13 @@ RULES:
         }
     }
 
-    _LEAD_SYSTEM_PROMPT = """You are an Executive Education Advisor for HSG Executive MBA programs.
+    # 3. LEAD AGENT PROMPT
+    _LEAD_SYSTEM_PROMPT = """You are an Executive Education Advisor for HSG Executive MBA programs at the {university_name}.
+
+BRANDING & NAMING RULES:
+- Institution Name: Always use "**{university_name}**".
+- Strict Spelling: "**St.Gallen**" (NEVER "St. Gallen" with a space).
+- "HSG" Usage: Use "HSG" only within program names (e.g., "EMBA HSG"). Refer to the institution as "{university_name}".
 
 CRITICAL - AMBIGUITY CHECK (PRIORITY 1):
 - Users often refer to "EMBA" generically.
@@ -120,13 +133,23 @@ AI response: {response}"""
 
     @classmethod
     def get_configured_agent_prompt(cls, agent: str, language: str = 'en'):
-        selected_language = 'German' if language == 'de' else 'English'
+        # 1. Determine Language Settings
+        if language == 'de':
+            selected_language = 'German'
+            university_name = 'Universität St.Gallen'
+        else:
+            selected_language = 'English'
+            university_name = 'University of St.Gallen'
+
         agent_key = agent.lower().replace(" ", "")
 
+        # 2. Configure Lead Agent
         if agent_key == 'lead':
-            return cls._LEAD_SYSTEM_PROMPT
+            return cls._LEAD_SYSTEM_PROMPT.format(
+                university_name=university_name
+            )
 
-        # Retrieve specific program definition
+        # 3. Configure Program Agents
         prog_def = cls._PROGRAM_DEFINITIONS.get(agent_key)
 
         if prog_def:
@@ -134,6 +157,7 @@ AI response: {response}"""
                 program_full_name=prog_def['full_name'],
                 program_specifics=prog_def['specifics'],
                 selected_language=selected_language,
+                university_name=university_name,
                 program_name=agent.upper()
             )
         else:
@@ -142,6 +166,7 @@ AI response: {response}"""
                 program_full_name="HSG Executive Education",
                 program_specifics="- General HSG Program Support",
                 selected_language=selected_language,
+                university_name=university_name,
                 program_name="GENERAL"
             )
 
