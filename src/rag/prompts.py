@@ -138,7 +138,7 @@ AI response: {response}"""
             selected_language = 'German'
             university_name = 'Universität St.Gallen'
         else:
-            selected_language = 'English'
+            selected_language = 'British English'
             university_name = 'University of St.Gallen'
 
         agent_key = agent.lower().replace(" ", "")

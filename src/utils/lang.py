@@ -25,6 +25,6 @@ def detect_language(text: str):
 
 def get_language_name(code: str):
     return {
-        'en': "English",
+        'en': "British English",
         'de': "German",
-    }.get(code, 'English')
+    }.get(code, 'British English')
