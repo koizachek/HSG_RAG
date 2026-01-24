@@ -20,8 +20,11 @@ class LeadAgentQueryResponse:
 
 class StructuredAgentResponse(BaseModel):
     response:         str   = Field(description="Main response to the query.")
-    confidence_score: float = Field("Value in range 0.0 to 1.0 that determines how confident the agent is in it's response based on the accumulated information.")
-    
+    appointment_requested: bool = Field(
+        default=False,
+        description="Set to True ONLY if the user explicitly wants to book, asks for help booking, or if a proactive trigger (pricing/eligibility/handover) occurred in THIS specific turn. Otherwise, set to False."
+    )
+
 
 class State(TypedDict):
     messages: list[AnyMessage]

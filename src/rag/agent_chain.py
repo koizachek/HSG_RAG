@@ -474,7 +474,12 @@ class ExecutiveAgentChain:
             chain_logger.info(f"Interpreted input '{query}' as '{processed_query}'")
 
         # 3. Language Detection
-        detected_language = self._language_detector.detect_language(processed_query)
+        SPECIAL_NAMES = ["emba", "hsg", "iemba", "emba_x", "x", "mba"]
+        lang_query = " ".join(name for name in processed_query.split() if name not in SPECIAL_NAMES).strip()
+        if len(lang_query):
+            detected_language = self._language_detector.detect_language(lang_query)
+        else:
+            detected_language = self._stored_language
         self._conversation_state['user_language'] = detected_language
         
         # Language validation
@@ -544,6 +549,7 @@ class ExecutiveAgentChain:
             messages=self._conversation_history + [language_instruction], 
         )
         agent_response = structured_response.response
+        chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
 
         # 4. Formatting
         if ENABLE_RESPONSE_CHUNKING:
@@ -554,11 +560,6 @@ class ExecutiveAgentChain:
             formatted_response = ResponseFormatter.remove_tables(agent_response)
 
         formatted_response = ResponseFormatter.clean_response(formatted_response)
-
-        # Detect if user is requesting an appointment
-        appointment_requested = self._detect_handover_request(preprocessed_query)
-        if appointment_requested:
-            chain_logger.info("User is requesting appointment - will show appointment buttons")
 
         # Step 7: Language fallback mechanisms and response quality evaluation
         confidence_fallback = False
@@ -580,7 +581,7 @@ class ExecutiveAgentChain:
             self._update_conversation_state(preprocessed_query, formatted_response)
             
             message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
-            if (message_count % 5 == 0 or self._conversation_state.get('suggested_program')):
+            if message_count % 5 == 0 or self._conversation_state.get('suggested_program'):
                 self._log_user_profile()
 
         return LeadAgentQueryResponse(
@@ -589,7 +590,7 @@ class ExecutiveAgentChain:
             confidence_fallback = confidence_fallback,
             should_cache = False if confidence_fallback else True,
             processed_query = preprocessed_query,
-            appointment_requested = appointment_requested,
+            appointment_requested = structured_response.appointment_requested,
         )
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
@@ -606,8 +607,6 @@ class ExecutiveAgentChain:
                 'structured_response',
                 StructuredAgentResponse(
                     response=result['messages'][-1].text,
-                    confidence_score=0.5,
-                    language=self._initial_language,
                 )
             )
             return response
@@ -616,6 +615,4 @@ class ExecutiveAgentChain:
             chain_logger.error(f"Failed to invoke the agent: {error_msg}")
             return StructuredAgentResponse(
                 response=QUERY_EXCEPTION_MESSAGE[self._stored_language],
-                confidence_score=0.0,
-                language=self._initial_language,
             )

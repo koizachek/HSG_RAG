@@ -1,6 +1,5 @@
 import os
 import gradio as gr
-from src.apps.chat.js import JS_LISTENER, JS_CLEAR
 from src.const.agent_response_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.utilclasses import LeadAgentQueryResponse
@@ -12,7 +11,7 @@ cache_logger = get_logger("cache_chatbot_app")
 
 class ChatbotApplication:
     def __init__(self, language: str = 'de') -> None:
-        self._app = gr.Blocks(js=JS_LISTENER)
+        self._app = gr.Blocks()
         self._language = language
         self._cache = Cache.get_cache()
 
@@ -29,6 +28,11 @@ class ChatbotApplication:
                 )
                 reset_button = gr.Button("Reset Conversation")
 
+            chatbot = gr.Chatbot(
+                height=600,
+                type='messages',
+                label="Executive Education Adviser"
+            )
             chat = gr.ChatInterface(
                 fn=lambda msg, history, agent: self._chat(
                     message=msg,
@@ -38,12 +42,8 @@ class ChatbotApplication:
                 additional_inputs=[agent_state],
                 title="Executive Education Adviser",
                 type='messages',
-            )
-
-            iframe_container = gr.HTML(
-                value="",
-                elem_id="consultation-iframe-container",
-                visible=True
+                chatbot=chatbot,
+                fill_height=True
             )
 
             def clear_chat_immediate():
@@ -69,29 +69,27 @@ class ChatbotApplication:
 
             lang_selector.change(
                 fn=clear_chat_immediate,
-                outputs=[chat.chatbot_value, iframe_container],
+                outputs=[chat.chatbot_value],
                 queue=True,
-                js=JS_CLEAR
             )
 
             lang_selector.change(
                 fn=on_lang_change,
                 inputs=[lang_selector],
-                outputs=[agent_state, lang_state, chat.chatbot_value, iframe_container],
+                outputs=[agent_state, lang_state, chat.chatbot_value],
                 queue=True,
             )
 
             reset_button.click(
                 fn=clear_chat_immediate,
-                outputs=[chat.chatbot_value, iframe_container],
+                outputs=[chat.chatbot_value],
                 queue=True,
-                js=JS_CLEAR
             )
 
             reset_button.click(
                 fn=switch_language,
                 inputs=[lang_state],
-                outputs=[agent_state, lang_state, chat.chatbot_value, iframe_container],
+                outputs=[agent_state, lang_state, chat.chatbot_value],
                 queue=True,
             )
 
@@ -143,7 +141,8 @@ class ChatbotApplication:
             self._language = final_response.language
 
             if final_response.confidence_fallback or final_response.max_turns_reached or final_response.appointment_requested:
-                answers.extend(APPOINTMENT_LINKS[self._language])
+                html_code = get_booking_widget(language=self._language)
+                answers.append(gr.HTML(value=html_code))
 
             if final_response.should_cache and Cache._settings["enabled"]:
                 # Caching new response
