@@ -60,9 +60,10 @@ class ScopeGuardian:
             'on_topic' | 'off_topic' | 'financial_planning' | 'aggressive'
         """
         message_lower = message.lower()
+        words_list = message_lower.split()
         
         # Check for aggressive behavior
-        if any(keyword in message_lower for keyword in ScopeGuardian.AGGRESSIVE_KEYWORDS):
+        if any(keyword in words_list for keyword in ScopeGuardian.AGGRESSIVE_KEYWORDS):
             logger.warning(f"Detected aggressive language in message")
             return 'aggressive'
         
@@ -71,7 +72,7 @@ class ScopeGuardian:
             ScopeGuardian.OFF_TOPIC_KEYWORDS.get('en', []) +
             ScopeGuardian.OFF_TOPIC_KEYWORDS.get('de', [])
         )
-        if any(keyword in message_lower for keyword in off_topic_keywords):
+        if any(keyword in words_list for keyword in off_topic_keywords):
             logger.info(f"Detected off-topic query")
             return 'off_topic'
         
@@ -80,7 +81,7 @@ class ScopeGuardian:
             ScopeGuardian.FINANCIAL_KEYWORDS.get('en', []) +
             ScopeGuardian.FINANCIAL_KEYWORDS.get('de', [])
         )
-        if any(keyword in message_lower for keyword in financial_keywords):
+        if any(keyword in words_list for keyword in financial_keywords):
             logger.info(f"Detected financial planning query")
             return 'financial_planning'
         

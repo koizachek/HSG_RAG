@@ -452,6 +452,7 @@ class ExecutiveAgentChain:
                 response = CONVERSATION_END_MESSAGE[current_language],
                 language = current_language,
                 max_turns_reached = True,
+                relevant_programs=[],
                 processed_query = query
             ) 
 
@@ -550,6 +551,7 @@ class ExecutiveAgentChain:
         )
         agent_response = structured_response.response
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
+        chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
         # 4. Formatting
         if ENABLE_RESPONSE_CHUNKING:
@@ -591,6 +593,7 @@ class ExecutiveAgentChain:
             should_cache = False if confidence_fallback else True,
             processed_query = preprocessed_query,
             appointment_requested = structured_response.appointment_requested,
+            relevant_programs = structured_response.relevant_programs
         )
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:

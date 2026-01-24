@@ -141,7 +141,7 @@ class ChatbotApplication:
             self._language = final_response.language
 
             if final_response.confidence_fallback or final_response.max_turns_reached or final_response.appointment_requested:
-                html_code = get_booking_widget(language=self._language)
+                html_code = get_booking_widget(language=self._language, programs=final_response.relevant_programs)
                 answers.append(gr.HTML(value=html_code))
 
             if final_response.should_cache and Cache._settings["enabled"]:

@@ -72,10 +72,13 @@ CONVERSATION_END_MESSAGE = {
 }
 
 
-def get_booking_widget(language="en"):
+def get_booking_widget(language: str="en", programs: list[str]=None):
     """
     Returns an HTML string representing a Booking Widget.
     """
+
+    if programs is None or programs == []:
+        programs = ["emba", "iemba", "emba_x"]
 
     labels = {
         "en": {"header": "📅 Book a Consultation", "sub": "Select an advisor to view their calendar:"},
@@ -84,9 +87,9 @@ def get_booking_widget(language="en"):
     txt = labels.get(language, labels["en"])
 
     advisors = [
-        {"name": "Cyra von Müller", "url": "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg"},
-        {"name": "Kristin Fuchs", "url": "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation"},
-        {"name": "Teyuna Giger", "url": "https://calendly.com/teyuna-giger-unisg"}
+        {"name": "Cyra von Müller (EMBA)", "url": "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg", "program": "emba"},
+        {"name": "Kristin Fuchs (IEMBA)", "url": "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation", "program": "iemba"},
+        {"name": "Teyuna Giger (EMBA X)", "url": "https://calendly.com/teyuna-giger-unisg", "program": "emba_x"},
     ]
 
     html_content = f"""
@@ -96,16 +99,17 @@ def get_booking_widget(language="en"):
     """
 
     for advisor in advisors:
-        html_content += f"""
-        <details style="margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <summary style="cursor: pointer; padding: 16px 20px; background-color: #ffffff; font-weight: 600; color: #374151; font-size: 1.05em; list-style: none; transition: background 0.2s;">
-                👤 {advisor['name']}
-            </summary>
-            <div style="padding: 0; border-top: 1px solid #e5e7eb;">
-                <iframe src="{advisor['url']}" width="100%" height="650px" frameborder="0" style="display: block;"></iframe>
-            </div>
-        </details>
-        """
+        if advisor["program"] in programs:
+            html_content += f"""
+            <details style="margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <summary style="cursor: pointer; padding: 16px 20px; background-color: #ffffff; font-weight: 600; color: #374151; font-size: 1.05em; list-style: none; transition: background 0.2s;">
+                    👤 {advisor['name']}
+                </summary>
+                <div style="padding: 0; border-top: 1px solid #e5e7eb;">
+                    <iframe src="{advisor['url']}" width="100%" height="650px" frameborder="0" style="display: block;"></iframe>
+                </div>
+            </details>
+            """
 
     html_content += "</div>"
     return html_content
