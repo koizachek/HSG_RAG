@@ -9,9 +9,15 @@ from src.utils.logging import get_logger
 logger = get_logger("response_formatter")
 
 
+CONTINUATION_PROMPT = {
+    'en': "*Would you like me to continue with more details?*",
+    'de': "*Möchten Sie, dass ich mit weiteren Details fortfahre?*"
+}
+
+
 class ResponseFormatter:
     """Formats agent responses for optimal display"""
-    
+
     @staticmethod
     def count_words(text: str) -> int:
         """Count words in text"""
@@ -69,83 +75,87 @@ class ResponseFormatter:
     
     @staticmethod
     def chunk_response(
-        text: str, 
-        max_words: int = MAX_RESPONSE_WORDS_LEAD
+        text: str,
+        max_words: int = MAX_RESPONSE_WORDS_LEAD,
+        language: str = 'en'
     ) -> tuple[str, str | None]:
         """
         Split long response into current response and continuation.
-        
+
         Args:
             text: Full response text
             max_words: Maximum words for current response
-            
+            language: Language code ('en' or 'de') for continuation prompt
+
         Returns:
             Tuple of (current_response, continuation_or_none)
         """
         word_count = ResponseFormatter.count_words(text)
-        
+
         if word_count <= max_words:
             return text, None
-        
+
         # Need to chunk
         logger.info(f"Response has {word_count} words, chunking to {max_words} words")
-        
+
         words = text.split()
-        
+
         # Try to break at a natural point (period, newline) near max_words
         break_point = max_words
-        
+
         # Look for sentence ending near break point
         for i in range(max_words - 20, min(max_words + 20, len(words))):
             if i < len(words) and words[i].endswith(('.', '!', '?')):
                 break_point = i + 1
                 break
-        
+
         # Create chunks
         current = " ".join(words[:break_point])
         continuation = " ".join(words[break_point:])
-        
-        # Add continuation prompt
-        current += "\n\n*Would you like me to continue with more details?*"
-        
+
+        # Add continuation prompt in the correct language
+        continuation_msg = CONTINUATION_PROMPT.get(language, CONTINUATION_PROMPT['en'])
+        current += f"\n\n{continuation_msg}"
+
         return current, continuation
     
     @staticmethod
     def format_response(
         text: str,
         agent_type: str = 'lead',
-        enable_chunking: bool = True
+        enable_chunking: bool = True,
+        language: str = 'en'
     ) -> str:
         """
         Format response: remove tables and handle length.
-        
+
         Args:
             text: Raw response text
             agent_type: 'lead' or 'subagent' (determines max length)
             enable_chunking: Whether to chunk long responses
-            
+            language: Language code ('en' or 'de') for any generated text
+
         Returns:
             Formatted response text
         """
         # Remove tables
         formatted = ResponseFormatter.remove_tables(text)
-        
+
         # Determine max words
         max_words = (
-            MAX_RESPONSE_WORDS_LEAD 
-            if agent_type == 'lead' 
+            MAX_RESPONSE_WORDS_LEAD
+            if agent_type == 'lead'
             else MAX_RESPONSE_WORDS_SUBAGENT
         )
-        
+
         # Handle chunking if enabled
         if enable_chunking:
-            formatted, continuation = ResponseFormatter.chunk_response(
-                formatted, 
-                max_words
+            formatted, _continuation = ResponseFormatter.chunk_response(
+                formatted,
+                max_words,
+                language
             )
-            # Note: Continuation handling would need to be implemented in agent chain
-            # For now, we just truncate and add hint
-        
+
         return formatted
     
     @staticmethod

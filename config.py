@@ -198,7 +198,7 @@ ENABLE_EVALUATE_RESPONSE_QUALITY = True
 
 # Conversation state settings
 TRACK_USER_PROFILE = True  # Track user preferences and avoid repetition
-LOCK_LANGUAGE_AFTER_FIRST_MESSAGE = True  # Don't change language mid-conversation
+LOCK_LANGUAGE_AFTER_N_MESSAGES = 3  # Lock language after N user messages (0 = never lock)
 MAX_CONVERSATION_TURNS = 15 # End conversation after max turns reached
 
 # Data processing pipeline settings 

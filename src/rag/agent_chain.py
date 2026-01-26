@@ -36,8 +36,9 @@ from config import (
     TOP_K_RETRIEVAL,
     TRACK_USER_PROFILE,
     ENABLE_RESPONSE_CHUNKING,
-    ENABLE_EVALUATE_RESPONSE_QUALITY, 
+    ENABLE_EVALUATE_RESPONSE_QUALITY,
     MAX_CONVERSATION_TURNS,
+    LOCK_LANGUAGE_AFTER_N_MESSAGES,
 )
 
 chain_logger = get_logger('agent_chain')
@@ -77,7 +78,8 @@ class ExecutiveAgentChain:
         }
 
         # Track scope violations for escalation
-        self._scope_violation_count = 0
+        self._scope_violation_counts: dict[str, int] = {}
+        self._aggressive_violation_count = 0
 
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
 
@@ -474,30 +476,43 @@ class ExecutiveAgentChain:
             chain_logger.info(f"Interpreted input '{query}' as '{processed_query}'")
 
         # 3. Language Detection
-        detected_language = self._language_detector.detect_language(processed_query)
-        self._conversation_state['user_language'] = detected_language
-        
-        # Language validation
-        if detected_language in ['de', 'en']:
-            self._stored_language = detected_language
-            current_language = detected_language
+        # Count user messages in conversation history
+        user_message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
+
+        # Lock language after N user messages (allows language switch early in conversation)
+        if LOCK_LANGUAGE_AFTER_N_MESSAGES > 0 and user_message_count >= LOCK_LANGUAGE_AFTER_N_MESSAGES:
+            chain_logger.info(f"Language locked to '{self._stored_language}' (after {user_message_count} messages)")
+            current_language = self._stored_language
         else:
-            chain_logger.info("Invalid language detected.")
-            return LeadAgentQueryResponse(
-                response=LANGUAGE_FALLBACK_MESSAGE[current_language],
-                language=current_language,
-                processed_query=processed_query
-            )
+            detected_language = self._language_detector.detect_language(processed_query)
+            self._conversation_state['user_language'] = detected_language
+
+            # Language validation
+            if detected_language in ['de', 'en']:
+                self._stored_language = detected_language
+                current_language = detected_language
+            else:
+                chain_logger.info("Invalid language detected.")
+                return LeadAgentQueryResponse(
+                    response=LANGUAGE_FALLBACK_MESSAGE[current_language],
+                    language=current_language,
+                    processed_query=processed_query
+                )
 
         # 4. Scope Check
         scope_type = ScopeGuardian.check_scope(processed_query, current_language)
 
         if scope_type != 'on_topic':
             chain_logger.info(f"Out-of-scope query detected: {scope_type}")
-            self._scope_violation_count += 1
+            if scope_type == 'aggressive':
+                self._aggressive_violation_count += 1
+                attempt_count = self._aggressive_violation_count
+            else:
+                self._scope_violation_counts[scope_type] = self._scope_violation_counts.get(scope_type, 0) + 1
+                attempt_count = self._scope_violation_counts[scope_type]
 
             should_escalate, escalation_type = ScopeGuardian.should_escalate(
-                processed_query, scope_type, self._scope_violation_count
+                processed_query, scope_type, attempt_count
             )
 
             if should_escalate:
@@ -511,7 +526,8 @@ class ExecutiveAgentChain:
             return LeadAgentQueryResponse(
                 response=redirect_msg,
                 language=current_language,
-                processed_query=processed_query
+                processed_query=processed_query,
+                appointment_requested=(should_escalate and escalation_type == "escalate_aggressive"),
             )
 
         # Response = None indicates that agent needs to answer the processed query
@@ -527,8 +543,8 @@ class ExecutiveAgentChain:
         Phase 2: Execute agent.
         Takes the ALREADY validated query from the preprocessing phase.
         """
-        # Reset violation count 
-        self._scope_violation_count = 0
+        # Reset scope-violation tracking
+        self._scope_violation_counts = {}
         
         response_language = self._stored_language
        
@@ -548,7 +564,7 @@ class ExecutiveAgentChain:
         # 4. Formatting
         if ENABLE_RESPONSE_CHUNKING:
             formatted_response = ResponseFormatter.format_response(
-                agent_response, agent_type='lead', enable_chunking=True
+                agent_response, agent_type='lead', enable_chunking=True, language=response_language
             )
         else:
             formatted_response = ResponseFormatter.remove_tables(agent_response)

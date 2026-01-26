@@ -108,8 +108,8 @@ class ScopeGuardian:
                 'de': "Für detaillierte Finanzplanung, Zahlungsoptionen oder Stipendienanträge empfehle ich, direkt mit unserem Zulassungsteam Kontakt aufzunehmen. Sie können Ihnen persönliche Beratung zu Finanzierungsmöglichkeiten und verfügbarer Unterstützung geben.\n\nMöchten Sie allgemeine Informationen über Programmkosten und Leistungen erhalten?"
             },
             'aggressive': {
-                'en': "I'm here to help with questions about HSG Executive MBA programs in a professional manner. If you have specific concerns or feedback, I'd be happy to connect you with our admissions team. How can I assist you with information about our programs?",
-                'de': "Ich bin hier, um Fragen zu den HSG Executive MBA-Programmen auf professionelle Weise zu beantworten. Wenn Sie spezifische Anliegen oder Feedback haben, stelle ich gerne den Kontakt zu unserem Zulassungsteam her. Wie kann ich Ihnen bei Informationen über unsere Programme helfen?"
+                'en': "I'm here to help with questions about HSG Executive MBA programs, but please keep the conversation respectful. If the aggressive language continues, I may need to end the chat and refer you to our admissions team. How can I help you with information about our programs?",
+                'de': "Ich helfe Ihnen gerne bei Fragen zu den HSG Executive MBA-Programmen, aber bitte bleiben Sie respektvoll. Wenn die aggressive Sprache anhält, muss ich das Gespräch ggf. beenden und Sie an unser Zulassungsteam verweisen. Wie kann ich Ihnen bei Informationen über unsere Programme helfen?"
             }
         }
         
@@ -132,9 +132,11 @@ class ScopeGuardian:
         Returns:
             Tuple of (should_escalate, escalation_message)
         """
-        # Aggressive behavior -> immediate escalation
+        # Aggressive behavior -> warn first, then escalate if it continues
         if scope_type == 'aggressive':
-            return True, "escalate_aggressive"
+            if attempt_count >= 2:
+                return True, "escalate_aggressive"
+            return False, ""
         
         # Off-topic after 2 redirects -> suggest human contact
         if scope_type == 'off_topic' and attempt_count >= 2:
@@ -160,8 +162,8 @@ class ScopeGuardian:
         """
         messages = {
             'escalate_aggressive': {
-                'en': "I'd like to connect you with our admissions team who can better address your concerns. Please contact them at [admissions contact info].",
-                'de': "Ich möchte Sie mit unserem Zulassungsteam verbinden, das Ihre Anliegen besser bearbeiten kann. Bitte kontaktieren Sie diese unter [Zulassungskontaktinfo]."
+                'en': "I can’t continue this chat while the language is aggressive. If you still need help, please book an appointment with our admissions team using the links below.",
+                'de': "Ich kann dieses Gespräch nicht fortsetzen, solange die Sprache aggressiv ist. Wenn Sie weiterhin Unterstützung benötigen, buchen Sie bitte über die untenstehenden Links einen Termin mit unserem Zulassungsteam."
             },
             'escalate_off_topic': {
                 'en': "For questions outside program information, our admissions team would be the best resource. You can reach them at [admissions contact info].\n\nIs there anything specific about the EMBA, IEMBA, or emba X programs I can help you with?",
