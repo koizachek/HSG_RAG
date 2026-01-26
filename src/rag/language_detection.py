@@ -23,6 +23,19 @@ SHORT_WORDS_EN = {
     'maybe', 'probably', 'definitely', 'certainly', 'alright',
 }
 
+# Patterns for explicit language switch requests
+SWITCH_TO_EN_PATTERNS = [
+    'in english', 'to english', 'switch to english', 'continue in english',
+    'speak english', 'english please', 'prefer english', 'rather in english',
+    'answer in english', 'respond in english', 'information in english',
+]
+SWITCH_TO_DE_PATTERNS = [
+    'auf deutsch', 'zu deutsch', 'in deutsch', 'deutsch bitte', 'lieber deutsch',
+    'bitte deutsch', 'weiter auf deutsch', 'antworten auf deutsch',
+    'in german', 'to german', 'switch to german', 'continue in german',
+    'speak german', 'german please', 'prefer german',
+]
+
 
 class LanguageDetectionResult(BaseModel):
     language_code: str = Field(description="ISO language code (e.g., en, de, fa, ru) of the language in which the message is written")
@@ -32,6 +45,25 @@ class LanguageDetector:
     def __init__(self) -> None:
         self._model = modconf.get_language_detector_model()
         self._model = self._model.with_structured_output(LanguageDetectionResult)
+
+    def detect_explicit_switch_request(self, query: str) -> str | None:
+        """
+        Detect if user explicitly requests a language switch.
+        Returns 'en', 'de', or None if no explicit switch requested.
+        """
+        query_lower = query.lower()
+
+        for pattern in SWITCH_TO_EN_PATTERNS:
+            if pattern in query_lower:
+                logger.info(f"Explicit language switch request detected: -> English")
+                return 'en'
+
+        for pattern in SWITCH_TO_DE_PATTERNS:
+            if pattern in query_lower:
+                logger.info(f"Explicit language switch request detected: -> German")
+                return 'de'
+
+        return None
 
     def _quick_detect_short_words(self, query: str) -> str | None:
         """Quick detection for short inputs using word dictionary. Returns None if not detected."""

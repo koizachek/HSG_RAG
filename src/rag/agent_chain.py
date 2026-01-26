@@ -476,28 +476,35 @@ class ExecutiveAgentChain:
             chain_logger.info(f"Interpreted input '{query}' as '{processed_query}'")
 
         # 3. Language Detection
-        # Count user messages in conversation history
-        user_message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
-
-        # Lock language after N user messages (allows language switch early in conversation)
-        if LOCK_LANGUAGE_AFTER_N_MESSAGES > 0 and user_message_count >= LOCK_LANGUAGE_AFTER_N_MESSAGES:
-            chain_logger.info(f"Language locked to '{self._stored_language}' (after {user_message_count} messages)")
-            current_language = self._stored_language
+        # First: Check for explicit language switch request (overrides lock)
+        explicit_switch = self._language_detector.detect_explicit_switch_request(processed_query)
+        if explicit_switch:
+            self._stored_language = explicit_switch
+            current_language = explicit_switch
+            self._conversation_state['user_language'] = explicit_switch
         else:
-            detected_language = self._language_detector.detect_language(processed_query)
-            self._conversation_state['user_language'] = detected_language
+            # Count user messages in conversation history
+            user_message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
 
-            # Language validation
-            if detected_language in ['de', 'en']:
-                self._stored_language = detected_language
-                current_language = detected_language
+            # Lock language after N user messages (allows language switch early in conversation)
+            if LOCK_LANGUAGE_AFTER_N_MESSAGES > 0 and user_message_count >= LOCK_LANGUAGE_AFTER_N_MESSAGES:
+                chain_logger.info(f"Language locked to '{self._stored_language}' (after {user_message_count} messages)")
+                current_language = self._stored_language
             else:
-                chain_logger.info("Invalid language detected.")
-                return LeadAgentQueryResponse(
-                    response=LANGUAGE_FALLBACK_MESSAGE[current_language],
-                    language=current_language,
-                    processed_query=processed_query
-                )
+                detected_language = self._language_detector.detect_language(processed_query)
+                self._conversation_state['user_language'] = detected_language
+
+                # Language validation
+                if detected_language in ['de', 'en']:
+                    self._stored_language = detected_language
+                    current_language = detected_language
+                else:
+                    chain_logger.info("Invalid language detected.")
+                    return LeadAgentQueryResponse(
+                        response=LANGUAGE_FALLBACK_MESSAGE[current_language],
+                        language=current_language,
+                        processed_query=processed_query
+                    )
 
         # 4. Scope Check
         scope_type = ScopeGuardian.check_scope(processed_query, current_language)

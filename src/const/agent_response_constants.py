@@ -90,7 +90,7 @@ APPOINTMENT_LINKS = {
             role="assistant",
             content=create_appt_button(
                 "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-                "Cyra von Müller",
+                "Cyra von Müller (EMBA HSG)",
                 "Book Appointment"
             ),
         ),
@@ -98,7 +98,7 @@ APPOINTMENT_LINKS = {
             role="assistant",
             content=create_appt_button(
                 "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-                "Kristin Fuchs",
+                "Kristin Fuchs (IEMBA)",
                 "Book Appointment"
             ),
         ),
@@ -106,7 +106,7 @@ APPOINTMENT_LINKS = {
             role="assistant",
             content=create_appt_button(
                 "https://calendly.com/teyuna-giger-unisg",
-                "Teyuna Giger",
+                "Teyuna Giger (emba X)",
                 "Book Appointment"
             ),
         ),
@@ -116,7 +116,7 @@ APPOINTMENT_LINKS = {
             role="assistant",
             content=create_appt_button(
                 "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-                "Cyra von Müller",
+                "Cyra von Müller (EMBA HSG)",
                 "Termin buchen"
             ),
         ),
@@ -124,7 +124,7 @@ APPOINTMENT_LINKS = {
             role="assistant",
             content=create_appt_button(
                 "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-                "Kristin Fuchs",
+                "Kristin Fuchs (IEMBA)",
                 "Termin buchen"
             ),
         ),
@@ -132,7 +132,7 @@ APPOINTMENT_LINKS = {
             role="assistant",
             content=create_appt_button(
                 "https://calendly.com/teyuna-giger-unisg",
-                "Teyuna Giger",
+                "Teyuna Giger (emba X)",
                 "Termin buchen"
             ),
         ),
