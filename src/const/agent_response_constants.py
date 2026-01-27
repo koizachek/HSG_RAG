@@ -84,10 +84,23 @@ def get_booking_widget(language: str="en", programs: list[str]=None):
     }
     txt = labels.get(language, labels["en"])
 
+    base_params = "?hide_gdpr_banner=1&embed_type=Inline&embed_domain=1"
     advisors = [
-        {"name": "Cyra von Müller (EMBA HSG)", "url": "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg", "program": "emba"},
-        {"name": "Kristin Fuchs (IEMBA)", "url": "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation", "program": "iemba"},
-        {"name": "Teyuna Giger (emba X)", "url": "https://calendly.com/teyuna-giger-unisg", "program": "emba_x"},
+        {
+            "name": "Cyra von Müller (EMBA)",
+            "url": f"https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg{base_params}",
+            "program": "emba"
+        },
+        {
+            "name": "Kristin Fuchs (IEMBA)",
+            "url": f"https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation{base_params}",
+            "program": "iemba"
+        },
+        {
+            "name": "Teyuna Giger (EMBA X)",
+            "url": f"https://calendly.com/teyuna-giger-unisg{base_params}",
+            "program": "emba_x"
+        },
     ]
 
     html_content = f"""
