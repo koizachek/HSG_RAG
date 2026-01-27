@@ -531,7 +531,6 @@ class ExecutiveAgentChain:
             self._conversation_history.append(HumanMessage(processed_query))
             self._conversation_history.append(AIMessage(redirect_msg))
 
-            formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
             return LeadAgentQueryResponse(
                 response=redirect_msg,
                 language=current_language,
