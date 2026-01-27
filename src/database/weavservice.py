@@ -387,6 +387,7 @@ class WeaviateService:
                     coll = client.collections.get(c)
                     for obj in coll.iterator():
                         ids.append(obj.properties['chunk_id'])
+            return ids
         except Exception as e:
             logger.error(f"Failed to collect chunk ids: {e}")
             raise e

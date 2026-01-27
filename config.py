@@ -141,8 +141,8 @@ class WeaviateConfiguration:
     
     # Custom timeouts for Cloud connection (in seconds)
     INIT_TIMEOUT   = 90 
-    QUERY_TIMEOUT  = 10 
-    INSERT_TIMEOUT = 120
+    QUERY_TIMEOUT  = 60 
+    INSERT_TIMEOUT = 600
 
     @classmethod 
     def is_local(cls) -> bool:

@@ -19,7 +19,7 @@ def detect_language(text: str):
     """
     found_langs = detect_langs(text)
     top_lang = found_langs[0]
-    logger.info(f'Found following languages in the text: {found_langs}')
+    logger.info(f'Found following languages in the text: {", ".join(f"{lang.lang}-{lang.prob:1.2f}" for lang in found_langs)}')
     return 'de' if top_lang.lang == 'de' and top_lang.prob >= LANG_AMBIGUITY_THRESHOLD else 'en'
     
 
