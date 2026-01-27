@@ -80,7 +80,7 @@ Here are the programs:
         """Test that long responses are chunked"""
         long_text = " ".join(["word"] * 150)  # 150 words
         
-        chunked, continuation = ResponseFormatter.chunk_response(long_text, max_words=200)
+        chunked, continuation = ResponseFormatter.chunk_response(long_text, max_words=100)
         
         # Current response should be shorter
         assert ResponseFormatter.count_words(chunked) <= 220  # Allow some buffer
