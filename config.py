@@ -141,8 +141,8 @@ class WeaviateConfiguration:
     
     # Custom timeouts for Cloud connection (in seconds)
     INIT_TIMEOUT   = 90 
-    QUERY_TIMEOUT  = 10 
-    INSERT_TIMEOUT = 120
+    QUERY_TIMEOUT  = 60 
+    INSERT_TIMEOUT = 600
 
     @classmethod 
     def is_local(cls) -> bool:
@@ -179,7 +179,7 @@ LANG_AMBIGUITY_THRESHOLD = 0.6
 CONFIDENCE_THRESHOLD = 0.6
 
 # Vector database settings
-CHUNK_SIZE = 1000
+CHUNK_SIZE = 512
 CHUNK_OVERLAP = 200
 
 # Agent Chain settings 

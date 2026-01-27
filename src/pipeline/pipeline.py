@@ -1,63 +1,20 @@
-import json, os
+import os
 
 from pathlib import Path
-from src.utils.logging import get_logger
-from src.processing.processor import DataProcessor, ProcessingResult, ProcessingStatus, WebsiteProcessor
-from src.database.weavservice import WeaviateService
+from src.pipeline.utilclasses import (
+        _deduplication_callback_placeholder,
+        _logging_callback_placeholder,
+        ProcessingResult,
+)
+from src.pipeline.processors import *
+from src.database.weavservice  import WeaviateService
 
-from config import AVAILABLE_LANGUAGES, HASH_FILE_PATH, DOCUMENTS_PATH
+from src.utils.logging import get_logger
+
+from config import AVAILABLE_LANGUAGES
 
 pipelogger = get_logger("pipeline_module")
 implogger  = get_logger("import_pipeline")
-
-
-def _get_all_sources(sources) -> list[str]:
-    sources.remove('all')
-    pipelogger.info(f"Getting all sources from the soruce directory at {DOCUMENTS_PATH}...")
-    for source in os.listdir(DOCUMENTS_PATH):
-        if source in sources: continue
-        if source.endswith('.pdf'):
-            sources.append(os.path.join(DOCUMENTS_PATH, source))
-    pipelogger.info(f"Loaded {len(sources)} sources from the source directory")
-    return sources
-
-
-def _import_hashtables() -> dict:
-    """
-    Import deduplication hashtables from the JSON file.
-
-    Returns:
-        dict: Hashtable data containing document and chunk IDs.
-    """
-    hashtables = dict()
-    
-    with open(HASH_FILE_PATH, 'a+') as f:
-        try:
-            f.seek(0)
-            pipelogger.info(f"Loading deduplication hashtable from file {HASH_FILE_PATH}")
-            hashtables = json.load(f)
-            pipelogger.info(f"Import pipeline loaded deduplication hashtable with {len(hashtables['documents'])} sources and {len(hashtables['chunks'])} chunks")
-        except json.JSONDecodeError as e:
-            pipelogger.warning(f"Failed to decode the hash file {os.path.basename(HASH_FILE_PATH)}: {e}; new hashtable will be created")
-            hashtables['documents'] = []
-            hashtables['chunks'] = []
-    return hashtables
-
-
-def _export_hashtables(hashtables: dict):
-    """
-    Export hashtable data to the JSON file.
-
-    Args:
-        hashtables (dict): Hashtable dictionary containing documents and chunks.
-    """
-    with open(HASH_FILE_PATH, 'w+') as f:
-        json.dump(hashtables, f)
-        pipelogger.info("Saved successfully imported chunk IDs in the hashtables")
-
-
-def _logging_callback_placeholder(msg):
-    pass
 
 
 class ImportPipeline:
@@ -66,16 +23,22 @@ class ImportPipeline:
     into the database with deduplication and language-based organization.
     """
 
-    def __init__(self, logging_callback = None) -> None:
+    def __init__(
+        self, 
+        logging_callback = None,
+        deduplication_callback = None,
+        reset_collections_on_import = False,
+    ) -> None:
         """Initialize the import pipeline with processors and hashtable data."""
-        self._hashtables   = _import_hashtables()
-        self._webprocessor = WebsiteProcessor()
-        self._processor    = DataProcessor()
+        self._reset_collections_on_import = reset_collections_on_import
+        self._logging_callback = logging_callback or _logging_callback_placeholder
+        self._deduplication_callback = deduplication_callback or _deduplication_callback_placeholder
+        self._webprocessor = WebsiteProcessor(logging_callback)
+        self._processor    = DocumentProcessor(logging_callback)
         self._wvtserv      = WeaviateService()
-        # self._saved_ids    = self._wvtserv._get_chunk_ids()
+        self._ids          = self._wvtserv._collect_chunk_ids()
         
-        self.logging_callback = logging_callback or _logging_callback_placeholder
-
+        implogger.info('Import pipeline initialization finished!')
 
     def scrape_website(self):
         """
@@ -92,7 +55,6 @@ class ImportPipeline:
             return 
         
         self._import_to_database(unique_chunks)
-        _export_hashtables(self._hashtables)
 
 
     def import_many_documents(self, sources: list[Path | str]):
@@ -103,6 +65,10 @@ class ImportPipeline:
         Args:
             sources (list[Path | str]): List of file paths or URLs to process.
         """
+        if self._reset_collections_on_import:
+            implogger.warning('Reset collection flag is set to True!')
+            implogger.warning('All existing embeddings will be removed from database before imprting!')
+
         if 'all' in sources:
             implogger.info("Import list contains the 'all', all sources will be imported...")
             sources = _get_all_sources(sources)
@@ -117,18 +83,22 @@ class ImportPipeline:
         unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
         for source in sources:
             filename = os.path.basename(source)
-            self.logging_callback(f'Processing {filename}...')
-            chunks, lang = self._process_source(source)
-            self.logging_callback(f'DONE!\nCollected {len(chunks)} chunks.\n', filename)
-            if chunks:
-                unique_chunks[lang].extend(chunks)
+            self._logging_callback(f'Starting pipeline for source {filename}...', 0)
+            result = self._process_source(source)
+            self._logging_callback(f'Storing chunks for {filename}...', 100, result)
+
+            if result.chunks:
+                unique_chunks[result.lang].extend(result.chunks)
         
-        if not unique_chunks:
+        if all([len(chunks) == 0 for chunks in unique_chunks.values()]):
+            self._logging_callback('No new data could be extracted from selected files!', 100)
             implogger.warning(f"File(s) provided for the insertion do not contain any unique information. Terminating the pipeline without importing")
             return 
-
+        
+        self._logging_callback('Importing chunks to database...', 110)
         self._import_to_database(unique_chunks)
-        _export_hashtables(self._hashtables)
+        self._logging_callback('Successfully imported all documents!', 100)
+
 
 
     def import_document(self, source: Path | str):
@@ -148,16 +118,13 @@ class ImportPipeline:
         Args:
             unique_chunks (dict): Dictionary mapping languages to lists of chunks.
         """
+        if self._reset_collections_on_import:
+            self._wvtserv._reset_collections()
+
         for lang, chunks in unique_chunks.items():
-            if not chunks: 
-                continue
-
-            failures = self._wvtserv.batch_import(data_rows=chunks, lang=lang)
-            for failure in failures:
-                chunk_id = failure['chunk_id']
-                if chunk_id in self._hashtables['chunks']:
-                    self._hashtables['chunks'].remove(chunk_id)
-
+            if chunks:
+                failures = self._wvtserv.batch_import(data_rows=chunks, lang=lang)
+ 
 
     def _process_source(self, source: Path | str) -> tuple[list, str]:
         """
@@ -172,48 +139,47 @@ class ImportPipeline:
         """
         result: ProcessingResult = self._processor.process(source)
 
-        if not result.status == ProcessingStatus.SUCCESS:
+        if not result:
             implogger.error(f"Failed to process document {source}: {result.status}")
             return [], ''
         
-        # unique_chunks = self._deduplicate(result)
-        return result.chunks, result.language
+        unique_chunks = result.chunks
+        if not self._reset_collections_on_import:
+            unique_chunks = self._deduplicate(result)
+        return ProcessingResult(unique_chunks, result.source, result.lang)
 
 
-    def _deduplicate(self, result: ProcessingResult):
+    def _deduplicate(self, result: ProcessingResult) -> list:
         """
-        Remove duplicate chunks and documents based on previously processed hashes.
+        Remove duplicate chunks based on chunks that are already stored in the database.
 
         Args:
+            source_name (str): Document name for deduplication callback.
             result (ProcessingResult): The processing result containing document chunks.
 
         Returns:
             list[dict]: List of unique chunk dictionaries.
         """
-        d_id = result.document_id
+        if self._reset_collections_on_import:
+            return result.chunks
+
+        self._logging_callback('Performing deduplication...', 80)
+        collected_chunks = result.chunks
         unique_chunks = []
-
-        implogger.info(f"Analyzing document with ID {d_id} for duplicated contents")
-        if d_id in self._hashtables['documents']:
-            implogger.warning(f"Document with ID {d_id} is a duplicate!")
-            return unique_chunks
+        duplicate_ids = []
+        for chunk in collected_chunks:
+            chunk_id = chunk['chunk_id']
+            if chunk_id in self._ids:
+                duplicate_ids.append(chunk_id)
+            else: 
+                unique_chunks.append(chunk)
         
-        for chunk in result.chunks:
-            c_id = chunk['chunk_id']
-            if c_id in self._hashtables['chunks']:
-                continue 
-
-            self._hashtables['chunks'].append(c_id)
-            unique_chunks.append(chunk)
-
+        implogger.info(f"Found {len(duplicate_ids)} already existing IDs in {len(collected_chunks)} collected chunks")
         if not unique_chunks:
-            self._hashtables['documents'].append(d_id)
-        
-        implogger.info(f"Found {len(unique_chunks)} unique chunks out ouf {len(result.chunks)} collected chunks")
-        return unique_chunks
+            implogger.info(f"Calling deduplication callback...")
+            if self._deduplication_callback(result.source, len(collected_chunks)):
+                implogger.info('Duplicated chunks will be reimported as new...')
+                self._wvtserv._delete_by_id(duplicate_ids)
+                return collected_chunks
 
-
-if __name__ == "__main__":
-    pipeline = ImportPipeline()
-    #pipeline.import_many_documents(['data/hsg.pdf', 'data/emba_X5.pdf'])
-    pipeline.scrape_website()
+        return unique_chunks 

@@ -373,17 +373,24 @@ class WeaviateService:
             raise e
     
 
-    # def _extract_chunk_ids() -> dict:
-    #     client = self._init_client()
-    #     try:
-    #         ids = {}
-    #         with self._client_lock:
-    #             for c in client.collections.list_all(simple=False):
-    #                 coll = client.collections.get(c)
-    #                 lang_key = 'de' if '_de' in coll.config.get().to_dict()['class'] else 'en' 
-    #                 ids[lang_key] = []
-    #                 for obj in coll.iterator(include_vector=False):
-    #                     ids[]
+    def _reset_collections(self):
+        self._delete_collections()
+        self._create_collections()
+
+
+    def _collect_chunk_ids(self) -> dict:
+        client = self._init_client()
+        try:
+            ids = []
+            with self._client_lock:
+                for c in client.collections.list_all(simple=False):
+                    coll = client.collections.get(c)
+                    for obj in coll.iterator():
+                        ids.append(obj.properties['chunk_id'])
+            return ids
+        except Exception as e:
+            logger.error(f"Failed to collect chunk ids: {e}")
+            raise e
 
 
     def _extract_data(self) -> dict:
