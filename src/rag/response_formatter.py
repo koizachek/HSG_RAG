@@ -154,6 +154,11 @@ class ResponseFormatter:
                 max_words,
                 language
             )
+        
+        if language is "en":
+            pattern = r"Universität St\.Gallen"
+            replace = "University of St.Gallen"
+            formatted = re.sub(pattern, replace, formatted)
 
         return formatted
     
