@@ -176,7 +176,7 @@ VECTORDB_PATH = os.path.join(DATA_DIR, "vectordb")
 LANG_AMBIGUITY_THRESHOLD = 0.6
 
 # Vector database settings
-CHUNK_SIZE = 1000
+CHUNK_SIZE = 512
 CHUNK_OVERLAP = 200
 
 # Agent Chain settings 

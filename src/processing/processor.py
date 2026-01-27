@@ -14,6 +14,9 @@ from src.utils.lang import detect_language
 from src.utils.logging import get_logger
 from config import BASE_URL, CHUNK_MAX_TOKENS, WeaviateConfiguration as wvtconf
 
+from unstructured.partition.pdf import partition_pdf
+from unstructured.chunking.basic import chunk_elements
+
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
 
@@ -69,38 +72,7 @@ class _ProcessorBase:
         self._strategies = self._load_strategies()
 
 
-    def _load_strategies(self):
-        properties = {}
-        strategies = {}
-        
-        os.makedirs(wvtconf.PROPERTIES_PATH, exist_ok=True)
-        os.makedirs(wvtconf.STRATEGIES_PATH, exist_ok=True)
-        properties_path = os.path.join(wvtconf.PROPERTIES_PATH, 'properties.json')
-        if not os.path.exists(properties_path):
-            raise ValueError(f"Properties file does not exist under {properties_path}! Ensure that the database interface was opened at least once!")
-
-        with open(properties_path) as f:
-            properties = json.load(f)
-
-        for prop in properties.keys():
-            strat_file = f'strat_{prop}.py'
-            strat_path = os.path.join(wvtconf.STRATEGIES_PATH, strat_file)
-            if not os.path.exists(strat_path):
-                raise ValueError(f"Could not find strategy for property {prop}!")
-
-            spec = importlib.util.spec_from_file_location(
-                name=prop,
-                location=strat_path
-            )
-            strategy = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(strategy)
-
-            if not hasattr(strategy, 'run'):
-                raise ValueError(f"Strategy '{strat_file}' has no 'run' function!")
-
-            strategies[prop] = strategy
-
-        return strategies
+    
         
 
     def process(self):
@@ -108,15 +80,6 @@ class _ProcessorBase:
         raise NotImplementedError("This method is not implemented in ProcessorBase")
 
     
-    def _prepare_chunks(self, document_name: str, document_content: str, chunks: list[str]) -> list[dict]:
-        prepared_chunks = []
-        for chunk in chunks:
-            prepared_chunk = {}
-            for prop, strat in self._strategies.items():
-                prepared_chunk[prop] = strat.run(document_name, document_content, chunk)
-            prepared_chunks.append(prepared_chunk)
-
-        return prepared_chunks
 
 
     def _collect_chunks(self, document: DoclingDocument) -> list[str]:
@@ -236,6 +199,20 @@ class DataProcessor(_ProcessorBase):
         Returns:
             ProcessingResult: The result of the processing operation, including chunks and language.
         """
+        with open(source, 'rb') as f:
+            elements = partition_pdf(
+                file=f,
+                strategy='hi_res',
+                language=['eng', 'deu'],
+                skip_infer_table_types=False,
+                include_page_breaks=False
+            )
+        
+        for element in elements:
+            print(element, end='\n\n')
+        
+        exit()
+
         if not os.path.exists(source) or not os.path.isfile(source):
             datalogger.error(f"Failed to initiate processing pipeline for source {source}: file does not exist")
             return ProcessingResult(status=ProcessingStatus.NOT_FOUND)
