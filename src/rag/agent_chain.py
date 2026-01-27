@@ -38,7 +38,7 @@ from config import (
     ENABLE_RESPONSE_CHUNKING,
     ENABLE_EVALUATE_RESPONSE_QUALITY,
     MAX_CONVERSATION_TURNS,
-    LOCK_LANGUAGE_AFTER_N_MESSAGES,
+    LOCK_LANGUAGE_AFTER_N_MESSAGES, CONFIDENCE_THRESHOLD,
 )
 
 chain_logger = get_logger('agent_chain')
@@ -589,10 +589,11 @@ class ExecutiveAgentChain:
             
             chain_logger.info(f"Quality Score: {quality_evaluation.overall_score:1.2f}")
 
-            if quality_evaluation.overall_score < 0.3:
+            if quality_evaluation.overall_score < CONFIDENCE_THRESHOLD:
                 confidence_fallback = True
                 formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
-             
+                chain_logger.info(f"Fallback Mechanism activated!")
+
         # Add to history
         self._conversation_history.append(AIMessage(formatted_response))
 
