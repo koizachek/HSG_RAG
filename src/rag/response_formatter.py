@@ -95,23 +95,22 @@ class ResponseFormatter:
         if word_count <= max_words:
             return text, None
 
-        # Need to chunk
+        # Need to chunk — preserve line structure (markdown formatting)
         logger.info(f"Response has {word_count} words, chunking to {max_words} words")
 
-        words = text.split()
+        lines = text.split('\n')
+        current_lines = []
+        current_word_count = 0
 
-        # Try to break at a natural point (period, newline) near max_words
-        break_point = max_words
-
-        # Look for sentence ending near break point
-        for i in range(max_words - 20, min(max_words + 20, len(words))):
-            if i < len(words) and words[i].endswith(('.', '!', '?')):
-                break_point = i + 1
+        for line in lines:
+            line_words = len(line.split()) if line.strip() else 0
+            if current_word_count + line_words > max_words and current_lines:
                 break
+            current_lines.append(line)
+            current_word_count += line_words
 
-        # Create chunks
-        current = " ".join(words[:break_point])
-        continuation = " ".join(words[break_point:])
+        current = '\n'.join(current_lines)
+        continuation = '\n'.join(lines[len(current_lines):])
 
         # Add continuation prompt in the correct language
         continuation_msg = CONTINUATION_PROMPT.get(language, CONTINUATION_PROMPT['en'])

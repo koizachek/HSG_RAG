@@ -1,12 +1,16 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, Literal, Optional
+
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 from langchain.agents import AgentState
 from langchain_core.messages import AnyMessage
 
+
 @dataclass
 class AgentContext:
     agent_name: str
+
 
 @dataclass
 class LeadAgentQueryResponse:
@@ -17,11 +21,20 @@ class LeadAgentQueryResponse:
     max_turns_reached: bool = False
     should_cache: bool = False
     appointment_requested: bool = False
+    relevant_programs: List[str] = field(default_factory=list)
+
 
 class StructuredAgentResponse(BaseModel):
-    response:         str   = Field(description="Main response to the query.")
-    confidence_score: float = Field("Value in range 0.0 to 1.0 that determines how confident the agent is in it's response based on the accumulated information.")
-    
+    response: str = Field(description="Main response to the query.")
+    appointment_requested: bool = Field(
+        default=False,
+        description="Set to True ONLY if the user explicitly wants to book, asks for help booking, or if a proactive trigger (pricing/eligibility/handover) occurred in THIS specific turn. Otherwise, set to False."
+    )
+    relevant_programs: Optional[List[Literal["emba", "iemba", "emba_x"]]] = Field(
+        default=None,
+        description="If appointment_requested is True, list the programs relevant to the user. Options: 'emba', 'iemba', 'emba_x'. If the user is undecided or general, leave this list empty."
+    )
+
 
 class State(TypedDict):
     messages: list[AnyMessage]
@@ -43,12 +56,12 @@ class ConversationState(TypedDict):
     handover_requested: bool | None  # True if appointment requested, False if declined, None if session active
     topics_discussed: list[str]  # Track what's been covered
     preferences_known: bool  # Whether we have enough context
-    
+
 
 class LeadInformationState(AgentState):
     lead_name: str
-    lead_age:  int
-    lead_language_knowledge: list 
+    lead_age: int
+    lead_language_knowledge: list
     lead_work_experience: dict
     lead_motivation: list
     # Enhanced state tracking

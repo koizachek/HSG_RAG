@@ -1,22 +1,20 @@
-from gradio import ChatMessage
-
 """ Constants for Gradio app """
 
 GREETING_MESSAGES = {
-        "en": [
-            "Hello and welcome! I’m your Executive Education Advisor for the HSG Executive MBA programs (**IEMBA**, **emba X**, and **EMBA**). How can I best support your MBA planning today?",
-            "Hello and welcome! I’m your Executive Education Advisor for the University of St.Gallen’s Executive MBA programs (**IEMBA**, **emba X**, **EMBA**). How can I support your MBA planning today?",
-            "Hello and welcome! I’m your Executive Education Advisor for the HSG Executive MBA programs (**EMBA**, **IEMBA**, **emba X**). How can I help you with your EMBA journey today?",
-            "Hello and welcome! I’m your Executive Education Advisor for the University of St.Gallen’s EMBA programs, here to help you navigate our **EMBA**, **IEMBA**, and **emba X** options.",
-            "Hello and welcome. I’m your Executive Education Advisor for the University of St.Gallen’s Executive MBA programs, here to help you assess fit and navigate the **EMBA**, **IEMBA**, and **emba X** options.",
-        ],
-        "de": [
-            "Guten Tag! Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme und unterstütze Sie gerne bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
-            "Guten Tag, ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**). Ich unterstütze Sie bei Programmwahl, Ablauf und Zulassungsfragen.",
-            "Guten Tag und herzlich willkommen! Ich bin Ihr Executive Education Advisor für die HSG Executive MBA Programme und unterstütze Sie gern bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
-            "Guten Tag, ich bin Ihr Executive-Education-Berater für die HSG Executive MBA-Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei Programmwahl und Zulassungsfragen.",
-            "Guten Tag! Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei Programmwahl und Zulassungsfragen.",
-        ]
+    "en": [
+        "Hello and welcome! I’m your Executive Education Advisor for the HSG Executive MBA programs (**IEMBA**, **emba X**, and **EMBA**). How can I best support your MBA planning today?",
+        "Hello and welcome! I’m your Executive Education Advisor for the University of St.Gallen’s Executive MBA programs (**IEMBA**, **emba X**, **EMBA**). How can I support your MBA planning today?",
+        "Hello and welcome! I’m your Executive Education Advisor for the HSG Executive MBA programs (**EMBA**, **IEMBA**, **emba X**). How can I help you with your EMBA journey today?",
+        "Hello and welcome! I’m your Executive Education Advisor for the University of St.Gallen’s EMBA programs, here to help you navigate our **EMBA**, **IEMBA**, and **emba X** options.",
+        "Hello and welcome. I’m your Executive Education Advisor for the University of St.Gallen’s Executive MBA programs, here to help you assess fit and navigate the **EMBA**, **IEMBA**, and **emba X** options.",
+    ],
+    "de": [
+        "Guten Tag! Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme und unterstütze Sie gerne bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
+        "Guten Tag, ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**). Ich unterstütze Sie bei Programmwahl, Ablauf und Zulassungsfragen.",
+        "Guten Tag und herzlich willkommen! Ich bin Ihr Executive Education Advisor für die HSG Executive MBA Programme und unterstütze Sie gern bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
+        "Guten Tag, ich bin Ihr Executive-Education-Berater für die HSG Executive MBA-Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei Programmwahl und Zulassungsfragen.",
+        "Guten Tag! Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei Programmwahl und Zulassungsfragen.",
+    ]
 }
 
 QUERY_EXCEPTION_MESSAGE = {
@@ -72,69 +70,44 @@ CONVERSATION_END_MESSAGE = {
 }
 
 
-def create_appt_button(url, title, lang_text):
-    return (
-        f'<a href="{url}" class="appointment-btn" '
-        f'style="display: block; background-color: #f3f4f6; border: 1px solid #d1d5db; '
-        f'padding: 8px 16px; border-radius: 6px; cursor: pointer; '
-        f'color: #374151; font-weight: 600; width: 100%; text-align: left; '
-        f'margin-top: 5px; text-decoration: none;">'
-        f'📅 {lang_text}: {title}'
-        f'</a>'
-    )
+def get_booking_widget(language: str="en", programs: list[str]=None):
+    """
+    Returns an HTML string representing a Booking Widget.
+    """
 
+    if programs is None or programs == []:
+        programs = ["emba", "iemba", "emba_x"]
 
-APPOINTMENT_LINKS = {
-    "en": [
-        ChatMessage(
-            role="assistant",
-            content=create_appt_button(
-                "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-                "Cyra von Müller (EMBA HSG)",
-                "Book Appointment"
-            ),
-        ),
-        ChatMessage(
-            role="assistant",
-            content=create_appt_button(
-                "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-                "Kristin Fuchs (IEMBA)",
-                "Book Appointment"
-            ),
-        ),
-        ChatMessage(
-            role="assistant",
-            content=create_appt_button(
-                "https://calendly.com/teyuna-giger-unisg",
-                "Teyuna Giger (emba X)",
-                "Book Appointment"
-            ),
-        ),
-    ],
-    "de": [
-        ChatMessage(
-            role="assistant",
-            content=create_appt_button(
-                "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-                "Cyra von Müller (EMBA HSG)",
-                "Termin buchen"
-            ),
-        ),
-        ChatMessage(
-            role="assistant",
-            content=create_appt_button(
-                "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-                "Kristin Fuchs (IEMBA)",
-                "Termin buchen"
-            ),
-        ),
-        ChatMessage(
-            role="assistant",
-            content=create_appt_button(
-                "https://calendly.com/teyuna-giger-unisg",
-                "Teyuna Giger (emba X)",
-                "Termin buchen"
-            ),
-        ),
-    ],
-}
+    labels = {
+        "en": {"header": "Book a Consultation", "sub": "Select an advisor to view their calendar:"},
+        "de": {"header": "Termin vereinbaren", "sub": "Wählen Sie einen Berater für den Kalender:"}
+    }
+    txt = labels.get(language, labels["en"])
+
+    advisors = [
+        {"name": "Cyra von Müller (EMBA HSG)", "url": "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg", "program": "emba"},
+        {"name": "Kristin Fuchs (IEMBA)", "url": "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation", "program": "iemba"},
+        {"name": "Teyuna Giger (emba X)", "url": "https://calendly.com/teyuna-giger-unisg", "program": "emba_x"},
+    ]
+
+    html_content = f"""
+    <div style="width: 100%; min-width: 100%; box-sizing: border-box; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-top: 10px; font-family: sans-serif;">
+        <h3 style="margin: 0 0 10px 0; color: #111827; font-size: 1.2em;">{txt['header']}</h3>
+        <p style="margin: 0 0 20px 0; color: #6b7280; font-size: 1em;">{txt['sub']}</p>
+    """
+
+    for advisor in advisors:
+        if advisor["program"] in programs:
+            html_content += f"""
+            <details style="margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <summary style="cursor: pointer; padding: 16px 20px; background-color: #ffffff; font-weight: 600; color: #374151; font-size: 1.05em; list-style: none; transition: background 0.2s;">
+                    {advisor['name']}
+                </summary>
+                <div style="padding: 0; border-top: 1px solid #e5e7eb;">
+                    <iframe src="{advisor['url']}" width="100%" height="650px" frameborder="0" style="display: block;"></iframe>
+                </div>
+            </details>
+            """
+
+    html_content += "</div>"
+    return html_content
