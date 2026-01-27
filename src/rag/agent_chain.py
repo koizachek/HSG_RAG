@@ -605,6 +605,8 @@ class ExecutiveAgentChain:
             if message_count % 5 == 0 or self._conversation_state.get('suggested_program'):
                 self._log_user_profile()
 
+        formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
+        
         return LeadAgentQueryResponse(
             response = formatted_response,
             language = response_language,

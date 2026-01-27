@@ -175,3 +175,12 @@ class ResponseFormatter:
         cleaned = cleaned.strip()
         
         return cleaned
+    
+    @staticmethod
+    def format_name_of_university(formatted_response, language):
+        if language == "en":
+            pattern = r"Universität St\.Gallen"
+            replace = "University of St.Gallen"
+            formatted_response = re.sub(pattern, replace, formatted_response)
+        
+        return formatted_response            
