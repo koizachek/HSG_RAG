@@ -154,11 +154,6 @@ class ResponseFormatter:
                 max_words,
                 language
             )
-        
-        if language is "en":
-            pattern = r"Universität St\.Gallen"
-            replace = "University of St.Gallen"
-            formatted = re.sub(pattern, replace, formatted)
 
         return formatted
     
@@ -180,3 +175,12 @@ class ResponseFormatter:
         cleaned = cleaned.strip()
         
         return cleaned
+    
+    @staticmethod
+    def format_name_of_university(formatted_response, language):
+        if language == "en":
+            pattern = r"Universität St\.Gallen"
+            replace = "University of St.Gallen"
+            formatted_response = re.sub(pattern, replace, formatted_response)
+        
+        return formatted_response            
