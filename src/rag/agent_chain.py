@@ -590,7 +590,7 @@ class ExecutiveAgentChain:
             response = formatted_response,
             language = response_language,
             confidence_fallback = confidence_fallback,
-            should_cache = False if confidence_fallback else True,
+            should_cache = False if (confidence_fallback or structured_response.appointment_requested) else True,
             processed_query = preprocessed_query,
             appointment_requested = structured_response.appointment_requested,
             relevant_programs = structured_response.relevant_programs
