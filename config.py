@@ -226,4 +226,3 @@ SCRAPE_URLS = [
     'https://embax.ch/programme/description/',
     'https://embax.ch/programme/timeline/',
 ]
-BASE_URL = "https://emba.unisg.ch/programm"
