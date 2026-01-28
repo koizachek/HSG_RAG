@@ -30,7 +30,7 @@ class ChatbotApplication:
                     label="Selected Language",
                     interactive=True,
                 )
-                reset_button = gr.Button("Reset Conversation", visible)
+                reset_button = gr.Button("Reset Conversation", visible=False)
 
             # ---- Consent Screen (Page 1) ----
             with gr.Column(visible=True) as consent_screen:
@@ -95,12 +95,13 @@ class ChatbotApplication:
                 agent, greeting = initialize_agent(lang)
                 self._language = lang
                 return (
-                    gr.update(visible=False),  # consent_screen hide
-                    gr.update(visible=True),   # chat_screen show
-                    True,                      # consent_state
-                    agent,                     # agent_state
-                    greeting,                  # chat initial history
-                    gr.update(visible=False, value=""),  
+                    gr.update(visible=False),        # consent_screen hide
+                    gr.update(visible=True),         # chat_screen show
+                    True,                            # consent_state
+                    agent,                           # agent_state
+                    greeting,                         # chat initial history
+                    gr.update(visible=False, value=""),  # decline_info hide
+                    gr.update(visible=True),         # show reset_button
                 )
 
             def on_decline(lang: str):
@@ -114,19 +115,12 @@ class ChatbotApplication:
                     gr.update(visible=True, value=DECLINE_MESSAGE[lang]),
                 )
 
-            def on_reset(lang: str):
+            def on_reset_chat(lang: str):
+                agent, greeting = initialize_agent(lang)
                 self._language = lang
                 return (
-                    gr.update(visible=True),   # consent_screen
-                    gr.update(visible=False),  # chat_screen
-                    False,                     # consent_state
-                    None,                      # agent_state
-                    [],                        # chat history
-                    gr.update(value=PRIVACY_NOTICE[lang]),
-                    gr.update(value=DECLINE[lang]),
-                    gr.update(value=ACCEPT[lang]),
-                    gr.update(visible=False, value=""),
-                    str(uuid.uuid4()),         # new session id
+                    agent,
+                    greeting,  
                 )
 
             # Language switch updates consent UI if consent not given
@@ -141,7 +135,15 @@ class ChatbotApplication:
             accept_btn.click(
                 fn=on_accept,
                 inputs=[lang_state],
-                outputs=[consent_screen, chat_screen, consent_state, agent_state, chat.chatbot_value, decline_info],
+                outputs=[
+                    consent_screen,
+                    chat_screen,
+                    consent_state,
+                    agent_state,
+                    chat.chatbot_value,
+                    decline_info,
+                    reset_button,
+                ],
                 queue=True,
             )
 
@@ -154,23 +156,14 @@ class ChatbotApplication:
 
             # Reset
             reset_button.click(
-                fn=on_reset,
+                fn=on_reset_chat,
                 inputs=[lang_state],
                 outputs=[
-                    consent_screen,
-                    chat_screen,
-                    consent_state,
                     agent_state,
                     chat.chatbot_value,
-                    data_policy,
-                    decline_btn,
-                    accept_btn,
-                    decline_info,
-                    session_id_state,
                 ],
                 queue=True,
             )
-
 
     @property
     def app(self) -> gr.Blocks:
