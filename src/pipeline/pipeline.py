@@ -1,6 +1,3 @@
-import os
-
-from pathlib import Path
 from src.pipeline.utilclasses import (
         _deduplication_callback_placeholder,
         _logging_callback_placeholder,
@@ -39,116 +36,60 @@ class ImportPipeline:
         self._ids          = self._wvtserv._collect_chunk_ids()
         
         implogger.info('Import pipeline initialization finished!')
-
-    def scrape_website(self):
-        """
-        Scrape program pages from the website, process and deduplicate them,
-        and import unique chunks into the database.
-        """
-        unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
-        for result in self._webprocessor.process():
-            chunks = self._deduplicate(result)
-            unique_chunks[result.language].extend(chunks)
-
-        if not unique_chunks:
-            implogger.warning("Information provided by the HSG website does not contain any unique information. Terminating the pipeline without importing")
-            return 
         
-        self._import_to_database(unique_chunks)
 
-
-    def import_many_documents(self, sources: list[Path | str]):
-        """
-        Import multiple documents by processing, deduplicating, and inserting
-        unique chunks into the database.
-
-        Args:
-            sources (list[Path | str]): List of file paths or URLs to process.
-        """
-        if self._reset_collections_on_import:
-            implogger.warning('Reset collection flag is set to True!')
-            implogger.warning('All existing embeddings will be removed from database before imprting!')
-
-        if 'all' in sources:
-            implogger.info("Import list contains the 'all', all sources will be imported...")
-            sources = _get_all_sources(sources)
-        
-        if not sources:
-            implogger.warning("Import list does not contain any sources, aborting the import pipeline!")
-            return
-
-        if len(sources) > 1:
-            implogger.info(f"Initiating the import pipeline for multiple sources: {', '.join(sources)}")
-
+    def _pipeline(self, sources: list, processor: ProcessorBase) -> dict:
         unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
+        
         for source in sources:
-            filename = os.path.basename(source)
-            self._logging_callback(f'Starting pipeline for source {filename}...', 0)
-            result = self._process_source(source)
-            self._logging_callback(f'Storing chunks for {filename}...', 100, result)
+            self._logging_callback(f'Starting pipeline for {source}...', 0)
+            result = processor.process(source)
 
-            if result.chunks:
-                unique_chunks[result.lang].extend(result.chunks)
-        
+            if not result:
+                implogger.error(f"Failed to process document {source}!")
+                continue
+            
+            chunks = result.chunks
+            if not self._reset_collections_on_import:
+                chunks = self._deduplicate(result)
+
+            self._logging_callback(f'Storing chunks for {source}...', 100, result)
+
+            if chunks:
+                unique_chunks[result.lang].extend(chunks)
+
         if all([len(chunks) == 0 for chunks in unique_chunks.values()]):
-            self._logging_callback('No new data could be extracted from selected files!', 100)
+            self._logging_callback('No new data could be extracted from these sources!', 100)
             implogger.warning(f"File(s) provided for the insertion do not contain any unique information. Terminating the pipeline without importing")
             return 
         
-        self._logging_callback('Importing chunks to database...', 110)
+        self._logging_callback('Importing chunks to database...', 90)
         self._import_to_database(unique_chunks)
-        self._logging_callback('Successfully imported all documents!', 100)
+        self._logging_callback('Successfully processed all sources!', 100)
 
 
-
-    def import_document(self, source: Path | str):
+    def scrape(self, urls: list[str]):
         """
-        Import a single document into the database.
+        Scrapes provided websites, process and deduplicate them,
+        and import unique chunks into the database.
 
         Args:
-            source (Path | str): Path to the document to process and import.
+            urls (list[str]): List of URLS to process.
         """
-        self.import_many_documents([source])
+        self._pipeline(urls, self._webprocessor) 
+
+
+    def import_documents(self, sources: list[str]):
+        """
+        Imports multiple sources (PDF, TXT, JSON, MD) by processing, deduplicating, and inserting
+        unique chunks into the database.
+
+        Args:
+            sources (list[str]): List of file paths to process.
+        """
+        self._pipeline(sources, self._processor)
      
-    
-    def _import_to_database(self, unique_chunks):
-        """
-        Import the processed unique chunks into the Weaviate database.
-
-        Args:
-            unique_chunks (dict): Dictionary mapping languages to lists of chunks.
-        """
-        if self._reset_collections_on_import:
-            self._wvtserv._reset_collections()
-
-        for lang, chunks in unique_chunks.items():
-            if chunks:
-                failures = self._wvtserv.batch_import(data_rows=chunks, lang=lang)
  
-
-    def _process_source(self, source: Path | str) -> tuple[list, str]:
-        """
-        Process a single document source, deduplicate its chunks, and
-        determine its language.
-
-        Args:
-            source (Path | str): Path to the document to process.
-
-        Returns:
-            tuple[list, str]: List of unique chunks and detected language.
-        """
-        result: ProcessingResult = self._processor.process(source)
-
-        if not result:
-            implogger.error(f"Failed to process document {source}: {result.status}")
-            return [], ''
-        
-        unique_chunks = result.chunks
-        if not self._reset_collections_on_import:
-            unique_chunks = self._deduplicate(result)
-        return ProcessingResult(unique_chunks, result.source, result.lang)
-
-
     def _deduplicate(self, result: ProcessingResult) -> list:
         """
         Remove duplicate chunks based on chunks that are already stored in the database.
@@ -182,4 +123,19 @@ class ImportPipeline:
                 self._wvtserv._delete_by_id(duplicate_ids)
                 return collected_chunks
 
-        return unique_chunks 
+        return unique_chunks
+
+
+    def _import_to_database(self, unique_chunks):
+        """
+        Import the processed unique chunks into the Weaviate database.
+
+        Args:
+            unique_chunks (dict): Dictionary mapping languages to lists of chunks.
+        """
+        if self._reset_collections_on_import:
+            self._wvtserv._reset_collections()
+
+        for lang, chunks in unique_chunks.items():
+            if chunks:
+                self._wvtserv.batch_import(data_rows=chunks, lang=lang)

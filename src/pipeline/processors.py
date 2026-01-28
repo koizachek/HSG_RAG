@@ -1,5 +1,5 @@
 from collections import defaultdict
-import os, re, hashlib, time, json
+import os, re, time, json
 import importlib.util 
 
 from pathlib import Path
@@ -19,7 +19,7 @@ from docling_core.types.doc.document import DoclingDocument
 from src.pipeline.utilclasses import ProcessingResult
 from src.utils.lang import detect_language
 from src.utils.logging import get_logger
-from config import BASE_URL, CHUNK_MAX_TOKENS, WeaviateConfiguration as wvtconf
+from config import CHUNK_MAX_TOKENS, WeaviateConfiguration as wvtconf
 
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
@@ -244,7 +244,7 @@ class DocumentProcessor(ProcessorBase):
         """
         if not os.path.exists(source) or not os.path.isfile(source):
             datalogger.error(f"Failed to initiate processing pipeline for source {source}: file does not exist")
-            return ProcessingResult(status=ProcessingStatus.NOT_FOUND)
+            return None
         
         document_name = os.path.basename(source) 
         datalogger.info(f"Initiating processing pipeline for source {document_name}")
@@ -276,5 +276,37 @@ class DocumentProcessor(ProcessorBase):
 
 
 class WebsiteProcessor(ProcessorBase):
-    pass
+    def process(self, url: str) -> ProcessingResult:
+        """
+        Process the content of a single URL, converting it into chunks with metadata.
 
+        Args:
+            url (str): The URL of the webpage to process.
+
+        Returns:
+            ProcessingResult: The processing result containing all collected chunks.
+        """
+        time.sleep(2)
+
+        weblogger.info(f"Initiating processing pipeline for url {url}")
+        self._logging_callback(f'Converting url {url}...', 20)
+        try:
+            document = self._converter.convert(url).document
+        except Exception as e:
+            weblogger.error(f"Failed to load the contents of the url page {url}: {e}")
+            return None
+        
+        self._logging_callback(f'Collecting chunks from {url}...', 40)
+        collected_chunks = self._collect_chunks(document)
+        document_content = MarkdownDocSerializer(doc=document).serialize().text
+
+        self._logging_callback(f'Preparing chunks for {url} for importing...', 60)
+        prepared_chunks = self._prepare_chunks(url, document_content, collected_chunks)
+
+        weblogger.info(f"Successfully collected {len(collected_chunks)} chunks from {url}")
+        
+        return ProcessingResult(
+            chunks=prepared_chunks,
+            source=url,
+            lang=detect_language(document_content), 
+        )
