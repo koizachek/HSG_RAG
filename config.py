@@ -210,5 +210,19 @@ AVAILABLE_LANGUAGES = ['en', 'de']
 HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
 DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
 
-# Base URL for scraping
-BASE_URL = "https://emba.unisg.ch/programm"
+# Base URLs for scraping
+SCRAPE_URLS = [
+    'https://apply.emba.unisg.ch/emba',
+    'https://apply.emba.unisg.ch/iemba',
+    'https://apply.emba.unisg.ch/embax',
+    
+    'https://emba.unisg.ch/programm/emba',
+    'https://emba.unisg.ch/en/programm/emba',
+    'https://emba.unisg.ch/programm/iemba',
+    'https://emba.unisg.ch/en/programm/iemba',
+    
+    'https://emba.unisg.ch/en/embax',
+    'https://embax.ch/programme/overview/',
+    'https://embax.ch/programme/description/',
+    'https://embax.ch/programme/timeline/',
+]

@@ -219,7 +219,7 @@ class WeaviateService:
                 return None
 
 
-    def query(self, query: str, lang: str, property_filters: dict[str], limit: int = 5) -> dict:
+    def query(self, query: str, lang: str, property_filters: dict[str] = None, limit: int = 5) -> dict:
         """
         Execute a hybrid semantic and keyword query against the active collection with automatic reconnection on idle timeout.
 
@@ -240,10 +240,11 @@ class WeaviateService:
         """
         retry_count = 0 
         max_retries = 2
-            
+        
         filters = [self._create_property_filter(prop, values) 
                    for prop, values in property_filters.items()] if property_filters else None
-        filters = reduce(lambda f1, f2: f1 & f2, filters)
+        if filters:
+            filters = reduce(lambda f1, f2: f1 & f2, filters)
 
         while retry_count < max_retries:
             try:

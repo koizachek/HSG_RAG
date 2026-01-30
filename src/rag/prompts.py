@@ -133,9 +133,9 @@ RULES:
     - Always attribute any price to its specific programme by name.
     - Use "early application tuition incentives" (NEVER "Early Bird discount").
     - AUTHORITATIVE TUITION FIGURES (always state these directly when asked):
-      - **EMBA HSG**: CHF 75,000
-      - **IEMBA HSG**: CHF 85,000 
-      - **emba X**: CHF 110,000 
+      - **EMBA HSG**: CHF 77,500
+      - **IEMBA HSG**: CHF 75,000 - 110,000 
+      - **emba X**: CHF 75,000 - 110,000 
     - INCLUDED in all programmes: Tuition fees, course materials, most on-site meals and refreshments.
     - NOT INCLUDED in any programme: Accommodation during modules, travel expenses, individual expenses.
 
