@@ -3,6 +3,7 @@ import threading
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
+from queue import Queue
 
 from src.pipeline.pipeline import ImportPipeline
 from src.apps.dbapp.framebase import CustomFrameBase
@@ -118,7 +119,61 @@ class ImportFrame(CustomFrameBase):
         self.url_text.config(yscrollcommand=scrollbar.set)
 
         return main_frame
+    
 
+    def _deduplication_callback(self, source: str, amount: int):
+        result_queue = Queue()
+
+        def show_dialog():
+            dialog = Toplevel()
+            dialog.title("Duplicated content!")
+            dialog.bell()
+
+            wrap_width = 360  
+
+            info_label = ttk.Label(
+                dialog, 
+                text=f'{amount} duplicated chunks found in database for {source}!',
+                wraplength=wrap_width,
+                justify=LEFT
+            )
+            info_label2 = ttk.Label(
+                dialog, 
+                text='Would you like to reimport them with updated properties?',
+                wraplength=wrap_width,
+                justify=LEFT
+            )
+            
+            info_label.pack(fill=X, anchor=W, padx=15, pady=15)
+            info_label2.pack(fill=X, anchor=W, padx=15, pady=15)
+
+            def reimport_callback():
+                result_queue.put(True)
+                dialog.destroy()
+
+            def dispose_callback():
+                result_queue.put(False)
+                dialog.destroy()
+
+            reimport_button = ttk.Button(dialog, text='Reimport', command=reimport_callback)
+            dispose_button = ttk.Button(dialog, text='Dispose', command=dispose_callback)
+
+            reimport_button.pack(side=LEFT, padx=15, pady=15)
+            dispose_button.pack(side=RIGHT, padx=15, pady=15)
+            
+            dialog.update_idletasks()  
+            width = dialog.winfo_reqwidth() + 20  
+            height = dialog.winfo_reqheight() + 20
+            dialog.geometry(f"{width}x{height}")
+
+            dialog.protocol("WM_DELETE_WINDOW", dispose_callback)
+            
+            dialog.wait_visibility()
+            dialog.grab_set()
+
+        self._parent.after(0, show_dialog)
+        return result_queue.get()
+    
 
     def _import_callback(self, button_state_callback):
         dialog = Toplevel()
@@ -147,17 +202,20 @@ class ImportFrame(CustomFrameBase):
 
         chunks_treeview.pack(side=TOP, fill=X, padx=15, pady=15, expand=True)
 
-        def logging_callback(msg: str, progress: int, result: ProcessingResult = None):
+        def logging_callback(
+                msg: str, 
+                progress: int, 
+                result: ProcessingResult = None,
+                failed: bool = False,
+            ):
             current_import_label.config(text=msg)
-            if progress > 100:
-                progress_bar.config(mode='indeterminate')
-            else:
-                progress_bar.config(mode='determinate', value=progress)
+            progress_bar.config(value=progress)
+
             if result:
                 chunks_treeview.insert('', index=0, 
                     text=result.source, 
                     values=(
-                        len(result.chunks), 
+                        'Failure!' if failed else len(result.chunks), 
                         get_language_name(result.lang)
                     )
                 )
@@ -167,14 +225,16 @@ class ImportFrame(CustomFrameBase):
             filepaths = self._import_paths.values()
             urls = self.url_text.get('1.0', END).strip().split('\n')
             try:
-                pipeline = ImportPipeline(
+                ImportPipeline(
                     logging_callback=logging_callback,
-                    reset_collections_on_import=self.reset_cd_var.get(),
-                )
-                pipeline.import_documents(filepaths)
-                pipeline.scrape(urls)
-            finally:
+                    deduplication_callback=self._deduplication_callback,
+                ).import_all(
+                    paths=filepaths,
+                    urls=urls,
+                    reset_collections=self.reset_cd_var.get()
+                ) 
                 dialog.bell()
+            finally:
                 button_state_callback(NORMAL)
 
         import_thread = threading.Thread(target=import_task)

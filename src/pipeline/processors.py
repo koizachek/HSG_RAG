@@ -26,6 +26,15 @@ datalogger = get_logger("data_processor")
 
 class ProcessorBase:
     def __init__(self, logging_callback) -> None:
+        """
+        Initialize the base processor with document conversion and chunking tools.
+
+        Sets up the PDF pipeline options, document converter, tokenizer, and chunker.
+        Loads strategies for chunk preparation.
+
+        Args:
+            logging_callback (callable): A callback function for logging progress.
+        """
         pipeline_options = PdfPipelineOptions(
             do_ocr=True,
             ocr_options=RapidOcrOptions(
@@ -68,6 +77,18 @@ class ProcessorBase:
         
     
     def _load_strategies(self):
+        """
+        Load strategies for processing document properties from configured paths.
+
+        Creates necessary directories if they don't exist, loads properties from JSON,
+        and dynamically imports strategy modules for each property.
+
+        Returns:
+            dict: A dictionary mapping property names to their strategy modules.
+
+        Raises:
+            ValueError: If properties file or strategy files are missing, or if a strategy lacks a 'run' function.
+        """
         properties = {}
         strategies = {}
         
@@ -102,11 +123,27 @@ class ProcessorBase:
 
 
     def process(self):
-            """Abstract method to be implemented by subclasses."""
-            raise NotImplementedError("This method is not implemented in ProcessorBase")
+        """
+        Abstract method to be implemented by subclasses for processing sources.
+
+        Raises:
+            NotImplementedError: If not overridden in a subclass.
+        """
+        raise NotImplementedError("This method is not implemented in ProcessorBase")
 
 
     def _prepare_chunks(self, document_name: str, document_content: str, chunks: list[str]) -> list[dict]:
+        """
+        Prepare chunks by applying strategies to generate properties for each chunk.
+
+        Args:
+            document_name (str): The name or identifier of the document.
+            document_content (str): The full content of the document.
+            chunks (list[str]): List of text chunks to prepare.
+
+        Returns:
+            list[dict]: List of dictionaries, each containing properties for a chunk.
+        """
         prepared_chunks = []
         for chunk in chunks:
             prepared_chunk = {}
@@ -118,8 +155,17 @@ class ProcessorBase:
     
 
     def _clean_content(self, document_content: str) -> str:
-        """Removes the garbage symbols from text."""
+        """
+        Clean the document content by removing garbage symbols and normalizing whitespace.
 
+        Handles specific replacements for punctuation, symbols, and line breaks.
+
+        Args:
+            document_content (str): The raw document content to clean.
+
+        Returns:
+            str: The cleaned document content.
+        """
         cleaned = re.sub(r'\s+/\s+', '/', document_content)           
         cleaned = re.sub(r'\s+\.\s+', '.', cleaned)          
         cleaned = re.sub(r',\s+', '.', cleaned)              
@@ -140,8 +186,18 @@ class ProcessorBase:
 
 
     def _extract_document_content(self, document: DoclingDocument) -> str:
-        """Compiles text chunks found in the document into a single string."""
+        """
+        Extract and compile text content from the document into a single string.
 
+        Organizes text items by page, sorts them by position, and joins them
+        while handling line breaks and spacing.
+
+        Args:
+            document (DoclingDocument): The document object to extract content from.
+
+        Returns:
+            str: The cleaned, compiled text content.
+        """
         page_texts = defaultdict(list)
         for text_item in document.texts:
             if not text_item.text.strip():
@@ -194,6 +250,15 @@ class ProcessorBase:
      
 
     def _collect_chunks(self, document: DoclingDocument) -> list[str]:
+        """
+        Collect contextualized chunks from the document using the chunker.
+
+        Args:
+            document (DoclingDocument): The document to chunk.
+
+        Returns:
+            list[str]: List of enriched text chunks.
+        """
         chunks = []
         for base_chunk in self._chunker.chunk(dl_doc=document):
             enriched = self._chunker.contextualize(chunk=base_chunk)
@@ -203,7 +268,9 @@ class ProcessorBase:
 
     def _collect_chunks_fallback(self, document_content: str) -> list[str]:
         """
-        Chunks the compiled text manually.
+        Fallback method to chunk the document content manually using tokenization.
+
+        Splits the content into overlapping chunks based on token limits.
 
         Args:
             document_content (str): The full content extracted from document.
@@ -234,17 +301,21 @@ class ProcessorBase:
 class DocumentProcessor(ProcessorBase):
     def process(self, source: Path | str) -> ProcessingResult:
         """
-        Process a single document source, converting it to text, chunking, and hashing.
+        Process a single local document, converting it to text, chunking, and preparing for import.
+
+        Handles document conversion, chunk collection (with fallback if needed),
+        chunk preparation, and language detection.
 
         Args:
             source (Path | str): Path to the document to process.
 
         Returns:
-            ProcessingResult: The result of the processing operation, including chunks and language.
+            ProcessingResult: The result containing chunks, source name, and detected language.
+            Returns None if the source does not exist or processing fails.
         """
         if not os.path.exists(source) or not os.path.isfile(source):
             datalogger.error(f"Failed to initiate processing pipeline for source {source}: file does not exist")
-            return None
+            return ProcessingResult(source=source, chunks=None, lang='')
         
         document_name = os.path.basename(source) 
         datalogger.info(f"Initiating processing pipeline for source {document_name}")
@@ -278,13 +349,17 @@ class DocumentProcessor(ProcessorBase):
 class WebsiteProcessor(ProcessorBase):
     def process(self, url: str) -> ProcessingResult:
         """
-        Process the content of a single URL, converting it into chunks with metadata.
+        Process the content of a single webpage URL, converting it to chunks with metadata.
+
+        Handles webpage conversion, chunk collection, preparation, and language detection.
+        Includes a short delay to avoid rapid requests.
 
         Args:
             url (str): The URL of the webpage to process.
 
         Returns:
-            ProcessingResult: The processing result containing all collected chunks.
+            ProcessingResult: The result containing chunks, source URL, and detected language.
+            Returns None if conversion fails.
         """
         time.sleep(2)
 
@@ -294,7 +369,7 @@ class WebsiteProcessor(ProcessorBase):
             document = self._converter.convert(url).document
         except Exception as e:
             weblogger.error(f"Failed to load the contents of the url page {url}: {e}")
-            return None
+            return ProcessingResult(source=url, chunks=None, lang='')
         
         self._logging_callback(f'Collecting chunks from {url}...', 40)
         collected_chunks = self._collect_chunks(document)
@@ -306,7 +381,7 @@ class WebsiteProcessor(ProcessorBase):
         weblogger.info(f"Successfully collected {len(collected_chunks)} chunks from {url}")
         
         return ProcessingResult(
-            chunks=prepared_chunks,
             source=url,
+            chunks=prepared_chunks,
             lang=detect_language(document_content), 
         )
