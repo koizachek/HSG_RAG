@@ -17,7 +17,7 @@ class ImportFrame(CustomFrameBase):
         super().__init__(parent, service)
         self._import_paths = dict()
 
-    def init(self):
+    def init(self) -> ttk.Frame:
         main_frame = ttk.Frame(self._parent)
         main_frame.pack(fill=BOTH, expand=True)
         
