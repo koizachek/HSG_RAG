@@ -8,7 +8,7 @@ from src.database.weavservice  import WeaviateService
 
 from src.utils.logging import get_logger
 
-from config import AVAILABLE_LANGUAGES
+from src.config import config
 
 pipelogger = get_logger("pipeline_module")
 implogger  = get_logger("import_pipeline")
@@ -101,7 +101,7 @@ class ImportPipeline:
         Returns:
             dict: A dictionary mapping languages to lists of unique chunk dictionaries.
         """
-        unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
+        unique_chunks = {lang: [] for lang in config.get('AVAILABLE_LANGUAGES')}
 
         if not sources:
             return unique_chunks

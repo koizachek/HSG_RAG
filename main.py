@@ -7,11 +7,7 @@ from langsmith import traceable
 from src.utils.logging import init_logging, get_logger
 from config import AVAILABLE_LANGUAGES
 from src.cache.cache import Cache
-from config import CacheConfig
-
-from dotenv import load_dotenv
-
-load_dotenv()
+from src.config import config
 
 
 # Initialize logging
@@ -110,7 +106,7 @@ def parse_args():
                         help="Runs different database actions")
     parser.add_argument("--backup-id", type=str, help="Required when calling the --weaviate restore command!")
 
-    parser.add_argument("--cache-mode", type=str, choices=['local', 'cloud', 'dict'], default=CacheConfig.CACHE_MODE,
+    parser.add_argument("--cache-mode", type=str, choices=['local', 'cloud', 'dict'], default=config.cache.CACHE_MODE,
                         help="Defines whether to use the local or cloud Redis database or the special python dict as cache")
 
     parser.add_argument("--no-cache", action="store_true", help="Deactivates the caching mechanism")

@@ -19,7 +19,8 @@ from docling_core.types.doc.document import DoclingDocument
 from src.pipeline.utilclasses import ProcessingResult
 from src.utils.lang import detect_language
 from src.utils.logging import get_logger
-from config import CHUNK_MAX_TOKENS, WeaviateConfiguration as wvtconf
+
+from src.config import config
 
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
@@ -67,9 +68,9 @@ class ProcessorBase:
         self._chunker = HybridChunker(
             tokenizer=HuggingFaceTokenizer(
                 tokenizer=tokenizer,
-                max_tokens=CHUNK_MAX_TOKENS
+                max_tokens=config.processing.MAX_TOKENS
             ), 
-            max_tokens=CHUNK_MAX_TOKENS, 
+            max_tokens=config.processing.MAX_TOKENS, 
             merge_peers=True
         )
         self._strategies = self._load_strategies()
@@ -92,9 +93,9 @@ class ProcessorBase:
         properties = {}
         strategies = {}
         
-        os.makedirs(wvtconf.PROPERTIES_PATH, exist_ok=True)
-        os.makedirs(wvtconf.STRATEGIES_PATH, exist_ok=True)
-        properties_path = os.path.join(wvtconf.PROPERTIES_PATH, 'properties.json')
+        os.makedirs(config.weaviate.PROPERTIES_PATH, exist_ok=True)
+        os.makedirs(config.weaviate.STRATEGIES_PATH, exist_ok=True)
+        properties_path = os.path.join(config.weaviate.PROPERTIES_PATH, 'properties.json')
         if not os.path.exists(properties_path):
             raise ValueError(f"Properties file does not exist under {properties_path}! Ensure that the database interface was opened at least once!")
 
@@ -103,7 +104,7 @@ class ProcessorBase:
 
         for prop in properties.keys():
             strat_file = f'strat_{prop}.py'
-            strat_path = os.path.join(wvtconf.STRATEGIES_PATH, strat_file)
+            strat_path = os.path.join(config.weaviate.STRATEGIES_PATH, strat_file)
             if not os.path.exists(strat_path):
                 raise ValueError(f"Could not find strategy for property {prop}!")
 

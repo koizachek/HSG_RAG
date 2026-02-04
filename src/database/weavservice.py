@@ -12,12 +12,12 @@ from weaviate.classes.query import Filter
 from weaviate.config import AdditionalConfig
 
 from src.utils.logging import get_logger
-from config import WeaviateConfiguration as wvtconf, AVAILABLE_LANGUAGES, HASH_FILE_PATH
+from src.config import config
 
 logger = get_logger("weaviate_service")
 
-_get_collection_name = lambda lang: f'{wvtconf.WEAVIATE_COLLECTION_BASENAME}_{lang}'
-_collection_names = [_get_collection_name(lang) for lang in AVAILABLE_LANGUAGES]
+_get_collection_name = lambda lang: f'{config.weaviate.WEAVIATE_COLLECTION_BASENAME}_{lang}'
+_collection_names = [_get_collection_name(lang) for lang in config.get('AVAILABLE_LANGUAGES')]
 
 
 class WeaviateService:
@@ -43,7 +43,7 @@ class WeaviateService:
         if hasattr(self, '_initialized'):
             return 
 
-        self._connection_type = 'local' if wvtconf.is_local() else 'cloud'
+        self._connection_type = 'local' if config.weaviate.LOCAL_DATABASE else 'cloud'
         self._client = None 
         self._client_lock = Lock()
         
@@ -98,30 +98,30 @@ class WeaviateService:
             last_exception: Exception = None
             while retries < 3:
                 try:
-                    if wvtconf.is_local():
+                    if config.weaviate.LOCAL_DATABASE:
                         self._client = wvt.connect_to_local()
                         break
 
                     self._client = wvt.connect_to_weaviate_cloud(
-                        cluster_url=wvtconf.CLUSTER_URL,
-                        auth_credentials=wvtconf.WEAVIATE_API_KEY,
+                        cluster_url=config.weaviate.CLUSTER_URL,
+                        auth_credentials=config.weaviate.WEAVIATE_API_KEY,
                         additional_config=AdditionalConfig(
                             timeout=Timeout(
-                                init=wvtconf.INIT_TIMEOUT, 
-                                query=wvtconf.QUERY_TIMEOUT, 
-                                insert=wvtconf.INSERT_TIMEOUT,
+                                init=config.weaviate.INIT_TIMEOUT, 
+                                query=config.weaviate.QUERY_TIMEOUT, 
+                                insert=config.weaviate.INSERT_TIMEOUT,
                             ),
                             skip_init_checks=False,
                         ),
                         headers={
-                            "X-HuggingFace-Api-Key": wvtconf.HUGGING_FACE_API_KEY,
+                            "X-HuggingFace-Api-Key": config.weaviate.HUGGING_FACE_API_KEY,
                         },
                     ) 
 
                     # Warm-up query 
                     logger.info("Running warm-up query to initialize server...")
                     try:
-                        collection = _get_collection_name(AVAILABLE_LANGUAGES[0])
+                        collection = _get_collection_name(config.get('AVAILABLE_LANGUAGES')[0])
                         self._client.collections.exists(collection)
                         logger.info("Warm-up finished - server is ready!")
                     except Exception as warmup_err:
@@ -290,7 +290,7 @@ class WeaviateService:
             logger.info('Attempting collections creation...')
             
             vector_config = (
-                Configure.Vectors.text2vec_transformers() if wvtconf.is_local() 
+                Configure.Vectors.text2vec_transformers() if config.weaviate.LOCAL_DATABASE
                 else Configure.Vectors.text2vec_huggingface(
                     name='hsg_rag_embeddings',
                     source_properties=['body'],
@@ -429,22 +429,22 @@ class WeaviateService:
         Returns: backup id of the created backup.
         """
         try:
-            if not wvtconf.BACKUP_METHOD:
+            if not config.weaviate.BACKUP_METHOD:
                 raise ValueError('Backup method is not selected!')
-            if wvtconf.BACKUP_METHOD not in wvtconf.AVAILABLE_BACKUP_METHODS:
-                raise ValueError(f"Selected backup method 'wvtconf.BACKUP_METHOD' is not supported!")
-            if not wvtconf.BACKUP_PATH:
+            if config.weaviate.BACKUP_METHOD not in config.weaviate.BACKUP_METHODS:
+                raise ValueError(f"Selected backup method 'config.weaviate.BACKUP_METHODS' is not supported!")
+            if not config.weaviate.BACKUP_PATH:
                 raise ValueError("Backup directory is not set!")
-            os.makedirs(wvtconf.BACKUP_PATH, exist_ok=True)
+            os.makedirs(config.weaviate.BACKUP_PATH, exist_ok=True)
 
             backup_id = f"backup_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}"
             logger.info(f"Initiating backup creation for {self._connection_type} database...")
             
-            match wvtconf.BACKUP_METHOD:
+            match config.weaviate.BACKUP_METHOD:
                 case 'manual':
                     import json 
                     
-                    backup_path = os.path.join(wvtconf.BACKUP_PATH, backup_id)
+                    backup_path = os.path.join(config.weaviate.BACKUP_PATH, backup_id)
                     os.makedirs(backup_path)
                     
                     db_data = self._extract_data()
@@ -501,15 +501,15 @@ class WeaviateService:
         self._delete_collections()
 
         try:
-            if not wvtconf.BACKUP_METHOD:
+            if not config.weaviate.BACKUP_METHOD:
                 raise ValueError('Backup method is not selected!')
-            if wvtconf.BACKUP_METHOD not in wvtconf.AVAILABLE_BACKUP_METHODS:
-                raise ValueError(f"Selected backup method 'wvtconf.BACKUP_METHOD' is not supported!")
-            if not wvtconf.BACKUP_PATH:
+            if config.weaviate.BACKUP_METHOD not in config.weaviate.BACKUP_METHODS:
+                raise ValueError(f"Selected backup method 'config.weaviate.BACKUP_METHODS' is not supported!")
+            if not config.weaviate.BACKUP_PATH:
                 raise ValueError("Backup directory is not set!")
-            os.makedirs(wvtconf.BACKUP_PATH, exist_ok=True)
+            os.makedirs(config.weaviate.BACKUP_PATH, exist_ok=True)
             
-            backup_path = os.path.join(wvtconf.BACKUP_PATH, backup_id)
+            backup_path = os.path.join(config.weaviate.BACKUP_PATH, backup_id)
             if not os.path.exists(backup_path):
                 raise RuntimeError(f"Directory for backup 'backup_id' does not exist in the backup directory!")  
             schema_backup_path = os.path.join(backup_path, 'schema.json')
@@ -523,7 +523,7 @@ class WeaviateService:
             logger.info(f"Initiating restoration from backup '{backup_id}' for {self._connection_type} database...")
             
             with self._client_lock:
-                match wvtconf.BACKUP_METHOD:
+                match config.weaviate.BACKUP_METHOD:
                     case 'manual':
                         import json
 
@@ -614,7 +614,7 @@ class WeaviateService:
                     modules_str = modules_str[:47] + '...'
                 
                 # Log connection details
-                if wvtconf.is_local():
+                if config.weaviate.LOCAL_DATABASE:
                     logger.info(
                         f"Database metadata: "
                         f"HOSTNAME={metainfo.get('hostname', 'unknown')}, "

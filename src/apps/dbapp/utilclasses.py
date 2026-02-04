@@ -1,6 +1,6 @@
 import os, json 
 from datetime import datetime
-from config import WeaviateConfiguration as wvtconf
+from src.config import config 
 
 class BackupData:
     def __init__(self, backup_id: str) -> None:
@@ -8,7 +8,7 @@ class BackupData:
         self._creation_date = ""
         self._collections = []
 
-        backup_path = os.path.join(wvtconf.BACKUP_PATH, backup_id)
+        backup_path = os.path.join(config.weaviate.BACKUP_PATH, backup_id)
         files = os.listdir(backup_path)
 
         if 'data.json' in files:

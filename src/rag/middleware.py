@@ -17,7 +17,7 @@ from openai import (
     RateLimitError,
 )
 
-from config import MAX_MODEL_RETRIES
+from src.config import config
 from src.rag.utilclasses import AgentContext
 from src.utils.logging import get_logger
 
@@ -45,7 +45,7 @@ class AgentChainMiddleware:
             return cls._model_wrapper_middleware
 
         cls._model_wrapper_middleware = wrap_model_call(cls._model_call_wrapper)
-        model_logger.info(f"Initialized model call wrapper with maximum of {MAX_MODEL_RETRIES} retry attempts")
+        model_logger.info(f"Initialized model call wrapper with maximum of {config.chain.MAX_RETRIES} retry attempts")
         return cls._model_wrapper_middleware
 
 
@@ -54,7 +54,7 @@ class AgentChainMiddleware:
         context: AgentContext  = request.runtime.context
         model:   BaseChatModel = request.model
         model_logger.info(f"{context.agent_name} is attempting to call model '{model.model_name}'...")
-        for attempt in range(1, MAX_MODEL_RETRIES+1):
+        for attempt in range(1, config.chain.MAX_RETRIES+1):
             try:
                 response: ModelResponse = handler(request)
                 model_logger.info(f"{context.agent_name} recieved response from model after {attempt} attempt{'s' if attempt > 1 else ''}")
@@ -86,8 +86,8 @@ class AgentChainMiddleware:
                         model_logger.error(f"[400] Bad request: {e.body['message']}")
                         raise e
 
-                if attempt == MAX_MODEL_RETRIES:
-                    model_logger.warning(f"Failed to recieve response from model '{model.model_name}' after {MAX_MODEL_RETRIES} attempt{'s' if attempt > 1 else ''}, reason: {e.body['message']}")
+                if attempt == config.chain.MAX_RETRIES:
+                    model_logger.warning(f"Failed to recieve response from model '{model.model_name}' after {config.chain.MAX_RETRIES} attempt{'s' if attempt > 1 else ''}, reason: {e.body['message']}")
                     model_logger.info(f"Switching to the fallback model...")
                     raise e
             except Exception as e:

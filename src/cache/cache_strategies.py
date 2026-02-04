@@ -1,12 +1,13 @@
-from .cache_base import CacheStrategy
-from config import CacheConfig
-from cachetools import TTLCache
 import json
 from typing import Any
+from cachetools import TTLCache
+
+from src.cache.cache_base import CacheStrategy
 from src.database.redisservice import RedisService
 from src.utils.logging import get_logger
+from src.config import config
 
-logger = get_logger(__name__)
+logger = get_logger('cache_strat')
 
 class RedisCache(CacheStrategy):
     def __init__(self, host, port, password, mode, metrics):
@@ -19,7 +20,7 @@ class RedisCache(CacheStrategy):
         
         try:
             json_str = json.dumps(value)
-            self.client.set(self._generate_normalized_key(key, language), json_str, ex=CacheConfig.TTL_CACHE)
+            self.client.set(self._generate_normalized_key(key, language), json_str, ex=config.cache.TTL_CACHE)
             logger.info("Response cached")
         except Exception as e:
             logger.error(f"Could not write to Redis: {e}")
@@ -59,7 +60,7 @@ class RedisCache(CacheStrategy):
 
 class LocalCache(CacheStrategy):
     def __init__(self, metrics):
-        self.cache = TTLCache(maxsize=CacheConfig.MAX_SIZE_CACHE, ttl=CacheConfig.TTL_CACHE)
+        self.cache = TTLCache(maxsize=config.cache.MAX_SIZE_CACHE, ttl=config.cache.TTL_CACHE)
         self.metrics = metrics
 
     def _generate_normalized_key(self, key: str, language: str) -> str:

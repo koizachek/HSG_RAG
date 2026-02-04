@@ -1,5 +1,5 @@
 from langchain.chat_models import BaseChatModel
-from config import LLMProvider, LLMProviderConfiguration as llmconf
+from src.config import config
 
 from src.utils.logging import get_logger
 
@@ -21,7 +21,7 @@ class ModelConfigurator:
             from langchain_openai import ChatOpenAI
             cls._language_detector_model_instance = ChatOpenAI(
                 model='gpt-4o-mini',
-                openai_api_key=llmconf.get_api_key(),
+                openai_api_key=config.llm.get_api_key(),
                 max_tokens=3072,
                 temperature=0.00,
                 timeout=60,
@@ -42,7 +42,7 @@ class ModelConfigurator:
             from langchain_openai import ChatOpenAI
             cls._confidence_scoring_model_instance = ChatOpenAI(
                 model='gpt-4o-mini',
-                openai_api_key=llmconf.get_api_key(),
+                openai_api_key=config.llm.get_api_key(),
                 max_tokens=3072,
                 temperature=0.00,
                 timeout=60,
@@ -63,7 +63,7 @@ class ModelConfigurator:
         try:
             # Add custom summarization model initialization here if needed
             cls._summarization_model_instance = cls.get_main_agent_model()
-            logger.info(f"Initialized summarization model '{llmconf.LLM_PROVIDER.name}:{llmconf.get_default_model()}'")
+            logger.info(f"Initialized summarization model '{config.llm.LLM_PROVIDER.name}:{config.llm.get_default_model()}'")
             return cls._summarization_model_instance
         except Exception as e:
             logger.error(f"Failed to initialize the summarization model: {e}")
@@ -77,7 +77,7 @@ class ModelConfigurator:
         from langchain_openai import ChatOpenAI
         cls._subagent_model_instance = ChatOpenAI(
             model='gpt-5.1',
-            openai_api_key=llmconf.get_api_key(),
+            openai_api_key=config.llm.get_api_key(),
             max_tokens=3072,
             temperature=0.01,
             timeout=60,
@@ -94,13 +94,13 @@ class ModelConfigurator:
 
         try:
             cls._main_model_instance = cls._initialize_model(
-                provider=llmconf.LLM_PROVIDER,
-                model=llmconf.get_default_model()
+                provider=config.llm.LLM_PROVIDER,
+                model=config.llm.get_default_model()
             )
-            logger.info(f"Initialized main agent model '{llmconf.LLM_PROVIDER.name}:{llmconf.get_default_model()}'")
+            logger.info(f"Initialized main agent model '{config.llm.LLM_PROVIDER.name}:{config.llm.get_default_model()}'")
             return cls._main_model_instance
         except Exception as e: 
-            logger.error(f"Failed to initialize the main agent model for provider '{llmconf.LLM_PROVIDER.name}': {e}")
+            logger.error(f"Failed to initialize the main agent model for provider '{config.llm.LLM_PROVIDER.name}': {e}")
             raise e
 
 
@@ -118,7 +118,7 @@ class ModelConfigurator:
     @classmethod
     def _initialize_fallback_models(cls) -> list[BaseChatModel]:
         fallback_models_instances = []
-        for fallback_provider, fallback_model in llmconf.get_fallback_models().items():
+        for fallback_provider, fallback_model in config.llm.get_fallback_models().items():
             try:
                 fallback_model_instance = cls._initialize_model(
                     provider=fallback_provider,
@@ -132,14 +132,14 @@ class ModelConfigurator:
 
 
     @classmethod
-    def _initialize_model(cls, provider: LLMProvider, model: str) -> BaseChatModel:
+    def _initialize_model(cls, provider, model: str) -> BaseChatModel:
         try:
             match provider.name:
                 case 'groq':
                     from langchain_groq import ChatGroq
                     return ChatGroq(
                         model=model,
-                        groq_api_key=llmconf.get_api_key(),
+                        groq_api_key=config.llm.get_api_key(),
                         temperature=0.01,
                     )
                 case (  'open_router:openai' 
@@ -149,22 +149,22 @@ class ModelConfigurator:
                     from langchain_openai import ChatOpenAI
                     return ChatOpenAI(
                         model=model,
-                        base_url=llmconf.OPEN_ROUTER_BASE_URL,
-                        api_key=llmconf.get_api_key(),
+                        base_url=config.llm.OPEN_ROUTER_BASE_URL,
+                        api_key=config.llm.get_api_key(),
                         temperature=0.01,
                     )
                 case 'open_router:deepseek':
                     from langchain_deepseek import ChatDeepSeek
                     return ChatDeepSeek(
                         model=model,
-                        api_key=llmconf.OPEN_ROUTER_API_KEY,
-                        api_base=llmconf.OPEN_ROUTER_BASE_URL,
+                        api_key=config.llm.OPEN_ROUTER_API_KEY,
+                        api_base=config.llm.OPEN_ROUTER_BASE_URL,
                     )
                 case 'openai':
                     from langchain_openai import ChatOpenAI
                     return ChatOpenAI(
                         model=model,
-                        openai_api_key=llmconf.get_api_key(),
+                        openai_api_key=config.llm.get_api_key(),
                         max_tokens=3072,
                         temperature=0.01,
                         timeout=60,
@@ -174,9 +174,9 @@ class ModelConfigurator:
                     from langchain_ollama import ChatOllama
                     return ChatOllama(
                         model=model,
-                        base_url=llmconf.OLLAMA_BASE_URL,
+                        base_url=config.llm.OLLAMA_BASE_URL,
                         temperature=0.01,
-                        reasoning=llmconf.get_reasoning_support(),
+                        reasoning=config.llm.get_reasoning_support(),
                         num_predict=2048,
                     )
                 case _:

@@ -1,214 +1,144 @@
 """
 Configuration settings for the Executive Education RAG Chatbot.
 """
-import os
-from dotenv import load_dotenv
+# ========================================= General Configuration ===========================================
 
-# Load environment variables from .env file
-load_dotenv()
+# A list of ISO 639 language codes. Defines a list of languages in which 
+# the application can operate. Defaults to ['en', 'de'].
+AVAILABLE_LANGUAGES = ['en', 'de']
 
-class LLMProvider:
-    def __init__(self, base: str, sub: str | None = None) -> None:
-        self.base = base
-        self.sub  = sub
-        self.name = f"{base}:{sub}" if sub else base 
-    
+# =================================== Conversation State Configuration ======================================
 
-    def with_sub(self, sub: str | None = None) -> str:
-        return LLMProvider(self.base, sub)
+# A boolean; either True or False. Enables the collection of user preferences 
+# during conversation to avoid repetetive questions. Defaults to True. 
+TRACK_USER_PROFILE = True 
 
+# An integer. Defines the amount of user messages after which the language 
+# of the conversation will be locked. If set to 0, the language will not be locked.
+LOCK_LANGUAGE_AFTER_N_MESSAGES = 3
 
-class LLMProviderConfiguration:
-    AVAIABLE_PROVIDERS = [
-        'groq', 
-        'ollama',  
-        'openai',
-        'open_router',
-    ]
-    AVAILABLE_SUBPROVIDERS = {
-        'groq': [],
-        'open_router': [
-            'openai', 
-            'deepseek',
-            'meituan'
-            'alibaba'   # For tongyi models 
-            'nvidia',
-        ],
-    }
-    
-    # DEFINE YOUR MAIN MODEL PROVIDER HERE 
-    # Some unified interfaces such as Groq or Open Router provide access to other providers
-    # such as OpenAI or Deepseek. When using interfaces define the provider you want to gain access to. 
-    LLM_PROVIDER = LLMProvider('openai')
-    
-    # -------------------- Some predefined models for available providers ----------------------
+# An integer. Sets the maximum amount of conversation turns as the sum of user queries
+# and agent responses. The conversation ends after the maximum turns amount is reached.
+MAX_CONVERSATION_TURNS = 15
 
-    # Groq settings
-    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-    GROQ_MODEL = "mixtral-8x7b-32768"
-    
-    # Open Router settings
-    OPEN_ROUTER_API_KEY = os.getenv("OPEN_ROUTER_API_KEY")
-    OPEN_ROUTER_MODEL="meituan/longcat-flash-chat:free"
-    OPEN_ROUTER_BASE_URL="https://openrouter.ai/api/v1"
+# ============================================ LLM Configuration ============================================
 
-    # OpenAI settings
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    OPENAI_MODEL = "gpt-5.1"
-    
-    # The gpt-oss:20b model is preferable but takes much more space
-    # Set to False if you only have the llama3.2 installed
-    GPT_OSS_ENABLED=False
-    # Local/Ollama settings
-    OLLAMA_BASE_URL = "http://localhost:11434"
-    OLLAMA_MODEL = "gpt-oss:20b" if GPT_OSS_ENABLED else "llama3.2"
-    
-    # ----------------------------------------------------------------------------------------
+# A string, either 'openai', 'groq', 'open_router' or 'ollama' (local).
+# Defines the main model provider for the application.
+LLM_PROVIDER = 'openai' 
 
-    @classmethod
-    def get_fallback_models(cls, provider: LLMProvider | None = None) -> list[str]:
-        provider = provider or cls.LLM_PROVIDER
-        match provider.base:
-            case 'openai':
-                return {
-                    provider: fallback_model
-                    for fallback_model in [
-                        'gpt-5-mini', 
-                        'gpt-5-nano',
-                    ]
-                }
-            case 'open_router':
-                return {
-                    provider.with_sub('openai'):   "gpt-oss-20b",
-                    provider.with_sub('openai'):   "gpt-oss-120b",
-                    provider.with_sub('alibaba'):  "alibaba/tongyi-deepresearch-30b-a3b:free",
-                    provider: "openrouter/polaris-alpha",
-                    # Currently unusable because has no tool support
-                    #provider.with_sub('deepseek'): "deepseek/deepseek-chat-v3.1:free",
-                }
-            case _:
-                return {}
+# A string. Defines the model that will be used by the application agents. 
+OPENAI_MODEL = 'gpt-5.1'
+# GROQ_MODEL = 
+# OLLAMA_MODEL = 
+# OPEN_ROUTER_MODEL = 
 
-    @classmethod
-    def get_reasoning_support(cls, provider: LLMProvider | None = None) -> bool:
-        provider = provider or cls.LLM_PROVIDER
-        return {
-            "groq":   True,
-            "openai": True, 
-            "open_router": True,
-        }.get(provider.base, False)
+# ==================================== Weaviate Database Configuration ======================================
 
+# A boolean; either True or False. 
+# Defines whether the database is set as a local instance (via Docker container), 
+# or as a cloud service. More information on https://docs.weaviate.io/weaviate.
+WEAVIATE_IS_LOCAL = False
 
-    @classmethod
-    def get_default_model(cls, provider: LLMProvider | None = None) -> str:
-        provider = provider or cls.LLM_PROVIDER
-        return {
-            "groq":   cls.GROQ_MODEL,
-            "openai": cls.OPENAI_MODEL, 
-            "ollama": cls.OLLAMA_MODEL,
-            "open_router":   cls.OPEN_ROUTER_MODEL,
-        }.get(provider.base)
-   
+# A string. Defines the name of the colletions stored in the database.
+# For each available language a new collection will be created
+# with set name <WEAVIATE_COLLECTION_BASENAME>_<LANGUAGE>.
+WEAVIATE_COLLECTION_BASENAME = 'hsg_rag_content'
 
-    @classmethod
-    def get_api_key(cls, provider: LLMProvider | None = None) -> str:
-        provider = provider or cls.LLM_PROVIDER
-        return {
-            "groq": cls.GROQ_API_KEY,
-            "openai": cls.OPENAI_API_KEY,
-            "open_router": cls.OPEN_ROUTER_API_KEY,
-        }.get(provider.base)
+# A string; either 'manual', 'filesystem' (local instance), 's3' (AWS).
+# Defines the service for storing the database backups.
+# More information on https://docs.weaviate.io/deploy/configuration/backups.
+WEAVIATE_BACKUP_METHOD = 'manual'
 
+# A string representing a path in the system where backups will be stored 
+# only if WEAVIATE_BACKUP_METHOD is set to 'manual'.
+BACKUPS_PATH = 'data/database/backups'
 
-# Weaviate database settings 
-class WeaviateConfiguration:
-    LOCAL_DATABASE = False
-    WEAVIATE_COLLECTION_BASENAME = 'hsg_rag_content'
-    
-    # Weaviate backup settings
-    AVAILABLE_BACKUP_METHODS = ['manual', 'filesystem', 's3']
-    BACKUP_METHOD = 'manual'
+# A string representing a system path where collection properties will be stored.
+PROPERTIES_PATH = 'data/database/properties'
 
-    # Weaviate generated data paths
-    BACKUP_PATH = 'data/database/backups'
-    PROPERTIES_PATH = 'data/database/properties'
-    STRATEGIES_PATH = 'data/database/strategies'
+# A string representing a system path where property strategies will be stored.
+# More information on property strategies in the documentation.
+STRATEGIES_PATH = 'data/database/strategies'
 
-    # Weaviate Cloud settings
-    CLUSTER_URL = os.getenv('WEAVIATE_CLUSTER_URL')
-    WEAVIATE_API_KEY = os.getenv('WEAVIATE_API_KEY')
-    HUGGING_FACE_API_KEY = os.getenv('HUGGING_FACE_API_KEY')
-    
-    # Custom timeouts for Cloud connection (in seconds)
-    INIT_TIMEOUT   = 90 
-    QUERY_TIMEOUT  = 60 
-    INSERT_TIMEOUT = 600
+# An integer. Defines a connection timeout to the cloud weaviate service (in seconds). 
+# Defaults to 90.
+WEAVIATE_INIT_TIMEOUT = 90
 
-    @classmethod 
-    def is_local(cls) -> bool:
-        return cls.LOCAL_DATABASE
+# An integer. Defines the query response time limit upon querying the database (in seconds). 
+# Defaults to 60.
+WEAVIATE_QUERY_TIMEOUT = 60
 
-# Cache settings
-class CacheConfig:
-    LOCAL_HOST = "localhost"
-    LOCAL_PORT = 6379
-    LOCAL_PASS = os.getenv("REDIS_LOCAL_PASSWORD", "")
+# An integer. Defines the chunk insertion time limit when importing new chunks to database (in seconds).
+# Defaults to 600
+WEAVIATE_INSERT_TIMEOUT = 600
 
-    CLOUD_HOST = os.getenv("REDIS_CLOUD_HOST")
-    CLOUD_PORT = int(os.getenv("REDIS_CLOUD_PORT", 6379))
-    CLOUD_PASS = os.getenv("REDIS_CLOUD_PASSWORD")
+# ========================================== Cache Configuration ============================================
 
-    CACHE_LOCAL = "local"
-    CACHE_CLOUD = "cloud"
-    CACHE_DICT = "dict"
-    CACHE_MODE = "cloud"  # 'local' or 'cloud' or 'dict' set here the default cache mode
+# A string; either 'local', 'cloud' (Redis) or 'dict'. Defaults to 'cloud'.
+# Sets the default cache mode. More information on cache modes in documentation.
+CACHE_MODE = 'cloud'
 
-    TTL_CACHE = 86400 # 86400 seconds = 24 hours
-    MAX_SIZE_CACHE = 1000
+# An integer. Sets the reset time (time to live) in seconds for the cache storage.
+# The cache storage will be cleared upon reset time exceedance.
+# Defaults to 86400 seconds (24 hours).
+CACHE_TTL = 86400 
 
-# Data paths
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-RAW_DATA_PATH = os.path.join(DATA_DIR, "raw_data.json")
-PROCESSED_DATA_PATH = os.path.join(DATA_DIR, "processed_data.json")
-VECTORDB_PATH = os.path.join(DATA_DIR, "vectordb")
+# An integer. Maximum amount of cached messages that will be held in the cache storage.
+# Defaults to 1000.
+CACHE_MAX_SIZE = 1000 
 
-# Determines when the text is considered German during the language detection
+# A string. Defines the IP adress to access the local cache storage. Defaults to 'localhost'.
+CACHE_LOCAL_HOST = 'localhost'
+
+# An integer. Defines the port for accessing the local cache storage. Defaults to 6379.
+CACHE_LOCAL_PORT = 6379 
+
+# ===================================== Data Processing Configuration =======================================
+
+# EMBEDDING_MODEL = 
+
+# A float in range from 0 to 1. Sets the threshold for english language in the language detector.
+# If the language detection certanty is lower than the threshold, the English language will be returned.
 LANG_AMBIGUITY_THRESHOLD = 0.6
 
-# Confidence Threshold to activate fall-back mechanism
-CONFIDENCE_THRESHOLD = 0.6
+# An integer. Defines the maximum amount of tokens pro single chunk.
+MAX_TOKENS = 512
 
-# Vector database settings
-CHUNK_SIZE = 512
-CHUNK_OVERLAP = 200
+# An integer. Defines the amount of overlapping tokens between chunks to keep the context. 
+CHUNK_OVERLAP = 100
 
-# Agent Chain settings 
-MAX_MODEL_RETRIES = 3
+# ======================================== Agent Chain Configuration ========================================
 
-# RAG settings
-TOP_K_RETRIEVAL = 4  # Number of documents to retrieve for each query
-
-# UI settings
-MAX_HISTORY = 10  # Maximum number of conversation turns to keep in history
-
-# Response formatting settings
-MAX_RESPONSE_WORDS_LEAD = 100  # Maximum words for lead agent responses
-MAX_RESPONSE_WORDS_SUBAGENT = 200  # Maximum words for subagent responses
-ENABLE_RESPONSE_CHUNKING = True  # Break long responses into multiple turns
-
-# Evaluation of agent response quality 
+# A boolean; either True or False. Activates the response quality evaluation procedure
+# for agentic responses. Defaults to True.
 ENABLE_EVALUATE_RESPONSE_QUALITY = True
 
-# Conversation state settings
-TRACK_USER_PROFILE = True  # Track user preferences and avoid repetition
-LOCK_LANGUAGE_AFTER_N_MESSAGES = 3  # Lock language after N user messages (0 = never lock)
-MAX_CONVERSATION_TURNS = 15 # End conversation after max turns reached
+# A float in range from 0 to 1. Sets the treshold value for the quality evaluation.
+# The fallback mechanism will be activated if the quality of the agentic response 
+# is lower than the confidence threshold.
+CONFIDENCE_THRESHOLD = 0.6
 
-# Data processing pipeline settings 
-CHUNK_MAX_TOKENS = 8191
-AVAILABLE_LANGUAGES = ['en', 'de']
-HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
-DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
+# An integer. Defines the amount of chunks that should be retrieved from the database 
+# upon querying by subagents during conversation. Defaults to 4.
+TOP_K_RETRIEVAL = 4  
+
+# An integer. Sets the amount of model invocation retries after which the fallback model 
+# will be invoked. Defaults to 3.
+MODEL_MAX_RETRIES = 3
+
+# An integer. Sets the maximum amount of words in the response from the lead agent.
+MAX_RESPONSE_WORDS_LEAD = 100 
+
+# An integer. Sets the maximum amount of words in the response for subagents.
+MAX_RESPONSE_WORDS_SUBAGENT = 200
+
+# A boolean; either True or False. If response chunking is enabled, long responses 
+# from the lead agent will be split and retuned through multiple conversation turns.
+ENABLE_RESPONSE_CHUNKING = True 
+
+# ===========================================================================================================
+
 
 # Base URLs for scraping
 SCRAPE_URLS = [

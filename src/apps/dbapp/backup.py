@@ -6,13 +6,13 @@ from tkinter import ttk
 from src.database.weavservice import WeaviateService
 from src.apps.dbapp.framebase import CustomFrameBase
 from src.apps.dbapp.utilclasses import BackupData
-from config import WeaviateConfiguration as wvtconf
+from src.config import config
 
 def _load_backup_files():
     backups = []
-    os.makedirs(wvtconf.BACKUP_PATH, exist_ok=True)
+    os.makedirs(config.weaviate.BACKUP_PATH, exist_ok=True)
 
-    for backup_id in os.listdir(wvtconf.BACKUP_PATH):
+    for backup_id in os.listdir(config.weaviate.BACKUP_PATH):
         backups.append(BackupData(backup_id))
     
     return backups
@@ -135,7 +135,7 @@ class BackupsFrame(CustomFrameBase):
             item_id = tree.selection()[0]
             backup = tree.item(item_id)
             
-            backup_path = os.path.join(wvtconf.BACKUP_PATH, 'backup_' + backup['text'])
+            backup_path = os.path.join(config.weaviate.BACKUP_PATH, 'backup_' + backup['text'])
             shutil.rmtree(backup_path, ignore_errors=True)
 
             tree.delete(item_id)
