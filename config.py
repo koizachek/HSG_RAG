@@ -178,7 +178,7 @@ LANG_AMBIGUITY_THRESHOLD = 0.6
 # Confidence Threshold to activate fall-back mechanism
 CONFIDENCE_THRESHOLD = 0.6
 
-# Vector database settings
+# Vector database settings (currently unused - CHUNK_MAX_TOKENS is used instead)
 CHUNK_SIZE = 512
 CHUNK_OVERLAP = 200
 
@@ -204,8 +204,10 @@ TRACK_USER_PROFILE = True  # Track user preferences and avoid repetition
 LOCK_LANGUAGE_AFTER_N_MESSAGES = 3  # Lock language after N user messages (0 = never lock)
 MAX_CONVERSATION_TURNS = 15 # End conversation after max turns reached
 
-# Data processing pipeline settings 
-CHUNK_MAX_TOKENS = 8191
+# Data processing pipeline settings
+# IMPORTANT: Must match embedding model's max sequence length!
+# all-MiniLM-L6-v2 supports max 256 tokens - using 200 for safety margin
+CHUNK_MAX_TOKENS = 200
 AVAILABLE_LANGUAGES = ['en', 'de']
 HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
 DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
