@@ -3,7 +3,7 @@ Response formatter for handling long responses and table formatting.
 Ensures responses are mobile-friendly and appropriately sized.
 """
 import re
-from config import MAX_RESPONSE_WORDS_LEAD, MAX_RESPONSE_WORDS_SUBAGENT
+from src.config import config
 from src.utils.logging import get_logger
 
 logger = get_logger("response_formatter")
@@ -76,7 +76,7 @@ class ResponseFormatter:
     @staticmethod
     def chunk_response(
         text: str,
-        max_words: int = MAX_RESPONSE_WORDS_LEAD,
+        max_words: int = config.chain.MAX_RESPONSE_WORDS_LEAD,
         language: str = 'en'
     ) -> tuple[str, str | None]:
         """
@@ -142,9 +142,9 @@ class ResponseFormatter:
 
         # Determine max words
         max_words = (
-            MAX_RESPONSE_WORDS_LEAD
+            config.chain.MAX_RESPONSE_WORDS_LEAD
             if agent_type == 'lead'
-            else MAX_RESPONSE_WORDS_SUBAGENT
+            else config.chain.MAX_RESPONSE_WORDS_SUBAGENT
         )
 
         # Handle chunking if enabled

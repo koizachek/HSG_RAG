@@ -1,4 +1,3 @@
-import os
 import redis
 from threading import Lock
 from src.utils.logging import get_logger
