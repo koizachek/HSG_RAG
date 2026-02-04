@@ -64,7 +64,7 @@ RULES:
 - LANGUAGE: English (strong working knowledge required).
 - FORMAT: Part-time ONLY (no full-time option). Modules in Switzerland and internationally.
 - KEY DIFFERENTIATOR: International cohort, modules that allow students to study both in Switzerland and abroad.
-- TUITION (until Aug 2026): CHF 80,000 - 95,000 | (from Aug 2026): Min. CHF 84,000 - 100,000
+- TUITION (until Aug 2026): CHF 85,000
 - INCLUDED IN TUITION: Tuition fees, course materials, most on-site meals and refreshments.
 - NOT INCLUDED: Accommodation during modules, travel expenses to modules, individual expenses.
 - IMPORTANT: Accommodation is NOT included (NEVER say it is included).

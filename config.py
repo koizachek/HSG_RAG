@@ -103,7 +103,7 @@ CACHE_LOCAL_PORT = 6379
 LANG_AMBIGUITY_THRESHOLD = 0.6
 
 # An integer. Defines the maximum amount of tokens pro single chunk.
-MAX_TOKENS = 512
+MAX_TOKENS = 200
 
 # An integer. Defines the amount of overlapping tokens between chunks to keep the context. 
 CHUNK_OVERLAP = 100
@@ -138,7 +138,6 @@ MAX_RESPONSE_WORDS_SUBAGENT = 200
 ENABLE_RESPONSE_CHUNKING = True 
 
 # ===========================================================================================================
-
 
 # Base URLs for scraping
 SCRAPE_URLS = [
