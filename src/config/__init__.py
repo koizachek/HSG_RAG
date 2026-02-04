@@ -6,11 +6,12 @@ import config as c
 class AppConfig:
     # ===================== INITIALIZE YOUR SUBCONFIGS HERE =====================
     
-    processing: ProcessingConfig   = ProcessingConfig()
-    weaviate:   WeaviateConfig     = WeaviateConfig()
-    chain:      ChainConfig        = ChainConfig()
-    cache:      CacheConfig        = CacheConfig()
-    llm:        LLMProviderConfig  = LLMProviderConfig()
+    convstate:  ConversationStateConfig = ConversationStateConfig()
+    processing: ProcessingConfig        = ProcessingConfig()
+    weaviate:   WeaviateConfig          = WeaviateConfig()
+    chain:      ChainConfig             = ChainConfig()
+    cache:      CacheConfig             = CacheConfig()
+    llm:        LLMProviderConfig       = LLMProviderConfig()
     
     # ===========================================================================
 

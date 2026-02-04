@@ -153,7 +153,7 @@ class WeaviateService:
         Raises:
             weaviate.exceptions.WeaviateConnectionError: If the specified language collection does not exist.
         """
-        if lang not in AVAILABLE_LANGUAGES:
+        if lang not in config.get('AVAILABLE_LANGUAGES'):
             logger.error(f"No collection for language '{lang}' was found in the database")
             return None, ''
 
