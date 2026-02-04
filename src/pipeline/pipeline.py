@@ -124,7 +124,8 @@ class ImportPipeline:
         if all([len(chunks) == 0 for chunks in unique_chunks.values()]):
             self._logging_callback('No new data could be extracted from these sources!', 100)
             implogger.warning(f"File(s) provided for the insertion do not contain any unique information.")
-            return unique_chunks
+        
+        return unique_chunks
         
 
     def _deduplicate(self, result: ProcessingResult) -> ProcessingResult:

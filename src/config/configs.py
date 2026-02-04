@@ -19,6 +19,11 @@ def _get(param: str, default=None, type_=None):
     except (ValueError, TypeError):
         raise ValueError(f"Failed to cast '{param}' value '{value}' to {type_.__name__}")
 
+class ConversationStateConfig:
+    TRACK_USER_PROFILE = _get('TRACK_USER_PROFILE')
+    LOCK_LANGUAGE_AFTER_N_MESSAGES = _get('LOCK_LANGUAGE_AFTER_N_MESSAGES')
+    MAX_CONVERSATION_TURNS = _get('MAX_CONVERSATION_TURNS')
+
 
 class ProcessingConfig:
     LANG_AMBIGUITY_THRESHOLD: float = _get('LANG_AMBIGUITY_THRESHOLD')
