@@ -78,7 +78,7 @@ class ImportPipeline:
         self._logging_callback('Importing chunks to database...', 90)
         for lang, ch in chunks.items():
             self._service.batch_import(data_rows=ch, lang=lang) 
-        self._logging_callback('Successfully imported {sum([len(ch) for ch in chunks.values()])} chunks!', 100)
+        self._logging_callback(f'Successfully imported {sum([len(ch) for ch in chunks.values()])} chunks!', 100)
 
 
     def _pipeline(
@@ -103,6 +103,7 @@ class ImportPipeline:
         """
         unique_chunks = {lang: [] for lang in AVAILABLE_LANGUAGES}
 
+        sources = [s for s in sources if s!=""]
         if not sources:
             return unique_chunks
         
@@ -124,7 +125,8 @@ class ImportPipeline:
         if all([len(chunks) == 0 for chunks in unique_chunks.values()]):
             self._logging_callback('No new data could be extracted from these sources!', 100)
             implogger.warning(f"File(s) provided for the insertion do not contain any unique information.")
-            return unique_chunks
+
+        return unique_chunks
         
 
     def _deduplicate(self, result: ProcessingResult) -> ProcessingResult:

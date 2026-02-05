@@ -206,8 +206,8 @@ MAX_CONVERSATION_TURNS = 15 # End conversation after max turns reached
 
 # Data processing pipeline settings
 # IMPORTANT: Must match embedding model's max sequence length!
-# all-MiniLM-L6-v2 supports max 256 tokens - using 200 for safety margin
-CHUNK_MAX_TOKENS = 200
+EMBEDDING_MODEL = 'sentence-transformers/multi-qa-mpnet-base-dot-v1'
+CHUNK_MAX_TOKENS = 512
 AVAILABLE_LANGUAGES = ['en', 'de']
 HASH_FILE_PATH = os.path.join(DATA_DIR, 'hashtables.json')
 DOCUMENTS_PATH = os.path.join(DATA_DIR, 'documents')
