@@ -12,7 +12,7 @@ from weaviate.classes.query import Filter
 from weaviate.config import AdditionalConfig
 
 from src.utils.logging import get_logger
-from config import WeaviateConfiguration as wvtconf, AVAILABLE_LANGUAGES, HASH_FILE_PATH
+from config import WeaviateConfiguration as wvtconf, AVAILABLE_LANGUAGES, HASH_FILE_PATH, EMBEDDING_MODEL
 
 logger = get_logger("weaviate_service")
 
@@ -177,7 +177,7 @@ class WeaviateService:
 
         Raises:
             If no active collection is available or a connection error was catched.
-        """        
+        """
         collection, collection_name = self._select_collection(lang)
         if collection is None:
             logger.error("No working collection selected!")
@@ -185,7 +185,7 @@ class WeaviateService:
 
         import_errors = []
         logger.info(f"Batch importing {len(data_rows)} rows into {collection_name}")
-        
+
         try:
             with self._client_lock:
                 with collection.batch.fixed_size(batch_size=100, concurrent_requests=2) as batch:
@@ -198,7 +198,7 @@ class WeaviateService:
                         if idx % 20 == 0 and idx > 0:
                             if batch.number_errors > 0:
                                 logger.info(f"Failed imports at index {idx}: {batch.number_errors}")
-            
+
             self._last_query_time = perf_counter()
             logger.info(f"Batch import finished. Total errors: {len(import_errors)}")
             
@@ -206,7 +206,7 @@ class WeaviateService:
             if 'connection' in str(e).lower():
                 logger.error(f"Connection error during batch import: {e}")
                 self._client = None
-            raise e  
+            raise e
 
         return import_errors
     
@@ -294,7 +294,7 @@ class WeaviateService:
                 else Configure.Vectors.text2vec_huggingface(
                     name='hsg_rag_embeddings',
                     source_properties=['body'],
-                    model="nomic-ai/nomic-embed-text-v1.5",
+                    model=EMBEDDING_MODEL,
                 )
             )
             

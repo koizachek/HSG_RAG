@@ -19,7 +19,7 @@ from docling_core.types.doc.document import DoclingDocument
 from src.pipeline.utilclasses import ProcessingResult
 from src.utils.lang import detect_language
 from src.utils.logging import get_logger
-from config import CHUNK_MAX_TOKENS, WeaviateConfiguration as wvtconf
+from config import CHUNK_MAX_TOKENS, WeaviateConfiguration as wvtconf, EMBEDDING_MODEL
 
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
@@ -63,7 +63,7 @@ class ProcessorBase:
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
             },
         )
-        tokenizer = AutoTokenizer.from_pretrained("nomic-ai/nomic-embed-text-v1.5")
+        tokenizer = AutoTokenizer.from_pretrained(EMBEDDING_MODEL)
         self._chunker = HybridChunker(
             tokenizer=HuggingFaceTokenizer(
                 tokenizer=tokenizer,
