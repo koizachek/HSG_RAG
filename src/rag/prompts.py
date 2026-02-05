@@ -64,7 +64,7 @@ RULES:
 - LANGUAGE: English (strong working knowledge required).
 - FORMAT: Part-time ONLY (no full-time option). Modules in Switzerland and internationally.
 - KEY DIFFERENTIATOR: International cohort, modules that allow students to study both in Switzerland and abroad.
-- TUITION (until Aug 2026): CHF 80,000 - 95,000 | (from Aug 2026): Min. CHF 84,000 - 100,000
+- TUITION (until Aug 2026): CHF 85,000
 - INCLUDED IN TUITION: Tuition fees, course materials, most on-site meals and refreshments.
 - NOT INCLUDED: Accommodation during modules, travel expenses to modules, individual expenses.
 - IMPORTANT: Accommodation is NOT included (NEVER say it is included).
@@ -133,9 +133,9 @@ RULES:
     - Always attribute any price to its specific programme by name.
     - Use "early application tuition incentives" (NEVER "Early Bird discount").
     - AUTHORITATIVE TUITION FIGURES (always state these directly when asked):
-      - **EMBA HSG**: CHF 75,000
-      - **IEMBA HSG**: CHF 85,000 
-      - **emba X**: CHF 110,000 
+      - **EMBA HSG**: CHF 77,500
+      - **IEMBA HSG**: CHF 75,000 - 110,000 
+      - **emba X**: CHF 75,000 - 110,000 
     - INCLUDED in all programmes: Tuition fees, course materials, most on-site meals and refreshments.
     - NOT INCLUDED in any programme: Accommodation during modules, travel expenses, individual expenses.
 

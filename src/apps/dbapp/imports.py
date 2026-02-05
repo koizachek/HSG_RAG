@@ -3,104 +3,179 @@ import threading
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
+from queue import Queue
 
 from src.pipeline.pipeline import ImportPipeline
 from src.apps.dbapp.framebase import CustomFrameBase
 from src.database.weavservice import WeaviateService
 from src.pipeline.utilclasses import ProcessingResult
 from src.utils.lang import get_language_name
+from config import SCRAPE_URLS
 
 class ImportFrame(CustomFrameBase):
     def __init__(self, parent, service: WeaviateService) -> None:
         super().__init__(parent, service)
         self._import_paths = dict()
 
-    def init(self):
+    def init(self) -> ttk.Frame:
         main_frame = ttk.Frame(self._parent)
         main_frame.pack(fill=BOTH, expand=True)
         
-        import_frame = ttk.Frame(main_frame)
-        file_buttons_frame = ttk.Frame(main_frame)
-        file_buttons_frame.pack(fill=X, side=TOP, anchor=NW, expand=True)
-        
-        import_buttons_frame = ttk.Frame(import_frame)
-        import_buttons_frame.pack(side=TOP, anchor=W, expand=True)
-
-        files_treeview = ttk.Treeview(
-            main_frame,
-            columns=[],
-            show='tree headings',
-            selectmode='extended',
-        )
-        files_treeview.heading('#0', text='File name')
-        files_treeview.column('#0', width=400)
-        
-        logging_textframe = Text(import_frame, width=40, height=16, state=DISABLED)
-
+        # ====================== Helper functions ======================
         def update_treeview():
-            for item in files_treeview.get_children(''):
-                files_treeview.delete(item)
-
-            for filename in self._import_paths.keys():
-                files_treeview.insert('', 0, text=filename)
+            for item in self.files_treeview.get_children():
+                self.files_treeview.delete(item)
+            for filename in self._import_paths:
+                self.files_treeview.insert("", 0, text=filename)
 
         def open_file_dialog():
             filepaths = filedialog.askopenfilenames(
-                title='Select files to import',
-                filetypes=(('PDF', '*.pdf'), ('Text files', '*.txt') ),
+                title="Select files to import",
+                filetypes=(("PDF", "*.pdf"), ("Text files", "*.txt"), ("All files", "*.*"))
             )
             for path in filepaths:
                 filename = os.path.basename(path)
                 self._import_paths[filename] = path
-
             update_treeview()
 
         def remove_files():
-            selection = files_treeview.selection()
+            selection = self.files_treeview.selection()
             if not selection:
-                return 
-
+                return
             for item in selection:
-                filename = files_treeview.item(item)['text']
-                del self._import_paths[filename]
-
+                filename = self.files_treeview.item(item)["text"]
+                self._import_paths.pop(filename, None)
             update_treeview()
-        
+
         def change_button_state(state):
             add_button.config(state=state)
             remove_button.config(state=state)
             import_button.config(state=state)
 
-        add_button = ttk.Button(file_buttons_frame, text='Add files', command=open_file_dialog)
-        add_button.pack(side=LEFT, padx=15, pady=15)
+        # Configure grid for 50/50 split
+        main_frame.grid_rowconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
 
-        remove_button = ttk.Button(file_buttons_frame, text='Remove files', command=remove_files)
-        remove_button.pack(side=LEFT, padx=15, pady=15)
+        # ====================== LEFT SIDE ======================
+        left_frame = ttk.Frame(main_frame)
+        left_frame.grid(row=0, column=0, sticky='nsew', padx=(10, 5), pady=10)
 
-        import_button = ttk.Button(import_buttons_frame, text='Begin Import', 
-            command=lambda: self._import_callback(change_button_state, clean_coll_var.get())
+        # Button row for add/remove
+        btn_row = ttk.Frame(left_frame)
+        btn_row.pack(fill=X, pady=(0, 8))
+
+        add_button = ttk.Button(btn_row, text="Add files", command=open_file_dialog)
+        add_button.pack(side=LEFT, padx=8)
+
+        remove_button = ttk.Button(btn_row, text="Remove files", command=remove_files)
+        remove_button.pack(side=LEFT, padx=8)
+
+        # Controls row for checkbox and import button
+        controls_row = ttk.Frame(left_frame)
+        controls_row.pack(fill=X, pady=(0, 8))
+
+        import_button = ttk.Button(
+            controls_row, 
+            text="Begin Import", 
+            command=lambda: self._import_callback(change_button_state)
         )
-        import_button.pack(side=LEFT, padx=15, pady=15)
+        import_button.pack(side=LEFT, padx=10)
         
-        clean_coll_var = BooleanVar(value=False)
-        clean_coll_checkbutton = ttk.Checkbutton(
-                import_buttons_frame, 
-                text='Clean Collections', 
-                variable=clean_coll_var,
+        self.reset_cd_var = BooleanVar(value=False)
+        reset_cb = ttk.Checkbutton(
+            controls_row, 
+            text="Reset database", 
+            variable=self.reset_cd_var
         )
-        clean_coll_checkbutton.pack(side=RIGHT, padx=15, pady=15)
- 
-        ttk.Label(import_frame, text='Import status:').pack(side=TOP, anchor=NW, padx=15)
-        
-        files_treeview.pack(side=LEFT, anchor=W, fill=Y, expand=True, padx=15, pady=15)
-        import_frame.pack(side=LEFT, anchor=W, fill=BOTH, expand=True)
-        
-        logging_textframe.pack(side=TOP, anchor=NW, fill=BOTH, expand=True, padx=15, pady=15)
+        reset_cb.pack(side=LEFT, padx=8, pady=6)
+
+        # Files treeview
+        self.files_treeview = ttk.Treeview(
+            left_frame,
+            columns=[],
+            show="tree headings",
+            selectmode="extended",
+            height=18
+        )
+        self.files_treeview.heading("#0", text="File name")
+        self.files_treeview.column("#0", width=260) 
+        self.files_treeview.pack(fill=BOTH, expand=True, pady=8)
+
+        # ====================== RIGHT SIDE ======================
+        right_frame = ttk.Frame(main_frame)
+        right_frame.grid(row=0, column=1, sticky='nsew', padx=(5, 10), pady=10)
+
+        ttk.Label(right_frame, text="Enter URLs (one per line):").pack(anchor=W, padx=5, pady=(0, 6))
+
+        self.url_text = Text(right_frame, width=28, height=22, undo=True, wrap="word", font=("Segoe UI", 10)) 
+        self.url_text.pack(side=LEFT, fill=BOTH, expand=True, padx=5, pady=5)
+
+        self.url_text.insert(END, '\n'.join(SCRAPE_URLS))
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(right_frame, orient="vertical", command=self.url_text.yview)
+        scrollbar.pack(side=RIGHT, fill=Y)
+        self.url_text.config(yscrollcommand=scrollbar.set)
 
         return main_frame
+    
 
+    def _deduplication_callback(self, source: str, amount: int):
+        result_queue = Queue()
 
-    def _import_callback(self, button_state_callback, clean_coll: bool):
+        def show_dialog():
+            dialog = Toplevel()
+            dialog.title("Duplicated content!")
+            dialog.bell()
+
+            wrap_width = 360  
+
+            info_label = ttk.Label(
+                dialog, 
+                text=f'{amount} duplicated chunks found in database for {source}!',
+                wraplength=wrap_width,
+                justify=LEFT
+            )
+            info_label2 = ttk.Label(
+                dialog, 
+                text='Would you like to reimport them with updated properties?',
+                wraplength=wrap_width,
+                justify=LEFT
+            )
+            
+            info_label.pack(fill=X, anchor=W, padx=15, pady=15)
+            info_label2.pack(fill=X, anchor=W, padx=15, pady=15)
+
+            def reimport_callback():
+                result_queue.put(True)
+                dialog.destroy()
+
+            def dispose_callback():
+                result_queue.put(False)
+                dialog.destroy()
+
+            reimport_button = ttk.Button(dialog, text='Reimport', command=reimport_callback)
+            dispose_button = ttk.Button(dialog, text='Dispose', command=dispose_callback)
+
+            reimport_button.pack(side=LEFT, padx=15, pady=15)
+            dispose_button.pack(side=RIGHT, padx=15, pady=15)
+            
+            dialog.update_idletasks()  
+            width = dialog.winfo_reqwidth() + 20  
+            height = dialog.winfo_reqheight() + 20
+            dialog.geometry(f"{width}x{height}")
+
+            dialog.protocol("WM_DELETE_WINDOW", dispose_callback)
+            
+            dialog.wait_visibility()
+            dialog.grab_set()
+
+        self._parent.after(0, show_dialog)
+        return result_queue.get()
+    
+
+    def _import_callback(self, button_state_callback):
         dialog = Toplevel()
         dialog.title("Import status")
         dialog.geometry("600x400")
@@ -127,17 +202,20 @@ class ImportFrame(CustomFrameBase):
 
         chunks_treeview.pack(side=TOP, fill=X, padx=15, pady=15, expand=True)
 
-        def logging_callback(msg: str, progress: int, result: ProcessingResult = None):
+        def logging_callback(
+                msg: str, 
+                progress: int, 
+                result: ProcessingResult = None,
+                failed: bool = False,
+            ):
             current_import_label.config(text=msg)
-            if progress > 100:
-                progress_bar.config(mode='indeterminate')
-            else:
-                progress_bar.config(mode='determinate', value=progress)
+            progress_bar.config(value=progress)
+
             if result:
                 chunks_treeview.insert('', index=0, 
                     text=result.source, 
                     values=(
-                        len(result.chunks), 
+                        'Failure!' if failed else len(result.chunks), 
                         get_language_name(result.lang)
                     )
                 )
@@ -145,13 +223,18 @@ class ImportFrame(CustomFrameBase):
         def import_task():
             button_state_callback(DISABLED)
             filepaths = self._import_paths.values()
+            urls = self.url_text.get('1.0', END).strip().split('\n')
             try:
                 ImportPipeline(
                     logging_callback=logging_callback,
-                    reset_collections_on_import=clean_coll,
-                ).import_many_documents(filepaths)
-            finally:
+                    deduplication_callback=self._deduplication_callback,
+                ).import_all(
+                    paths=filepaths,
+                    urls=urls,
+                    reset_collections=self.reset_cd_var.get()
+                ) 
                 dialog.bell()
+            finally:
                 button_state_callback(NORMAL)
 
         import_thread = threading.Thread(target=import_task)
