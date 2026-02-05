@@ -63,7 +63,7 @@ class ProcessorBase:
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
             },
         )
-        tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        tokenizer = AutoTokenizer.from_pretrained("nomic-ai/nomic-embed-text-v1.5")
         self._chunker = HybridChunker(
             tokenizer=HuggingFaceTokenizer(
                 tokenizer=tokenizer,
