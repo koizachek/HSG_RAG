@@ -363,6 +363,9 @@ class WebsiteProcessor(ProcessorBase):
         """
         time.sleep(2)
 
+        if not url:
+            return ProcessingResult(source=url, chunks=None, lang='')
+
         weblogger.info(f"Initiating processing pipeline for url {url}")
         self._logging_callback(f'Converting url {url}...', 20)
         try:
