@@ -294,7 +294,7 @@ class WeaviateService:
                 else Configure.Vectors.text2vec_huggingface(
                     name='hsg_rag_embeddings',
                     source_properties=['body'],
-                    model="sentence-transformers/all-MiniLM-L6-v2",
+                    model="nomic-ai/nomic-embed-text-v1.5",
                 )
             )
             
