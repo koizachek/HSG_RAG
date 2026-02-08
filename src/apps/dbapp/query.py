@@ -81,6 +81,9 @@ RELEVANT PROGRAMS: {', '.join(obj.properties['programs'])}
 
 CONTENT: 
 {obj.properties['body']}
+
+VECTOR:
+{obj.vector}
 """ for idx, obj in enumerate(response.objects, start=1)])
 
             result_str = f"Query: {query_text}\n{result_str}"
