@@ -49,3 +49,12 @@ DECLINE_MESSAGE = {
           "Please contact us directly at emba@unisg.ch.",
 }
 
+WITHDRAW_CONFIRMATION_MESSAGE = {
+  "de": "Ihre Einwilligung wurde widerrufen. Ihre Session-Daten wurden gelöscht. Ohne Einwilligung können wir Sie leider nicht beraten.",
+  "en": "Your consent has been withdrawn. Your session data has been deleted. Without consent, we cannot continue advising you."
+}
+
+WITHDRAW_TEXT = {
+    "de": "Einwilligung widerrufen",
+    "en": "Withdraw Consent"
+}
