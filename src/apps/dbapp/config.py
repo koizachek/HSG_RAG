@@ -5,11 +5,11 @@ from tkinter import ttk
 from src.apps.dbapp.framebase import CustomFrameBase
 from src.utils.stratutils.generator import generate_strategy
 from src.database.weavservice import WeaviateService
-from config import WeaviateConfiguration as wvtconf
+from src.config import config
 
 def _dump_schema(schema):
-    os.makedirs(wvtconf.PROPERTIES_PATH, exist_ok=True)
-    properties_file_path = os.path.join(wvtconf.PROPERTIES_PATH, 'properties.json')
+    os.makedirs(config.weaviate.PROPERTIES_PATH, exist_ok=True)
+    properties_file_path = os.path.join(config.weaviate.PROPERTIES_PATH, 'properties.json')
     with open(properties_file_path, 'w', encoding='utf-8') as f:
         json.dump(schema, f, indent=2, default=str)
 
@@ -22,13 +22,13 @@ class SchemaConfigurationFrame(CustomFrameBase):
     
 
     def _load_strategies(self) -> dict:
-        os.makedirs(wvtconf.STRATEGIES_PATH, exist_ok=True)
-        loaded_strats = os.listdir(wvtconf.STRATEGIES_PATH)
+        os.makedirs(config.weaviate.STRATEGIES_PATH, exist_ok=True)
+        loaded_strats = os.listdir(config.weaviate.STRATEGIES_PATH)
         strategies = {}
 
         for name, prop in self._schema.items():
             strategy_file = f"strat_{name}.py"
-            file_path = os.path.join(wvtconf.STRATEGIES_PATH, strategy_file)
+            file_path = os.path.join(config.weaviate.STRATEGIES_PATH, strategy_file)
             strategy_content = ""
             
             if strategy_file not in loaded_strats:
@@ -45,20 +45,22 @@ class SchemaConfigurationFrame(CustomFrameBase):
 
 
     def _save_strategy(self, name, strategy) -> None:
-        os.makedirs(wvtconf.STRATEGIES_PATH, exist_ok=True)
+        os.makedirs(config.weaviate.STRATEGIES_PATH, exist_ok=True)
         self._strategies[name] = strategy
 
-        file_path = os.path.join(wvtconf.STRATEGIES_PATH, f"strat_{name}.py")
+        file_path = os.path.join(config.weaviate.STRATEGIES_PATH, f"strat_{name}.py")
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(strategy)
 
 
     def _load_schema_data(self) -> dict:
-        schema = self._service._extract_data()['schema'][0]
-        
         schema_data = {}
+        
+        schema = self._service._extract_data()['schema']
+        if not schema:
+            return schema_data
 
-        for prop in schema['properties']:
+        for prop in schema[0]['properties']:
             data_property = {
                 'description': prop.get('description', ''),
                 'data_type': prop['dataType'][0],

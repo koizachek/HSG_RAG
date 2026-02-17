@@ -358,16 +358,7 @@ class WeaviateService:
             
             self._last_query_time = perf_counter()
             logger.info(f"Deleted {deleted_count}/{len(_collection_names)} collections")
-            
-            # Clean up hash file
-            if os.path.exists(HASH_FILE_PATH):
-                try:
-                    logger.info(f"Removing hash file: {HASH_FILE_PATH}")
-                    os.remove(HASH_FILE_PATH)
-                    logger.info("Hash file deleted successfully")
-                except Exception as e:
-                    logger.error(f"Failed to delete hash file: {e}")
-                    
+                                
         except Exception as e:
             logger.error(f"Collections deletion failed: {e}")
             self._client = None
