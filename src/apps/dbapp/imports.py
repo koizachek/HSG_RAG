@@ -10,7 +10,7 @@ from src.apps.dbapp.framebase import CustomFrameBase
 from src.database.weavservice import WeaviateService
 from src.pipeline.utilclasses import ProcessingResult
 from src.utils.lang import get_language_name
-from config import SCRAPE_URLS
+from src.config import config
 
 class ImportFrame(CustomFrameBase):
     def __init__(self, parent, service: WeaviateService) -> None:
@@ -111,7 +111,7 @@ class ImportFrame(CustomFrameBase):
         self.url_text = Text(right_frame, width=28, height=22, undo=True, wrap="word", font=("Segoe UI", 10)) 
         self.url_text.pack(side=LEFT, fill=BOTH, expand=True, padx=5, pady=5)
 
-        self.url_text.insert(END, '\n'.join(SCRAPE_URLS))
+        self.url_text.insert(END, '\n'.join(config.get('SCRAPING_TARGET_URLS')))
 
         # Scrollbar
         scrollbar = ttk.Scrollbar(right_frame, orient="vertical", command=self.url_text.yview)

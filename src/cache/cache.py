@@ -1,10 +1,11 @@
-from .cache_strategies import RedisCache, LocalCache
-from config import CacheConfig
 from threading import Lock
-from src.utils.logging import get_logger
-from .cache_metrics import CacheMetrics
+from src.cache.cache_metrics import CacheMetrics
+from src.cache.cache_strategies import RedisCache, LocalCache
 
-logger = get_logger("cache")
+from src.utils.logging import get_logger
+from src.config import config
+
+logger = get_logger("cache    ")
 
 class Cache:
     _instance = None
@@ -28,7 +29,7 @@ class Cache:
             if Cache._instance is not None:
                 return Cache._instance
 
-            settings = Cache._settings or {"mode": CacheConfig.CACHE_LOCAL, "enabled": True}
+            settings = Cache._settings or {"mode": 'local', "enabled": True}
             
             if not settings.get("enabled", True):
                 Cache._instance = None
@@ -37,25 +38,25 @@ class Cache:
             if Cache._cache_metrics is None:
                 Cache._cache_metrics = CacheMetrics()
 
-            mode = settings.get("mode", CacheConfig.CACHE_LOCAL)
-
-            if mode == CacheConfig.CACHE_CLOUD:
+            mode = settings.get("mode", 'local')
+            
+            if mode == 'cloud':
                 cache_obj = RedisCache(
-                    host=CacheConfig.CLOUD_HOST,
-                    port=CacheConfig.CLOUD_PORT,
-                    password=CacheConfig.CLOUD_PASS,
+                    host=config.cache.CLOUD_HOST,
+                    port=config.cache.CLOUD_PORT,
+                    password=config.cache.CLOUD_PASS,
                     mode=mode,
                     metrics=Cache._cache_metrics
                 )
-            elif mode == CacheConfig.CACHE_LOCAL:
+            elif mode == 'local':
                 cache_obj = RedisCache(
-                    host=CacheConfig.LOCAL_HOST,
-                    port=CacheConfig.LOCAL_PORT,
-                    password=CacheConfig.LOCAL_PASS,
+                    host=config.cache.LOCAL_HOST,
+                    port=config.cache.LOCAL_PORT,
+                    password=config.cache.LOCAL_PASS,
                     mode=mode,
                     metrics=Cache._cache_metrics
                 )
-            elif mode == CacheConfig.CACHE_DICT:
+            elif mode == 'dict':
                 Cache._instance = LocalCache(metrics=Cache._cache_metrics)
                 return Cache._instance
             else:
