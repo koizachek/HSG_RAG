@@ -1,5 +1,6 @@
 """
 Configuration settings for the Executive Education RAG Chatbot.
+PLEASE CONSIDER READING THE 'docs/configuration_system_documentation.md' TO PROPERLY USE THE NEW CONFIGURATION SYSTEM.
 """
 # ========================================= General Configuration ===========================================
 
