@@ -33,14 +33,7 @@ from src.rag.language_detection import LanguageDetector
 
 from src.utils.logging import get_logger
 from src.utils.lang import get_language_name
-from config import (
-    TOP_K_RETRIEVAL,
-    TRACK_USER_PROFILE,
-    ENABLE_RESPONSE_CHUNKING,
-    ENABLE_EVALUATE_RESPONSE_QUALITY,
-    MAX_CONVERSATION_TURNS,
-    LOCK_LANGUAGE_AFTER_N_MESSAGES, CONFIDENCE_THRESHOLD,
-)
+from src.config import config
 
 chain_logger = get_logger('agent_chain')
 
@@ -54,7 +47,7 @@ class ExecutiveAgentChain:
         self._conversation_history = []
         
         # AI-middlewares
-        if ENABLE_EVALUATE_RESPONSE_QUALITY:
+        if config.chain.EVALUATE_RESPONSE_QUALITY:
             self._quality_handler = QualityScoreHandler()
         self._language_detector = LanguageDetector()
 
@@ -98,7 +91,7 @@ class ExecutiveAgentChain:
             response, _ = self._dbservice.query(
                 query=query,
                 lang=lang,
-                limit=TOP_K_RETRIEVAL,
+                limit=config.get('TOP_K_RETRIEVAL'),
                 property_filters={
                     'programs': [program],
                 },
@@ -343,7 +336,7 @@ class ExecutiveAgentChain:
 
     def _update_conversation_state(self, user_query: str, agent_response: str) -> None:
         """Update conversation state by extracting information from the conversation."""
-        if not TRACK_USER_PROFILE:
+        if not config.convstate.TRACK_USER_PROFILE:
             return
 
         # Combine query and response for analysis
@@ -401,7 +394,7 @@ class ExecutiveAgentChain:
 
     def _log_user_profile(self) -> None:
         """Log user profile to JSON file."""
-        if not TRACK_USER_PROFILE:
+        if not config.convstate.TRACK_USER_PROFILE:
             return
 
         try:
@@ -491,7 +484,7 @@ class ExecutiveAgentChain:
         # Remember fallback language
         current_language = self._stored_language 
 
-        if len(self._conversation_history) >= MAX_CONVERSATION_TURNS:
+        if len(self._conversation_history) >= config.convstate.MAX_CONVERSATION_TURNS:
             return LeadAgentQueryResponse(
                 response = CONVERSATION_END_MESSAGE[current_language],
                 language = current_language,
@@ -530,7 +523,8 @@ class ExecutiveAgentChain:
             user_message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
 
             # Lock language after N user messages (allows language switch early in conversation)
-            if LOCK_LANGUAGE_AFTER_N_MESSAGES > 0 and user_message_count >= LOCK_LANGUAGE_AFTER_N_MESSAGES:
+            lang_lock_n = config.convstate.LOCK_LANGUAGE_AFTER_N_MESSAGES
+            if lang_lock_n > 0 and user_message_count >= lang_lock_n:
                 chain_logger.info(f"Language locked to '{self._stored_language}' (after {user_message_count} messages)")
                 current_language = self._stored_language
             else:
@@ -614,7 +608,7 @@ class ExecutiveAgentChain:
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
         # 4. Formatting
-        if ENABLE_RESPONSE_CHUNKING:
+        if config.chain.ENABLE_RESPONSE_CHUNKING:
             formatted_response = ResponseFormatter.format_response(
                 agent_response, agent_type='lead', enable_chunking=True, language=response_language
             )
@@ -625,13 +619,13 @@ class ExecutiveAgentChain:
 
         # Step 7: Language fallback mechanisms and response quality evaluation
         confidence_fallback = False
-        if ENABLE_EVALUATE_RESPONSE_QUALITY:
+        if config.chain.EVALUATE_RESPONSE_QUALITY:
             quality_evaluation: QualityEvaluationResult = self._quality_handler. \
                 evaluate_response_quality(preprocessed_query, formatted_response)
             
             chain_logger.info(f"Quality Score: {quality_evaluation.overall_score:1.2f}")
 
-            if quality_evaluation.overall_score < CONFIDENCE_THRESHOLD:
+            if quality_evaluation.overall_score < config.chain.CONFIDENCE_THRESHOLD:
                 confidence_fallback = True
                 formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
                 chain_logger.info(f"Fallback Mechanism activated!")
@@ -640,7 +634,7 @@ class ExecutiveAgentChain:
         self._conversation_history.append(AIMessage(formatted_response))
 
         # 6. Profiling
-        if TRACK_USER_PROFILE:
+        if config.convstate.TRACK_USER_PROFILE:
             self._update_conversation_state(preprocessed_query, formatted_response)
             
             message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
