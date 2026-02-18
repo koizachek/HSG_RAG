@@ -9,6 +9,10 @@ from typing import Optional
 import colorama
 from colorama import Fore, Style
 
+import json
+from datetime import datetime, timezone
+import os
+
 # Initialize colorama for cross-platform color support
 colorama.init()
 
@@ -282,3 +286,25 @@ def init_logging(
     
     # Configure external library loggers
     configure_external_loggers()
+
+
+class ConsentLogger:
+    def __init__(self):
+        log_dir = os.path.join('logs', 'consent')
+        os.makedirs(log_dir, exist_ok=True)
+
+    def log(self, session_id: str, decision: str, policy_version="1.0"):
+        try:
+            entry = {
+                "session_id": session_id,
+                "decision": decision,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "policy_version": policy_version
+            }
+
+            log_path = os.path.join('logs', 'consent', f"{session_id}.jsonl")
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, indent=2) + "\n")
+                
+        except Exception as e:
+            print(f"Error logging consent decision: {e}")

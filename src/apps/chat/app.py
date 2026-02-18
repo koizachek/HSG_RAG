@@ -6,7 +6,7 @@ from src.const.agent_response_constants import *
 from src.const.data_consent_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.utilclasses import LeadAgentQueryResponse
-from src.utils.logging import get_logger
+from src.utils.logging import get_logger, ConsentLogger
 from src.cache.cache import Cache
 
 logger = get_logger("chatbot_app")
@@ -16,6 +16,7 @@ class ChatbotApplication:
         self._app = gr.Blocks()
         self._language = language
         self._cache = Cache.get_cache()
+        self._consentLogger = ConsentLogger()
 
         with self._app:
             agent_state = gr.State(None)
@@ -94,6 +95,7 @@ class ChatbotApplication:
 
             def on_accept(lang: str):
                 agent, greeting = initialize_agent(lang, session_id=session_id_state.value)
+                self._consentLogger.log(session_id_state.value, "accepted", policy_version="1.0")
                 self._language = lang
                 return (
                     gr.update(visible=False),        # consent_screen hide
@@ -109,6 +111,7 @@ class ChatbotApplication:
 
             def on_decline(lang: str):
                 self._language = lang
+                self._consentLogger.log(session_id_state.value, "declined", policy_version="1.0")
                 return (
                     gr.update(visible=True),   # consent_screen stays
                     gr.update(visible=False),  # chat_screen stays hidden
@@ -127,6 +130,8 @@ class ChatbotApplication:
                 )
             
             def on_withdraw(lang: str, agent):
+                self._consentLogger.log(session_id_state.value, "withdrawn", policy_version="1.0")
+                
                 # 1) wipe server-side
                 if agent is not None:
                     try:
@@ -134,7 +139,7 @@ class ChatbotApplication:
                         logger.info("wipe_session_data executed")
                     except Exception as e:
                         logger.error(f"wipe_session_data failed: {e}", exc_info=True)
-                    
+                
                 # 2) lock chat again (back to consent screen)
                 return (
                     gr.update(visible=True),                                    # consent_screen

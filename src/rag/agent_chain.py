@@ -59,12 +59,10 @@ class ExecutiveAgentChain:
         self._language_detector = LanguageDetector()
 
         # Generate unique user ID for this session
-        self._user_id = str(uuid.uuid4())
-        self._session_id = session_id
+        self._user_id = session_id
 
         # Initialize conversation state with user profile tracking
         self._conversation_state: ConversationState = {
-            'session_id': self._session_id,
             'user_id': self._user_id,
             'user_language': None,
             'user_name': None,
@@ -462,15 +460,15 @@ class ExecutiveAgentChain:
         self._scope_violation_counts = {}
         self._aggressive_violation_count = 0
 
-        # --- 2) On-disk wipe (delete profile_<session_id>_*.json) ---
-        if not self._session_id:
-            chain_logger.warning("wipe_session_data called without session_id – skipping file deletion")
+        # --- 2) On-disk wipe (delete profile_<user_id>_*.json) ---
+        if not self._user_id:
+            chain_logger.warning("wipe_session_data called without user_id – skipping file deletion")
             return
 
         pattern = os.path.join(
             "logs",
             "user_profiles",
-            f"profile_{self._session_id}_*.json"
+            f"profile_{self._user_id}_*.json"
         )
 
         for path in glob.glob(pattern):
