@@ -132,9 +132,9 @@ SCRAPING_MAX_RETRIES = 3
 # This value might be overwritten by the delay set by the server.
 SCRAPING_CRAWL_DELAY = 1
 
-# An integer. Defines the backoff exponent for retries with exponential backoff.
+# An integer. Defines the backoff base value for retries with exponential backoff.
 # The higher is the number, the longer is the waiting interval between subsequent retries going to be.
-SCRAPING_BACKOFF_RATE = 2
+SCRAPING_BACKOFF_RATE = 1.25
 
 # A list of string URLs. Defines the starting points for the website scraping.
 SCRAPING_TARGET_URLS = [

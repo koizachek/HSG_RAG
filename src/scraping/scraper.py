@@ -1,8 +1,6 @@
-import requests, os, sys, logging
-from urllib.robotparser import RobotFileParser
-from urllib.error import URLError
+import os
 
-from src.scraping.utils import url_to_filename, call_with_exponential_backoff
+from src.scraping.utils import *
 from src.scraping.html_processor import HTMLProcessor
 from src.pipeline.utilclasses import ProcessingResult
 from src.utils.logging import get_logger
@@ -20,73 +18,36 @@ class Scraper:
 
         logger.info(f'Successfully initialized the scraper')
     
-
-    def _robots_exist(self, robots_url) -> bool:
-        try:
-            logger.info(f"Checking if 'robots.txt' accessible on path '{robots_url}'...")
-            response = requests.head(robots_url, allow_redirects=True, timeout=config.scraping.TIMEOUT)
-            if response.status_code not in [200, 404]:
-                logger.error("Cannot access the 'robots.txt' - recieved status code {response.status_code}!")
-                return False
-            return True
-        except requests.RequestException as e:
-            raise requests.RequestException(f"An error occured while requesting the URL '{robots_url}': {e}")
-        except _ as e:
-            raise e
-
-
-    def _parse_robots(self, base_url: str) -> RobotFileParser:
-        robots_url = f'{base_url.rstrip('/')}/robots.txt'
- 
-        # Check whether the robots.txt file is accessible from this url 
-        response = call_with_exponential_backoff(self._robots_exist, args=(robots_url,)) 
-        if not response['result']: return None 
-        
-        logger.info(f"File 'robots.txt' found for the target url '{base_url}'")
-        rp = RobotFileParser()
-        rp.set_url(robots_url)
-        
-        # Parse existing robots.txt file into the parser
-        def fetch_robots():
-            try:
-                rp.read()
-                return rp 
-            except URLError as e:
-                raise URLError(f"Failed to fetch the 'robots.txt': {e}")
-        
-        response = call_with_exponential_backoff(fetch_robots)
-        if response['status'] == 'FAIL': 
-            logger.error(f"Failed to fetch the 'robots.txt' file after {retries} retries, last error: {last_error}") 
-            return None 
-
-        return rp
-    
-
     def scrape(self, target_url: str) -> list[ProcessingResult]:
         results = []
 
         if not target_url:
             logger.warning('The target URL string is empty!')
             return results
-        
-        logger.info(f"Starting the scraping process for the target URL '{target_url}'...")
-        rp = self._parse_robots(target_url)
-        
-        if not rp:
-            logger.warning(f"File 'robots.txt' is not accessible for target URL '{target_url}'!")
+       
+        # Test whether the target URL is even accessible before initializing the scraping procedure
+        response = call_with_exponential_backoff(fetch_url, args=(target_url,))
+        if response['status'] == 'FAIL':
+            logger.error(f"Unaccessible target URL '{target_url}': {response['last_error']}")
+            return results
+        if not response['result']:
+            logger.warning(f"Unnaccessible target URL '{target_url}': Recieved client/server error!")
             return results
 
+        logger.info(f"Starting the scraping process for the target URL '{target_url}'...")
+        rp = parse_robots(target_url)
+        
+        if not rp:
+            logger.warning(
+                f"Could not fetch the 'robots.txt' file for the target URL '{target_url}'! " +
+                 "(Are you sure the scraping begins from root?)"
+            )
+            return results
+        
         logger.info(f"Parsed the 'robots.txt' file for target URL '{target_url}'")
 
         crawl_delay = rp.crawl_delay('scraper')
         
-        def fetch_url(url: str) -> str:
-            try:
-                response = requests.get(url, allow_redirects=True)
-                return response.text
-            except Exception as e:
-                raise e
-
         urls = [target_url] 
         while urls:
             url = urls.pop()
@@ -96,6 +57,9 @@ class Scraper:
             response = call_with_exponential_backoff(fetch_url, args=(url,), delay=crawl_delay)
             if response['status'] == 'FAIL':
                 logger.warning("Failed to fetch URL '{url}': {response['last_error']}")
+                continue
+            if not response['result']:
+                logger.warning("Cannot fetch '{url}'!")
                 continue
             
             raw_html = response['result']

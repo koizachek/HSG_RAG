@@ -29,10 +29,7 @@ class HTMLProcessor(ProcessorBase):
         
         self._logging_callback(f'{url}: Collecting chunks...', 40)
         collected_chunks = self._collect_chunks(document)
-        extracted_text = document.export_to_markdown(
-            strict_text=True, 
-            image_placeholder='',
-        )
+        extracted_text = document.export_to_markdown(image_placeholder='')
 
         self._logging_callback(f'{url}: Preparing chunks for importing...', 60)
         prepared_chunks = self._prepare_chunks(url, extracted_text, collected_chunks)
