@@ -219,6 +219,7 @@ class ImportFrame(CustomFrameBase):
                         get_language_name(result.lang)
                     )
                 )
+        config.dbapp['logging_callback'] = logging_callback
 
         def import_task():
             button_state_callback(DISABLED)

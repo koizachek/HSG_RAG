@@ -12,7 +12,7 @@ from src.config import config
 
 # Initialize logging
 def logging_startup():
-    init_logging(interactive_mode=False)
+    init_logging()
     return get_logger('main_module')
 
 

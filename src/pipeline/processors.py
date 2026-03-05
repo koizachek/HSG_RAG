@@ -1,5 +1,5 @@
 from collections import defaultdict
-import os, re, time, json
+import os, re, json
 import importlib.util 
 
 from pathlib import Path
@@ -16,7 +16,7 @@ from docling.document_converter import DocumentConverter, PdfFormatOption, Input
 from docling.chunking import HybridChunker
 from docling_core.types.doc.document import DoclingDocument
 
-from src.pipeline.utilclasses import ProcessingResult
+from src.pipeline.utilclasses import ProcessingResult, _logging_callback_placeholder
 from src.utils.lang import detect_language
 from src.utils.logging import get_logger
 from src.config import config
@@ -25,7 +25,7 @@ weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
 
 class ProcessorBase:
-    def __init__(self, logging_callback) -> None:
+    def __init__(self) -> None:
         """
         Initialize the base processor with document conversion and chunking tools.
 
@@ -63,7 +63,7 @@ class ProcessorBase:
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
             },
         )
-        tokenizer = AutoTokenizer.from_pretrained(EMBEDDING_MODEL)
+        tokenizer = AutoTokenizer.from_pretrained(config.processing.EMBEDDING_MODEL)
         self._chunker = HybridChunker(
             tokenizer=HuggingFaceTokenizer(
                 tokenizer=tokenizer,
@@ -73,7 +73,7 @@ class ProcessorBase:
             merge_peers=True
         )
         self._strategies = self._load_strategies()
-        self._logging_callback = logging_callback
+        self._logging_callback = config.dbapp['logging_callback'] or _logging_callback_placeholder
         
     
     def _load_strategies(self):
@@ -346,7 +346,7 @@ class DocumentProcessor(ProcessorBase):
         )
 
 
-class WebsiteProcessor(ProcessorBase):
+class HTMLProcessor(ProcessorBase):
     def process(self, url: str) -> ProcessingResult:
         """
         Process the content of a single webpage URL, converting it to chunks with metadata.
@@ -361,17 +361,15 @@ class WebsiteProcessor(ProcessorBase):
             ProcessingResult: The result containing chunks, source URL, and detected language.
             Returns None if conversion fails.
         """
-        time.sleep(2)
-
         if not url:
             return ProcessingResult(source=url, chunks=None, lang='')
 
         weblogger.info(f"Initiating processing pipeline for url {url}")
         self._logging_callback(f'Converting url {url}...', 20)
         try:
-            document = self._converter.convert(url).document
+            document = self._converter.convert_string(url, InputFormat.HTML).document
         except Exception as e:
-            weblogger.error(f"Failed to load the contents of the url page {url}: {e}")
+            weblogger.error(f"Failed to load the contents of the url page: {e}")
             return ProcessingResult(source=url, chunks=None, lang='')
         
         self._logging_callback(f'Collecting chunks from {url}...', 40)

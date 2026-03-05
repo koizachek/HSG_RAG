@@ -1,41 +1,32 @@
 """
 Centralized logging configuration for the Executive Education RAG Chatbot.
 """
-from threading import Lock
-import logging, os, sys, warnings, copy
-from pathlib import Path
-from typing import Optional
-
-import colorama
+import logging, os, sys, warnings, colorama
+from collections import defaultdict
 from colorama import Fore, Style
+from typing import Literal
+
+from src.config import config
+
+file_handlers = defaultdict(list)
 
 # Initialize colorama for cross-platform color support
 colorama.init()
 
-class CodeBlockFormatter(logging.Formatter):
-    ALIASES = {
-        'DEBUG':    'DEBUG',
-        'INFO':     'INFO ',
-        'WARNING':  'WARN ',
-        'ERROR':    'ERROR',
-        'CRITICAL': 'CRITC'
-    }
-
+class DefaultFormatter(logging.Formatter):
     def format(self, record):
-        if hasattr(record, 'levelname') and record.levelname in self.ALIASES:
-            record.levelname = self.ALIASES[record.levelname]
-
-        if hasattr(record, 'name'):
-            rname = record.name 
-            if len(rname) <= 17: rname += ' '*(17-len(rname))
-            else: rname = rname[14:] + '...'
-            record.name = rname
+        record = logging.makeLogRecord(record.__dict__)
         
+        if hasattr(record, 'name'):
+            rname = record.name if len(record.name) <= 17 else record.name[:14] + '...'
+            record.name = rname
+
         return super().format(record)
 
 
 class ColoredFormatter(logging.Formatter):
-    """Custom formatter with color support for console output."""
+    """Custom formatter with color support for console output ONLY.
+       Never mutates the original LogRecord (so file handlers stay clean)."""
     
     COLORS = {
         'DEBUG':    Fore.CYAN,
@@ -53,15 +44,19 @@ class ColoredFormatter(logging.Formatter):
     }
     
     def format(self, record):
+        record = logging.makeLogRecord(record.__dict__)
+
         # Add color to the level name
         if hasattr(record, 'levelname') and record.levelname in self.COLORS:
             lname = record.levelname
-            if hasattr(record, 'message') and lname == 'ERROR':
-                record.message = f"{self.COLORS[lname]}{record.message}{Style.RESET_ALL}"
-
-            record.levelname = f"{self.COLORS[lname]}{self.ALIASES[lname]}{Style.RESET_ALL}"
+            color = self.COLORS[lname]
             
+            if lname == 'ERROR' and hasattr(record, 'message'):
+                record.message = f"{color}{record.message}{Style.RESET_ALL}"
 
+            record.levelname = f"{color}{self.ALIASES[lname]}{Style.RESET_ALL}"
+
+        # Add color to the module name
         if hasattr(record, 'name'):
             rname = record.name if len(record.name) <= 17 else record.name[:14] + '...'
             record.name = f"{Fore.CYAN}{rname}{Style.RESET_ALL}"
@@ -69,51 +64,19 @@ class ColoredFormatter(logging.Formatter):
         return super().format(record)
 
 
-class CachedLogHandler(logging.Handler):
-    def __init__(self, level = 0) -> None:
-        super().__init__(level)
-        self._cache = []
-        self._max_lines = 50
-        self._lock = Lock()
-
-
-    def emit(self, record):
-        record_copy = copy.copy(record)
-        msg = self.format(record_copy)
-        with self._lock:
-            self._cache.append(msg)
-
-    def get_logs(self):
-        with self._lock:
-            return '\n'.join(self._cache)
-
-
-cached_log_handler: CachedLogHandler = CachedLogHandler()
-
-def setup_logging(
-    level: str = "INFO",
-    log_file: Optional[str] = None,
-    interactive_mode: bool = False,
-    module_name: Optional[str] = None
-) -> logging.Logger:
+def setup_logging(level: str = "INFO") -> logging.Logger:
     """
     Set up centralized logging configuration.
     
     Args:
-        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: Optional path to log file. If None, uses default location.
-        interactive_mode: If True, logs only to file in interactive mode
-        module_name: Name of the module requesting the logger
-    
+        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)    
     Returns:
         Configured logger instance
     """
-    global cached_log_handler
-
     # Convert string level to logging constant
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     
-    # Create logger
+    # Get root logger
     logger = logging.getLogger()
     
     # Avoid duplicate handlers if logger already configured
@@ -123,7 +86,7 @@ def setup_logging(
     logger.setLevel(numeric_level)
     
     # Create formatters
-    detailed_formatter = logging.Formatter(
+    detailed_formatter = DefaultFormatter(
         "(%(asctime)s) %(name)s\t %(levelname)s: %(message)s",
         datefmt="%Y.%m.%d %H:%M:%S"
     )
@@ -132,41 +95,17 @@ def setup_logging(
         "(%(asctime)s) %(name)s\t %(levelname)s: %(message)s",
         datefmt="%Y.%m.%d %H:%M:%S"
     )
-
-    codeblock_formatter = CodeBlockFormatter(
-       "%(levelname)s %(name)s\t : %(message)s", 
-    )
+        
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(numeric_level)
     
-    # Set up file logging
-    if log_file or interactive_mode:
-        if not log_file:
-            # Default log file location
-            log_dir = Path("logs")
-            log_dir.mkdir(exist_ok=True)
-            log_file = log_dir / "rag_chatbot.log"
+    # Use colored formatter if terminal supports it
+    if _supports_color():
+        console_handler.setFormatter(colored_formatter)
+    else:
+        console_handler.setFormatter(detailed_formatter)
         
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
-        file_handler.setLevel(numeric_level)
-        file_handler.setFormatter(detailed_formatter)
-        logger.addHandler(file_handler)
-    
-    # Set up the cached log handler for gradio Code block output
-    cached_log_handler.setLevel(numeric_level)
-    cached_log_handler.setFormatter(codeblock_formatter)
-
-    # Set up console logging (unless in interactive mode)
-    if not interactive_mode:
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(numeric_level)
-        
-        # Use colored formatter if terminal supports it
-        if _supports_color():
-            console_handler.setFormatter(colored_formatter)
-        else:
-            console_handler.setFormatter(detailed_formatter)
-        
-        logger.addHandler(cached_log_handler)
-        logger.addHandler(console_handler)
+    logger.addHandler(console_handler)
     
     return logger
 
@@ -182,8 +121,53 @@ def get_logger(module_name: str) -> logging.Logger:
         Logger instance
     """
     logger = logging.getLogger(module_name)
-    logger.propagate = True       
+    logger.propagate = True 
     return logger
+
+
+def create_file_handler(
+    file_path: str, 
+    module_name: str, 
+    mode: Literal['a', 'w'] = 'a', 
+    level = logging.WARNING
+) -> logging.FileHandler:
+    """
+    Initializes a new FileHandler to redirect logs to the files.
+    All subsequent calls to the 'append_handlers' function with the name of the module 
+    will append handlers stored under the module name to the logger.
+
+    Args:
+        file_path: path to the .log file where logs will be stored.
+        module_name: name of the logging module that this handler belongs to. 
+
+    Returns:
+        File handler instance.
+    """
+    global file_handlers
+
+    file_handler = logging.FileHandler(
+        file_path, 
+        mode=mode,
+        encoding='utf-8'
+    )
+    file_handler.setLevel(level)
+
+    formatter = DefaultFormatter(
+        "(%(asctime)s) %(name)s\t %(levelname)s: %(message)s",
+        datefmt="%Y.%m.%d %H:%M:%S"
+    )
+    file_handler.setFormatter(formatter)
+    
+    file_handlers[module_name].append(file_handler)
+
+    return file_handler
+
+
+def append_file_handlers(logger: logging.Logger, module_name: str) -> None:
+    global file_handlers
+
+    for handler in file_handlers.get(module_name, []):
+        logger.addHandler(handler)
 
 
 def _supports_color() -> bool:
@@ -212,22 +196,6 @@ def _supports_color() -> bool:
     return False
 
 
-def detect_interactive_mode() -> bool:
-    """
-    Detect if the application is running in interactive mode.
-    
-    Returns:
-        True if in interactive mode, False otherwise
-    """
-    # Check if no command line arguments were provided (except script name)
-    if len(sys.argv) == 1:
-        return True
-    
-    # Check if only the script name and no other arguments
-    # This indicates the chatbot is running in default interactive mode
-    return False
-
-
 def configure_external_loggers(level: str = "WARNING") -> None:
     """
     Configure logging for external libraries to reduce noise.
@@ -241,6 +209,7 @@ def configure_external_loggers(level: str = "WARNING") -> None:
         'requests',
         'chromadb',
         'docling',
+        'docling_core',
         'weaviate',
         'langchain',
         'langgraph',
@@ -254,31 +223,44 @@ def configure_external_loggers(level: str = "WARNING") -> None:
         logging.getLogger(logger_name).setLevel(numeric_level)
 
 
+def configure_internal_loggers():
+    # Logging output for all loggers 
+    root_handler = create_file_handler(
+        file_path=os.path.join(config.paths.LOGS, 'logs.log'),
+        module_name='*',
+        mode='a',
+        level=logging.INFO,
+    )
+    root_logger = logging.getLogger()
+    root_logger.addHandler(root_handler)
+
+    # Scraping loggers tree configuration
+    scraping_handler = create_file_handler(
+        file_path=os.path.join(config.paths.LOGS, 'scraping.log'), 
+        module_name='scraping', 
+        mode='a',
+        level=logging.INFO,
+    )
+    scraping_logger = logging.getLogger('scraper')
+    scraping_logger.addHandler(scraping_handler)
+
+
 # Global configuration function
-def init_logging(
-    level: str = "INFO",
-    log_file: Optional[str] = None,
-    interactive_mode: Optional[bool] = None
-) -> None:
+def init_logging(level: str = "INFO") -> None:
     """
     Initialize the global logging configuration.
     
     Args:
         level: Logging level
         log_file: Optional log file path
-        interactive_mode: If None, auto-detect interactive mode
-    """
-    if interactive_mode is None:
-        interactive_mode = detect_interactive_mode()
-    
+    """ 
     warnings.filterwarnings("ignore")
 
     # Set up root logger
-    setup_logging(
-        level=level,
-        log_file=log_file,
-        interactive_mode=interactive_mode
-    )
-    
+    setup_logging(level=level)
+
+    # Configure loggers defined by this application
+    configure_internal_loggers()
+
     # Configure external library loggers
     configure_external_loggers()

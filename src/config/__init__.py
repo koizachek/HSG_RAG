@@ -9,8 +9,11 @@ class AppConfig:
     convstate:  ConversationStateConfig = ConversationStateConfig()
     processing: ProcessingConfig        = ProcessingConfig()
     weaviate:   WeaviateConfig          = WeaviateConfig()
+    scraping:   ScrapingConfig          = ScrapingConfig()
     chain:      ChainConfig             = ChainConfig()
     cache:      CacheConfig             = CacheConfig()
+    paths:      PathsConfig             = PathsConfig()
+    dbapp:      DatabaseAppConfig       = DatabaseAppConfig()
     llm:        LLMProviderConfig       = LLMProviderConfig()
     
     # ===========================================================================
