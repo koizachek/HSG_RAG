@@ -1,15 +1,87 @@
-import requests
+import requests, json, os, re, difflib
+from collections import defaultdict
 from time import sleep 
 from urllib.robotparser import RobotFileParser
 from urllib.error import URLError
 
 from src.config import config
+from src.const.page_priority import *
+from src.const.page_blacklist import PAGE_BLACKLIST
 from src.utils.logging import get_logger
 
 logger = get_logger('scraper.utils')
 
 def url_to_filename(url: str) -> str:
     return url.lstrip('https://').lstrip('http://').rstrip('/').replace('/', '_').replace('.', '-')
+
+
+def _fuzzy_match(word, keyword, threshold=0.8):
+    """
+    Check if word fuzzy matches keyword using difflib ratio.
+    """
+    return difflib.SequenceMatcher(None, word.lower(), keyword.lower()).ratio() >= threshold
+
+def is_url_blacklisted(url) -> bool:
+    words = re.findall(r'(\w*-*)+', url)
+
+    for word in words:
+        for kw in PAGE_BLACKLIST:
+            if _fuzzy_match(word, kw):
+                return True 
+
+    return False
+
+def detect_topic_and_priority(text: str, language: str):
+    text_lower = text.lower()
+    words = re.findall(r'\w+', text_lower)
+    
+    for word in words:
+        for kw in PAGE_PRIORITY_KEYWORDS_HIGH[language]:
+            if _fuzzy_match(word, kw):
+                return kw, 'high'
+        for kw in PAGE_PRIORITY_KEYWORDS_MEDIUM[language]:
+            if _fuzzy_match(word, kw):
+                return kw, 'medium'
+        for kw in PAGE_PRIORITY_KEYWORDS_LOW[language]:
+            if _fuzzy_match(word, kw):
+                return kw, 'low'
+
+    return 'low', 'none'
+
+
+def load_urls_dictionary(dict_name: str, refresh_entry: str = '') -> dict:
+    url_dict = defaultdict(set)
+    urls_json_path = os.path.join(config.paths.URLS_OUTPUT, f'{dict_name}.json') 
+    if os.path.exists(urls_json_path) and refresh_entry != 'all':
+        try:
+            with open(urls_json_path, 'r') as f:
+                url_dict = json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load URL dictionary '{dict_name}': {e}")
+    
+    if refresh_entry in url_dict.keys():
+        if isinstance(url_dict[refresh_entry], list):
+            url_dict[refresh_entry].clear() 
+
+    for key in url_dict.keys():
+        if isinstance(url_dict[key], list):
+            url_dict[key] = set(url_dict[key])
+
+    return url_dict
+
+
+def write_urls_dictionary(urls_dict: dict, dict_name: str):
+    urls_json_path = os.path.join(config.paths.URLS_OUTPUT, f'{dict_name}.json')
+    
+    for key in urls_dict.keys():
+        if isinstance(urls_dict[key], set):
+            urls_dict[key] = list(urls_dict[key])
+    
+    try:
+        with open(urls_json_path, 'w') as f:
+            json.dump(urls_dict, f, indent=4)
+    except Exception as e:
+        logger.error(f"Failed to save ULR dictionary '{dict_name}': {e}")
 
 
 def fetch_url(url: str) -> str:
@@ -25,6 +97,7 @@ def fetch_url(url: str) -> str:
         return ""
     except Exception as e:
         raise e
+
 
 def _robots_exist(robots_url) -> bool:
     try:

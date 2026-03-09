@@ -30,8 +30,9 @@ pandas>=2.0.3
 # UI
 rich>=13.5.2
 
-# Document processing pipeline
+# Processing pipeline
 docling>=2.55.0
+ultimate-sitemap-parser==1.8.0
 
 # Weaviate Vector DB 
 weaviate-client>=4.16.9

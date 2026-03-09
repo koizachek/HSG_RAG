@@ -11,11 +11,11 @@ class TestHappyPath:
     def test_happy_path(self):
         init_logging()
 
-        target_url = config.get('SCRAPING_TARGET_URLS')[0]
+        target_url = 'https://embax.ch'
         url_filename = url_to_filename(target_url)
         scraper = Scraper()
         
-        results = scraper.scrape(target_url)
+        results = scraper.scrape_target(target_url)
         assert len(results) > 0
         
         logs_file_path = os.path.join(config.paths.LOGS, 'scraping.log')

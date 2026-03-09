@@ -214,7 +214,8 @@ def configure_external_loggers(level: str = "WARNING") -> None:
         'langchain',
         'langgraph',
         'openai',
-        'httpx'
+        'httpx',
+        'usp',
     ]
     
     numeric_level = getattr(logging, level.upper(), logging.WARNING)
@@ -238,7 +239,7 @@ def configure_internal_loggers():
     scraping_handler = create_file_handler(
         file_path=os.path.join(config.paths.LOGS, 'scraping.log'), 
         module_name='scraping', 
-        mode='a',
+        mode='w',
         level=logging.INFO,
     )
     scraping_logger = logging.getLogger('scraper')
