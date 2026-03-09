@@ -1,8 +1,7 @@
-import os
 from typing import Literal
 from dotenv import load_dotenv 
 
-import config 
+import config, os
 
 load_dotenv()
 
@@ -19,19 +18,53 @@ def _get(param: str, default=None, type_=None):
     except (ValueError, TypeError):
         raise ValueError(f"Failed to cast '{param}' value '{value}' to {type_.__name__}")
 
-class ConversationStateConfig:
+
+class ConfigBase:
+    PARAMS: dict = dict()
+
+    @classmethod
+    def __getitem__(cls, key):
+        return cls.PARAMS.get(key, None)
+
+    @classmethod
+    def __setitem__(cls, key, value):
+        cls.PARAMS[key] = value
+
+
+class DatabaseAppConfig(ConfigBase):
+    pass
+
+
+class PathsConfig(ConfigBase):
+    DATA: str = _get('DATA_PATH')
+    LOGS: str = _get('LOGS_PATH')
+    URLS_OUTPUT = os.path.join(_get('DATA_PATH'), 'raw_html')
+    RAW_HTML_OUTPUT: str       = os.path.join(_get('DATA_PATH'), 'raw_html')
+    EXTRACTED_TEXT_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'extracted_text')
+
+
+class ScrapingConfig(ConfigBase):
+    TIMEOUT: int      = _get('SCRAPING_SCRAPING_TIMEOUT', 30)
+    MAX_RETRIES: int  = _get('SCRAPING_MAX_RETRIES', 3)
+    CRAWL_DELAY: int  = _get('SCRAPING_CRAWL_DELAY', 1)
+    BACKOFF_RATE: int = _get('SCRAPING_BACKOFF_RATE', 2)
+    TARGET_URLS: int  = _get('SCRAPING_TARGET_URLS', None)
+
+
+class ConversationStateConfig(ConfigBase):
     TRACK_USER_PROFILE = _get('TRACK_USER_PROFILE')
     LOCK_LANGUAGE_AFTER_N_MESSAGES = _get('LOCK_LANGUAGE_AFTER_N_MESSAGES')
     MAX_CONVERSATION_TURNS = _get('MAX_CONVERSATION_TURNS')
 
 
-class ProcessingConfig:
+class ProcessingConfig(ConfigBase):
     LANG_AMBIGUITY_THRESHOLD: float = _get('LANG_AMBIGUITY_THRESHOLD')
+    EMBEDDING_MODEL:          float = _get('EMBEDDING_MODEL')
     MAX_TOKENS:    int = _get('MAX_TOKENS')
     CHUNK_OVERLAP: int = _get('CHUNK_OVERLAP')
 
 
-class ChainConfig:
+class ChainConfig(ConfigBase):
     ENABLE_RESPONSE_CHUNKING:  bool  = _get('ENABLE_RESPONSE_CHUNKING', True)
     EVALUATE_RESPONSE_QUALITY: bool  = _get('ENABLE_EVALUATE_RESPONSE_QUALITY', True)
     CONFIDENCE_THRESHOLD:      float = _get('CONFIDENCE_THRESHOLD')
@@ -42,7 +75,7 @@ class ChainConfig:
     MAX_RESPONSE_WORDS_SUBAGENT: int = _get('MAX_RESPONSE_WORDS_SUBAGENT', 200)
 
 
-class CacheConfig:
+class CacheConfig(ConfigBase):
     CACHE_MODE: Literal['local', 'cloud', 'dict'] = _get('CACHE_MODE')
 
     LOCAL_HOST: str = _get('CACHE_LOCAL_HOST', 'localhost')
@@ -57,7 +90,7 @@ class CacheConfig:
     MAX_SIZE_CACHE: int = _get('CACHE_MAX_SIZE', 1000)
 
 
-class WeaviateConfig:
+class WeaviateConfig(ConfigBase):
     LOCAL_DATABASE: bool = _get('WEAVIATE_IS_LOCAL')
     WEAVIATE_COLLECTION_BASENAME: str = _get('WEAVIATE_COLLECTION_BASENAME')
     

@@ -8,6 +8,6 @@ from dotenv import load_dotenv
 if __name__ == "__main__":
 	load_dotenv()
 	Cache.configure(mode='cloud', no_cache=False)
-	init_logging(interactive_mode=False)
+	init_logging()
 	ChatbotApplication("de").run()
 

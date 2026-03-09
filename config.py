@@ -8,6 +8,14 @@ PLEASE CONSIDER READING THE 'docs/configuration_system_documentation.md' TO PROP
 # the application can operate. Defaults to ['en', 'de'].
 AVAILABLE_LANGUAGES = ['en', 'de']
 
+# A string representing a path (relative to the project root or absolute) to the directory
+# where the data output files such as scraping or document processing outputs will be stored.
+DATA_PATH = 'data'
+
+# A string representing a path (relative to the project root or absolute) to the directory
+# where the loging files will be stored.
+LOGS_PATH = 'logs'
+
 # =================================== Conversation State Configuration ======================================
 
 # A boolean; either True or False. Enables the collection of user preferences 
@@ -111,11 +119,28 @@ MAX_TOKENS = 512
 # An integer. Defines the amount of overlapping tokens between chunks to keep the context. 
 CHUNK_OVERLAP = 100
 
+
+# An integer representing seconds. Defines the maximum waiting time for the target server 
+# responses during the scraping procedures.
+SCRAPING_TIMEOUT = 30 
+
+# An integer. Defines the maximum amount of additional tries that will be performed 
+# if the initial request to the server failed.
+SCRAPING_MAX_RETRIES = 3
+
+# An integer representing seconds. Defines the waiting interval between two server calls.
+# This value might be overwritten by the delay set by the server.
+SCRAPING_CRAWL_DELAY = 1
+
+# An integer. Defines the backoff base value for retries with exponential backoff.
+# The higher is the number, the longer is the waiting interval between subsequent retries going to be.
+SCRAPING_BACKOFF_RATE = 1.25
+
 # A list of string URLs. Defines the starting points for the website scraping.
 SCRAPING_TARGET_URLS = [
-    'https://emba.unisg.ch/de/',    # EMBA HSG root
-    'https://emba.unisg.ch/en/',    # IEMBA HSG root 
-    'https://embax.ch/',            # emba X root
+    'https://emba.unisg.ch',       # EMBA HSG root
+    'https://emba.unisg.ch/en',    # IEMBA HSG root 
+    'https://embax.ch',            # emba X root
 ]
 
 # ======================================== Agent Chain Configuration ========================================
