@@ -39,9 +39,11 @@ class PathsConfig(ConfigBase):
     DATA: str = _get('DATA_PATH')
     LOGS: str = _get('LOGS_PATH')
     URLS_OUTPUT:     str = os.path.join(_get('DATA_PATH'), 'urls')
+    CHUNKS_OUTPUT:   str = os.path.join(_get('DATA_PATH'), 'chunks')
     SCRAPING_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'scraping')
     RAW_TEXT_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'raw_text')
     RAW_HTML_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'raw_html')
+    METADATA_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'metadata')
     EXTRACTED_TEXT_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'extracted_text')
 
 

@@ -1,16 +1,18 @@
-import os
+import os, datetime, shutil
+from collections import Counter
 from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
 from usp.objects.sitemap import InvalidSitemap
 from usp.tree import sitemap_tree_for_homepage
 
-from src.scraping.utils import *
-from src.scraping.html_processor  import HTMLProcessor
-from src.scraping.content_cleaner import ContentCleaner
-from src.pipeline.utilclasses import ProcessingResult
-from src.utils.lang import detect_language 
-from src.utils.logging import get_logger
-from src.config import config
+from .utils import *
+from .html_processor  import HTMLProcessor
+from .content_cleaner import ContentCleaner
+
+from ..pipeline.utilclasses import ProcessingResult
+from ..utils.lang import detect_language 
+from ..utils.logging import get_logger
+from ..config import config
 
 logger = get_logger('scraper.core')
 
@@ -20,9 +22,11 @@ class Scraper:
         self._content_cleaner: ContentCleaner = ContentCleaner()
         
         os.makedirs(config.paths.URLS_OUTPUT,           exist_ok=True)
+        os.makedirs(config.paths.CHUNKS_OUTPUT,         exist_ok=True)
         os.makedirs(config.paths.SCRAPING_OUTPUT,       exist_ok=True)
         os.makedirs(config.paths.RAW_HTML_OUTPUT,       exist_ok=True)
         os.makedirs(config.paths.RAW_TEXT_OUTPUT,       exist_ok=True)
+        os.makedirs(config.paths.METADATA_OUTPUT,       exist_ok=True)
         os.makedirs(config.paths.EXTRACTED_TEXT_OUTPUT, exist_ok=True)
 
         logger.info(f'Successfully initialized the scraper')
@@ -33,11 +37,11 @@ class Scraper:
         analyzed_domain = self._analyze_domain(target_url)
         if not analyzed_domain:
             logger.error(f"Failed to scrape target URL '{target_url}'")
-            return None
+            return []
         
         documents        = list()
         discovered_urls  = set() 
-        sitemap_urls_dct = load_urls_dictionary('sitemap_urls', target_url)
+        sitemap_urls_dct = load_set_dict(config.paths.URLS_OUTPUT, 'sitemap_urls', target_url)
         
         # Step 2: Validate and scrape URLs listed in the sitemap
         logger.info(f'Starting validation and scraping for sitemap URLs...')
@@ -63,13 +67,13 @@ class Scraper:
                     f"out of {len(analyzed_domain['sitemap_urls'])} " +
                     f"sitemap URLs for target URL '{target_url}'")
         
-        write_urls_dictionary(sitemap_urls_dct, 'sitemap_urls')
+        write_set_dict(config.paths.URLS_OUTPUT, 'sitemap_urls', sitemap_urls_dct)
         logger.info(f"Stored sitemap URLs for target URL '{target_url}'")
         
         #Step 3: Analyze discovered URLs and search for the new ones
         discovered_urls = [{'url': url, 'depth': 0} for url in discovered_urls 
                            if url not in sitemap_urls_dct[target_url]]
-        discovered_urls_dct = load_urls_dictionary('discovered_urls', target_url)
+        discovered_urls_dct = load_set_dict(config.paths.URLS_OUTPUT, 'discovered_urls', target_url)
 
         logger.info(f"Discovered {len(discovered_urls)} unique URLs while scraping the sitemap URLs")
 
@@ -79,7 +83,7 @@ class Scraper:
             while discovered_urls:
                 discovered_url = discovered_urls.pop()
                 url = discovered_url['url']
-                
+
                 scraping_result = self._scrape_page(url, analyzed_domain['delay'], discovered_url['depth'])
                 if not scraping_result: continue  
                 
@@ -89,24 +93,27 @@ class Scraper:
                     if any([is_url_blacklisted(discovered_url), 
                             urlsplit(discovered_url).netloc != analyzed_domain['target_domain']]): 
                         continue
-                    discovered_urls.add({'url': discovered_url, 'depth': scraping_result['discovery_depth']})
+                    discovered_urls.append({'url': discovered_url, 'depth': scraping_result['discovery_depth']})
 
                 discovered_urls_dct[target_url].add(discovered_url)
 
             logger.info(f"Indexed {len(discovered_urls_dct[target_url])} new URLs for target URL '{target_url}'")
  
-        write_urls_dictionary(discovered_urls_dct, 'discovered_urls')
+        write_set_dict(config.paths.URLS_OUTPUT, 'discovered_urls', discovered_urls_dct)
         logger.info(f"Stored discovered URLs for target URL '{target_url}'")
         
         # Step 4: Clean documents, collect text and tags
-        url_tags_dct       = load_urls_dictionary('url_tags')
-        url_priorities_dct = load_urls_dictionary('url_priorities') 
+        url_tags_dct       = load_set_dict(config.paths.URLS_OUTPUT, 'url_tags')
+        url_priorities_dct = load_set_dict(config.paths.URLS_OUTPUT, 'url_priorities')
+        chunk_metadata_dct = load_set_dict(config.paths.METADATA_OUTPUT, 'chunk_metadata_dct')
+        chunk_metadata_dct[target_url] = []
+        program_counter = Counter()
 
         self._content_cleaner.perform_content_analysis(target_url)
         for document in documents:
             url = document.name
-            self._content_cleaner.clean_furniture(document)
-            self._content_cleaner.clean_repetitive_content(document)
+            chunk_metadata_dct[url] = []
+            self._content_cleaner.clean_document(document)
             
             extracted_text = self._processor.convert_to_txt(document)
             url_filename = url_to_filename(url) 
@@ -116,35 +123,68 @@ class Scraper:
                 logger.info(f"Saved extracted text for URL '{url}' under '{extracted_text_file_path}'")
             
             language = detect_language(extracted_text)
-            topic, priority = detect_topic_and_priority(extracted_text, language)           
-            url_tags_dct[url] = {
+            topic, priority = detect_topic_and_priority(extracted_text, language)
+            program = self._processor.strategies_processor.apply_strategy(
+                strategy_name='programs', 
+                arguments={'document_content': extracted_text},
+            )[0]
+            program_counter[program] += 1
+ 
+            url_tags = {
                 'topic':    topic,
                 'priority': priority,
                 'language': language,
-                'programs': self._processor.strategies_processor.apply_strategy(
-                                strategy_name='programs', 
-                                arguments={'document_content': extracted_text},
-                            )
+                'program':  program,
             }
+            url_tags_dct[url] = url_tags
             url_priorities_dct[priority].add(url)
-            
-        write_urls_dictionary(url_tags_dct, 'url_tags')
-        write_urls_dictionary(url_priorities_dct, 'url_priorities')
 
-        return results
+            # Step 5: Collect and save chunks
+            doc_chunks_dir_path = os.path.join(config.paths.CHUNKS_OUTPUT, url_filename)
+            if os.path.exists(doc_chunks_dir_path):
+                shutil.rmtree(doc_chunks_dir_path)
+            os.makedirs(doc_chunks_dir_path)
+            
+            url_chunk_metadata_list = []
+            for i, chunk in enumerate(self._processor.chunk(document), start=1):
+                chunk_file_path = os.path.join(doc_chunks_dir_path, f"chunk_{i}.txt")
+                with open(chunk_file_path, 'w') as f:
+                    f.write(chunk['text'])
+
+                url_chunk_metadata_list.append({
+                    'chunk_id': f"{program.lower()}_{program_counter[program]:3d}_{i:2d}",
+                    'text': chunk['text'],
+                    'source_url': url,
+                    'program':  program,
+                    'language': url_tags['language'],
+                    'topic': url_tags['topic'],             #TODO: Topic classification pro chunk
+                    'last_scraped': datetime.now(),
+                    'page_title': self._processor.extract_title(document),
+                    'section_heading': chunk['title'],
+                    'token_size': chunk['size'],
+                })
+            
+            chunk_metadata_dct[target_url].extend(url_chunk_metadata_list)     
+            logger.info(f"Collected {i} chunks and saved under '{doc_chunks_dir_path}'")
+            
+        write_set_dict(config.paths.URLS_OUTPUT, 'url_tags', url_tags_dct)
+        write_set_dict(config.paths.URLS_OUTPUT, 'url_priorities', url_priorities_dct)
+        write_set_dict(config.paths.METADATA_OUTPUT, 'chunk_metadata', chunk_metadata_dct)
+
+        return 
 
 
     def _scrape_page(self, url: str, crawl_delay: float, discovery_depth: int = 0) -> dict:
-        if not url: return None
+        if not url: return {}
 
         logger.info(f"Fetching URL '{url}'...")
         response = call_with_exponential_backoff(fetch_url, args=(url,), delay=crawl_delay)
         if response['status'] == 'FAIL':
             logger.warning("Failed to fetch URL '{url}': {response['last_error']}! Skipping...")
-            return None
+            return {}
         if not response['result']:
             logger.warning("Cannot fetch '{url}'! Skipping...")
-            return None
+            return {}
         
         raw_html = response['result']
         
@@ -159,7 +199,7 @@ class Scraper:
         
         if not document:
             logger.warning(f"Failed to process URL '{url}'! Sipping...")
-            return None
+            return {}
         
         discovered_urls = self._content_cleaner.extract_urls(document) if discovery_depth <= 3 else []
         self._content_cleaner.collect_repetitive_content(document)
@@ -180,16 +220,16 @@ class Scraper:
     def _analyze_domain(self, target_url: str) -> dict:
         if not target_url:
             logger.warning('The target URL string is empty!')
-            return None
+            return {}
        
         # Step 1: Test whether the target URL is even accessible before initializing the scraping procedure
         response = call_with_exponential_backoff(fetch_url, args=(target_url,))
         if response['status'] == 'FAIL':
             logger.error(f"Unaccessible target URL '{target_url}': {response['last_error']}")
-            return None
+            return {}
         if not response['result']:
             logger.warning(f"Unnaccessible target URL '{target_url}': Recieved client/server error!")
-            return None
+            return {}
         
         # Step 2: Fetch and parse robots
         logger.info(f"Fetching 'robots.txt' for the target URL '{target_url}'...")
@@ -200,7 +240,7 @@ class Scraper:
                 f"Could not fetch the 'robots.txt' file for the target URL '{target_url}'! " +
                  "(Are you sure the scraping begins from root?)"
             )
-            return None
+            return {}
         
         logger.info(f"Parsed the 'robots.txt' file for target URL '{target_url}'")
 
@@ -212,7 +252,7 @@ class Scraper:
         sitemap_tree = sitemap_tree_for_homepage(target_url)
         if isinstance(sitemap_tree, InvalidSitemap):
             logger.error(f"Cannot fetch sitemap for target URL '{target_url}': Invalid sitemap structure!")
-            return None
+            return {}
         urls = set([page.url for page in sitemap_tree.all_pages()])
         urls = [url for url in urls if robots_parser.can_fetch('scraper', url)]
         logger.info(f'Loaded sitemaps with {len(urls)} pages')

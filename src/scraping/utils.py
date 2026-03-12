@@ -4,10 +4,10 @@ from time import sleep
 from urllib.robotparser import RobotFileParser
 from urllib.error import URLError
 
-from src.config import config
-from src.const.page_priority import *
-from src.const.page_blacklist import PAGE_BLACKLIST
-from src.utils.logging import get_logger
+from ..config import config
+from ..const.page_priority import *
+from ..const.page_blacklist import PAGE_BLACKLIST
+from ..utils.logging import get_logger
 
 logger = get_logger('scraper.utils')
 
@@ -49,9 +49,13 @@ def detect_topic_and_priority(text: str, language: str):
     return 'low', 'none'
 
 
-def load_urls_dictionary(dict_name: str, refresh_entry: str = '') -> dict:
+def load_set_dict(
+    path: str,
+    dict_name: str, 
+    refresh_entry: str = '', 
+) -> dict:
     url_dict = defaultdict(set)
-    urls_json_path = os.path.join(config.paths.URLS_OUTPUT, f'{dict_name}.json') 
+    urls_json_path = os.path.join(path, f'{dict_name}.json') 
     if os.path.exists(urls_json_path) and refresh_entry != 'all':
         try:
             with open(urls_json_path, 'r') as f:
@@ -70,8 +74,12 @@ def load_urls_dictionary(dict_name: str, refresh_entry: str = '') -> dict:
     return url_dict
 
 
-def write_urls_dictionary(urls_dict: dict, dict_name: str):
-    urls_json_path = os.path.join(config.paths.URLS_OUTPUT, f'{dict_name}.json')
+def write_set_dict(
+    path: str, 
+    dict_name: str, 
+    urls_dict: dict,
+):
+    urls_json_path = os.path.join(path, f'{dict_name}.json')
     
     for key in urls_dict.keys():
         if isinstance(urls_dict[key], set):
@@ -92,7 +100,7 @@ def fetch_url(url: str) -> str:
         if code < 400:
             return response.text 
 
-        logging.warning(f"Catched an error while fetching '{url}': " + 
+        logger.warning(f"Catched an error while fetching '{url}': " + 
                         f"{code} {'Client' if code < 500 else 'Server'} Error")
         return ""
     except Exception as e:
@@ -109,11 +117,11 @@ def _robots_exist(robots_url) -> bool:
         return True
     except requests.RequestException as e:
         raise requests.RequestException(f"An error occured while requesting the URL '{robots_url}': {e}")
-    except _ as e:
+    except Exception as e:
         raise e
 
 
-def parse_robots(base_url: str) -> RobotFileParser:
+def parse_robots(base_url: str) -> RobotFileParser | None:
     robots_url = f'{base_url.rstrip('/')}/robots.txt'
 
     # Check whether the robots.txt file is accessible from this url 
@@ -133,16 +141,16 @@ def parse_robots(base_url: str) -> RobotFileParser:
     
     response = call_with_exponential_backoff(fetch_robots)
     if response['status'] == 'FAIL': 
-        logger.error(f"Failed to fetch the 'robots.txt' file after {retries} retries, last error: {last_error}") 
+        logger.error(f"Failed to fetch the 'robots.txt': {response['last_error']}") 
         return None 
 
     return rp
 
 def call_with_exponential_backoff(
     func, 
-    args: set = set(), 
-    delay: int = None, 
-    backoff_rate: int = None,
+    args: tuple = (), 
+    delay: float | None = None, 
+    backoff_rate: float | None = None,
 ) -> dict:
     retries = 0
     last_error = None

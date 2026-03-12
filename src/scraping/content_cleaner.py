@@ -3,9 +3,10 @@ import json, os
 from typing import Counter
 from docling_core.types.doc.document import DoclingDocument
 
-from src.utils.logging  import get_logger
-from src.scraping.utils import url_to_filename
-from src.config import config
+from .utils import url_to_filename
+
+from ..utils.logging  import get_logger
+from ..config import config
 
 logger = get_logger('scraper.cleaning')
 
@@ -20,7 +21,6 @@ class ContentCleaner:
         for node, _ in document.iterate_items(root=document.body, with_groups=False):
             if hasattr(node, 'hyperlink') and node.hyperlink:
                 discovered_urls.append(str(node.hyperlink))
-                node.hyperlink = None 
         
         logger.info(f"Extracted {len(discovered_urls)} URLs from source '{document.name}'")
         return discovered_urls
@@ -53,33 +53,43 @@ class ContentCleaner:
         self._repetitive_content = [rc['content'] for rc in self._repetitive_content]
 
 
-    def clean_furniture(self, document: DoclingDocument) -> None:
+    def clean_document(self, document: DoclingDocument) -> None:
         document.furniture.children.clear()
-
-
-    def clean_repetitive_content(self, document: DoclingDocument) -> None:
-        for node, _ in document.iterate_items(root=document.body, with_groups=False):
+        
+        # Step 1: Shallow tagging of useless content
+        texts_to_remove = set()
+        nodes_to_remove = []
+        for node, _ in document.iterate_items(root=document.body, with_groups=False):            
             if hasattr(node, 'text') and node.text:
                 stripped_text = node.text.strip().lower()
                 if stripped_text in self._repetitive_content:
-                    node.text = None
+                    nodes_to_remove.append(node)
+                    continue
+            if hasattr(node, 'captions') and node.captions:
+                caption_text = node.caption_text(document).strip()
+                if len(caption_text) < 50:
+                    nodes_to_remove.append(node)
+                    if caption_text not in self._repetitive_content:
+                        texts_to_remove.add(caption_text)
+                    continue
+            if hasattr(node, 'hyperlink') and node.hyperlink:
+                nodes_to_remove.append(node)
+                if node.text:
+                    texts_to_remove.add(node.text)
+                continue
+        
+        # Step 2: Removal of duplicates from other node types
+        for node, _ in document.iterate_items(root=document.body, with_groups=False):
+            if hasattr(node, 'text') and node.text:
+                stripped_text = node.text.strip().lower()
+                if stripped_text in texts_to_remove:
+                    nodes_to_remove.append(node)
+                    continue
 
-        # nodes_to_remove  = []
-        # for node, _ in document.iterate_items(root=document.body, with_groups=False):
-        #     if hasattr(node, 'text') and node.text:
-        #         stripped_text = node.text.strip().lower()
-        #         if stripped_text in self._repetitive_content:
-        #             nodes_to_remove.append(node)
-        #
-        # for node in nodes_to_remove:
-        #     if node.parent and hasattr(node.parent, 'children'):
-        #         try:
-        #             node.parent.children.remove(node)
-        #         except ValueError:
-        #             logger.error(f"Failed to remove node '{node.text if hasattr(node, 'text') else ''}': " +
-        #                          f" node not found in parent children")
-        #         except Exception as e:
-        #             logger.error(f"Unexpected error removing node: {e}")
-        #
-        # logger.info(f"Removed {len(nodes_to_remove)} repetitive content elements " +
-        #             f"from source '{document.name}'")
+        # Step 3: Deletion of all useless nodes
+        for node in nodes_to_remove:
+            if hasattr(node, 'parent') and node.parent:
+                parent = node.parent.resolve(document)
+                parent.children.remove(node.get_ref())
+
+        # print(document.export_to_html())
