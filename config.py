@@ -28,7 +28,7 @@ LOCK_LANGUAGE_AFTER_N_MESSAGES = 3
 
 # An integer. Sets the maximum amount of conversation turns as the sum of user queries
 # and agent responses. The conversation ends after the maximum turns amount is reached.
-MAX_CONVERSATION_TURNS = 15
+MAX_CONVERSATION_TURNS = 20
 
 # ============================================ LLM Configuration ============================================
 
