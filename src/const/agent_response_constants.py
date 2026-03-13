@@ -97,7 +97,7 @@ def get_booking_widget(language: str="en", programs: list[str]=None):
             "program": "iemba"
         },
         {
-            "name": "Teyuna Giger (EMBA X)",
+            "name": "Teyuna Giger (emba X)",
             "url": f"https://calendly.com/teyuna-giger-unisg{base_params}",
             "program": "emba_x"
         },

@@ -329,7 +329,7 @@ class ExecutiveAgentChain:
         # EMBA X: Digital/Innovation focus
         elif state.get('interest') and any(kw in state.get('interest', '').lower()
                                            for kw in ['digital', 'innovation', 'technology']):
-            return 'EMBA X'
+            return 'emba X'
 
         return None
 
