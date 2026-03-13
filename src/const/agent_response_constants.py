@@ -124,3 +124,44 @@ def get_booking_widget(language: str="en", programs: list[str]=None):
 
     html_content += "</div>"
     return html_content
+
+
+def get_disclaimer_widget(language: str = "en"):
+    """
+    Returns an HTML string representing a warning disclaimer.
+    """
+    disclaimers = {
+        "en": {
+            "title": "Disclaimer",
+            "body": "Assessments provided by this advisor are non-binding and based on limited information. Please consult our program directors for final admission or credit evaluations."
+        },
+        "de": {
+            "title": "Haftungsausschluss",
+            "body": "Die Einschätzungen dieses Beraters sind unverbindlich und basieren auf begrenzten Informationen. Bitte wenden Sie sich für endgültige Zulassungs- oder Anrechnungsfragen an die Programmleitung."
+        }
+    }
+
+    content = disclaimers.get(language, disclaimers["en"])
+
+    # Yellow styling constants
+    bg_color = "#fffbeb"  # Light yellow
+    border_color = "#f59e0b"  # Amber/Yellow border
+    icon_color = "#d97706"  # Darker amber for the icon
+    text_color = "#92400e"  # Dark brown/yellow for readability
+
+    html_content = f"""
+    <div style="display: flex; align-items: flex-start; background-color: {bg_color}; border: 1px solid {border_color}; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-family: sans-serif;">
+        <div style="margin-right: 12px; margin-top: 2px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{icon_color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        </div>
+        <div>
+            <strong style="display: block; color: {text_color}; margin-bottom: 4px; font-size: 0.95em;">{content['title']}</strong>
+            <p style="margin: 0; color: {text_color}; font-size: 0.85em; line-height: 1.4;">
+                {content['body']}
+            </p>
+        </div>
+    </div>
+    """
+    return html_content
