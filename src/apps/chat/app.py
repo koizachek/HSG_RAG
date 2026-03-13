@@ -56,7 +56,12 @@ class ChatbotApplication:
             def initalize_agent(language):
                 agent = ExecutiveAgentChain(language=language)
                 greeting = agent.generate_greeting()
-                return agent, [{"role": "assistant", "content": greeting}]
+
+                disclaimer_html = get_disclaimer_widget(language)
+
+                full_content = f"{disclaimer_html}{greeting}"
+
+                return agent, [{"role": "assistant", "content": full_content}]
 
             def switch_language(new_language):
                 new_agent, greeting = initalize_agent(new_language)
