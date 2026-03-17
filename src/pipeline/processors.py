@@ -2,6 +2,9 @@ from collections import defaultdict
 import os, re
 
 from pathlib import Path
+from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer, ChunkingSerializerProvider
+from docling_core.transforms.serializer.base import BaseTableSerializer, SerializationResult
+from docling_core.transforms.serializer.common import create_ser_result
 from transformers import AutoTokenizer
 
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
@@ -10,10 +13,10 @@ from docling.datamodel.pipeline_options import (
         RapidOcrOptions,
         LayoutOptions,
 )
-from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
+from docling_core.transforms.serializer.markdown import MarkdownDocSerializer 
 from docling.document_converter import DocumentConverter, PdfFormatOption, InputFormat
 from docling.chunking import HybridChunker
-from docling_core.types.doc.document import DoclingDocument, TableItem
+from docling_core.types.doc.document import DoclingDocument, RichTableCell, TableItem
 
 from src.pipeline.utils import StrategiesProcessor, StrategyArguments
 from src.pipeline.utilclasses import ProcessingResult, _logging_callback_placeholder
@@ -23,6 +26,66 @@ from src.config import config
 
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
+
+class EnchansedTableSerializer(BaseTableSerializer):
+    def serialize(self, *, item, doc_serializer, doc, **kwargs) -> SerializationResult:
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return create_ser_result(text='')
+
+        grid = item.data.grid
+        if not grid: 
+            return create_ser_result(text='')
+
+        row_count = len(grid)
+        col_count = len(grid[0]) if grid else 0
+
+        if row_count < 7 or col_count < 3: 
+            return create_ser_result(text='')
+ 
+        row_cells = []
+        for row in grid:
+            clean_row = []
+            for cell in row:
+                if isinstance(cell, RichTableCell):
+                    ser = doc_serializer.serialize(item=cell.ref.resolve(doc), **kwargs)
+                    clean_row.append(ser.text.strip())
+                else:
+                    clean_row.append((cell.text or "").strip())
+            if any(c for c in clean_row): 
+                row_cells.append(clean_row)
+
+        headers = row_cells[0]
+        data_rows = row_cells[1:]
+
+        lines = []
+
+        for row in data_rows:
+            if len(row) < 2 or not row[0].strip():
+                continue
+
+            main_key = row[0].strip().replace('\n', ' ')
+            top_line = f'- {main_key}:'
+            lines.append(top_line)
+
+            for i in range(1, len(row)):
+                value = row[i].strip().replace('\n', ' ')
+                if not value: continue
+                sub_header = headers[i].strip().replace('\n', ' ') if i < len(headers) else f""
+                sub_line = f'  - {sub_header}: {value}'
+                lines.append(sub_line)
+
+            lines.append("")
+
+        final_text = "\n".join(lines).rstrip() 
+        return create_ser_result(text=final_text, span_source=item)
+
+
+class EnchansedSerializerProvider(ChunkingSerializerProvider):
+    def get_serializer(self, doc):
+        return ChunkingDocSerializer(
+            doc=doc,
+            table_serializer=EnchansedTableSerializer(),
+        )
 
 class ProcessorBase:
     def __init__(self) -> None:
@@ -68,7 +131,8 @@ class ProcessorBase:
             tokenizer=HuggingFaceTokenizer(
                 tokenizer=tokenizer,
                 max_tokens=config.processing.MAX_TOKENS
-            ), 
+            ),
+            serializer_provider=EnchansedSerializerProvider(),
             max_tokens=config.processing.MAX_TOKENS, 
             merge_peers=True
         )

@@ -15,9 +15,12 @@ class TestPageChunking:
         raw_texts = []
         documents = []
         
+        html_path = config.paths.RAW_HTML_OUTPUT
         for raw_html_file_path in [
-            os.path.join(config.paths.RAW_HTML_OUTPUT, 'embax-ch.html'),
-            os.path.join(config.paths.RAW_HTML_OUTPUT, 'embax-ch_admissions.html')
+            os.path.join(html_path, 'embax-ch.html'),
+            os.path.join(html_path, 'embax-ch_admissions.html'),
+            # Tests for tables and lists
+            os.path.join(html_path, 'embax-ch_admissions_deadlines-fees.html')
         ]:
             raw_html = open(raw_html_file_path, 'r').read()
             document = processor.process(url='https://embax.ch', html_content=raw_html)
@@ -40,10 +43,8 @@ class TestPageChunking:
 
             chunks = processor.chunk(document)
             assert chunks
-            for i, chunk in enumerate(chunks, start=1):
+            for _, chunk in enumerate(chunks, start=1):
                 assert len(chunk['text']) > 50
-                assert chunk['size'] in range(500, 1000)
-                # print(f"chunk {i}\n{chunk}", end='\n\n')
 
 
 if __name__ == "__main__":

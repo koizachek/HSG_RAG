@@ -7,6 +7,8 @@ from ..utils.logging import get_logger
 logger = get_logger('scraper.processor')
 
 class HTMLProcessor(ProcessorBase):
+    def __init__(self) -> None:
+        super().__init__()
 
     def process(self, url: str, html_content: str) -> DoclingDocument | None:
         if not html_content:
@@ -28,10 +30,10 @@ class HTMLProcessor(ProcessorBase):
         return titles[0] if titles else 'No Title'
 
 
-    def chunk(self, document: DoclingDocument) -> list[dict]: 
+    def chunk(self, document: DoclingDocument) -> list[dict]:
         raw_chunks = list(self._chunker.chunk(document))
-        chunks = self._merge_chunks_by_headings(raw_chunks)
-        
+        chunks = self._merge_chunks_by_headings(raw_chunks) 
+
         prepared_chunks = [{
             'text': chunk,
             'title': chunk.split('\n')[0],
@@ -39,6 +41,23 @@ class HTMLProcessor(ProcessorBase):
         } for chunk in chunks]
 
         return prepared_chunks
+    
+
+    def _get_formatted_chunk_text(self, chunk, headings) -> str: 
+            formatted_text = f"{' '.join(headings)}\n"
+
+            if not hasattr(chunk.meta, 'doc_items'):
+                return formatted_text + chunk.text.replace('\n', ' ')
+
+            labels = set()       
+            for item in chunk.meta.doc_items:
+                labels.add(item.label)
+            
+            labels = [label for label in labels if label in ['table', 'list_item']]
+            if labels:
+                return formatted_text + chunk.text
+
+            return formatted_text + chunk.text.replace('\n', ' ')
 
 
     def _merge_chunks_by_headings(self, raw_chunks: list) -> list[str]:
@@ -53,9 +72,10 @@ class HTMLProcessor(ProcessorBase):
         while i < n:
             chunk = raw_chunks[i]
             headings = getattr(chunk.meta, "headings", []) or []
-            
+
             if len(headings) < prefix_level:
-                merged.append(f"{' '.join(headings)}\n{chunk.text.replace('\n', ' ')}")
+                formatted_text = self._get_formatted_chunk_text(chunk, headings) 
+                merged.append(formatted_text)
                 i += 1
                 continue
             

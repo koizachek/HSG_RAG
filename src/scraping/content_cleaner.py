@@ -5,7 +5,8 @@ from docling_core.types.doc.document import DoclingDocument
 
 from .utils import url_to_filename
 
-from ..utils.logging  import get_logger
+from ..const.cc_whitelist import REPETITION_WHITELIST
+from ..utils.logging import get_logger
 from ..config import config
 
 logger = get_logger('scraper.cleaning')
@@ -22,21 +23,26 @@ class ContentCleaner:
             if hasattr(node, 'hyperlink') and node.hyperlink:
                 discovered_urls.append(str(node.hyperlink))
         
-        logger.info(f"Extracted {len(discovered_urls)} URLs from source '{document.name}'")
         return discovered_urls
 
 
     def collect_repetitive_content(self, document: DoclingDocument) -> None:
+        content_in_document = set()
         for node, _ in document.iterate_items(root=document.body, with_groups=False):
             if hasattr(node, 'text') and node.text:
                 stripped_text = node.text.strip().lower()
-                if len(stripped_text) < 50: 
-                    self._repetitions_counter[stripped_text] += 1   
+                content_in_document.add(stripped_text)
+                if 'just as your' in stripped_text:
+                    print('JUST AS YOUR SPOTTED IN DOCUMENT', document.name)
+        
+        for content in content_in_document:
+            self._repetitions_counter[content] += 1   
     
 
     def perform_content_analysis(self, target_url: str = "index") -> None:
         self._repetitive_content = [{'content': text, 'amount': count} 
-            for text, count in self._repetitions_counter.items() if count > 1]
+            for text, count in self._repetitions_counter.items() 
+                if text not in REPETITION_WHITELIST and count > 1]
         logger.info(f"Content analysis for target URL '{target_url}' " + 
                     f"yielded {len(self._repetitive_content)} repetitive text lines")
 
@@ -88,8 +94,28 @@ class ContentCleaner:
 
         # Step 3: Deletion of all useless nodes
         for node in nodes_to_remove:
-            if hasattr(node, 'parent') and node.parent:
-                parent = node.parent.resolve(document)
-                parent.children.remove(node.get_ref())
+            if not (hasattr(node, 'parent') and node.parent): 
+                continue
+            
+            parent_node = node.parent.resolve(document)
+            node_ref = node.get_ref()
+            if node_ref not in parent_node.children:
+                continue
+            
+            node_children_refs = list(node.children) if hasattr(node, 'children') else []
+            idx = parent_node.children.index(node_ref)
+            parent_node.children.pop(idx)
+            parent_node.children[idx:idx] = node_children_refs
+            
+            # Promote children of removed node to node's parent
+            for child_ref in node_children_refs:
+                child_node = child_ref.resolve(document)
+                if hasattr(child_node, 'parent'):
+                    child_node.parent = node.parent 
+            
+            # Clean node references
+            if hasattr(node, 'children'):
+                node.children.clear()
+            if hasattr(node, 'parent'):
+                node.parent = None
 
-        # print(document.export_to_html())
