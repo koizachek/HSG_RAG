@@ -404,7 +404,7 @@ class ExecutiveAgentChain:
 
             # Create profile data
             profile_data = {
-                'session_id': self._conversation_state['session_id'],
+                'session_id': self._conversation_state['user_id'],
                 'user_id': self._conversation_state['user_id'],
                 'name': self._conversation_state.get('user_name'),
                 'timestamp': datetime.now().isoformat(),
