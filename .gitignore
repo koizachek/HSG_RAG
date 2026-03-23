@@ -47,6 +47,9 @@ build/
 # Output data
 data/
 
+# Pyright config may differ from one platform to another 
+pyrightconfig.json
+
 # Pycharm
 .idea/
 

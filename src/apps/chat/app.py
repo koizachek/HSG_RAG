@@ -59,7 +59,12 @@ class ChatbotApplication:
             def initialize_agent(lang: str, session_id: str):
                 agent = ExecutiveAgentChain(language=lang, session_id=session_id)
                 greeting = agent.generate_greeting()
-                return agent, [{"role": "assistant", "content": greeting}]
+
+                disclaimer_html = get_disclaimer_widget(language)
+
+                full_content = f"{disclaimer_html}{greeting}"
+
+                return agent, [{"role": "assistant", "content": full_content}]
 
             def label_to_lang_code(label: str) -> str:
                 return "en" if label == "English" else "de"

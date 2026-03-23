@@ -1,8 +1,10 @@
 from collections import defaultdict
-import os, re, json
-import importlib.util 
+import os, re
 
 from pathlib import Path
+from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer, ChunkingSerializerProvider
+from docling_core.transforms.serializer.base import BaseTableSerializer, SerializationResult
+from docling_core.transforms.serializer.common import create_ser_result
 from transformers import AutoTokenizer
 
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
@@ -11,11 +13,12 @@ from docling.datamodel.pipeline_options import (
         RapidOcrOptions,
         LayoutOptions,
 )
-from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
+from docling_core.transforms.serializer.markdown import MarkdownDocSerializer 
 from docling.document_converter import DocumentConverter, PdfFormatOption, InputFormat
 from docling.chunking import HybridChunker
-from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.document import DoclingDocument, RichTableCell, TableItem
 
+from src.pipeline.utils import StrategiesProcessor, StrategyArguments
 from src.pipeline.utilclasses import ProcessingResult, _logging_callback_placeholder
 from src.utils.lang import detect_language
 from src.utils.logging import get_logger
@@ -23,6 +26,66 @@ from src.config import config
 
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
+
+class EnchansedTableSerializer(BaseTableSerializer):
+    def serialize(self, *, item, doc_serializer, doc, **kwargs) -> SerializationResult:
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return create_ser_result(text='')
+
+        grid = item.data.grid
+        if not grid: 
+            return create_ser_result(text='')
+
+        row_count = len(grid)
+        col_count = len(grid[0]) if grid else 0
+
+        if row_count < 7 or col_count < 3: 
+            return create_ser_result(text='')
+ 
+        row_cells = []
+        for row in grid:
+            clean_row = []
+            for cell in row:
+                if isinstance(cell, RichTableCell):
+                    ser = doc_serializer.serialize(item=cell.ref.resolve(doc), **kwargs)
+                    clean_row.append(ser.text.strip())
+                else:
+                    clean_row.append((cell.text or "").strip())
+            if any(c for c in clean_row): 
+                row_cells.append(clean_row)
+
+        headers = row_cells[0]
+        data_rows = row_cells[1:]
+
+        lines = []
+
+        for row in data_rows:
+            if len(row) < 2 or not row[0].strip():
+                continue
+
+            main_key = row[0].strip().replace('\n', ' ')
+            top_line = f'- {main_key}:'
+            lines.append(top_line)
+
+            for i in range(1, len(row)):
+                value = row[i].strip().replace('\n', ' ')
+                if not value: continue
+                sub_header = headers[i].strip().replace('\n', ' ') if i < len(headers) else f""
+                sub_line = f'  - {sub_header}: {value}'
+                lines.append(sub_line)
+
+            lines.append("")
+
+        final_text = "\n".join(lines).rstrip() 
+        return create_ser_result(text=final_text, span_source=item)
+
+
+class EnchansedSerializerProvider(ChunkingSerializerProvider):
+    def get_serializer(self, doc):
+        return ChunkingDocSerializer(
+            doc=doc,
+            table_serializer=EnchansedTableSerializer(),
+        )
 
 class ProcessorBase:
     def __init__(self) -> None:
@@ -68,59 +131,14 @@ class ProcessorBase:
             tokenizer=HuggingFaceTokenizer(
                 tokenizer=tokenizer,
                 max_tokens=config.processing.MAX_TOKENS
-            ), 
+            ),
+            serializer_provider=EnchansedSerializerProvider(),
             max_tokens=config.processing.MAX_TOKENS, 
             merge_peers=True
         )
-        self._strategies = self._load_strategies()
+        self.strategies_processor = StrategiesProcessor()
         self._logging_callback = config.dbapp['logging_callback'] or _logging_callback_placeholder
-        
     
-    def _load_strategies(self):
-        """
-        Load strategies for processing document properties from configured paths.
-
-        Creates necessary directories if they don't exist, loads properties from JSON,
-        and dynamically imports strategy modules for each property.
-
-        Returns:
-            dict: A dictionary mapping property names to their strategy modules.
-
-        Raises:
-            ValueError: If properties file or strategy files are missing, or if a strategy lacks a 'run' function.
-        """
-        properties = {}
-        strategies = {}
-        
-        os.makedirs(config.weaviate.PROPERTIES_PATH, exist_ok=True)
-        os.makedirs(config.weaviate.STRATEGIES_PATH, exist_ok=True)
-        properties_path = os.path.join(config.weaviate.PROPERTIES_PATH, 'properties.json')
-        if not os.path.exists(properties_path):
-            raise ValueError(f"Properties file does not exist under {properties_path}! Ensure that the database interface was opened at least once!")
-
-        with open(properties_path) as f:
-            properties = json.load(f)
-
-        for prop in properties.keys():
-            strat_file = f'strat_{prop}.py'
-            strat_path = os.path.join(config.weaviate.STRATEGIES_PATH, strat_file)
-            if not os.path.exists(strat_path):
-                raise ValueError(f"Could not find strategy for property {prop}!")
-
-            spec = importlib.util.spec_from_file_location(
-                name=prop,
-                location=strat_path
-            )
-            strategy = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(strategy)
-
-            if not hasattr(strategy, 'run'):
-                raise ValueError(f"Strategy '{strat_file}' has no 'run' function!")
-
-            strategies[prop] = strategy
-
-        return strategies
-
 
     def process(self):
         """
@@ -130,6 +148,18 @@ class ProcessorBase:
             NotImplementedError: If not overridden in a subclass.
         """
         raise NotImplementedError("This method is not implemented in ProcessorBase")
+
+
+    def convert_to_txt(self, document: DoclingDocument) -> str:
+        plain_text = []
+        for node, _ in document.iterate_items(root=document.body, with_groups=False):
+            if isinstance(node, TableItem):
+                df = node.export_to_dataframe(document)
+                table_str = df.to_string(index=False, na_rep='')  
+                plain_text.append(table_str)  
+            elif hasattr(node, 'text') and node.text:
+                plain_text.append(node.text.strip())
+        return '\n\n'.join(plain_text)  
 
 
     def _prepare_chunks(self, document_name: str, document_content: str, chunks: list[str]) -> list[dict]:
@@ -145,11 +175,14 @@ class ProcessorBase:
             list[dict]: List of dictionaries, each containing properties for a chunk.
         """
         prepared_chunks = []
-        for chunk in chunks:
-            prepared_chunk = {}
-            for prop, strat in self._strategies.items():
-                prepared_chunk[prop] = strat.run(document_name, document_content, chunk)
-            prepared_chunks.append(prepared_chunk)
+        for chunk in chunks:  
+            prepared_chunk.append({
+                prop: self.strategies_processor.apply_strategy(
+                    strategy_name=prop,
+                    arguments=StrategyArguments(document_name, document_content, chunk),
+                )
+                for prop in self.strategies_processor.list_strategies()
+            })
 
         return prepared_chunks
     
