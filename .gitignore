@@ -38,6 +38,7 @@ venv.bak/
 # Data files
 *.pdf
 *.json
+*.jsonl
 
 # Output folders
 dist/
