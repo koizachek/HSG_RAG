@@ -115,14 +115,20 @@ class Scraper:
         # Step 4: Clean documents, collect text and tags
         url_tags_dct       = load_set_dict(config.paths.URLS_OUTPUT, 'url_tags')
         url_priorities_dct = load_set_dict(config.paths.URLS_OUTPUT, 'url_priorities')
-        chunk_metadata_dct = load_set_dict(config.paths.METADATA_OUTPUT, 'chunk_metadata_dct')
-        chunk_metadata_dct[target_url] = []
+        
+        raw_chunk_metadata_dct     = load_set_dict(config.paths.METADATA_OUTPUT, 'raw_chunk_metadata')
+        deleted_chunk_metadata_dct = load_set_dict(config.paths.METADATA_OUTPUT, 'deleted_chunk_metadata')
+        merged_chunk_metadata_dct  = load_set_dict(config.paths.METADATA_OUTPUT, 'merged_chunk_metadata')
+        
+        raw_chunk_metadata_dct[target_url]     = []
+        deleted_chunk_metadata_dct[target_url] = []
+        merged_chunk_metadata_dct[target_url]  = []
+
         program_counter = Counter()
 
         self._content_cleaner.perform_content_analysis(target_url)
         for document in documents:
             url = document.name
-            chunk_metadata_dct[url] = []
             self._content_cleaner.clean_document(document)
             
             extracted_text = self._processor.convert_to_txt(document)
@@ -156,34 +162,48 @@ class Scraper:
                 shutil.rmtree(doc_chunks_dir_path)
             os.makedirs(doc_chunks_dir_path)
             
-            url_chunk_metadata_list = []
+            raw_chunk_metadatas = []
+            mergible_chunks_metadatas = []
             for i, chunk in enumerate(self._processor.chunk(document), start=1):
                 chunk_file_path = os.path.join(doc_chunks_dir_path, f"chunk_{i}.txt")
                 with open(chunk_file_path, 'w') as f:
                     f.write(chunk['text'])
-
-                url_chunk_metadata_list.append({
+                
+                chunk_topic = detect_chunk_topic(chunk['text'])
+                chunk_metadata = {
                     'chunk_id': f"{program.lower()}_{program_counter[program]:3d}_{i:2d}",
                     'text': chunk['text'],
                     'source_url': url,
                     'program':  program,
                     'language': url_tags['language'],
-                    'topic': detect_chunk_topic(chunk['text']),             
+                    'topic': chunk_topic,             
                     'last_scraped': datetime.datetime.now(),
                     'page_title': self._processor.extract_title(document),
                     'section_heading': chunk['title'],
                     'token_size': chunk['size'],
-                })
+                }
+                raw_chunk_metadatas.append(chunk_metadata)
+                if chunk_topic == 'none':
+                    deleted_chunk_metadata_dct[target_url].append(chunk_metadata)
+                else:
+                    mergible_chunks_metadatas.append(chunk_metadata)
+ 
+            raw_chunk_metadata_dct[target_url].extend(raw_chunk_metadatas)
+            logger.info(f"Collected {i} raw chunks and saved under '{doc_chunks_dir_path}'")
+
+            merged_chunk_metadatas = self._processor.merge_chunks_by_topic(mergible_chunks_metadatas)
+            merged_chunk_metadata_dct[target_url].extend(merged_chunk_metadatas)
+            logger.info(f"Merged raw chunks into {len(merged_chunk_metadatas)} chunks by topic")
             
-            chunk_metadata_dct[target_url].extend(url_chunk_metadata_list)     
-            logger.info(f"Collected {i} chunks and saved under '{doc_chunks_dir_path}'")
-            
-        write_set_dict(config.paths.URLS_OUTPUT, 'url_tags', url_tags_dct)
+        write_set_dict(config.paths.URLS_OUTPUT, 'url_tags',       url_tags_dct)
         write_set_dict(config.paths.URLS_OUTPUT, 'url_priorities', url_priorities_dct)
-        write_set_dict(config.paths.METADATA_OUTPUT, 'chunk_metadata', chunk_metadata_dct)
+
+        write_set_dict(config.paths.METADATA_OUTPUT, 'raw_chunk_metadata',     raw_chunk_metadata_dct)
+        write_set_dict(config.paths.METADATA_OUTPUT, 'deleted_chunk_metadata', deleted_chunk_metadata_dct)
+        write_set_dict(config.paths.METADATA_OUTPUT, 'merged_chunk_metadata',  merged_chunk_metadata_dct)
         
         logger.info(f"Scraping finished for target URL '{target_url}'")
-        return chunk_metadata_dct[target_url] 
+        return merged_chunk_metadata_dct[target_url] 
     
 
     def _create_chunk_statistics_report(self, target_url: str, chunk_metadata_list: list):

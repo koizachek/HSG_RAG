@@ -1,6 +1,8 @@
 from docling.document_converter import InputFormat
 from docling_core.types.doc.document import DoclingDocument, TitleItem
 
+from ..config import config
+
 from ..pipeline.processors import ProcessorBase
 from ..utils.logging import get_logger
 
@@ -42,6 +44,77 @@ class HTMLProcessor(ProcessorBase):
 
         return prepared_chunks
     
+
+    def merge_chunks_by_topic(self, chunk_metadatas: list[dict]) -> list[dict]:
+        MAX_TOKENS = config.processing.MAX_TOKENS
+        merged_chunks = []
+
+        current_group  = []
+        current_tokens = 0
+        current_topic  = None
+
+        for chunk in chunk_metadatas:
+            topic      = chunk["topic"]
+            token_size = chunk["token_size"]
+            
+            # If the chunk is already large enough, it will not be merged
+            if token_size >= MAX_TOKENS:
+                # Consequtive group is over when large chunk is met
+                if current_group:
+                    merged_chunks.append(self._create_merged_chunk(current_group))
+                    current_group  = []
+                    current_tokens = 0
+                    current_topic  = None
+                
+                # Large chunk is appended here
+                merged_chunks.append(chunk)
+                continue
+
+            if (current_topic and topic != current_topic) or (current_tokens + token_size > MAX_TOKENS):
+                if current_group:
+                    merged_chunks.append(self._create_merged_chunk(current_group))
+                
+                current_group  = [chunk]
+                current_tokens = token_size
+                current_topic  = topic
+                continue
+
+            current_group.append(chunk)
+            current_tokens += token_size
+            current_topic   = topic
+        
+
+        if current_group:
+            merged_chunks.append(self._create_merged_chunk(current_group))
+ 
+        return merged_chunks
+
+
+    def _create_merged_chunk(self, group: list[dict]) -> dict:
+        if len(group) == 1:
+            return group[0].copy()
+
+        merged_text  = "\n".join(cm["text"] for cm in group).strip()
+        total_tokens = sum(cm["token_size"] for cm in group)
+
+        first = group[0]
+
+        merged_id = f"merged_{first['topic']}_{group[0]['chunk_id']}_to_{group[-1]['chunk_id']}"
+        merged_chunk = {
+            "chunk_id":           merged_id,
+            "text":               merged_text,
+            "source_url":         first["source_url"],
+            "program":            first["program"],
+            "language":           first["language"],
+            "topic":              first["topic"],
+            "last_scraped":       first["last_scraped"],
+            "page_title":         first["page_title"],
+            "section_heading":    first["section_heading"],
+            "token_size":         total_tokens,
+            "original_chunk_ids": [c["chunk_id"] for c in group],  
+        }
+        return merged_chunk
+
 
     def _get_formatted_chunk_text(self, chunk, headings) -> str: 
             formatted_text = f"{' '.join(headings)}\n"
