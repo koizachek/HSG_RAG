@@ -18,7 +18,7 @@ class TestPageChunking:
         html_path = config.paths.RAW_HTML_OUTPUT
         for raw_html_file_path in [
             os.path.join(html_path, 'embax-ch.html'),
-            os.path.join(html_path, 'embax-ch_admissions.html'),
+            os.path.join(html_path, 'embax-ch_admissions_student-profile.html'),
             # Tests for tables and lists
             os.path.join(html_path, 'embax-ch_admissions_deadlines-fees.html')
         ]:

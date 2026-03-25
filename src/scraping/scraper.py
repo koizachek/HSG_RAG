@@ -54,13 +54,14 @@ class Scraper:
                 logger.info(f'URL {url} was already analyzed via redirect, skipping...')
                 continue
 
-            scraping_result = self._scrape_page(url, analyzed_domain['delay'])
+            scraping_result = self._scrape_page(url, analyzed_domain['delay'], visited_urls)
+            visited_urls.add(url)
+
             if not scraping_result: continue  
             
             documents.append(scraping_result['document'])
             sitemap_urls_dct[target_url].add(scraping_result['final_url'])
             visited_urls.add(scraping_result['final_url'])
-            visited_urls.add(url)
 
             for discovered_url in scraping_result['discovered_urls']: 
                 if any([is_url_blacklisted(discovered_url),
@@ -90,13 +91,13 @@ class Scraper:
                 discovered_url = discovered_urls.pop()
                 url = discovered_url['url']
 
-                scraping_result = self._scrape_page(url, analyzed_domain['delay'], discovered_url['depth'])
+                scraping_result = self._scrape_page(url, analyzed_domain['delay'], visited_urls, discovered_url['depth'])
+                visited_urls.add(url)
                 if not scraping_result: continue  
                 
                 documents.append(scraping_result['document'])
                 discovered_urls_dct[target_url].add(scraping_result['final_url'])
                 visited_urls.add(scraping_result['final_url'])
-                visited_urls.add(discovered_url['url'])
 
                 for discovered_url in scraping_result['discovered_urls']:
                     if any([is_url_blacklisted(discovered_url),
@@ -131,9 +132,9 @@ class Scraper:
                 f.write(extracted_text)
                 logger.info(f"Saved extracted text for URL '{url}' under '{extracted_text_file_path}'")
             
-            language = detect_language(extracted_text)
-            topic, priority = detect_topic_and_priority(extracted_text, language)
-            programs = self._processor.strategies_processor.apply_strategy(
+            language  = detect_language(extracted_text)
+            tp_result = detect_page_topic_and_priority(extracted_text)
+            programs  = self._processor.strategies_processor.apply_strategy(
                 strategy_name='programs', 
                 arguments={'document_content': extracted_text},
             )
@@ -141,13 +142,13 @@ class Scraper:
             program_counter[program] += 1
  
             url_tags = {
-                'topic':    topic,
-                'priority': priority,
+                'topic':    tp_result['topic'],
+                'priority': tp_result['priority'],
                 'language': language,
                 'program':  programs,
             }
             url_tags_dct[url] = url_tags
-            url_priorities_dct[priority].add(url)
+            url_priorities_dct[tp_result['priority']].add(url)
 
             # Step 5: Collect and save chunks
             doc_chunks_dir_path = os.path.join(config.paths.CHUNKS_OUTPUT, url_filename)
@@ -167,7 +168,7 @@ class Scraper:
                     'source_url': url,
                     'program':  program,
                     'language': url_tags['language'],
-                    'topic': url_tags['topic'],             #TODO: Topic classification pro chunk
+                    'topic': detect_chunk_topic(chunk['text']),             
                     'last_scraped': datetime.datetime.now(),
                     'page_title': self._processor.extract_title(document),
                     'section_heading': chunk['title'],
@@ -180,11 +181,23 @@ class Scraper:
         write_set_dict(config.paths.URLS_OUTPUT, 'url_tags', url_tags_dct)
         write_set_dict(config.paths.URLS_OUTPUT, 'url_priorities', url_priorities_dct)
         write_set_dict(config.paths.METADATA_OUTPUT, 'chunk_metadata', chunk_metadata_dct)
+        
+        logger.info(f"Scraping finished for target URL '{target_url}'")
+        return chunk_metadata_dct[target_url] 
+    
 
-        return 
+    def _create_chunk_statistics_report(self, target_url: str, chunk_metadata_list: list):
+        chunk_statistics = load_set_dict(config.paths.CHUNKS_OUTPUT, 'chunk_statistics_report')
+
+        chunk_statistics[target_url] = {
+            'chunks_amount': len(chunk_metadata_list),
+            'topics': list(set(map(lambda cm: cm['topic'], chunk_metadata_list))),
+        }
+
+        write_set_dict(config.paths.CHUNKS_OUTPUT, 'chunk_statistics_report', chunk_statistics)
 
 
-    def _scrape_page(self, url: str, crawl_delay: float, discovery_depth: int = 0) -> dict:
+    def _scrape_page(self, url: str, crawl_delay: float, visited_urls: list, discovery_depth: int = 0) -> dict:
         if not url: return {}
 
         logger.info(f"Fetching URL '{url}'...")
@@ -202,6 +215,9 @@ class Scraper:
         
         if final_url != url:
             logger.info(f"Redirect detected: '{url}' --> '{final_url}'")
+            if final_url in visited_urls:
+                logger.info(f"'{final_url}' was already visited, skipping...")
+                return {}
             logger.info(f"Continuing with URL '{final_url}'...")
 
         url_filename = url_to_filename(final_url) 
