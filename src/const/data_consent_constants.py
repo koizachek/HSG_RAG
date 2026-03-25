@@ -12,7 +12,7 @@ Dabei verarbeiten wir insbesondere:
 Ihre Daten werden **ausschließlich für die Studienberatung** verwendet und **nicht an Dritte weitergegeben**.  
 Sie können Ihre Einwilligung **jederzeit widerrufen**.
 
-[Weitere Informationen zur Datenschutzerklärung]()
+[Weitere Informationen zur Datenschutzerklärung](https://www.unisg.ch/en/data-protection-declaration/)
 """,
 
     "en": """
@@ -28,7 +28,7 @@ We process in particular:
 Your data is used **solely for study advisory purposes** and **is not shared with third parties**.  
 You may **withdraw your consent at any time**.
 
-[More information in the Privacy Policy]()
+[More information in the Privacy Policy](https://www.unisg.ch/en/data-protection-declaration/)
 """
 }
 
