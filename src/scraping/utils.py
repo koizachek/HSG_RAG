@@ -1,4 +1,5 @@
-import requests, json, os, re, difflib
+import requests, json, os, difflib
+from functools import lru_cache
 from collections import defaultdict
 from time import sleep 
 from urllib.robotparser import RobotFileParser
@@ -18,6 +19,7 @@ def url_to_filename(url: str) -> str:
     return url.lstrip('https://').lstrip('http://').rstrip('/').replace('/', '_').replace('.', '-')
 
 
+@lru_cache
 def _fuzzy_match(word, keyword, threshold=0.8):
     """
     Check if word fuzzy matches keyword using difflib ratio.
@@ -36,22 +38,54 @@ def is_url_blacklisted(url: str) -> bool:
     return False
 
 
-def detect_topic_and_priority(text: str, language: str):
+def detect_page_topic_and_priority(text: str) -> dict[str, str]:
+    result = {
+        'priority': 'low',
+        'topic': 'none',
+    }
+
+    if not text: return result
+
     text_lower = text.lower()
-    words = re.findall(r'\w+', text_lower)
+    words = text_lower.split()
+    topic_counter = { prio: defaultdict(int) for prio in PAGE_PRIORITY_KEYWORDS.keys() }
+    prio_counter  = { prio: 0 for prio in PAGE_PRIORITY_KEYWORDS.keys() } 
+
+    for word in words:
+        for prio, kws in PAGE_PRIORITY_KEYWORDS.items():
+            for kw in kws:
+                if _fuzzy_match(word, kw):
+                    topic_counter[prio][kw] += 1
+            prio_counter[prio] += sum(topic_counter[prio].values())
+    
+    if max(prio_counter.values()) == 0:
+        return result
+
+    top_prio  = max(prio_counter.keys(), key=lambda k: prio_counter[k])
+    top_topic = max(topic_counter[top_prio].keys(), key=lambda k: topic_counter[top_prio][k])
+
+    result['priority'] = top_prio 
+    result['topic']    = top_topic
+    
+    return result 
+
+
+def detect_chunk_topic(text: str) -> str:
+    if not text: return 'none'
+
+    text_lower = text.lower()
+    words = text_lower.split() 
+    topic_counter = { topic: 0 for topic in CHUNK_TOPIC_KEYWORDS.keys() }
     
     for word in words:
-        for kw in PAGE_PRIORITY_KEYWORDS_HIGH[language]:
-            if _fuzzy_match(word, kw):
-                return kw, 'high'
-        for kw in PAGE_PRIORITY_KEYWORDS_MEDIUM[language]:
-            if _fuzzy_match(word, kw):
-                return kw, 'medium'
-        for kw in PAGE_PRIORITY_KEYWORDS_LOW[language]:
-            if _fuzzy_match(word, kw):
-                return kw, 'low'
+        for topic, kws in CHUNK_TOPIC_KEYWORDS.items():
+            topic_counter[topic] += len(list(filter(lambda kw: _fuzzy_match(word, kw), kws)))
+     
+    if max(topic_counter.values()) == 0:
+        return 'none'
 
-    return 'low', 'none'
+    top_topic = max(topic_counter.keys(), key=lambda k: topic_counter[k])
+    return top_topic
 
 
 def load_set_dict(
@@ -64,7 +98,8 @@ def load_set_dict(
     if os.path.exists(urls_json_path) and refresh_entry != 'all':
         try:
             with open(urls_json_path, 'r') as f:
-                url_dict = json.load(f)
+                for key, value in json.load(f).items():
+                    url_dict[key] = value
         except Exception as e:
             logger.error(f"Failed to load URL dictionary '{dict_name}': {e}")
     

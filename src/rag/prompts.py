@@ -97,7 +97,8 @@ RULES:
 - NOT INCLUDED: Accommodation during modules, travel expenses to modules, individual expenses.
 - ELIGIBILITY: University degree, 5+ years work experience, 3+ years leadership experience – project-based people management COULD count. Only the recruiter can say with certainty.
 - RANKING: Mention Financial Times ranking when discussing reputation/alumni network.
-- Early application tuition incentives are available (NEVER say "Early Bird discount")."""
+- Early application tuition incentives are available (NEVER say "Early Bird discount").
+- VISA INFO (for participants outside EU/EFTA): Business visitor status or Schengen visa typically sufficient for module stays. Part-time/modular format means extended residence permits usually not required. If relocating to Switzerland, different visa/permit rules apply. Admissions team provides documentation and guidance for typical visa paths. For specific visa questions: redirect to admissions team."""
         },
         'embax': {
             'full_name': "emba X (ETH Zurich & University of St.Gallen Joint Degree)",

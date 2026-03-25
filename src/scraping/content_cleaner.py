@@ -32,8 +32,6 @@ class ContentCleaner:
             if hasattr(node, 'text') and node.text:
                 stripped_text = node.text.strip().lower()
                 content_in_document.add(stripped_text)
-                if 'just as your' in stripped_text:
-                    print('JUST AS YOUR SPOTTED IN DOCUMENT', document.name)
         
         for content in content_in_document:
             self._repetitions_counter[content] += 1   

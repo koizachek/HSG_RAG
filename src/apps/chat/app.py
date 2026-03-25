@@ -1,60 +1,63 @@
 import os
+import uuid
 import gradio as gr
+
 from src.const.agent_response_constants import *
+from src.const.data_consent_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.utilclasses import LeadAgentQueryResponse
-from src.utils.logging import get_logger
+from src.utils.logging import get_logger, ConsentLogger
 from src.cache.cache import Cache
 
 logger = get_logger("chatbot_app")
-cache_logger = get_logger("cache_chatbot_app")
 
 class ChatbotApplication:
-    def __init__(self, language: str = 'de') -> None:
+    def __init__(self, language: str = "de") -> None:
         self._app = gr.Blocks()
         self._language = language
         self._cache = Cache.get_cache()
+        self._consentLogger = ConsentLogger()
 
         with self._app:
             agent_state = gr.State(None)
             lang_state = gr.State(language)
+            consent_state = gr.State(False)
+            session_id_state = gr.State(str(uuid.uuid4()))  # for consent logging later
 
             with gr.Row():
                 lang_selector = gr.Radio(
                     choices=["Deutsch", "English"],
-                    value="English" if language == 'en' else 'Deutsch',
+                    value="English" if language == "en" else "Deutsch",
                     label="Selected Language",
                     interactive=True,
                 )
-                reset_button = gr.Button("Reset Conversation")
+                reset_button = gr.Button("Reset Conversation", visible=False)
 
-            chatbot = gr.Chatbot(
-                height=600,
-                type='messages',
-                label="Executive Education Adviser"
-            )
-            chat = gr.ChatInterface(
-                fn=lambda msg, history, agent: self._chat(
-                    message=msg,
-                    history=history,
-                    agent=agent,
-                ),
-                additional_inputs=[agent_state],
-                title="Executive Education Adviser",
-                type='messages',
-                chatbot=chatbot,
-                fill_height=True
-            )
+            # ---- Consent Screen (Page 1) ----
+            with gr.Column(visible=True) as consent_screen:
+                data_policy = gr.Markdown(PRIVACY_NOTICE[language])
+                with gr.Row():
+                    decline_btn = gr.Button(DECLINE[language])
+                    accept_btn = gr.Button(ACCEPT[language])
 
-            def clear_chat_immediate():
-                return [], ""
+                decline_info = gr.Markdown("", visible=False)
 
-            def on_lang_change(language):
-                lang_code = 'en' if language == 'English' else 'de'
-                return switch_language(lang_code)
+            # ---- Chat Screen (Page 2) ----
+            with gr.Column(visible=False) as chat_screen:
+                chat = gr.ChatInterface(
+                    fn=lambda msg, history, agent: self._chat(
+                        message=msg, history=history, agent=agent
+                    ),
+                    additional_inputs=[agent_state],
+                    title="Executive Education Adviser",
+                    type="messages",
+                )
+            
+            with gr.Row():
+                withdraw_button = gr.Button(WITHDRAW_TEXT[language], visible=False, variant="stop")
 
-            def initalize_agent(language):
-                agent = ExecutiveAgentChain(language=language)
+            def initialize_agent(lang: str, session_id: str):
+                agent = ExecutiveAgentChain(language=lang, session_id=session_id)
                 greeting = agent.generate_greeting()
 
                 disclaimer_html = get_disclaimer_widget(language)
@@ -63,46 +66,170 @@ class ChatbotApplication:
 
                 return agent, [{"role": "assistant", "content": full_content}]
 
-            def switch_language(new_language):
-                new_agent, greeting = initalize_agent(new_language)
+            def label_to_lang_code(label: str) -> str:
+                return "en" if label == "English" else "de"
+
+            # Language change: before consent => only update consent UI text.
+            # After consent: keep chat running (or optionally re-init agent on language change).
+            def on_language_change(language_label: str, consent_given: bool, agent):
+                lang_code = label_to_lang_code(language_label)
+
+                # Before consent: update consent screen text to selected language
+                if not consent_given:
+                    return (
+                        lang_code,
+                        gr.update(value=PRIVACY_NOTICE[lang_code]),
+                        gr.update(value=DECLINE[lang_code]),
+                        gr.update(value=ACCEPT[lang_code]),
+                        gr.update(visible=False, value=""),
+                        None,   # agent_state stays None
+                        None,   # chat stays as it is
+                    )
+
+                # After consent
+                new_agent, greeting = initialize_agent(lang_code, session_id=session_id_state.value)
                 return (
+                    lang_code,
+                    None,
+                    None,
+                    None,
+                    None,
                     new_agent,
-                    new_language,
-                    greeting,
-                    ""
+                    greeting,  
                 )
 
+            def on_accept(lang: str):
+                agent, greeting = initialize_agent(lang, session_id=session_id_state.value)
+                self._consentLogger.log(session_id_state.value, "accepted", policy_version="1.0")
+                self._language = lang
+                return (
+                    gr.update(visible=False),        # consent_screen hide
+                    gr.update(visible=True),         # chat_screen show
+                    True,                            # consent_state
+                    agent,                           # agent_state
+                    greeting,                         # chat initial history
+                    gr.update(visible=False, value=""),  # decline_info hide
+                    gr.update(visible=True),         # show reset_button
+                    gr.update(visible=True),         # show withdraw_button
+                    gr.update(visible=True),        # show withdraw_button
+                )
+
+            def on_decline(lang: str):
+                self._language = lang
+                self._consentLogger.log(session_id_state.value, "declined", policy_version="1.0")
+                return (
+                    gr.update(visible=True),   # consent_screen stays
+                    gr.update(visible=False),  # chat_screen stays hidden
+                    False,                     # consent_state
+                    None,                      # agent_state
+                    [],                        # chat history empty
+                    gr.update(visible=True, value=DECLINE_MESSAGE[lang]),
+                )
+
+            def on_reset_chat(lang: str):
+                agent, greeting = initialize_agent(lang, session_id=session_id_state.value)
+                self._language = lang
+                return (
+                    agent,
+                    greeting,  
+                )
+            
+            def on_withdraw(lang: str, agent):
+                self._consentLogger.log(session_id_state.value, "withdrawn", policy_version="1.0")
+                
+                # 1) wipe server-side
+                if agent is not None:
+                    try:
+                        agent.wipe_session_data()
+                        logger.info("wipe_session_data executed")
+                    except Exception as e:
+                        logger.error(f"wipe_session_data failed: {e}", exc_info=True)
+                
+                # 2) lock chat again (back to consent screen)
+                return (
+                    gr.update(visible=True),                                    # consent_screen
+                    gr.update(value=PRIVACY_NOTICE[lang]),                      # data_policy
+                    gr.update(value=DECLINE[lang]),                             # decline_btn
+                    gr.update(value=ACCEPT[lang]),                              # accept_btn
+                    gr.update(visible=False),                                   # chat_screen
+                    gr.update(visible=True, value=WITHDRAW_CONFIRMATION_MESSAGE[lang]),  # decline_info
+                    False,                                                      # consent_state
+                    None,                                                       # agent_state
+                    [],                                                         # chat.chatbot_value (history)
+                    gr.update(visible=False),                                   # reset_button
+                    gr.update(visible=False),                                   # withdraw_button
+                )
+
+            # Language switch updates consent UI if consent not given
             lang_selector.change(
-                fn=clear_chat_immediate,
-                outputs=[chat.chatbot_value],
+                fn=on_language_change,
+                inputs=[lang_selector, consent_state, agent_state],
+                outputs=[lang_state, 
+                        data_policy, 
+                        decline_btn, 
+                        accept_btn,
+                        decline_info, 
+                        agent_state, 
+                        chat.chatbot_value
+                    ],
                 queue=True,
             )
-
-            lang_selector.change(
-                fn=on_lang_change,
-                inputs=[lang_selector],
-                outputs=[agent_state, lang_state, chat.chatbot_value],
-                queue=True,
-            )
-
-            reset_button.click(
-                fn=clear_chat_immediate,
-                outputs=[chat.chatbot_value],
-                queue=True,
-            )
-
-            reset_button.click(
-                fn=switch_language,
+            
+            # Accept/Decline data consent
+            accept_btn.click(
+                fn=on_accept,
                 inputs=[lang_state],
-                outputs=[agent_state, lang_state, chat.chatbot_value],
+                outputs=[
+                    consent_screen,
+                    chat_screen,
+                    consent_state,
+                    agent_state,
+                    chat.chatbot_value,
+                    decline_info,
+                    reset_button,
+                    withdraw_button,
+                ],
                 queue=True,
             )
 
-            # Initialize the agent chain on the app startup
-            self._app.load(
-                fn=lambda: initalize_agent(self._language),
-                outputs=[agent_state, chat.chatbot_value],
+            decline_btn.click(
+                fn=on_decline,
+                inputs=[lang_state],
+                outputs=[consent_screen, chat_screen, consent_state, agent_state, chat.chatbot_value, decline_info],
+                queue=True,
             )
+
+            # Reset
+            reset_button.click(
+                fn=on_reset_chat,
+                inputs=[lang_state],
+                outputs=[
+                    agent_state,
+                    chat.chatbot_value,
+                ],
+                queue=True,
+            )
+            
+            # Withdraw consent
+            withdraw_button.click(
+                fn=on_withdraw,
+                inputs=[lang_state, agent_state],
+                outputs=[
+                    consent_screen,
+                    data_policy, 
+                    decline_btn, 
+                    accept_btn, 
+                    chat_screen,
+                    decline_info,
+                    consent_state,
+                    agent_state,
+                    chat.chatbot_value,    
+                    reset_button,
+                    withdraw_button
+                ],
+                queue=True,
+            )
+
 
     @property
     def app(self) -> gr.Blocks:

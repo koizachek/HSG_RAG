@@ -15,6 +15,7 @@ import json
 import os
 import re
 import random
+import glob
 from datetime import datetime
 
 from src.database.weavservice import WeaviateService
@@ -38,7 +39,7 @@ chain_logger = get_logger('agent_chain')
 
 
 class ExecutiveAgentChain:
-    def __init__(self, language: str = 'en') -> None:
+    def __init__(self, language: str = 'en', session_id: str | None = None) -> None:
         self._initial_language  = language
         self._stored_language = language
         self._dbservice = WeaviateService()
@@ -51,7 +52,7 @@ class ExecutiveAgentChain:
         self._language_detector = LanguageDetector()
 
         # Generate unique user ID for this session
-        self._user_id = str(uuid.uuid4())
+        self._user_id = session_id
 
         # Initialize conversation state with user profile tracking
         self._conversation_state: ConversationState = {
@@ -403,6 +404,7 @@ class ExecutiveAgentChain:
 
             # Create profile data
             profile_data = {
+                'session_id': self._conversation_state['user_id'],
                 'user_id': self._conversation_state['user_id'],
                 'name': self._conversation_state.get('user_name'),
                 'timestamp': datetime.now().isoformat(),
@@ -418,7 +420,7 @@ class ExecutiveAgentChain:
 
             # Log file path with timestamp
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            log_file = os.path.join(log_dir, f'profile_{self._user_id}_{timestamp}.json')
+            log_file = os.path.join(log_dir, f'profile_{self._conversation_state["session_id"]}_{self._conversation_state["user_id"]}_{timestamp}.json')
 
             # Write to file
             with open(log_file, 'w', encoding='utf-8') as f:
@@ -428,6 +430,46 @@ class ExecutiveAgentChain:
 
         except Exception as e:
             chain_logger.error(f"Failed to log user profile: {e}")
+    
+    def wipe_session_data(self) -> None:
+        """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
+
+        # --- 1) In-memory wipe ---
+        self._conversation_history = []
+        self._conversation_state.update({
+            'user_language': None,
+            'user_name': None,
+            'experience_years': None,
+            'leadership_years': None,
+            'field': None,
+            'interest': None,
+            'qualification_level': None,
+            'program_interest': [],
+            'suggested_program': None,
+            'handover_requested': None,
+            'topics_discussed': [],
+            'preferences_known': False
+        })
+        self._scope_violation_counts = {}
+        self._aggressive_violation_count = 0
+
+        # --- 2) On-disk wipe (delete profile_<user_id>_*.json) ---
+        if not self._user_id:
+            chain_logger.warning("wipe_session_data called without user_id – skipping file deletion")
+            return
+
+        pattern = os.path.join(
+            "logs",
+            "user_profiles",
+            f"profile_{self._user_id}_*.json"
+        )
+
+        for path in glob.glob(pattern):
+            try:
+                os.remove(path)
+                chain_logger.info(f"Deleted profile file: {path}")
+            except OSError as e:
+                chain_logger.error(f"Failed to delete {path}: {e}")
 
     def generate_greeting(self) -> str:
         greeting_message = random.choice(GREETING_MESSAGES[self._stored_language])
