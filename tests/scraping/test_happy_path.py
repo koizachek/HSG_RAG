@@ -3,7 +3,7 @@ import pytest, os
 from src.utils.logging import init_logging
 
 from src.scraping.scraper import Scraper
-from src.scraping.utils import url_to_filename
+from src.scraping.url_normalizer import UrlNormalizer
 from src.config import config
 
 class TestHappyPath:
@@ -11,8 +11,8 @@ class TestHappyPath:
     def test_happy_path(self):
         init_logging()
 
-        target_url = 'https://embax.ch'
-        url_filename = url_to_filename(target_url)
+        target_url = 'https://embax.ch/'
+        url_filename = UrlNormalizer().url_to_filename(target_url)
         scraper = Scraper()
         
         results = scraper.scrape_target(target_url)

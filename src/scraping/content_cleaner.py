@@ -3,8 +3,6 @@ import json, os
 from typing import Counter
 from docling_core.types.doc.document import DoclingDocument
 
-from .utils import url_to_filename
-
 from ..const.cc_whitelist import REPETITION_WHITELIST
 from ..utils.logging import get_logger
 from ..config import config
@@ -37,7 +35,7 @@ class ContentCleaner:
             self._repetitions_counter[content] += 1   
     
 
-    def perform_content_analysis(self, target_url: str = "index") -> None:
+    def perform_content_analysis(self,target_url: str = "index", url_filename: str = 'index', ) -> None:
         self._repetitive_content = [{'content': text, 'amount': count} 
             for text, count in self._repetitions_counter.items() 
                 if text not in REPETITION_WHITELIST and count > 1]
@@ -48,7 +46,7 @@ class ContentCleaner:
             'target_url': target_url,
             'repetitive_content': self._repetitive_content,
         }
-        target_url_filename = url_to_filename(target_url) + '-content_analysis.json'
+        target_url_filename = url_filename + '-content_analysis.json'
         target_url_path = os.path.join(config.paths.SCRAPING_OUTPUT, target_url_filename) 
         with open(target_url_path, 'w') as f:
             json.dump(content_analysis, f, indent=4)        

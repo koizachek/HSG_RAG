@@ -32,7 +32,8 @@ rich>=13.5.2
 
 # Processing pipeline
 docling>=2.55.0
-ultimate-sitemap-parser==1.8.0
+ultimate-sitemap-parser>=1.8.0
+beautifulsoup4>=4.14.3
 
 # Weaviate Vector DB 
 weaviate-client>=4.16.9
