@@ -1,8 +1,9 @@
 from docling.document_converter import InputFormat
 from docling_core.types.doc.document import DoclingDocument, TitleItem
 
-from ..config import config
+from .types import ChunkMetadata
 
+from ..config import config
 from ..pipeline.processors import ProcessorBase
 from ..utils.logging import get_logger
 
@@ -45,7 +46,7 @@ class HTMLProcessor(ProcessorBase):
         return prepared_chunks
     
 
-    def merge_chunks_by_topic(self, chunk_metadatas: list[dict]) -> list[dict]:
+    def merge_chunks_by_topic(self, chunk_metadatas: list[ChunkMetadata]) -> list[dict]:
         MAX_TOKENS = config.processing.MAX_TOKENS
         merged_chunks = []
 
@@ -54,8 +55,8 @@ class HTMLProcessor(ProcessorBase):
         current_topic  = None
 
         for chunk in chunk_metadatas:
-            topic      = chunk["topic"]
-            token_size = chunk["token_size"]
+            topic      = chunk.topic
+            token_size = chunk.token_size
             
             # If the chunk is already large enough, it will not be merged
             if token_size >= MAX_TOKENS:
@@ -92,26 +93,26 @@ class HTMLProcessor(ProcessorBase):
 
     def _create_merged_chunk(self, group: list[dict]) -> dict:
         if len(group) == 1:
-            return group[0].copy()
+            return group[0]
 
-        merged_text  = "\n".join(cm["text"] for cm in group).strip()
-        total_tokens = sum(cm["token_size"] for cm in group)
+        merged_text  = "\n".join(cm.text for cm in group).strip()
+        total_tokens = sum(cm.token_size for cm in group)
 
         first = group[0]
 
-        merged_id = f"merged_{first['topic']}_{group[0]['chunk_id']}_to_{group[-1]['chunk_id']}"
+        merged_id = f"merged_{first.topic}_{group[0].chunk_id}_to_{group[-1].chunk_id}"
         merged_chunk = {
             "chunk_id":           merged_id,
             "text":               merged_text,
-            "source_url":         first["source_url"],
-            "program":            first["program"],
-            "language":           first["language"],
-            "topic":              first["topic"],
-            "last_scraped":       first["last_scraped"],
-            "page_title":         first["page_title"],
-            "section_heading":    first["section_heading"],
+            "source_url":         first.source_url,
+            "program":            first.program,
+            "language":           first.language,
+            "topic":              first.topic,
+            "last_scraped":       first.last_scraped,
+            "page_title":         first.page_title,
+            "section_heading":    first.section_heading,
             "token_size":         total_tokens,
-            "original_chunk_ids": [c["chunk_id"] for c in group],  
+            "original_chunk_ids": [c.chunk_id for c in group],  
         }
         return merged_chunk
 

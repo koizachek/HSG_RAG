@@ -10,6 +10,8 @@ from urllib.error import URLError
 from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 
+from src.scraping.types import FetchResult
+
 from ..config import config
 from ..const.page_priority import *
 from ..utils.logging import get_logger
@@ -133,6 +135,35 @@ def extract_last_modified(response, html) -> datetime.datetime | None:
     return parse_isoformat(last_modified)
 
 
+def fetch_head(url: str, etag: str | None = None) -> FetchResult:
+    try:
+        headers = {"User-Agent": ua.chrome}
+        if etag:
+            headers["If-None-Match"] = etag
+
+        response = requests.head(
+            url,
+            allow_redirects=True,
+            timeout=15,
+            headers=headers
+        )
+        if response.status_code == 304:
+            return FetchResult(not_modified=True)
+
+        if response.status_code >= 400:
+            logger.warning(f"HTTP {response.status_code} for URL '{url}'")
+            raise Exception() 
+
+        return FetchResult(
+            final_url     = response.url,
+            last_modified = response.headers.get('Last-Modified'), 
+            etag          = response.headers.get('ETag')
+        )
+    except Exception as e:
+        logger.exception(f"Head fetch failed: {url}")
+        raise e 
+
+
 def fetch_url(url: str, etag: str | None = None) -> dict:
     try:
         headers = {"User-Agent": ua.chrome}
@@ -146,24 +177,24 @@ def fetch_url(url: str, etag: str | None = None) -> dict:
             headers=headers
         )
         if response.status_code == 304:
-            return { "not_modified": True }
+            return FetchResult(not_modified=True)
 
         if response.status_code >= 400:
             logger.warning(f"HTTP {response.status_code} for URL '{url}'")
             raise Exception() 
        
         html = response.text  
-        etag = response.headers.get("ETag", None)
+        etag = response.headers.get("ETag")
         last_modified = extract_last_modified(response, html)
         page_hash = hash_html(html)
 
-        return {
-            "text":          html, 
-            "final_url":     response.url,
-            "page_hash":     page_hash,
-            "last_modified": last_modified,
-            "etag":          etag,
-        }
+        return FetchResult(
+            text          = html, 
+            final_url     = response.url,
+            page_hash     = page_hash,
+            last_modified = last_modified,
+            etag          = etag,
+        )
     except Exception as e:
         logger.exception(f"Fetch failed: {url}")
         raise e 
