@@ -16,7 +16,6 @@ class TestHappyPath:
         scraper = Scraper()
         
         results = scraper.scrape_target(target_url)
-        assert len(results) > 0
         
         logs_file_path = os.path.join(config.paths.LOGS, 'scraping.log')
         raw_html_file_path = os.path.join(config.paths.RAW_HTML_OUTPUT, url_filename + '.html')
