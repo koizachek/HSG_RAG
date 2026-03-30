@@ -27,10 +27,10 @@ class UrlTags:
 
 @dataclass 
 class UrlTimestamps:
-    last_modified: datetime 
-    last_scraped:  datetime 
-    etag:          str 
-    page_hash:     str
+    last_modified: datetime = None
+    last_scraped:  datetime = None
+    etag:          str = ""
+    page_hash:     str = ""
 
 @dataclass 
 class DocumentTags:
