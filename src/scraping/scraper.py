@@ -382,6 +382,35 @@ class Scraper:
         return True
 
 
+    def _is_url_prioritized(self, url) -> bool:
+        if url not in self._url_timestamps.keys(): 
+            return True 
+        
+        for prio, urls in self._url_priorities.items():
+            if url in urls:
+                return self._is_scraping_scheduled(url, prio)
+
+        return True
+
+
+    def _is_scraping_scheduled(self, url, prio) -> bool:
+        current_timestamp = datetime.now()
+        saved_timestamp   = self._url_timestamps[url].last_scraped
+        time_difference   = current_timestamp - saved_timestamp
+
+        if not saved_timestamp:
+            return True 
+
+        if prio == 'high':
+            return time_difference.days >= 1 
+        if prio == 'medium':
+            return time_difference.days >= 7 
+        if prio == 'low':
+            return time_difference.days >= 30
+
+        return True
+
+
     def _scrape_page(
         self, url: str, 
         crawl_delay: float, 
@@ -398,13 +427,16 @@ class Scraper:
 
         if url in visited_urls:
             logger.info(f'URL {url} was already analyzed via redirect, skipping...')
-            return None
-        
+            return None 
 
         if not self._scrape_all and last_modified and not self._is_url_modified(url, new_last_modified=last_modified):
             logger.info(f"URL '{url}' was not modified since last scraping session, skipping...")
             self._url_timestamps[url].last_modified = last_modified
             return None 
+        
+        if not self._is_url_prioritized(url):
+            logger.info(f"URL {url} is not prioritized, skipping")
+            return None
 
         logger.info(f"Fetching head for URL '{url}'...")
         
