@@ -27,19 +27,13 @@ from src.config import config
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
 
-class EnchansedTableSerializer(BaseTableSerializer):
+class EnhancedTableSerializer(BaseTableSerializer):
     def serialize(self, *, item, doc_serializer, doc, **kwargs) -> SerializationResult:
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return create_ser_result(text='')
 
         grid = item.data.grid
         if not grid: 
-            return create_ser_result(text='')
-
-        row_count = len(grid)
-        col_count = len(grid[0]) if grid else 0
-
-        if row_count < 7 or col_count < 3: 
             return create_ser_result(text='')
  
         row_cells = []
@@ -84,7 +78,7 @@ class EnchansedSerializerProvider(ChunkingSerializerProvider):
     def get_serializer(self, doc):
         return ChunkingDocSerializer(
             doc=doc,
-            table_serializer=EnchansedTableSerializer(),
+            table_serializer=EnhancedTableSerializer(),
         )
 
 class ProcessorBase:

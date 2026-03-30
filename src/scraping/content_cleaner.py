@@ -1,6 +1,7 @@
 import json, os
 
 from typing import Counter
+from bs4 import BeautifulSoup
 from docling_core.types.doc.document import DoclingDocument
 
 from ..const.cc_whitelist import REPETITION_WHITELIST
@@ -13,6 +14,14 @@ class ContentCleaner:
     def __init__(self) -> None:
         self._repetitions_counter: Counter = Counter()
         self._repetitive_content:  list[str] = []
+    
+    
+    def clean_mobile_content(self, html: str) -> str:
+        soup = BeautifulSoup(html, 'html')
+        for element in soup.find_all(class_='show-sm'):
+            element.decompose()
+
+        return str(soup)
 
 
     def extract_urls(self, document: DoclingDocument) -> list[str]:

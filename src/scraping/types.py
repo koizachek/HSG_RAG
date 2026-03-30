@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass 
+from dataclasses import asdict, dataclass, is_dataclass 
 from datetime import datetime
 
 from docling_core.types.doc.document import DoclingDocument
@@ -83,6 +83,7 @@ class DocumentAnalysisReport:
 
 
 def dataclass_to_dict(obj) -> dict:
+    if not is_dataclass(obj): return obj
     return asdict(obj, dict_factory=lambda items: {
         k: v.isoformat() if isinstance(v, datetime) else v
         for k, v in items

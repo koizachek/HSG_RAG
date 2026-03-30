@@ -20,8 +20,9 @@ logger = get_logger('scraper.core')
 incupd_logger = get_logger('scraper.incremental_updates')
 
 class Scraper:
-    def __init__(self) -> None:
-        self._path = config.paths
+    def __init__(self, scrape_all: bool =True) -> None:
+        self._scrape_all = scrape_all
+        self._path       = config.paths
         self._processor:       HTMLProcessor  = HTMLProcessor()
         self._normalizer:      UrlNormalizer  = UrlNormalizer()
         self._content_cleaner: ContentCleaner = ContentCleaner()
@@ -399,7 +400,8 @@ class Scraper:
             logger.info(f'URL {url} was already analyzed via redirect, skipping...')
             return None
         
-        if last_modified and not self._is_url_modified(url, new_last_modified=last_modified):
+
+        if not self._scrape_all and last_modified and not self._is_url_modified(url, new_last_modified=last_modified):
             logger.info(f"URL '{url}' was not modified since last scraping session, skipping...")
             self._url_timestamps[url].last_modified = last_modified
             return None 
@@ -443,12 +445,16 @@ class Scraper:
         with open(raw_html_file_path, 'w') as f:
             f.write(raw_html)
             logger.info(f"Saved fetched HTML under '{raw_html_file_path}'")
+        
+        logger.info(f"Cleaning URL {final_url} from mobile data...")
+        cleaned_html = self._content_cleaner.clean_mobile_content(raw_html)
 
-        logger.info(f"Processing URL '{final_url}'...")
-        document = self._processor.process(final_url, raw_html)
+        logger.info(f"Processing URL {final_url}...")
+        document = self._processor.process(final_url, cleaned_html)
         
         if not document:
-            logger.warning(f"Failed to process URL '{final_url}'! Sipping...")
+
+            logger.warning(f"Failed to process URL '{final_url}'! Skipping...")
             return None
         
         discovered_urls = self._content_cleaner.extract_urls(document) if discovery_depth <= 3 else []
@@ -493,7 +499,9 @@ class Scraper:
                 results_dict[prio] = list(prev.union(urls))
         
         else:
-            if target_url:
+
+            results = [dataclass_to_dict(r) for r in results]
+            if target_url: 
                 results_dict[target_url] = results
             else:
                 results_dict = results
