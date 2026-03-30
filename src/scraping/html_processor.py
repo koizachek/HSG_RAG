@@ -118,20 +118,20 @@ class HTMLProcessor(ProcessorBase):
 
 
     def _get_formatted_chunk_text(self, chunk, headings) -> str: 
-            formatted_text = f"{' '.join(headings)}\n"
+        formatted_text = f"{' '.join(headings)}\n"
 
-            if not hasattr(chunk.meta, 'doc_items'):
-                return formatted_text + chunk.text.replace('\n', ' ')
-
-            labels = set()       
-            for item in chunk.meta.doc_items:
-                labels.add(item.label)
-            
-            labels = [label for label in labels if label in ['table', 'list_item']]
-            if labels:
-                return formatted_text + chunk.text
-
+        if not hasattr(chunk.meta, 'doc_items'):
             return formatted_text + chunk.text.replace('\n', ' ')
+
+        labels = set()       
+        for item in chunk.meta.doc_items:
+            labels.add(item.label)
+        
+        labels = [label for label in labels if label in ['table', 'list_item']]
+        if labels:
+            return formatted_text + chunk.text
+
+        return formatted_text + chunk.text.replace('\n', ' ')
 
 
     def _merge_chunks_by_headings(self, raw_chunks: list) -> list[str]:
@@ -179,7 +179,7 @@ class HTMLProcessor(ProcessorBase):
             if len(group) > 1:
                 full_chunk = f"{'\n'.join(headings[1:-1])}\n{'\n'.join(group)}"
             else:
-                full_chunk = f"{'\n'.join(headings[1:])}\n{chunk.text.replace('\n', ' ')}"
+                full_chunk = f"{'\n'.join(headings[1:])}\n{chunk.text}"
 
             merged.append(full_chunk.strip())
                 
