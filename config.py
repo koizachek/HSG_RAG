@@ -143,6 +143,13 @@ SCRAPING_TARGET_URLS = [
     'https://embax.ch',            # emba X root
 ]
 
+# Scraping Priority Interval in days
+SCRAPING_PRIO_INTERVAL = {
+    "high": 1,
+    "medium": 7,
+    "low": 30
+}
+
 # ======================================== Agent Chain Configuration ========================================
 
 # A boolean; either True or False. Activates the response quality evaluation procedure

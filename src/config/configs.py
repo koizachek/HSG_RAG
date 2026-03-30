@@ -53,6 +53,7 @@ class ScrapingConfig(ConfigBase):
     CRAWL_DELAY: int  = _get('SCRAPING_CRAWL_DELAY', 1)
     BACKOFF_RATE: int = _get('SCRAPING_BACKOFF_RATE', 2)
     TARGET_URLS: int  = _get('SCRAPING_TARGET_URLS', None)
+    INTERVALS: dict = _get('SCRAPING_PRIO_INTERVAL', dict())
 
 
 class ConversationStateConfig(ConfigBase):

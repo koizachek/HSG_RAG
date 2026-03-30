@@ -399,14 +399,12 @@ class Scraper:
         time_difference   = current_timestamp - saved_timestamp
 
         if not saved_timestamp:
-            return True 
+            return True
 
-        if prio == 'high':
-            return time_difference.days >= 1 
-        if prio == 'medium':
-            return time_difference.days >= 7 
-        if prio == 'low':
-            return time_difference.days >= 30
+        for interval_prio, interval in config.scraping.INTERVALS.items():
+            if prio == interval_prio:
+                logger.info(f"prio={prio} interval_prio = {interval_prio} interval={interval} time_difference.days={time_difference.days}")
+                return time_difference.days >= interval
 
         return True
 
