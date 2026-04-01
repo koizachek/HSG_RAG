@@ -24,8 +24,8 @@ class Scraper:
     def __init__(self, scrape_all: bool = True) -> None:
         self._scrape_all = scrape_all
         self._path = config.paths
-        self._processor: HTMLProcessor = HTMLProcessor()
-        self._normalizer: UrlNormalizer = UrlNormalizer()
+        self._processor:       HTMLProcessor  = HTMLProcessor()
+        self._normalizer:      UrlNormalizer  = UrlNormalizer()
         self._content_cleaner: ContentCleaner = ContentCleaner(self._scrape_all)
 
         self._make_directories()
@@ -37,13 +37,13 @@ class Scraper:
         logger.info(f'Successfully initialized the scraper')
 
     def _make_directories(self) -> None:
-        os.makedirs(self._path.URLS_OUTPUT, exist_ok=True)
-        os.makedirs(self._path.CHUNKS_OUTPUT, exist_ok=True)
-        os.makedirs(self._path.TEMP_CHUNKS_OUTPUT, exist_ok=True)
-        os.makedirs(self._path.SCRAPING_OUTPUT, exist_ok=True)
-        os.makedirs(self._path.RAW_HTML_OUTPUT, exist_ok=True)
-        os.makedirs(self._path.RAW_TEXT_OUTPUT, exist_ok=True)
-        os.makedirs(self._path.METADATA_OUTPUT, exist_ok=True)
+        os.makedirs(self._path.URLS_OUTPUT,           exist_ok=True)
+        os.makedirs(self._path.CHUNKS_OUTPUT,         exist_ok=True)
+        os.makedirs(self._path.TEMP_CHUNKS_OUTPUT,    exist_ok=True)
+        os.makedirs(self._path.SCRAPING_OUTPUT,       exist_ok=True)
+        os.makedirs(self._path.RAW_HTML_OUTPUT,       exist_ok=True)
+        os.makedirs(self._path.RAW_TEXT_OUTPUT,       exist_ok=True)
+        os.makedirs(self._path.METADATA_OUTPUT,       exist_ok=True)
         os.makedirs(self._path.EXTRACTED_TEXT_OUTPUT, exist_ok=True)
 
     def scrape_target(self, target_url: str) -> list[ChunkMetadata]:
@@ -78,7 +78,7 @@ class Scraper:
         logger.info(f"Indexed {len(discovered_urls)} new URLs for target URL {target_url}")
 
         # Step 4: Load temp chunks first so resume works even when there are no new documents.
-        temp_filename = self._get_temp_chunks_filename(target_url)
+        temp_filename      = self._get_temp_chunks_filename(target_url)
         temp_merged_chunks = self._load_data(self._path.TEMP_CHUNKS_OUTPUT, temp_filename)
 
         if not documents and not temp_merged_chunks:
@@ -95,11 +95,7 @@ class Scraper:
             tagged_documents = analyzied_documents.tagged_documents
 
         # Step 5: Collect and save chunks
-        chunk_metadatas = self._collect_chunks(
-            tagged_documents,
-            target_url=target_url,
-            existing_merged_chunks=temp_merged_chunks,
-        )
+        chunk_metadatas = self._collect_chunks(tagged_documents, target_url, temp_merged_chunks)
 
         self._save_results(self._path.METADATA_OUTPUT, 'raw_chunk_metadata', chunk_metadatas['raw'], target_url)
         self._save_results(self._path.METADATA_OUTPUT, 'merged_chunk_metadata', chunk_metadatas['merged'], target_url)
@@ -161,15 +157,15 @@ class Scraper:
         logger.info(f'Loaded sitemaps with {len(page_data)} pages')
 
         return DomainAnalysisReport(
-            target=target_domain,
-            urls=list(page_urls),
-            pages=page_data,
-            delay=delay,
+            target = target_domain,
+            urls   = list(page_urls),
+            pages  = page_data,
+            delay  = delay,
         )
 
     def _analyze_sitemap(self, domain: DomainAnalysisReport) -> UrlAnalysisReport:
         documents = []
-        visited_urls = set()
+        visited_urls    = set()
         discovered_urls = set()
 
         sitemap_pages = domain.pages
@@ -191,8 +187,8 @@ class Scraper:
 
         discovered_urls = [url for url in discovered_urls if url not in visited_urls]
         return UrlAnalysisReport(
-            documents=documents,
-            discovered_urls=discovered_urls,
+            documents       = documents,
+            discovered_urls = discovered_urls,
         )
 
     def _analyze_discoveries(self, discovered_urls: list, sitemap_urls: list,
@@ -200,8 +196,8 @@ class Scraper:
         if len(discovered_urls) == 0:
             return UrlAnalysisReport([], [])
 
-        documents = []
-        discoveries = discovered_urls.copy()
+        documents    = []
+        discoveries  = discovered_urls.copy()
         visited_urls = set(sitemap_urls.copy())
 
         discovered_urls = [{'url': url, 'depth': 0} for url in discovered_urls]
@@ -226,13 +222,13 @@ class Scraper:
                 discovered_urls.append({'url': new_url, 'depth': result.discovery_depth})
 
         return UrlAnalysisReport(
-            documents=documents,
-            discovered_urls=discoveries,
+            documents       = documents,
+            discovered_urls = discoveries,
         )
 
     def _analyze_url_documents(self, documents: list) -> DocumentAnalysisReport:
         url_tags = {}
-        url_priorities = defaultdict(list)
+        url_priorities   = defaultdict(list)
         tagged_documents = []
 
         logger.info(f"Analyzing scraped contents of {len(documents)} pages...")
@@ -251,19 +247,19 @@ class Scraper:
                 f.write(extracted_text)
                 logger.info(f"Saved extracted text for URL '{url}' under '{extracted_text_file_path}'")
 
-            language = detect_language(extracted_text)
+            language  = detect_language(extracted_text)
             tp_result = detect_page_topic_and_priority(extracted_text)
-            programs = self._processor.strategies_processor.apply_strategy(
+            programs  = self._processor.strategies_processor.apply_strategy(
                 strategy_name='programs',
                 arguments={'document_content': extracted_text},
             )
             program = programs[0] if programs else 'no program'
 
             tags = UrlTags(
-                topic=tp_result['topic'],
-                priority=tp_result['priority'],
-                language=language,
-                program=program,
+                topic    = tp_result['topic'],
+                priority = tp_result['priority'],
+                language = language,
+                program  = program,
             )
 
             url_tags[url] = tags
@@ -272,9 +268,9 @@ class Scraper:
             tagged_documents.append(TaggedDocument(document, DocumentTags(program, language)))
 
         return DocumentAnalysisReport(
-            url_tags=url_tags,
-            url_priorities=url_priorities,
-            tagged_documents=tagged_documents,
+            url_tags         = url_tags,
+            url_priorities   = url_priorities,
+            tagged_documents = tagged_documents,
         )
 
     def _collect_chunks(
@@ -283,7 +279,7 @@ class Scraper:
             target_url: str,
             existing_merged_chunks: dict[str, list[ChunkMetadata]] | None = None,
     ) -> dict[str, list[ChunkMetadata]]:
-        raw_chunks = []
+        raw_chunks     = []
         deleted_chunks = []
 
         for url in [entry.document.name for entry in tagged_documents]:
@@ -292,7 +288,7 @@ class Scraper:
                     f"Removed {url} from existing chunks as it is newly scraped!")
                 del existing_merged_chunks[url]
 
-        merged_chunks = [chunk for v in existing_merged_chunks.values() for chunk in v]
+        merged_chunks   = [chunk for v in existing_merged_chunks.values() for chunk in v]
         program_counter = self._build_program_counter_from_merged_chunks(merged_chunks)
 
         if merged_chunks:
@@ -301,7 +297,7 @@ class Scraper:
 
         for entry in tagged_documents:
             document = entry.document
-            program = entry.tags.program
+            program  = entry.tags.program
             language = entry.tags.language
             url = document.name
             url_filename = self._normalizer.url_to_filename(url)
@@ -320,18 +316,18 @@ class Scraper:
                 with open(chunk_file_path, 'w', encoding="utf-8") as f:
                     f.write(chunk['text'])
 
-                chunk_topic = detect_chunk_topic(chunk['text'])
+                chunk_topic    = detect_chunk_topic(chunk['text'])
                 chunk_metadata = ChunkMetadata(
-                    chunk_id=f"{program.lower()}_{program_counter[program]:03d}_{i:02d}",
-                    text=chunk['text'],
-                    source_url=url,
-                    program=program,
-                    language=language,
-                    topic=chunk_topic,
-                    last_scraped=datetime.now(),
-                    page_title=self._processor.extract_title(document),
-                    section_heading=chunk['title'],
-                    token_size=chunk['size'],
+                    chunk_id        = f"{program.lower()}_{program_counter[program]:03d}_{i:02d}",
+                    text            = chunk['text'],
+                    source_url      = url,
+                    program         = program,
+                    language        = language,
+                    topic           = chunk_topic,
+                    last_scraped    = datetime.now(),
+                    page_title      = self._processor.extract_title(document),
+                    section_heading = chunk['title'],
+                    token_size      = chunk['size'],
                 )
                 raw_chunks.append(chunk_metadata)
                 if chunk_topic == 'none':
@@ -356,7 +352,7 @@ class Scraper:
 
     def _build_program_counter_from_merged_chunks(self, merged_chunks: list[ChunkMetadata]) -> Counter:
         counter = Counter()
-        seen = set()
+        seen    = set()
 
         for chunk in merged_chunks:
             key = (chunk.program, chunk.source_url)
@@ -435,7 +431,7 @@ class Scraper:
             logger.info(f"Continuing with URL '{final_url}'...")
 
         last_modified = fetch_result.last_modified
-        page_hash = fetch_result.page_hash
+        page_hash     = fetch_result.page_hash
         if not self._scrape_all and not self._is_url_modified(final_url, new_last_modified=last_modified, new_page_hash=page_hash):
             logger.info(f"URL {final_url} was not modified since last scraping session, skipping...")
             return False
@@ -454,8 +450,8 @@ class Scraper:
 
     def _is_scraping_scheduled(self, url, prio) -> bool:
         current_timestamp = datetime.now()
-        saved_timestamp = self._url_timestamps[url].last_scraped
-        time_difference = current_timestamp - saved_timestamp
+        saved_timestamp   = self._url_timestamps[url].last_scraped
+        time_difference   = current_timestamp - saved_timestamp
 
         if not saved_timestamp:
             return True
@@ -498,14 +494,14 @@ class Scraper:
         logger.info(f"Fetching head for URL '{url}'...")
 
         etag = self._get_etag(url)
-        # response = call_with_exponential_backoff(fetch_head, args=(url, etag), delay=crawl_delay)
-        # if response['status'] == 'FAIL':
-        #     logger.warning(f"Failed to fetch head for URL {url}: {response['last_error']}! Skipping...")
-        #     return None
-        #
-        # fetch_result = response['result']
-        # if not self._is_fetch_valid(url, visited_urls, fetch_result):
-        #     return None
+        response = call_with_exponential_backoff(fetch_head, args=(url, etag), delay=crawl_delay)
+        if response['status'] == 'FAIL':
+            logger.warning(f"Failed to fetch head for URL {url}: {response['last_error']}! Skipping...")
+            return None
+
+        fetch_result = response['result']
+        if not self._is_fetch_valid(url, visited_urls, fetch_result):
+            return None
 
         response = call_with_exponential_backoff(fetch_url, args=(url, etag), delay=crawl_delay)
         if response['status'] == 'FAIL':
@@ -520,13 +516,13 @@ class Scraper:
             logger.warning("No information about URL last modification date exists!")
 
         timestamps = UrlTimestamps(
-            last_modified=fetch_result.last_modified,
-            last_scraped=datetime.now(),
-            etag=fetch_result.etag,
-            page_hash=fetch_result.page_hash,
+            last_modified = fetch_result.last_modified,
+            last_scraped  = datetime.now(),
+            etag          = fetch_result.etag,
+            page_hash     = fetch_result.page_hash,
         )
 
-        raw_html = fetch_result.text
+        raw_html  = fetch_result.text
         final_url = fetch_result.final_url
 
         url_filename = self._normalizer.url_to_filename(final_url)
@@ -555,11 +551,11 @@ class Scraper:
             logger.info(f"Saved raw text for URL '{final_url}' under '{raw_text_file_path}'")
 
         return ScrapingResult(
-            document=document,
-            discovered_urls=discovered_urls,
-            final_url=final_url,
-            timestamps=timestamps,
-            discovery_depth=discovery_depth + 1,
+            document        = document,
+            discovered_urls = discovered_urls,
+            final_url       = final_url,
+            timestamps      = timestamps,
+            discovery_depth = discovery_depth + 1,
         )
 
     def _save_results(self, path: str, filename: str, results, target_url: str | None = None) -> None:
