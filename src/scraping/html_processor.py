@@ -26,6 +26,16 @@ class HTMLProcessor(ProcessorBase):
         except Exception as e:
             logger.error(f"Failed to analyze page layout: {e}")
             return None
+    
+
+    def prepare_chunks(self, url: str, url_text: str, metas: list[ChunkMetadata]) -> dict[str, list]:
+        prepared_chunks = { lang: [] for lang in config.get('AVAILABLE_LANGUAGES', ['en', 'de']) }
+        for meta in metas:
+            prepared_chunks[meta.language].append(meta.text)
+        for lang, chunks in prepared_chunks.items():
+            prepared_chunks[lang] = self._prepare_chunks(url, url_text, chunks) 
+ 
+        return prepared_chunks
 
 
     def extract_title(self, document: DoclingDocument) -> str:

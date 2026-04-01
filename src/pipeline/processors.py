@@ -169,8 +169,8 @@ class ProcessorBase:
             list[dict]: List of dictionaries, each containing properties for a chunk.
         """
         prepared_chunks = []
-        for chunk in chunks:  
-            prepared_chunk.append({
+        for chunk in chunks:
+            prepared_chunks.append({
                 prop: self.strategies_processor.apply_strategy(
                     strategy_name=prop,
                     arguments=StrategyArguments(document_name, document_content, chunk),

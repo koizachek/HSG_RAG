@@ -105,7 +105,9 @@ class Scraper:
         logger.info(f"Collected {len(chunk_metadatas['merged'])} chunks from target URL {target_url}")
 
         logger.info(f"Scraping finished for target URL '{target_url}'")
-        return chunk_metadatas['merged']
+
+        return chunk_metadatas['final'] 
+
 
     def _analyze_domain(self, target_url: str) -> DomainAnalysisReport | None:
         if not target_url:
@@ -343,11 +345,13 @@ class Scraper:
             self._save_results(self._path.TEMP_CHUNKS_OUTPUT, self._get_temp_chunks_filename(target_url), {url:merged_chunk_metadatas})
             self._save_results(self._path.SCRAPING_OUTPUT, 'url_timestamps', self._url_timestamps)
             logger.info(f"Merged raw chunks into {len(merged_chunk_metadatas)} chunks by topic")
-
+        
+        final_chunks = self._processor.prepare_chunks(merged_chunks)
         return {
             'raw': raw_chunks,
             'merged': merged_chunks,
             'deleted': deleted_chunks,
+            'final':   final_chunks,
         }
 
     def _build_program_counter_from_merged_chunks(self, merged_chunks: list[ChunkMetadata]) -> Counter:
