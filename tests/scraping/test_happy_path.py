@@ -13,7 +13,7 @@ class TestHappyPath:
 
         target_url = 'https://embax.ch/'
         url_filename = UrlNormalizer().url_to_filename(target_url)
-        scraper = Scraper(scrape_all=False)
+        scraper = Scraper(scrape_all=True)
         
         results = scraper.scrape_target(target_url)
         

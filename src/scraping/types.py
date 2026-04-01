@@ -35,7 +35,10 @@ class UrlTimestamps:
 @dataclass 
 class DocumentTags:
     program:  str 
-    language: str 
+    language: str
+    priority: str = ""
+    last_modified: datetime = None
+    last_scraped: datetime = None
 
 @dataclass 
 class TaggedDocument:
@@ -54,6 +57,7 @@ class ChunkMetadata:
     page_title:      str 
     section_heading: str 
     token_size:      int
+    original_chunk_ids: list[str] = None
 
 @dataclass 
 class ScrapingResult:
