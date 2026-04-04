@@ -170,6 +170,11 @@ MAX_RESPONSE_WORDS_SUBAGENT = 200
 
 # A boolean; either True or False. If response chunking is enabled, long responses 
 # from the lead agent will be split and retuned through multiple conversation turns.
-ENABLE_RESPONSE_CHUNKING = True 
+ENABLE_RESPONSE_CHUNKING = True
+
+# ========================================== Notification Configuration =====================================
+
+NOTIFY_ENABLE_EMAIL_ALERTS= True
+NOTIFY_ENABLE_SLACK_ALERTS = True
 
 # ===========================================================================================================
