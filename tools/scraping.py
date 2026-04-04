@@ -32,12 +32,12 @@ def scraping_task(full_scrape: bool):
 
     result = call_with_exponential_backoff(scrape)
 
-    if result['status'] == 'FAIL':
+    if result['status'] != 'OK':
         center = NotificationCenter()
-        center.send_error(
-            "ERROR: Scraping failed",
+        center.send_notification(
+            "⛔ ERROR: Scraping failed",
             f"Scraping procedure failed after {config.scraping.MAX_RETRIES} attempts with message: {result['last_error']}",     
-            "email",
+            "all",
             [
                 os.path.join(config.paths.LOGS, 'scraping.log')
             ]

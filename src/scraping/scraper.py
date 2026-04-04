@@ -6,6 +6,8 @@ from urllib.robotparser import RobotFileParser
 from usp.objects.sitemap import InvalidSitemap
 from usp.tree import sitemap_tree_for_homepage
 
+from src.notification.notification_center import NotificationCenter
+
 from .utils import *
 from .types import *
 from .html_processor import HTMLProcessor
@@ -25,9 +27,10 @@ class Scraper:
     def __init__(self, scrape_all: bool = True) -> None:
         self._scrape_all = scrape_all
         self._path = config.paths
-        self._processor:       HTMLProcessor  = HTMLProcessor()
-        self._normalizer:      UrlNormalizer  = UrlNormalizer()
-        self._content_cleaner: ContentCleaner = ContentCleaner(self._scrape_all)
+        self._processor:       HTMLProcessor      = HTMLProcessor()
+        self._normalizer:      UrlNormalizer      = UrlNormalizer()
+        self._content_cleaner: ContentCleaner     = ContentCleaner(self._scrape_all)
+        self._notif_center:    NotificationCenter = NotificationCenter()
 
         self._make_directories()
 
@@ -174,15 +177,19 @@ class Scraper:
         documents = []
         visited_urls    = set()
         discovered_urls = set()
+        rejected_urls   = [] 
 
         sitemap_pages = domain.pages
         logger.info(f'Starting validation and scraping for sitemap URLs...')
         for page in sitemap_pages:
             result = self._scrape_page(page.url, domain.delay, visited_urls, last_modified=page.last_modified)
             visited_urls.add(page.url)
-
-            if not result: continue
-
+            
+            if result.status != ScrapingStatus.OK:
+                if result.status == ScrapingStatus.REJECTED:
+                    rejected_urls.append(page.url)
+                continue
+            
             final_url = result.final_url
             documents.append(result.document)
             visited_urls.add(final_url)
@@ -191,6 +198,17 @@ class Scraper:
 
             new_urls = self._normalizer.filter_discovered_urls(result.discovered_urls, visited_urls, domain.target)
             discovered_urls |= new_urls
+       
+        if len(rejected_urls) > len(sitemap_pages)*0.1:
+            rejection_rate = len(rejected_urls)/len(sitemap_pages)
+            logger.warning(f"Rejection rate is {rejection_rate}")
+            self._notif_center.send_notification(
+                subject = "⚠  WARNING: Scraping rejection rate is >10%!",
+                body    = f"Rejection rate: {int(rejection_rate*100)}%\n" +
+                          f"Failed to scrape following URLs for target domain {domain.target}:\n" +
+                          "\n".join([f"\t- {url}" for url in rejected_urls]),
+                channel = "slack",
+            ) 
 
         discovered_urls = [url for url in discovered_urls if url not in visited_urls]
         return UrlAnalysisReport(
@@ -465,30 +483,31 @@ class Scraper:
 
         return self._url_timestamps[url].etag
 
-    def _is_fetch_valid(self, url: str, visited_urls: list[str], fetch_result: FetchResult) -> bool:
+    def _is_fetch_valid(self, url: str, visited_urls: list[str], fetch_result: FetchResult) -> ScrapingStatus:
         if not fetch_result:
             logger.warning(f"Cannot fetch {url}! Skipping...")
-            return False
+            return ScrapingStatus.REJECTED 
 
         if fetch_result.not_modified:
             logger.info("No updates on the page, skipping...")
-            return False
+            return ScrapingStatus.NO_UPDATES
 
         final_url = fetch_result.final_url
         if final_url != url:
             logger.info(f"Redirect detected: '{url}' --> '{final_url}'")
             if final_url in visited_urls:
                 logger.info(f"'{final_url}' was already visited, skipping...")
-                return False
+                return ScrapingStatus.VISITED
             logger.info(f"Continuing with URL '{final_url}'...")
 
         last_modified = fetch_result.last_modified
         page_hash     = fetch_result.page_hash
         if not self._scrape_all and not self._is_url_modified(final_url, new_last_modified=last_modified, new_page_hash=page_hash):
             logger.info(f"URL {final_url} was not modified since last scraping session, skipping...")
-            return False
+            return ScrapingStatus.NO_UPDATES
 
-        return True
+        return ScrapingStatus.OK
+
 
     def _is_url_prioritized(self, url) -> bool:
         if url not in self._url_timestamps.keys():
@@ -499,6 +518,7 @@ class Scraper:
                 return self._is_scraping_scheduled(url, prio)
 
         return True
+
 
     def _is_scraping_scheduled(self, url, prio) -> bool:
         current_timestamp = datetime.now()
@@ -516,6 +536,7 @@ class Scraper:
 
         return True
 
+
     def _scrape_page(
             self, url: str,
             crawl_delay: float,
@@ -524,24 +545,24 @@ class Scraper:
             last_modified: datetime | None = None
     ) -> ScrapingResult | None:
         if not url:
-            return None
+            return ScrapingResult(status=ScrapingStatus.REJECTED)
 
         if self._normalizer.is_url_blacklisted(url):
             logger.info(f"URL {url} is blacklisted by scraper, skipping...")
-            return None
+            return ScrapingResult(status=ScrapingStatus.BLACKLISTED)
 
         if url in visited_urls:
             logger.info(f'URL {url} was already analyzed via redirect, skipping...')
-            return None
+            return ScrapingResult(status=ScrapingStatus.VISITED)
 
         if not self._scrape_all and last_modified and not self._is_url_modified(url, new_last_modified=last_modified):
             logger.info(f"URL '{url}' was not modified since last scraping session, skipping...")
             self._url_timestamps[url].last_modified = last_modified
-            return None
+            return ScrapingResult(status=ScrapingStatus.NO_UPDATES)
 
         if not self._scrape_all and not self._is_url_prioritized(url):
             logger.info(f"URL {url} is not prioritized, skipping")
-            return None
+            return ScrapingResult(status=ScrapingStatus.NO_UPDATES)
 
         logger.info(f"Fetching head for URL '{url}'...")
 
@@ -549,20 +570,22 @@ class Scraper:
         response = call_with_exponential_backoff(fetch_head, args=(url, etag), delay=crawl_delay)
         if response['status'] == 'FAIL':
             logger.warning(f"Failed to fetch head for URL {url}: {response['last_error']}! Skipping...")
-            return None
+            return ScrapingResult(status=ScrapingStatus.REJECTED)
 
         fetch_result = response['result']
-        if not self._is_fetch_valid(url, visited_urls, fetch_result):
-            return None
+        validation = self._is_fetch_valid(url, visited_urls, fetch_result) 
+        if validation != ScrapingStatus.OK:
+            return ScrapingResult(status=validation)
 
         response = call_with_exponential_backoff(fetch_url, args=(url, etag), delay=crawl_delay)
         if response['status'] == 'FAIL':
             logger.warning(f"Failed to fetch URL {url}: {response['last_error']}! Skipping...")
-            return None
+            return ScrapingResult(status=ScrapingStatus.REJECTED)
 
         fetch_result = response['result']
-        if not self._is_fetch_valid(url, visited_urls, fetch_result):
-            return None
+        validation = self._is_fetch_valid(url, visited_urls, fetch_result) 
+        if validation != ScrapingStatus.OK:
+            return ScrapingResult(status=validation)
 
         if not fetch_result.last_modified:
             logger.warning("No information about URL last modification date exists!")
@@ -591,7 +614,7 @@ class Scraper:
 
         if not document:
             logger.warning(f"Failed to process URL '{final_url}'! Skipping...")
-            return None
+            return ScrapingResult(status=ScrapingStatus.REJECTED)
 
         discovered_urls = self._content_cleaner.extract_urls(document) if discovery_depth <= 3 else []
         self._content_cleaner.collect_repetitive_content(document)
@@ -608,6 +631,7 @@ class Scraper:
             final_url       = final_url,
             timestamps      = timestamps,
             discovery_depth = discovery_depth + 1,
+            status          = ScrapingStatus.OK,
         )
 
     def _save_results(self, path: str, filename: str, results, target_url: str | None = None) -> None:

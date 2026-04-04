@@ -1,5 +1,6 @@
 from dataclasses import asdict, dataclass, is_dataclass 
 from datetime import datetime
+from enum import Enum
 
 from docling_core.types.doc.document import DoclingDocument
 
@@ -59,13 +60,25 @@ class ChunkMetadata:
     token_size:      int
     original_chunk_ids: list[str] = None
 
+
+class ScrapingStatus(Enum):
+    OK          = 1 
+    REJECTED    = 2
+    VISITED     = 3
+    REDIRECTION = 4
+    NO_UPDATES  = 5
+    BLACKLISTED = 6
+
+
 @dataclass 
 class ScrapingResult:
-    document:        DoclingDocument
-    discovered_urls: list[str]
-    final_url:       str 
-    timestamps:      UrlTimestamps
-    discovery_depth: int 
+    final_url:       str             = ""
+    discovery_depth: int             = 0
+    discovered_urls: list[str]       = None
+    document:        DoclingDocument = None
+    timestamps:      UrlTimestamps   = None 
+    status:          ScrapingStatus  = ScrapingStatus.NO_UPDATES
+
 
 @dataclass 
 class DomainAnalysisReport:
