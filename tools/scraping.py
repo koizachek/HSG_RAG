@@ -10,7 +10,6 @@ from src.scraping.scraper import Scraper
 from src.utils.logging import init_logging, get_logger
 from src.utils.tools import call_with_exponential_backoff
 
-
 def scraping_task(full_scrape: bool):
     init_logging()
     logger = get_logger('scraper.scheduler')
@@ -33,7 +32,7 @@ def scraping_task(full_scrape: bool):
     result = call_with_exponential_backoff(scrape)
 
     if result['status'] == 'FAIL':
-        logger.error("Notification entrypoint here")
+        
         raise result['last_error']
 
 
@@ -70,14 +69,14 @@ def run_scheduler():
     )
 
     scheduler.start()
-    logger.info("Scheduler started")
+    print("Scheduler started")
 
     try:
         while True:
             time.sleep(3600)
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
-        logger.info("Scheduler stopped")
+        print("Scheduler stopped")
 
 
 if __name__ == "__main__":

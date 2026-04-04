@@ -56,7 +56,7 @@ class Scraper:
         analyzed_domain = self._analyze_domain(target_url)
         if not analyzed_domain:
             logger.error(f"Failed to scrape target URL {target_url}")
-            return []
+            return {}
 
         sitemap_urls = analyzed_domain.urls
         self._save_results(self._path.URLS_OUTPUT, 'sitemap_urls', sitemap_urls, target_url)
@@ -88,7 +88,7 @@ class Scraper:
 
         if not documents and not temp_merged_chunks:
             logger.info(f"No new content was scraped from the target URL {target_url}")
-            return []
+            return {}
 
         tagged_documents = []
         # Step 5: Analyze the converted URLs

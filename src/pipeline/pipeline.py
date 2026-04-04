@@ -48,6 +48,8 @@ class ImportPipeline:
 
     def import_from_scraper(self, scraper_chunks: dict[str, dict]) -> None:
         for lang, chunks in scraper_chunks.items():
+            if not chunks: continue
+
             sources = list(set([chunk.get('source', '') for chunk in chunks]))
             self._service.delete_chunks(lang, property_filters={'source': sources})
             self._service.batch_import(data_rows=chunks, lang=lang)
