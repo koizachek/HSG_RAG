@@ -40,6 +40,7 @@ class PathsConfig(ConfigBase):
     LOGS: str = _get('LOGS_PATH')
     URLS_OUTPUT:     str = os.path.join(_get('DATA_PATH'), 'urls')
     CHUNKS_OUTPUT:   str = os.path.join(_get('DATA_PATH'), 'chunks')
+    TEMP_CHUNKS_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'temp_chunks')
     SCRAPING_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'scraping')
     RAW_TEXT_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'raw_text')
     RAW_HTML_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'raw_html')
@@ -53,6 +54,7 @@ class ScrapingConfig(ConfigBase):
     CRAWL_DELAY: int  = _get('SCRAPING_CRAWL_DELAY', 1)
     BACKOFF_RATE: int = _get('SCRAPING_BACKOFF_RATE', 2)
     TARGET_URLS: int  = _get('SCRAPING_TARGET_URLS', None)
+    INTERVALS: dict = _get('SCRAPING_PRIO_INTERVAL', dict())
 
 
 class ConversationStateConfig(ConfigBase):

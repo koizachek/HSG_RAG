@@ -210,14 +210,72 @@ class WeaviateService:
 
         return import_errors
     
+
     @staticmethod
     def _create_property_filter(prop, values) -> Filter:
         match prop:
             case 'programs':
                 return Filter.by_property('programs').contains_any(values)
+            case 'source':
+                return Filter.by_property('source').contains_any(values) \
+                    if isinstance(values, list) else Filter.by_property('source').equal(values)            
             case _:
-                return None
+                return None    
 
+
+    def delete_chunks(self, lang: str, property_filters: dict[str, any] = None) -> int:
+        """
+        Delete all chunks from the specified collection that match given property filters.
+
+        Args:
+            lang (str): Language collection to use.
+            property_filters (dict[str, any]): Key-value pairs for filtering.
+
+        Returns:
+            int: Number of deleted objects (if available, else -1).
+        """
+        retry_count = 0
+        max_retries = 2
+
+        filters = [self._create_property_filter(prop, values)
+                   for prop, values in property_filters.items()] if property_filters else None
+        if filters:
+            filters = [f for f in filters if f is not None]
+            filters = reduce(lambda f1, f2: f1 & f2, filters) if filters else None
+
+        while retry_count < max_retries:
+            try:
+                collection, collection_name = self._select_collection(lang)
+                if collection is None:
+                    logger.error("No working collection selected!")
+                    return 0
+
+                logger.info(f"Deleting chunks from {collection_name} with filters={property_filters}")
+
+                with self._client_lock:
+                    result = collection.data.delete_many(
+                        where=filters
+                    )
+
+                self._last_query_time = perf_counter()
+
+                deleted = getattr(result, "objects_deleted", None)
+                if deleted is None:
+                    logger.info("Deletion executed (count not returned by client)")
+                    return -1
+
+                logger.info(f"Deleted {deleted} objects")
+                return deleted
+
+            except Exception as e:
+                if any(err_type in str(e).lower() for err_type in ['reset', 'closed', 'grpc', 'unavailable']):
+                    retry_count += 1
+                    logger.warning(f"Connection error during deletion: {e}. Retrying...")
+                    if retry_count == max_retries:
+                        raise e
+                else:
+                    raise e
+        
 
     def query(self, query: str, lang: str, property_filters: dict[str] = None, limit: int = 5) -> dict:
         """
@@ -244,7 +302,8 @@ class WeaviateService:
         filters = [self._create_property_filter(prop, values) 
                    for prop, values in property_filters.items()] if property_filters else None
         if filters:
-            filters = reduce(lambda f1, f2: f1 & f2, filters)
+            filters = [f for f in filters if f is not None]
+            filters = reduce(lambda f1, f2: f1 & f2, filters) if filters else None
 
         while retry_count < max_retries:
             try:

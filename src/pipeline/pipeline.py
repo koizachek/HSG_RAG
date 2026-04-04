@@ -39,14 +39,22 @@ class ImportPipeline:
         """
         self._logging_callback = logging_callback or _logging_callback_placeholder
         self._deduplication_callback = deduplication_callback or _deduplication_callback_placeholder
-        self._webprocessor = WebsiteProcessor(self._logging_callback)
-        self._docprocessor = DocumentProcessor(self._logging_callback)
+        self._docprocessor = DocumentProcessor()
         self._service      = WeaviateService()
         self._ids          = self._service._collect_chunk_ids()
         
         implogger.info('Import pipeline initialization finished!')
-        
+    
 
+    def import_from_scraper(self, scraper_chunks: dict[str, dict]) -> None:
+        for lang, chunks in scraper_chunks.items():
+            if not chunks: continue
+
+            sources = list(set([chunk.get('source', '') for chunk in chunks]))
+            self._service.delete_chunks(lang, property_filters={'source': sources})
+            self._service.batch_import(data_rows=chunks, lang=lang)
+                 
+        
     def import_all(
             self, 
             paths: list[str] = None,

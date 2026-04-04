@@ -1,5 +1,6 @@
-from dataclasses import asdict, dataclass 
+from dataclasses import asdict, dataclass, is_dataclass 
 from datetime import datetime
+from enum import Enum
 
 from docling_core.types.doc.document import DoclingDocument
 
@@ -27,15 +28,18 @@ class UrlTags:
 
 @dataclass 
 class UrlTimestamps:
-    last_modified: datetime 
-    last_scraped:  datetime 
-    etag:          str 
-    page_hash:     str
+    last_modified: datetime = None
+    last_scraped:  datetime = None
+    etag:          str = ""
+    page_hash:     str = ""
 
 @dataclass 
 class DocumentTags:
     program:  str 
-    language: str 
+    language: str
+    priority: str = ""
+    last_modified: datetime = None
+    last_scraped: datetime = None
 
 @dataclass 
 class TaggedDocument:
@@ -54,14 +58,27 @@ class ChunkMetadata:
     page_title:      str 
     section_heading: str 
     token_size:      int
+    original_chunk_ids: list[str] = None
+
+
+class ScrapingStatus(Enum):
+    OK          = 1 
+    REJECTED    = 2
+    VISITED     = 3
+    REDIRECTION = 4
+    NO_UPDATES  = 5
+    BLACKLISTED = 6
+
 
 @dataclass 
 class ScrapingResult:
-    document:        DoclingDocument
-    discovered_urls: list[str]
-    final_url:       str 
-    timestamps:      UrlTimestamps
-    discovery_depth: int 
+    final_url:       str             = ""
+    discovery_depth: int             = 0
+    discovered_urls: list[str]       = None
+    document:        DoclingDocument = None
+    timestamps:      UrlTimestamps   = None 
+    status:          ScrapingStatus  = ScrapingStatus.NO_UPDATES
+
 
 @dataclass 
 class DomainAnalysisReport:
@@ -83,18 +100,21 @@ class DocumentAnalysisReport:
 
 
 def dataclass_to_dict(obj) -> dict:
+    if not is_dataclass(obj): return obj
     return asdict(obj, dict_factory=lambda items: {
         k: v.isoformat() if isinstance(v, datetime) else v
         for k, v in items
     })
 
 
-def dict_to_url_timestamps(data: dict) -> UrlTimestamps:
+def dict_to_dataclass(data: dict, class_type):
     from .utils import parse_isoformat
-
     if not data: return None  
     
-    data['last_modified'] = parse_isoformat(data.get('last_modified'))
-    data['last_scraped']  = parse_isoformat(data.get('last_scraped'))
-    
-    return UrlTimestamps(**data)
+    if 'last_scraped' in data.keys():
+        data['last_scraped'] = parse_isoformat(data.get('last_scraped'))
+
+    if 'last_modified' in data.keys():
+        data['last_modified'] = parse_isoformat(data.get('last_modified'))
+ 
+    return class_type(**data)

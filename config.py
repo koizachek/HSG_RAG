@@ -138,10 +138,16 @@ SCRAPING_BACKOFF_RATE = 1.25
 
 # A list of string URLs. Defines the starting points for the website scraping.
 SCRAPING_TARGET_URLS = [
-    'https://emba.unisg.ch',       # EMBA HSG root
-    'https://emba.unisg.ch/en',    # IEMBA HSG root 
-    'https://embax.ch',            # emba X root
+    # 'https://emba.unisg.ch/',       # EMBA HSG root
+    'https://embax.ch/',            # emba X root
 ]
+
+# Scraping Priority Interval in days
+SCRAPING_PRIO_INTERVAL = {
+    "high": 1,
+    "medium": 7,
+    "low": 30
+}
 
 # ======================================== Agent Chain Configuration ========================================
 
