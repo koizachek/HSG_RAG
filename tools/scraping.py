@@ -1,5 +1,4 @@
-import argparse
-import time
+import time, os, argparse
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -9,6 +8,8 @@ from src.pipeline.pipeline import ImportPipeline
 from src.scraping.scraper import Scraper
 from src.utils.logging import init_logging, get_logger
 from src.utils.tools import call_with_exponential_backoff
+from src.notification.notification_center import NotificationCenter
+
 
 def scraping_task(full_scrape: bool):
     init_logging()
@@ -32,7 +33,15 @@ def scraping_task(full_scrape: bool):
     result = call_with_exponential_backoff(scrape)
 
     if result['status'] == 'FAIL':
-        
+        center = NotificationCenter()
+        center.send_error(
+            "ERROR: Scraping failed",
+            f"Scraping procedure failed after {config.scraping.MAX_RETRIES} attempts with message: {result['last_error']}",     
+            "email",
+            [
+                os.path.join(config.paths.LOGS, 'scraping.log')
+            ]
+        )
         raise result['last_error']
 
 
