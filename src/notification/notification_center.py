@@ -128,16 +128,21 @@ class NotificationCenter:
         self.email = EmailNotifier()
         self.slack = SlackNotifier()
 
-    def send_error(
+    def send_notification(
         self,
         subject: str,
         body: str,
         channel: Channel = "email",
         attachments: str | list[str] | None = None,
     ) -> None:
-        if channel == "email":
-            self.email.send(subject, body, attachments=attachments)
-        elif channel == "slack":
-            self.slack.send(subject, body)
-        else:
-            raise ValueError(f"Unsupported notification channel: {channel}")
+
+        match channel:
+            case "all":
+                self.email.send(subject, body, attachments)
+                self.slack.send(subject, body)
+            case "email":
+                self.email.send(subject, body, attachments)
+            case "slack":
+                self.slack.send(subject, body)
+            case _:
+                raise ValueError(f"Unknown notification channel: {channel}")
