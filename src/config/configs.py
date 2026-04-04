@@ -225,3 +225,21 @@ class LLMProviderConfig:
             "openai": cls.OPENAI_API_KEY,
             "open_router": cls.OPEN_ROUTER_API_KEY,
         }.get(provider.base)
+
+
+class NotificationCenterConfig(ConfigBase):
+    ENABLE_EMAIL_ALERTS: bool = _get('NOTIFY_ENABLE_EMAIL_ALERTS', True, bool)
+
+    SMTP_HOST: str = _get("NOTIFY_SMTP_HOST")
+    SMTP_PORT: int = _get("NOTIFY_SMTP_PORT", 587, type_=int)
+
+    SMTP_USER: str = _get("NOTIFY_SMTP_USER")
+    SMTP_PASSWORD: str = _get("NOTIFY_SMTP_PASSWORD")
+
+    SMTP_USE_TLS: bool = _get("NOTIFY_SMTP_USE_TLS", "True").lower() in ("1", "true", "yes", "on")
+
+    FROM_EMAIL: str = _get("NOTIFY_FROM_EMAIL")
+    TO_EMAIL: str = _get("NOTIFY_TO_EMAIL")
+
+    ENABLE_SLACK_ALERTS: bool = _get('NOTIFY_ENABLE_SLACK_ALERTS', False, bool)
+    SLACK_WEBHOOK_URL: str = _get("NOTIFY_SLACK_WEBHOOK_URL")
