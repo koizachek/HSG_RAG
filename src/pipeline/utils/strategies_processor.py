@@ -29,7 +29,7 @@ class StrategiesProcessor:
             strategy = self._strategies[strategy_name]
             run_result = None
             if isinstance(arguments, StrategyArguments):
-                run_result = strategy.run(arguments.name, arguments.content, chunk)
+                run_result = strategy.run(arguments.name, arguments.content, arguments.chunk)
             else:
                 run_result = strategy.run(
                     arguments.get('document_name', ""), 

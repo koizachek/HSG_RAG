@@ -4,7 +4,6 @@ import requests, difflib, datetime
 from email.utils import parsedate_to_datetime
 from functools import lru_cache
 from collections import defaultdict
-from time import sleep 
 from urllib.robotparser import RobotFileParser
 from urllib.error import URLError
 from fake_useragent import UserAgent
@@ -15,6 +14,7 @@ from src.scraping.types import FetchResult
 from ..config import config
 from ..const.page_priority import *
 from ..utils.logging import get_logger
+from ..utils.tools import call_with_exponential_backoff
 
 logger = get_logger('scraper.utils')
 ua = UserAgent()
@@ -239,30 +239,4 @@ def parse_robots(base_url: str) -> RobotFileParser | None:
 
     return rp
 
-def call_with_exponential_backoff(
-    func, 
-    args: tuple = (), 
-    delay: float | None = None, 
-    backoff_rate: float | None = None,
-) -> dict:
-    retries = 0
-    last_error = None
 
-    delay = delay or config.scraping.CRAWL_DELAY 
-    backoff_rate = backoff_rate or config.scraping.BACKOFF_RATE
-
-    sleep(delay)
-    
-    while retries <= config.scraping.MAX_RETRIES:
-        try:
-            return { 'result': func(*args), 'retries': retries, 'last_error': last_error, 'status': 'OK'}
-        except Exception as e:
-            logger.warning(f'Caught an error on try {retries+1}: {e}')
-            last_error = e
-            retries += 1
-
-            backoff_time = delay * backoff_rate**retries
-            logger.info(f'Retrying with exponential backoff time {backoff_time} sec.')
-            sleep(backoff_time)
-    
-    return { 'result': None, 'retries': retries, 'last_error': last_error, 'status': 'FAIL' }

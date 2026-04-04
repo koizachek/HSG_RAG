@@ -14,6 +14,7 @@ from .url_normalizer import UrlNormalizer
 
 from ..utils.lang import detect_language
 from ..utils.logging import get_logger
+from ..utils.tools import call_with_exponential_backoff
 from ..config import config
 
 logger = get_logger('scraper.core')
@@ -30,11 +31,14 @@ class Scraper:
 
         self._make_directories()
 
-        self._url_timestamps: dict[str, UrlTimestamps] = self._load_data(self._path.SCRAPING_OUTPUT, 'url_timestamps')
         self._url_temp_timestamps: dict[str, UrlTimestamps] = {}
-        self._url_priorities: dict[str, list[str]] = self._load_data(self._path.URLS_OUTPUT, 'url_priorities')
-
+        self._url_timestamps:      dict[str, UrlTimestamps] = self._load_data(self._path.SCRAPING_OUTPUT, 'url_timestamps')
+        self._url_priorities:      dict[str, list[str]]     = self._load_data(self._path.URLS_OUTPUT, 'url_priorities')
+        
         logger.info(f'Successfully initialized the scraper')
+        if scrape_all:
+            logger.info("Initialized with SCRAPE_ALL=True. Timestamps and priorities will be ignored for this scraping session")
+
 
     def _make_directories(self) -> None:
         os.makedirs(self._path.URLS_OUTPUT,           exist_ok=True)
@@ -45,6 +49,7 @@ class Scraper:
         os.makedirs(self._path.RAW_TEXT_OUTPUT,       exist_ok=True)
         os.makedirs(self._path.METADATA_OUTPUT,       exist_ok=True)
         os.makedirs(self._path.EXTRACTED_TEXT_OUTPUT, exist_ok=True)
+
 
     def scrape_target(self, target_url: str) -> list[ChunkMetadata]:
         # Step 1: Analyze the target URL for availability, robots and sitemap
@@ -86,6 +91,7 @@ class Scraper:
             return []
 
         tagged_documents = []
+        # Step 5: Analyze the converted URLs
         if documents:
             self._content_cleaner.perform_content_analysis(target_url, self._normalizer.url_to_filename(target_url))
             analyzied_documents = self._analyze_url_documents(documents)
@@ -94,13 +100,12 @@ class Scraper:
             self._save_results(self._path.URLS_OUTPUT, 'url_priorities', analyzied_documents.url_priorities)
             tagged_documents = analyzied_documents.tagged_documents
 
-        # Step 5: Collect and save chunks
+        # Step 6: Collect and save chunks
         chunk_metadatas = self._collect_chunks(tagged_documents, target_url, temp_merged_chunks)
 
         self._save_results(self._path.METADATA_OUTPUT, 'raw_chunk_metadata', chunk_metadatas['raw'], target_url)
         self._save_results(self._path.METADATA_OUTPUT, 'merged_chunk_metadata', chunk_metadatas['merged'], target_url)
         self._save_results(self._path.METADATA_OUTPUT, 'deleted_chunk_metadata', chunk_metadatas['deleted'], target_url)
-        # self._delete_temp_merged_chunks(target_url)
 
         logger.info(f"Collected {len(chunk_metadatas['merged'])} chunks from target URL {target_url}")
 
@@ -193,8 +198,12 @@ class Scraper:
             discovered_urls = discovered_urls,
         )
 
-    def _analyze_discoveries(self, discovered_urls: list, sitemap_urls: list,
-                             domain: DomainAnalysisReport) -> UrlAnalysisReport:
+    def _analyze_discoveries(
+        self, 
+        discovered_urls: list, 
+        sitemap_urls: list,
+        domain: DomainAnalysisReport
+    ) -> UrlAnalysisReport:
         if len(discovered_urls) == 0:
             return UrlAnalysisReport([], [])
 
@@ -276,26 +285,18 @@ class Scraper:
         )
 
     def _collect_chunks(
-            self,
-            tagged_documents: list[dict],
-            target_url: str,
-            existing_merged_chunks: dict[str, list[ChunkMetadata]] | None = None,
+        self,
+        tagged_documents: list[dict],
+        target_url: str,
+        temp_chunks: dict[str, list[ChunkMetadata]] | None = None,
     ) -> dict[str, list[ChunkMetadata]]:
         raw_chunks     = []
         deleted_chunks = []
+        merged_chunks, final_chunks = self._read_temp_chunks(temp_chunks, tagged_documents)
 
-        for url in [entry.document.name for entry in tagged_documents]:
-            if url in existing_merged_chunks.keys():
-                logger.info(
-                    f"Removed {url} from existing chunks as it is newly scraped!")
-                del existing_merged_chunks[url]
-
-        merged_chunks   = [chunk for v in existing_merged_chunks.values() for chunk in v]
         program_counter = self._build_program_counter_from_merged_chunks(merged_chunks)
 
-        if merged_chunks:
-            logger.info(
-                f"Loaded {len(merged_chunks)} temp merged.")
+        if merged_chunks: incupd_logger.info(f"Restored {len(merged_chunks)} chunks from temp")
 
         for entry in tagged_documents:
             document = entry.document
@@ -303,7 +304,7 @@ class Scraper:
             language = entry.tags.language
             url = document.name
             url_filename = self._normalizer.url_to_filename(url)
-
+            
             program_counter[program] += 1
 
             doc_chunks_dir_path = os.path.join(config.paths.CHUNKS_OUTPUT, url_filename)
@@ -341,18 +342,69 @@ class Scraper:
 
             merged_chunk_metadatas = self._processor.merge_chunks_by_topic(mergible_chunks_metadatas)
             merged_chunks.extend(merged_chunk_metadatas)
-            self._url_timestamps[url] = self._url_temp_timestamps[url]
-            self._save_results(self._path.TEMP_CHUNKS_OUTPUT, self._get_temp_chunks_filename(target_url), {url:merged_chunk_metadatas})
-            self._save_results(self._path.SCRAPING_OUTPUT, 'url_timestamps', self._url_timestamps)
-            logger.info(f"Merged raw chunks into {len(merged_chunk_metadatas)} chunks by topic")
-        
-        final_chunks = self._processor.prepare_chunks(merged_chunks)
+            
+            self._store_temp_chunks(target_url, url, merged_chunk_metadatas)
+            logger.info(f"Merged {raw_chunk_count} raw chunks into {len(merged_chunk_metadatas)} chunks by topic")
+            
+            prepared_chunks = self._processor.prepare_chunks(url, self._processor.convert_to_txt(document), merged_chunk_metadatas)
+            for lang in final_chunks.keys():
+                if lang in prepared_chunks.keys():
+                    final_chunks[lang].extend(prepared_chunks[lang])
+
         return {
-            'raw': raw_chunks,
-            'merged': merged_chunks,
+            'raw':     raw_chunks,
+            'merged':  merged_chunks,
             'deleted': deleted_chunks,
             'final':   final_chunks,
         }
+    
+
+    def _read_temp_chunks(
+        self, 
+        temp_chunks: dict[str, list[ChunkMetadata]], 
+        tagged_documents: list[TaggedDocument]
+    ) -> set[list, list[dict]]:
+        loaded_temp_chunks = temp_chunks.copy()
+        prepared_temp_chunks = {lang: [] for lang in config.get('AVAILABLE LANGUAGES', ['en', 'de'])}
+
+        for url in [entry.document.name for entry in tagged_documents]:
+            if url in temp_chunks.keys():
+                incupd_logger.info(f"Deleted stored temp data for URL {url} as it was newly scraped")
+                del loaded_temp_chunks[url]
+        
+        restored_temp_chunks = []
+        for url, chunks in loaded_temp_chunks.items():
+            url_filename = self._normalizer.url_to_filename(url)
+            extracted_text_path = os.path.join(self._path.EXTRACTED_TEXT_OUTPUT, url_filename + '.txt')
+            if not os.path.exists(extracted_text_path):
+                incupd_logger.warning(f"Cannot restore chunks for URL {url}: Failed to locate previously extracted contents!")
+                incupd_logger.warning(f"This URL will has to be rescraped in the next session")
+                continue 
+            
+            with open(extracted_text_path, 'r') as f:
+                url_text = f.read()
+
+            prepared_chunks = self._processor.prepare_chunks(url, url_text, chunks)
+            for lang in prepared_temp_chunks.keys():
+                if lang in prepared_chunks.keys():
+                    prepared_temp_chunks[lang].extend(prepared_chunks[lang])
+
+            restored_temp_chunks.extend(chunks)
+            incupd_logger.info(f"Restored {len(chunks)} chunks for URL {url} from temp")
+        
+        return restored_temp_chunks, prepared_temp_chunks
+
+
+    def _store_temp_chunks(self, target_url: str, url: str, chunks: list[ChunkMetadata]) -> None:
+        self._url_timestamps[url] = self._url_temp_timestamps[url]
+        
+        temp_chunks = {url: chunks}
+
+        self._save_results(self._path.TEMP_CHUNKS_OUTPUT, self._get_temp_chunks_filename(target_url), temp_chunks)
+        self._save_results(self._path.SCRAPING_OUTPUT, 'url_timestamps', self._url_timestamps)
+        
+        incupd_logger.info(f"Stored {len(chunks)} chunks in temp for URL {url}")
+
 
     def _build_program_counter_from_merged_chunks(self, merged_chunks: list[ChunkMetadata]) -> Counter:
         counter = Counter()
@@ -385,31 +437,27 @@ class Scraper:
 
         return True
 
+
     def _store_timestamps(self, url: str, timestamps: UrlTimestamps, temp=False) -> None:
         if temp:
             self._url_temp_timestamps[url] = timestamps
         else:
             self._url_timestamps[url] = timestamps
 
-    def _chunk_dict_to_metadata(self, chunk_dict: dict) -> ChunkMetadata:
-        data = chunk_dict.copy()
-
-        if isinstance(data.get("last_scraped"), str):
-            data["last_scraped"] = datetime.fromisoformat(data["last_scraped"])
-
-        return ChunkMetadata(**data)
 
     def _get_temp_chunks_filename(self, target_url: str) -> str:
         return self._normalizer.url_to_filename(target_url) + '_merged_chunks'
 
-    def _delete_temp_merged_chunks(self, target_url: str) -> None:
+
+    def delete_temp_merged_chunks(self, target_url: str) -> None:
         temp_path = os.path.join(
             self._path.TEMP_CHUNKS_OUTPUT,
             self._get_temp_chunks_filename(target_url) + '.json'
         )
         if os.path.exists(temp_path):
             os.remove(temp_path)
-            logger.info(f"Deleted temp merged chunks file '{temp_path}'")
+            incupd_logger.info(f"Deleted temp merged chunks file '{temp_path}'")
+
 
     def _get_etag(self, url: str) -> str | None:
         if url not in self._url_timestamps.keys():
@@ -609,13 +657,14 @@ class Scraper:
             logger.error(f"Failed to store results '{filename}'")
             raise e
 
-        logger.info(f"Stored results in file {results_path}")
+        logger.debug(f"Stored results in file {results_path}")
+
 
     def _load_data(self, path: str, filename: str):
         datapath = os.path.join(path, filename + '.json')
 
         if not os.path.exists(datapath):
-            logger.warning(f"Failed to load/locate file {datapath}; new data will be recorded")
+            logger.warning(f"Failed to locate file {datapath}; new data will be recorded")
             return defaultdict(dict)
 
         try:
@@ -625,14 +674,14 @@ class Scraper:
             match filename:
                 case 'url_timestamps':
                     for url, ts_dict in loaded_data.items():
-                        loaded_data[url] = dict_to_url_timestamps(ts_dict)
-                    incupd_logger.info(f"Loaded {len(loaded_data)} URL timestamps")
+                        loaded_data[url] = dict_to_dataclass(ts_dict, UrlTimestamps)
+                    incupd_logger.debug(f"Loaded {len(loaded_data)} URL timestamps")
                     return loaded_data
 
                 case _ if filename.endswith('_merged_chunks'):
                     for url, chunk_metadata in loaded_data.items():
-                        loaded_data[url] = [self._chunk_dict_to_metadata(chunk) for chunk in chunk_metadata]
-                    incupd_logger.info(f"Loaded {len(loaded_data)} temp merged chunks")
+                        loaded_data[url] = [dict_to_dataclass(chunk, ChunkMetadata) for chunk in chunk_metadata]
+                    incupd_logger.debug(f"Loaded {len(loaded_data)} temp merged chunks")
                     return loaded_data
 
                 case _:
@@ -640,7 +689,7 @@ class Scraper:
                     return loaded_data
 
         except Exception as e:
-            incupd_logger.error(f"Failed trying to load data '{filename}': {e}")
-            incupd_logger.info("New data will be recorded")
-            return [] if filename.endswith('_merged_chunks') else defaultdict(dict)
+            logger.error(f"Failed trying to load data '{filename}': {e}")
+            logger.info("New data will be recorded")
+            return defaultdict(dict)
 

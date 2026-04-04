@@ -56,7 +56,7 @@ class HTMLProcessor(ProcessorBase):
         return prepared_chunks
     
 
-    def merge_chunks_by_topic(self, chunk_metadatas: list[ChunkMetadata]) -> list[dict]:
+    def merge_chunks_by_topic(self, chunk_metadatas: list[ChunkMetadata]) -> list[ChunkMetadata]:
         MAX_TOKENS = config.processing.MAX_TOKENS
         merged_chunks = []
 
@@ -101,7 +101,7 @@ class HTMLProcessor(ProcessorBase):
         return merged_chunks
 
 
-    def _create_merged_chunk(self, group: list[dict]) -> dict:
+    def _create_merged_chunk(self, group: list[dict]) -> ChunkMetadata:
         if len(group) == 1:
             return group[0]
 
@@ -111,19 +111,19 @@ class HTMLProcessor(ProcessorBase):
         first = group[0]
 
         merged_id = f"merged_{first.topic}_{group[0].chunk_id}_to_{group[-1].chunk_id}"
-        merged_chunk = {
-            "chunk_id":           merged_id,
-            "text":               merged_text,
-            "source_url":         first.source_url,
-            "program":            first.program,
-            "language":           first.language,
-            "topic":              first.topic,
-            "last_scraped":       first.last_scraped,
-            "page_title":         first.page_title,
-            "section_heading":    first.section_heading,
-            "token_size":         total_tokens,
-            "original_chunk_ids": [c.chunk_id for c in group],  
-        }
+        merged_chunk = ChunkMetadata(
+            chunk_id           = merged_id,
+            text               = merged_text,
+            source_url         = first.source_url,
+            program            = first.program,
+            language           = first.language,
+            topic              = first.topic,
+            last_scraped       = first.last_scraped,
+            page_title         = first.page_title,
+            section_heading    = first.section_heading,
+            token_size         = total_tokens,
+            original_chunk_ids = [c.chunk_id for c in group],  
+        )
         return merged_chunk
 
 

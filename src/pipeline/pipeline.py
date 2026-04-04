@@ -39,7 +39,7 @@ class ImportPipeline:
         """
         self._logging_callback = logging_callback or _logging_callback_placeholder
         self._deduplication_callback = deduplication_callback or _deduplication_callback_placeholder
-        self._docprocessor = DocumentProcessor(self._logging_callback)
+        self._docprocessor = DocumentProcessor()
         self._service      = WeaviateService()
         self._ids          = self._service._collect_chunk_ids()
         

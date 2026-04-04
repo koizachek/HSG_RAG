@@ -94,12 +94,14 @@ def dataclass_to_dict(obj) -> dict:
     })
 
 
-def dict_to_url_timestamps(data: dict) -> UrlTimestamps:
+def dict_to_dataclass(data: dict, class_type):
     from .utils import parse_isoformat
-
     if not data: return None  
     
-    data['last_modified'] = parse_isoformat(data.get('last_modified'))
-    data['last_scraped']  = parse_isoformat(data.get('last_scraped'))
-    
-    return UrlTimestamps(**data)
+    if 'last_scraped' in data.keys():
+        data['last_scraped'] = parse_isoformat(data.get('last_scraped'))
+
+    if 'last_modified' in data.keys():
+        data['last_modified'] = parse_isoformat(data.get('last_modified'))
+ 
+    return class_type(**data)
