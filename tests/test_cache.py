@@ -1,3 +1,5 @@
+import time
+
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.cache.cache import Cache
 
@@ -61,8 +63,8 @@ class ChatBotApplication:
 
         return final_response.response
 
-
-def test_cache_hit_miss():
+########################################### Tests dict cache strategy ###########################################
+def test_local_cache_hit():
     Cache.configure(mode="dict", no_cache=False)
     
     app = ChatBotApplication()
@@ -77,3 +79,80 @@ def test_cache_hit_miss():
     stats = Cache._cache_metrics.cache_stats
     assert stats.misses == 1
     assert stats.hits == 1   
+
+def test_local_cache_miss():
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+    
+    Cache.configure(mode="dict", no_cache=False)
+    
+    app = ChatBotApplication()
+    agent = ExecutiveAgentChain()
+    
+    r1 = app._chat("Was ist EMBA?", agent)
+    r2 = app._chat("Was ist IEMBA?", agent)
+
+    assert r1 == "Antwort auf: Was ist EMBA?"
+    assert r2 == "Antwort auf: Was ist IEMBA?"
+
+    stats = Cache._cache_metrics.cache_stats
+    assert stats.misses == 2
+    assert stats.hits == 0
+
+def test_local_cache_generate_normalized_key():
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+    
+    Cache.configure(mode="dict", no_cache=False)
+    
+    app = ChatBotApplication()
+    
+    normalized_key = app._cache._generate_normalized_key("Was ist EMBA?", "de")
+    
+    assert normalized_key == "cache:de:wasistemba"
+
+def test_local_cache_max_size(monkeypatch):
+    monkeypatch.setattr("src.config.config.cache.MAX_SIZE_CACHE", 2)
+
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+    
+    Cache.configure(mode="dict", no_cache=False)
+    app = ChatBotApplication()
+    cache = app._cache
+    agent = ExecutiveAgentChain()
+    
+    app._chat("Was ist EMBA?", agent)
+    app._chat("Was ist IEMBA?", agent)
+    app._chat("Was ist EMBAX?", agent)
+    app._chat("Was ist EMBA?", agent)
+
+    stats = Cache._cache_metrics.cache_stats
+    assert stats.misses == 4
+    assert stats.hits == 0   
+    assert len(cache.cache) == 2
+
+def test_local_cache_ttl_expiry(monkeypatch):
+    monkeypatch.setattr("src.config.config.cache.TTL_CACHE", 1)
+
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+    
+    Cache.configure(mode="dict", no_cache=False)
+    app = ChatBotApplication()
+    cache = app._cache
+    agent = ExecutiveAgentChain()
+    
+    stats = Cache._cache_metrics.cache_stats
+    
+    app._chat("Was ist EMBA?", agent)
+    time.sleep(1.2)
+    
+    assert len(cache.cache) == 0
+    app._chat("Was ist EMBA?", agent)
+    assert stats.misses == 2
+    assert stats.hits == 0
