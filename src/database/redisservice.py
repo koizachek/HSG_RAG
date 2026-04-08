@@ -51,3 +51,5 @@ class RedisService:
     
     def is_connected(self) -> bool:
         return self._client is not None
+
+############################################### Test cache local FakeRedis ################################################

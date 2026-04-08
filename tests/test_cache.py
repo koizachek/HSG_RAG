@@ -1,7 +1,16 @@
 import time
+import fakeredis
+import pytest
+import redis
 
+from unittest.mock import patch, MagicMock
+from src.database.redisservice import RedisService
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.cache.cache import Cache
+from unittest.mock import MagicMock, patch
+from src.cache.cache import Cache
+from src.cache.cache_strategies import RedisCache, LocalCache
+from src.config import config
 
 class ExecutiveAgentChain:
     def preprocess_query(self, message: str):
@@ -156,3 +165,149 @@ def test_local_cache_ttl_expiry(monkeypatch):
     app._chat("Was ist EMBA?", agent)
     assert stats.misses == 2
     assert stats.hits == 0
+
+def test_redis_connection_failure_on_startup_falls_back_to_local_cache():
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=None):
+        Cache.configure(mode="local", no_cache=False)
+        cache = Cache.get_cache()
+
+        assert isinstance(cache, LocalCache)
+
+########################################################### Test Cache with Redis (using fakeredis) ###########################################################
+def test_cache_uses_redis_with_fakeredis():
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    fake_redis = fakeredis.FakeRedis()
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_redis):
+        Cache.configure(mode="local", no_cache=False)
+        cache = Cache.get_cache()
+
+        assert isinstance(cache, RedisCache)
+
+def test_redis_cache_hit_with_fakeredis():
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    fake_redis = fakeredis.FakeRedis()
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_redis):
+        Cache.configure(mode="local", no_cache=False)
+        app = ChatBotApplication()
+        agent = ExecutiveAgentChain()
+
+        r1 = app._chat("Was ist EMBA?", agent)
+        r2 = app._chat("Was ist EMBA?", agent)
+
+        assert r1 == "Antwort auf: Was ist EMBA?"
+        assert r2 == "Antwort auf: Was ist EMBA?"
+
+        stats = Cache._cache_metrics.cache_stats
+        assert stats.misses == 1
+        assert stats.hits == 1
+
+def test_redis_cache_miss_with_fakeredis():
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    fake_redis = fakeredis.FakeRedis()
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_redis):
+        Cache.configure(mode="local", no_cache=False)
+        app = ChatBotApplication()
+        agent = ExecutiveAgentChain()
+
+        r1 = app._chat("Was ist EMBA?", agent)
+        r2 = app._chat("Was ist IEMBA?", agent)
+
+        assert r1 == "Antwort auf: Was ist EMBA?"
+        assert r2 == "Antwort auf: Was ist IEMBA?"
+
+        stats = Cache._cache_metrics.cache_stats
+        assert stats.misses == 2
+        assert stats.hits == 0
+
+def test_redis_cache_generate_normalized_key():
+    fake_redis = fakeredis.FakeRedis()
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_redis):
+        cache = RedisCache(
+            host="localhost",
+            port=6379,
+            password="",
+            mode="local",
+            metrics=MagicMock()
+        )
+
+        normalized_key = cache._generate_normalized_key("Was ist EMBA?", "de")
+
+        assert normalized_key == "cache:de:wasistemba"
+
+def test_redis_cache_ttl_expiry_with_fakeredis(monkeypatch):
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    monkeypatch.setattr(config.cache, "TTL_CACHE", 1)
+
+    fake_redis = fakeredis.FakeRedis()
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_redis):
+        Cache.configure(mode="local", no_cache=False)
+        app = ChatBotApplication()
+        agent = ExecutiveAgentChain()
+
+        app._chat("Was ist EMBA?", agent)
+        time.sleep(1.2)
+        app._chat("Was ist EMBA?", agent)
+
+        stats = Cache._cache_metrics.cache_stats
+        assert stats.misses == 2
+        assert stats.hits == 0
+
+def test_redis_cache_clear_cache_with_fakeredis():
+    fake_redis = fakeredis.FakeRedis()
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_redis):
+        cache = RedisCache(
+            host="localhost",
+            port=6379,
+            password="",
+            mode="local",
+            metrics=MagicMock()
+        )
+
+        cache.set("Was ist EMBA?", "Antwort", "de")
+        assert cache.get("Was ist EMBA?", "de") == "Antwort"
+
+        cache.clear_cache()
+
+        assert cache.get("Was ist EMBA?", "de") is None
+
+def test_redis_ttl_set_correctly():
+    fake_client = MagicMock()
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_client):
+        cache = RedisCache(
+            host="localhost",
+            port=6379,
+            password="",
+            mode="local",
+            metrics=MagicMock()
+        )
+
+        cache.set("Was ist EMBA?", "Antwort", "de")
+
+        fake_client.set.assert_called_once_with(
+            "cache:de:wasistemba",
+            '"Antwort"',
+            ex=config.cache.TTL_CACHE
+        )

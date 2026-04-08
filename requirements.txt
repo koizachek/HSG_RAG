@@ -40,3 +40,5 @@ weaviate-client>=4.16.9
 # Cache 
 cachetools>=5.0.0
 redis>=4.5.5
+
+fakeredis>=2.0.0
