@@ -177,7 +177,7 @@ def test_redis_connection_failure_on_startup_falls_back_to_local_cache():
 
         assert isinstance(cache, LocalCache)
 
-########################################################### Test Cache with Redis (using fakeredis) ###########################################################
+################################## Test Cache with Redis (using fakeredis) ######################################
 def test_cache_uses_redis_with_fakeredis():
     Cache._instance = None
     Cache._settings = None
@@ -311,3 +311,152 @@ def test_redis_ttl_set_correctly():
             '"Antwort"',
             ex=config.cache.TTL_CACHE
         )
+
+################################## Test Cache with Redis (Integration Test with Docker) ######################################
+def test_redis_connection_loss_during_get_does_not_crash():
+    fake_client = MagicMock()
+    fake_client.get.side_effect = Exception("Redis down")
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_client):
+        cache = RedisCache(
+            host="localhost",
+            port=6379,
+            password="",
+            mode="local",
+            metrics=MagicMock()
+        )
+
+        result = cache.get("Was ist EMBA?", "de")
+
+        assert result is None
+
+def test_redis_connection_loss_during_set_does_not_crash():
+    fake_client = MagicMock()
+    fake_client.set.side_effect = Exception("Redis down")
+
+    with patch("src.cache.cache_strategies.RedisService.get_client", return_value=fake_client):
+        cache = RedisCache(
+            host="localhost",
+            port=6379,
+            password="",
+            mode="local",
+            metrics=MagicMock()
+        )
+
+        cache.set("Was ist EMBA?", "Antwort", "de")
+        
+def is_redis_available(host="localhost", port=6379, password=""):
+    try:
+        client = redis.Redis(host=host, port=port, password=password, db=0)
+        client.ping()
+        return True
+    except redis.RedisError:
+        return False
+    
+@pytest.mark.integration
+@pytest.mark.skipif(
+    not is_redis_available(host="localhost", port=6379, password=""),
+    reason="Redis is not available on localhost:6379"
+)
+def test_integration_local_mode_roundtrip(monkeypatch):
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    monkeypatch.setattr(config.cache, "LOCAL_HOST", "localhost")
+    monkeypatch.setattr(config.cache, "LOCAL_PORT", 6379)
+    monkeypatch.setattr(config.cache, "LOCAL_PASS", "")
+
+    Cache.configure(mode="local", no_cache=False)
+    cache = Cache.get_cache()
+
+    assert isinstance(cache, RedisCache)
+
+    cache.clear_cache()
+    cache.set("Was ist EMBA?", "Antwort", "de")
+
+    result = cache.get("Was ist EMBA?", "de")
+    assert result == "Antwort"
+
+@pytest.mark.skipif(
+    not is_redis_available(host="localhost", port=6379, password=""),
+    reason="Redis is not available on localhost:6379"
+)
+def test_integration_cloud_mode_roundtrip(monkeypatch):
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    monkeypatch.setattr(config.cache, "CLOUD_HOST", "localhost")
+    monkeypatch.setattr(config.cache, "CLOUD_PORT", 6379)
+    monkeypatch.setattr(config.cache, "CLOUD_PASS", "")
+
+    Cache.configure(mode="cloud", no_cache=False)
+    cache = Cache.get_cache()
+
+    assert isinstance(cache, RedisCache)
+
+    cache.clear_cache()
+    cache.set("Was ist EMBA?", "Antwort", "de")
+
+    result = cache.get("Was ist EMBA?", "de")
+    assert result == "Antwort"
+
+    cache.clear_cache()
+
+@pytest.mark.skipif(
+    not is_redis_available(host="localhost", port=6379, password=""),
+    reason="Redis is not available on localhost:6379"
+)
+def test_integration_ttl_real_expiry(monkeypatch):
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    monkeypatch.setattr(config.cache, "LOCAL_HOST", "localhost")
+    monkeypatch.setattr(config.cache, "LOCAL_PORT", 6379)
+    monkeypatch.setattr(config.cache, "LOCAL_PASS", "")
+    monkeypatch.setattr(config.cache, "TTL_CACHE", 1)
+
+    Cache.configure(mode="local", no_cache=False)
+    cache = Cache.get_cache()
+
+    assert isinstance(cache, RedisCache)
+
+    cache.clear_cache()
+    cache.set("Was ist EMBA?", "Antwort", "de")
+
+    assert cache.get("Was ist EMBA?", "de") == "Antwort"
+
+    time.sleep(1.2)
+
+    assert cache.get("Was ist EMBA?", "de") is None
+
+    cache.clear_cache()
+
+
+@pytest.mark.skipif(
+    not is_redis_available(host="localhost", port=6379, password=""),
+    reason="Redis is not available on localhost:6379"
+)
+def test_integration_cache_flush(monkeypatch):
+    Cache._instance = None
+    Cache._settings = None
+    Cache._cache_metrics = None
+
+    monkeypatch.setattr(config.cache, "LOCAL_HOST", "localhost")
+    monkeypatch.setattr(config.cache, "LOCAL_PORT", 6379)
+    monkeypatch.setattr(config.cache, "LOCAL_PASS", "")
+
+    Cache.configure(mode="local", no_cache=False)
+    cache = Cache.get_cache()
+
+    assert isinstance(cache, RedisCache)
+
+    cache.clear_cache()
+    cache.set("Was ist EMBA?", "Antwort", "de")
+    assert cache.get("Was ist EMBA?", "de") == "Antwort"
+
+    cache.clear_cache()
+
+    assert cache.get("Was ist EMBA?", "de") is None
