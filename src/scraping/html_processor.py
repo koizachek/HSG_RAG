@@ -1,8 +1,9 @@
 from docling.document_converter import InputFormat
 from docling_core.types.doc.document import DoclingDocument, TitleItem
 
-from ..config import config
+from .types import ChunkMetadata
 
+from ..config import config
 from ..pipeline.processors import ProcessorBase
 from ..utils.logging import get_logger
 
@@ -25,6 +26,16 @@ class HTMLProcessor(ProcessorBase):
         except Exception as e:
             logger.error(f"Failed to analyze page layout: {e}")
             return None
+    
+
+    def prepare_chunks(self, url: str, url_text: str, metas: list[ChunkMetadata]) -> dict[str, list]:
+        prepared_chunks = { lang: [] for lang in config.get('AVAILABLE_LANGUAGES', ['en', 'de']) }
+        for meta in metas:
+            prepared_chunks[meta.language].append(meta.text)
+        for lang, chunks in prepared_chunks.items():
+            prepared_chunks[lang] = self._prepare_chunks(url, url_text, chunks) 
+ 
+        return prepared_chunks
 
 
     def extract_title(self, document: DoclingDocument) -> str:
@@ -45,7 +56,7 @@ class HTMLProcessor(ProcessorBase):
         return prepared_chunks
     
 
-    def merge_chunks_by_topic(self, chunk_metadatas: list[dict]) -> list[dict]:
+    def merge_chunks_by_topic(self, chunk_metadatas: list[ChunkMetadata]) -> list[ChunkMetadata]:
         MAX_TOKENS = config.processing.MAX_TOKENS
         merged_chunks = []
 
@@ -54,8 +65,8 @@ class HTMLProcessor(ProcessorBase):
         current_topic  = None
 
         for chunk in chunk_metadatas:
-            topic      = chunk["topic"]
-            token_size = chunk["token_size"]
+            topic      = chunk.topic
+            token_size = chunk.token_size
             
             # If the chunk is already large enough, it will not be merged
             if token_size >= MAX_TOKENS:
@@ -90,47 +101,47 @@ class HTMLProcessor(ProcessorBase):
         return merged_chunks
 
 
-    def _create_merged_chunk(self, group: list[dict]) -> dict:
+    def _create_merged_chunk(self, group: list[dict]) -> ChunkMetadata:
         if len(group) == 1:
-            return group[0].copy()
+            return group[0]
 
-        merged_text  = "\n".join(cm["text"] for cm in group).strip()
-        total_tokens = sum(cm["token_size"] for cm in group)
+        merged_text  = "\n".join(cm.text for cm in group).strip()
+        total_tokens = sum(cm.token_size for cm in group)
 
         first = group[0]
 
-        merged_id = f"merged_{first['topic']}_{group[0]['chunk_id']}_to_{group[-1]['chunk_id']}"
-        merged_chunk = {
-            "chunk_id":           merged_id,
-            "text":               merged_text,
-            "source_url":         first["source_url"],
-            "program":            first["program"],
-            "language":           first["language"],
-            "topic":              first["topic"],
-            "last_scraped":       first["last_scraped"],
-            "page_title":         first["page_title"],
-            "section_heading":    first["section_heading"],
-            "token_size":         total_tokens,
-            "original_chunk_ids": [c["chunk_id"] for c in group],  
-        }
+        merged_id = f"merged_{first.topic}_{group[0].chunk_id}_to_{group[-1].chunk_id}"
+        merged_chunk = ChunkMetadata(
+            chunk_id           = merged_id,
+            text               = merged_text,
+            source_url         = first.source_url,
+            program            = first.program,
+            language           = first.language,
+            topic              = first.topic,
+            last_scraped       = first.last_scraped,
+            page_title         = first.page_title,
+            section_heading    = first.section_heading,
+            token_size         = total_tokens,
+            original_chunk_ids = [c.chunk_id for c in group],  
+        )
         return merged_chunk
 
 
     def _get_formatted_chunk_text(self, chunk, headings) -> str: 
-            formatted_text = f"{' '.join(headings)}\n"
+        formatted_text = f"{' '.join(headings)}\n"
 
-            if not hasattr(chunk.meta, 'doc_items'):
-                return formatted_text + chunk.text.replace('\n', ' ')
-
-            labels = set()       
-            for item in chunk.meta.doc_items:
-                labels.add(item.label)
-            
-            labels = [label for label in labels if label in ['table', 'list_item']]
-            if labels:
-                return formatted_text + chunk.text
-
+        if not hasattr(chunk.meta, 'doc_items'):
             return formatted_text + chunk.text.replace('\n', ' ')
+
+        labels = set()       
+        for item in chunk.meta.doc_items:
+            labels.add(item.label)
+        
+        labels = [label for label in labels if label in ['table', 'list_item']]
+        if labels:
+            return formatted_text + chunk.text
+
+        return formatted_text + chunk.text.replace('\n', ' ')
 
 
     def _merge_chunks_by_headings(self, raw_chunks: list) -> list[str]:
@@ -178,7 +189,7 @@ class HTMLProcessor(ProcessorBase):
             if len(group) > 1:
                 full_chunk = f"{'\n'.join(headings[1:-1])}\n{'\n'.join(group)}"
             else:
-                full_chunk = f"{'\n'.join(headings[1:])}\n{chunk.text.replace('\n', ' ')}"
+                full_chunk = f"{'\n'.join(headings[1:])}\n{chunk.text}"
 
             merged.append(full_chunk.strip())
                 

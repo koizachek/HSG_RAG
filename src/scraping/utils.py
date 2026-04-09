@@ -1,23 +1,23 @@
-import requests, json, os, difflib
+import hashlib
+import json
+import requests, difflib, datetime
+from email.utils import parsedate_to_datetime
 from functools import lru_cache
 from collections import defaultdict
-from time import sleep 
 from urllib.robotparser import RobotFileParser
 from urllib.error import URLError
 from fake_useragent import UserAgent
+from bs4 import BeautifulSoup
+
+from src.scraping.types import FetchResult
 
 from ..config import config
 from ..const.page_priority import *
-from ..const.page_blacklist import PAGE_BLACKLIST
 from ..utils.logging import get_logger
+from ..utils.tools import call_with_exponential_backoff
 
 logger = get_logger('scraper.utils')
 ua = UserAgent()
-
-
-def url_to_filename(url: str) -> str:
-    return url.lstrip('https://').lstrip('http://').rstrip('/').replace('/', '_').replace('.', '-')
-
 
 @lru_cache
 def _fuzzy_match(word, keyword, threshold=0.8):
@@ -25,17 +25,6 @@ def _fuzzy_match(word, keyword, threshold=0.8):
     Check if word fuzzy matches keyword using difflib ratio.
     """
     return difflib.SequenceMatcher(None, word.lower(), keyword.lower()).ratio() >= threshold
-
-
-def is_url_blacklisted(url: str) -> bool:
-    url_lower = url.lower()
-    path = url_lower.split('://', 1)[-1].split('/', 1)[-1] 
-    
-    for forbidden in PAGE_BLACKLIST:
-        if forbidden in path:
-            return True
-            
-    return False
 
 
 def detect_page_topic_and_priority(text: str) -> dict[str, str]:
@@ -85,67 +74,127 @@ def detect_chunk_topic(text: str) -> str:
         return 'none'
 
     top_topic = max(topic_counter.keys(), key=lambda k: topic_counter[k])
-    return top_topic
+    return top_topic 
 
 
-def load_set_dict(
-    path: str,
-    dict_name: str, 
-    refresh_entry: str = '', 
-) -> dict:
-    set_backed_dicts = {'sitemap_urls', 'discovered_urls', 'url_priorities'}
-    url_dict = defaultdict(set)
-    urls_json_path = os.path.join(path, f'{dict_name}.json') 
-    if os.path.exists(urls_json_path) and refresh_entry != 'all':
-        try:
-            with open(urls_json_path, 'r') as f:
-                for key, value in json.load(f).items():
-                    url_dict[key] = value
-        except Exception as e:
-            logger.error(f"Failed to load URL dictionary '{dict_name}': {e}")
-    
-    if refresh_entry in url_dict.keys():
-        if isinstance(url_dict[refresh_entry], (list, set)):
-            url_dict[refresh_entry].clear() 
+def hash_html(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
 
-    for key in url_dict.keys():
-        if dict_name in set_backed_dicts and isinstance(url_dict[key], list):
-            url_dict[key] = set(url_dict[key])
+    for tag in soup(["script", "style"]):
+        tag.decompose()
 
-    return url_dict
+    text = soup.get_text()
+    return hashlib.sha256(text.encode()).hexdigest()
 
 
-def write_set_dict(
-    path: str, 
-    dict_name: str, 
-    urls_dict: dict,
-):
-    urls_json_path = os.path.join(path, f'{dict_name}.json')
-    
-    for key in urls_dict.keys():
-        if isinstance(urls_dict[key], set):
-            urls_dict[key] = list(urls_dict[key])
-    
+def parse_isoformat(data: str) -> datetime.datetime:
+    if not data:
+        return None
+
     try:
-        with open(urls_json_path, 'w') as f:
-            json.dump(urls_dict, f, indent=4, default=str)
+        return parsedate_to_datetime(data)
+    except (TypeError, ValueError):
+        pass
+
+    try:
+        return datetime.datetime.fromisoformat(data)
+    except ValueError:
+        pass
+
+    return None
+
+
+def extract_last_modified(response, html) -> datetime.datetime | None: 
+    last_modified = response.headers.get("Last-Modified", None)
+    
+    soup = BeautifulSoup(html, "html.parser")
+    if not last_modified:
+        for key in [ ("name", "last-modified"), ("property", "article:modified_time")]: 
+            tag = soup.find("meta", {key[0]: key[1]})
+            if tag:
+                last_modified = tag.get("content")
+                break
+
+    if not last_modified:
+        scripts = soup.find_all("script", {"type": "application/ld+json"})
+        for script in scripts:
+            try:
+                data = json.loads(script.string)
+            except:
+                continue
+
+            graph = data.get("@graph") if isinstance(data, dict) else None
+
+            if graph:
+                for item in graph:
+                    if item.get("@type") in ["WebPage", "Article"]:
+                        last_modified = item.get("dateModified")
+                        if last_modified:
+                            break
+        
+    return parse_isoformat(last_modified)
+
+
+def fetch_head(url: str, etag: str | None = None) -> FetchResult:
+    try:
+        headers = {"User-Agent": ua.chrome}
+        if etag:
+            headers["If-None-Match"] = etag
+
+        response = requests.head(
+            url,
+            allow_redirects=True,
+            timeout=15,
+            headers=headers
+        )
+        if response.status_code == 304:
+            return FetchResult(not_modified=True)
+
+        if response.status_code >= 400:
+            logger.warning(f"HTTP {response.status_code} for URL '{url}'")
+            raise Exception() 
+
+        return FetchResult(
+            final_url     = response.url,
+            last_modified = response.headers.get('Last-Modified'), 
+            etag          = response.headers.get('ETag')
+        )
     except Exception as e:
-        logger.error(f"Failed to save ULR dictionary '{dict_name}': {e}")
+        logger.exception(f"Head fetch failed: {url}")
+        raise e 
 
 
-def fetch_url(url: str) -> dict:
+def fetch_url(url: str, etag: str | None = None) -> dict:
     try:
+        headers = {"User-Agent": ua.chrome}
+        if etag:
+            headers["If-None-Match"] = etag
+
         response = requests.get(
             url,
             allow_redirects=True,
             timeout=15,
-            headers={"User-Agent": ua.chrome}
+            headers=headers
         )
-        if response.status_code >= 400:
-            logger.warning(f"HTTP {response.status_code} for {url}")
-            raise Exception() 
+        if response.status_code == 304:
+            return FetchResult(not_modified=True)
 
-        return {"text": response.text, "final_url": response.url}
+        if response.status_code >= 400:
+            logger.warning(f"HTTP {response.status_code} for URL '{url}'")
+            raise Exception() 
+       
+        html = response.text  
+        etag = response.headers.get("ETag")
+        last_modified = extract_last_modified(response, html)
+        page_hash = hash_html(html)
+
+        return FetchResult(
+            text          = html, 
+            final_url     = response.url,
+            page_hash     = page_hash,
+            last_modified = last_modified,
+            etag          = etag,
+        )
     except Exception as e:
         logger.exception(f"Fetch failed: {url}")
         raise e 
@@ -190,30 +239,3 @@ def parse_robots(base_url: str) -> RobotFileParser | None:
 
     return rp
 
-def call_with_exponential_backoff(
-    func, 
-    args: tuple = (), 
-    delay: float | None = None, 
-    backoff_rate: float | None = None,
-) -> dict:
-    retries = 0
-    last_error = None
-
-    delay = delay or config.scraping.CRAWL_DELAY 
-    backoff_rate = backoff_rate or config.scraping.BACKOFF_RATE
-
-    sleep(delay)
-    
-    while retries <= config.scraping.MAX_RETRIES:
-        try:
-            return { 'result': func(*args), 'retries': retries, 'last_error': last_error, 'status': 'OK'}
-        except Exception as e:
-            logger.warning(f'Caught an error on try {retries+1}: {e}')
-            last_error = e
-            retries += 1
-
-            backoff_time = delay * backoff_rate**retries
-            logger.info(f'Retrying with exponential backoff time {backoff_time} sec.')
-            sleep(backoff_time)
-    
-    return { 'result': None, 'retries': retries, 'last_error': last_error, 'status': 'FAIL' }

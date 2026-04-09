@@ -1,0 +1,2 @@
+Requirement already satisfied: apscheduler in /home/pygmales/work/hsg_rag/venv/lib/python3.12/site-packages (3.11.2)
+Requirement already satisfied: tzlocal>=3.0 in /home/pygmales/work/hsg_rag/venv/lib/python3.12/site-packages (from apscheduler) (5.3.1)
