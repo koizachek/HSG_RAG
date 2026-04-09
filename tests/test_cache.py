@@ -10,7 +10,9 @@ from src.cache.cache import Cache
 from unittest.mock import MagicMock, patch
 from src.cache.cache import Cache
 from src.cache.cache_strategies import RedisCache, LocalCache
+from src.cache.cache_metrics import CacheMetrics
 from src.config import config
+from threading import Thread
 
 class ExecutiveAgentChain:
     def preprocess_query(self, message: str):
@@ -460,3 +462,71 @@ def test_integration_cache_flush(monkeypatch):
     cache.clear_cache()
 
     assert cache.get("Was ist EMBA?", "de") is None
+
+########################################### Tests edge cases ###########################################
+def test_concurrent_writes():
+    cache = LocalCache(metrics=CacheMetrics())
+
+    def write_value(value):
+        cache.set("Was ist EMBA?", value, "de")
+
+    t1 = Thread(target=write_value, args=("Antwort A",))
+    t2 = Thread(target=write_value, args=("Antwort B",))
+
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    result = cache.get("Was ist EMBA?", "de")
+
+    assert result in ("Antwort A", "Antwort B")
+    
+def test_unicode_in_cache_key():
+    cache = LocalCache(metrics=CacheMetrics())
+
+    cache.set("Was kostet das EMBA für Ärzte?", "Antwort", "de")
+    result = cache.get("Was kostet das EMBA für Ärzte?", "de")
+
+    assert result == "Antwort"
+
+def test_unicode_key_generation_does_not_crash():
+    cache = LocalCache(metrics=CacheMetrics())
+
+    key = cache._generate_normalized_key("Was kostet das EMBA für Ärzte?", "de")
+
+    assert key.startswith("cache:de:")
+
+
+# BUG/TODO: Improve Unicode normalization for cache keys.
+# Current behavior removes umlauts/special characters entirely
+# (e.g. "für Ärzte" -> "frrzte"), which may cause unreadable keys
+# and potential collisions. Consider transliteration such as
+# ä -> ae, ö -> oe, ü -> ue, ß -> ss.
+def test_unicode_in_cache_key():
+    cache = LocalCache(metrics=CacheMetrics())
+
+    normalized_key = cache._generate_normalized_key(
+        "Was kostet das EMBA für Ärzte?", "de"
+    )
+
+    assert normalized_key == "cache:de:waskostetdasembafrrzte"
+
+def test_very_long_response_in_cache():
+    cache = LocalCache(metrics=CacheMetrics())
+
+    long_response = "Antwort " * 6000
+
+    cache.set("Was ist EMBA?", long_response, "de")
+    result = cache.get("Was ist EMBA?", "de")
+
+    assert result == long_response
+
+def test_language_isolation_same_query_different_language():
+    cache = LocalCache(metrics=CacheMetrics())
+
+    cache.set("EMBA cost", "English Answer", "en")
+    cache.set("EMBA cost", "Deutsche Antwort", "de")
+
+    assert cache.get("EMBA cost", "en") == "English Answer"
+    assert cache.get("EMBA cost", "de") == "Deutsche Antwort"
