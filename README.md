@@ -1,134 +1,187 @@
-# Executive MBA HSG Chatbot
+# Executive Education RAG Chatbot
 
-A Retrieval-Augmented Generation (RAG) chatbot that provides information specifically about the Executive MBA HSG program from the University of St. Gallen Executive School.
+A retrieval-augmented chatbot for the University of St.Gallen Executive Education programmes. The current system covers **EMBA HSG**, **IEMBA HSG**, and **emba X**, supports **English and German**, and combines scraping, document import, vector retrieval, caching, and a Gradio-based chat interface.
 
-## Overview
+## What The Repository Contains
 
-This chatbot uses web scraping to collect information about the Executive MBA HSG program from the University of St. Gallen Executive School website, processes the data, and creates a knowledge base that can be queried using natural language. The system uses LangChain and vector embeddings to provide accurate and relevant responses specifically about the Executive MBA HSG program.
+- A multi-agent RAG chat application for programme information and admissions guidance
+- A scraping and import pipeline for keeping programme content up to date
+- Weaviate-based retrieval across language-specific collections
+- Response caching with `cloud`, `local`, and in-memory `dict` modes
+- A Gradio chat UI plus a separate database management UI
+- A growing pytest suite for consent flow, scraping, prompts, cache behaviour, and formatting
 
-## Features
+## Core Features
 
-- Web scraping of Executive MBA HSG program information from the University of St. Gallen Executive School website
-- Extraction of program details including duration, curriculum, costs, admission requirements, schedules, faculty info, and deadlines
-- Vector database for efficient information retrieval
-- Natural language interface for querying information about the Executive MBA HSG program
-- Contextual responses based on the latest program data
+- Programme-specific support for **EMBA HSG**, **IEMBA HSG**, and **emba X**
+- Language handling for **English** and **German**
+- Lead-agent routing with programme-specific sub-agents
+- Response formatting, ambiguity checks, scope guarding, and quality fallback handling
+- Booking / handover flow with advisor-specific widgets
+- Consent handling and user-profile tracking
+- Scraping, chunking, import, and Weaviate collection management
+- Configurable cache layer for Redis Cloud, local Redis, or in-memory operation
 
-## Project Structure
+## Project Layout
 
-```
+```text
 HSG_RAG/
-├── data/                      # Scraped and processed data
+├── docs/                       # Architecture and operations documentation
 ├── src/
-│   ├── apps/                  # User interface applications
-│   │   └── chat/              # Gradio chatbot interface
-│   ├── database/              # Weaviate vector database
-│   │   └── weavservice.py     # Database operations
-│   ├── pipeline/              # Data import pipeline
-│   │   └── pipeline.py        # Orchestration & deduplication
-│   ├── processing/            # Document processing
-│   │   └── processor.py       # WebsiteProcessor & DataProcessor
-│   ├── rag/                   # RAG agent implementation
-│   │   ├── agent_chain.py     # Multi-agent orchestration
-│   │   ├── models.py          # LLM configuration
-│   │   ├── prompts.py         # Agent prompts
-│   │   └── middleware.py      # Error handling & retries
-│   └── utils/                 # Utilities
-│       ├── logging.py         # Centralized logging
-│       └── lang.py            # Language detection
-├── main.py                    # Application entry point
-├── config.py                  # Configuration settings
-└── requirements.txt           # Project dependencies
+│   ├── apps/
+│   │   ├── chat/               # Gradio chatbot application
+│   │   └── dbapp/              # Database management UI
+│   ├── cache/                  # Cache facade, metrics, and strategies
+│   ├── config/                 # Runtime config loader
+│   ├── const/                  # Static response and content constants
+│   ├── database/               # Redis and Weaviate services
+│   ├── notification/           # Notification helpers
+│   ├── pipeline/               # Import pipeline orchestration
+│   ├── rag/                    # Agent chain, prompts, formatting, scope handling
+│   ├── scraping/               # Scraper, HTML processing, URL normalization
+│   └── utils/                  # Shared utilities
+├── tests/                      # Pytest suite
+├── tools/                      # Operational scripts
+├── config.py                   # Repository-level default settings
+├── main.py                     # Main CLI entry point
+├── pytest.ini                  # Default pytest behaviour
+└── requirements.txt            # Python dependencies
 ```
 
 ## Setup
 
-1. Clone the repository
-2. Create a virtual environment:
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-4. Create a `.env` file with your API keys (copy from `.env.example`):
-   
-   **Required:**
-   ```
-   OPENAI_API_KEY=your_openai_api_key
-   WEAVIATE_API_KEY=your_weaviate_api_key
-   WEAVIATE_CLUSTER_URL=your_weaviate_rest_endpoint_url
-   HUGGING_FACE_API_KEY=your_hf_api_key
-   ```
-   
-   **Optional (for LangSmith tracing/debugging):**
-   ```
-   LANGSMITH_TRACING=true
-   LANGSMITH_API_KEY=your_langsmith_api_key
-   LANGSMITH_PROJECT=your_project_name
-   LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-   ```
-   
-   **Optional (alternative LLM providers):**
-   ```
-   GROQ_API_KEY=your_groq_api_key
-   OPEN_ROUTER_API_KEY=your_openrouter_api_key
-   ```
-   
-   See `.env.example` for the complete template.
-    
+1. Clone the repository.
+2. Create and activate a virtual environment.
 
-## Usage
-
-1. Run the gradio application with the virtual environment activated:
-   ```
-   python main.py --app de
-   ```
-   If you want to know the full set of tools, run this command:
-   ```
-   python main.py --help
-   ```
-2. Open the application using the local URL shown in the terminal:
-   ```
-   * Running on local URL:  http://127.0.0.1:7861
-   ```
-3. Start asking your questions to the assistant!
-
-## Some Example Queries ENGLISH/GERMAN
-
-- "How long is the Executive MBA HSG program?"
-- "What are the admission requirements for the Executive MBA HSG?"
-- "When is the application deadline for the next cohort?"
-- "How much does the Executive MBA HSG program cost?"
-- "What is the curriculum of the Executive MBA HSG?"
-- "Who are the faculty members for the Executive MBA HSG?"
-- "Wie ist das EMBA HSG Programm strukturiert?"
-- "Welche Akkreditierungen besitzt das EMBA HSG Programm?"
-- "Was sind die Zulassungsvoraussetzungen für das EMBA HSG?"
-
-## Deployment to HuggingFace Spaces
-
-This application is deployed at: **https://huggingface.co/spaces/Pygmales/hsg_rag_eea**
-
-The HuggingFace Space runs the Gradio interface directly via:
 ```bash
-python main.py --app de  # or --app en for English
+python -m venv venv
+source venv/bin/activate
 ```
 
-### Required Secrets for HuggingFace Spaces
+3. Install dependencies.
 
-Configure these in your HuggingFace Space settings:
-- `OPENAI_API_KEY` - OpenAI API access
-- `WEAVIATE_API_KEY` - Weaviate Cloud database access
-- `WEAVIATE_CLUSTER_URL` - REST endpoint of the Weaviate Cloud cluster
-- `HUGGING_FACE_API_KEY` - For embeddings (if using cloud Weaviate)
-- `LANGSMITH_TRACING` - (optional) Enable LangSmith tracing for debugging
-- `LANGSMITH_API_KEY` - (optional) LangSmith API key
-- `LANGSMITH_PROJECT` - (optional) LangSmith project name
+```bash
+pip install -r requirements.txt
+```
 
-The application automatically uses environment variables for configuration, making deployment seamless.
+4. Create a local `.env` file from `.env.example`.
+
+Required values depend on the mode you want to run, but in practice you will usually need:
+
+```bash
+OPENAI_API_KEY=...
+WEAVIATE_API_KEY=...
+WEAVIATE_CLUSTER_URL=...
+HUGGING_FACE_API_KEY=...
+```
+
+Optional but commonly useful:
+
+```bash
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=...
+LANGSMITH_PROJECT=...
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+
+GROQ_API_KEY=...
+OPEN_ROUTER_API_KEY=...
+
+REDIS_CLOUD_HOST=...
+REDIS_CLOUD_PORT=...
+REDIS_CLOUD_PASSWORD=...
+```
+
+See `.env.example` and [docs/configuration_system_documentation.md](docs/configuration_system_documentation.md) for the full configuration surface.
+
+## Running The Application
+
+Start the chat UI in German:
+
+```bash
+python main.py --app de
+```
+
+Start the chat UI in English:
+
+```bash
+python main.py --app en
+```
+
+Show all CLI options:
+
+```bash
+python main.py --help
+```
+
+Useful operational commands:
+
+```bash
+python main.py --scrape
+python main.py --imports path/to/file1 path/to/file2
+python main.py --weaviate checkhealth
+python main.py --weaviate init
+python main.py --weaviate redo
+python main.py --clear-cache
+python main.py --dbapp
+```
+
+Cache mode can be selected explicitly:
+
+```bash
+python main.py --app de --cache-mode dict
+python main.py --app de --cache-mode local
+python main.py --app de --cache-mode cloud
+```
+
+## Testing
+
+The default pytest configuration only runs tests that do **not** require network access or external services.
+
+```bash
+pytest -q
+```
+
+Current default behaviour from [pytest.ini](pytest.ini):
+
+- `network` tests are excluded by default
+- `integration` tests are excluded by default
+
+Examples:
+
+```bash
+pytest -q tests/test_cache.py
+pytest -q tests/test_pricing_prompts.py
+pytest -q tests/test_tone_and_handover.py
+pytest -q -m integration
+```
+
+If optional dependencies are missing, some tests are skipped during collection via [tests/conftest.py](tests/conftest.py).
+
+## Configuration Notes
+
+The repository uses `config.py` as the default configuration source, with environment-based overrides loaded through `src/config/configs.py`.
+
+Important defaults in the current repository state:
+
+- Available languages: `en`, `de`
+- Default cache mode: `cloud`
+- Cache TTL: `86400` seconds
+- Cache max size: `1000`
+- Lead response target: `100` words
+- Sub-agent response target: `200` words
+- User-profile tracking: enabled
+
+For details, see:
+
+- [docs/configuration_system_documentation.md](docs/configuration_system_documentation.md)
+- [docs/user_profile_tracking.md](docs/user_profile_tracking.md)
+- [docs/weaviate_database_setup.md](docs/weaviate_database_setup.md)
+
+## Repository Notes
+
+- `main.py` is the supported entry point for local execution.
+- `tools/scraping.py` is an operational scheduler / scraping helper, not the main app entry.
+- The chatbot UI and the database UI are separate applications under `src/apps/`.
 
 ## License
 
