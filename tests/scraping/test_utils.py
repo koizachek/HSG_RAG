@@ -3,6 +3,9 @@ import pytest
 
 from src.scraping.utils import *
 
+pytestmark = pytest.mark.network
+
+
 class TestScrapingUtils:
 
     def test_url_fetching(self):

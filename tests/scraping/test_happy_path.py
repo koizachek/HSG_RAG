@@ -6,6 +6,9 @@ from src.scraping.scraper import Scraper
 from src.scraping.url_normalizer import UrlNormalizer
 from src.config import config
 
+pytestmark = [pytest.mark.network, pytest.mark.integration]
+
+
 class TestHappyPath:
 
     def test_happy_path(self):

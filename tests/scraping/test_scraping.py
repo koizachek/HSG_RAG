@@ -25,12 +25,16 @@ class TestScrapingErrors:
         assert not os.path.exists(url_html_file_path)
         assert not os.path.exists(url_txt_file_path)
 
+    @pytest.mark.network
+    @pytest.mark.integration
     def test_invalid_target_url(self, caplog):
         invalid_url = 'https://gugel.pl'
         self._invalid_url_scrape_test(invalid_url)
 
         assert f"Unaccessible target URL '{invalid_url}'" in caplog.text
 
+    @pytest.mark.network
+    @pytest.mark.integration
     def test_target_url_with_no_robots(self, caplog):
         invalid_url = 'https://emba.unisg.ch/programm/emba'
         self._invalid_url_scrape_test(invalid_url)
