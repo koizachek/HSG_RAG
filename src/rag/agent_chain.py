@@ -272,7 +272,7 @@ class ExecutiveAgentChain:
         interests = [
             'strategy', 'innovation', 'leadership', 'digital transformation',
             'finance', 'operations', 'marketing', 'entrepreneurship',
-            'sustainability', 'technology', 'management',
+            'social impact', 'technology', 'management',
             'Strategie', 'Innovation', 'Führung', 'Digitalisierung'  # German
         ]
         conversation_lower = conversation.lower()

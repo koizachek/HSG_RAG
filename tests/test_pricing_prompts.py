@@ -34,3 +34,20 @@ def test_lead_prompt_uses_specific_deadline_figures_instead_of_ranges():
     assert "24 November 2025" in prompt
     assert "30 June 2026" in prompt
     assert "31 October 2026" in prompt
+
+
+def test_embax_prompt_uses_social_impact_not_sustainability():
+    prompt = PromptConfigurator.get_configured_agent_prompt("embax", language="en")
+
+    assert "Social Impact" in prompt
+    assert "Sustainability" not in prompt
+    assert "strong focus on technology and transformation" in prompt
+
+
+def test_lead_prompt_uses_updated_embax_positioning():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "Tech/Social Impact?" in prompt
+    assert "Social Impact, Innovation" in prompt
+    assert "strong focus on technology and transformation" in prompt
+    assert "double EMBA degree" not in prompt
