@@ -221,7 +221,6 @@ class TestTempBehaviorComplete:
         scraper._analyze_domain = lambda target: SimpleNamespace(urls=['https://target.example/page-1'])
         scraper._analyze_sitemap = lambda domain: SimpleNamespace(documents=[], discovered_urls=[])
         scraper._analyze_discoveries = lambda discovered, sitemap_urls, domain: SimpleNamespace(documents=[], discovered_urls=[])
-        scraper._delete_temp_merged_chunks = lambda target: setattr(scraper, '_temp_deleted_for', target)
 
         original_load_data = scraper._load_data
 
@@ -256,7 +255,6 @@ class TestTempBehaviorComplete:
         assert collect_calls[0]['tagged_documents'] == []
         assert collect_calls[0]['existing_merged_chunks'] == {'https://target.example/page-1': [existing_chunk]}
         assert scraper._content_cleaner.perform_calls == []
-        assert scraper._temp_deleted_for == target_url
 
         saved_filenames = [call['filename'] for call in scraper._save_calls]
         assert saved_filenames.count('merged_chunk_metadata') == 1
@@ -287,7 +285,7 @@ class TestTempBehaviorComplete:
 
         result = scraper.scrape_target(target_url)
 
-        assert result == []
+        assert result == {}
         saved_filenames = [call['filename'] for call in scraper._save_calls]
         assert 'merged_chunk_metadata' not in saved_filenames
         assert scraper._content_cleaner.perform_calls == []

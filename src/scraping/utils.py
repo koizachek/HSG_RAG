@@ -239,4 +239,3 @@ def parse_robots(base_url: str) -> RobotFileParser | None:
 
     return rp
 
-

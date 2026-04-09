@@ -383,7 +383,7 @@ class Scraper:
         tagged_documents: list[TaggedDocument]
     ) -> set[list, list[dict]]:
         loaded_temp_chunks = temp_chunks.copy()
-        prepared_temp_chunks = {lang: [] for lang in config.get('AVAILABLE LANGUAGES', ['en', 'de'])}
+        prepared_temp_chunks = {lang: [] for lang in config.get('AVAILABLE_LANGUAGES', ['en', 'de'])}
 
         for url in [entry.document.name for entry in tagged_documents]:
             if url in temp_chunks.keys():
@@ -716,4 +716,3 @@ class Scraper:
             logger.error(f"Failed trying to load data '{filename}': {e}")
             logger.info("New data will be recorded")
             return defaultdict(dict)
-
