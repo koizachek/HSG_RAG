@@ -93,6 +93,7 @@ def load_set_dict(
     dict_name: str, 
     refresh_entry: str = '', 
 ) -> dict:
+    set_backed_dicts = {'sitemap_urls', 'discovered_urls', 'url_priorities'}
     url_dict = defaultdict(set)
     urls_json_path = os.path.join(path, f'{dict_name}.json') 
     if os.path.exists(urls_json_path) and refresh_entry != 'all':
@@ -104,11 +105,11 @@ def load_set_dict(
             logger.error(f"Failed to load URL dictionary '{dict_name}': {e}")
     
     if refresh_entry in url_dict.keys():
-        if isinstance(url_dict[refresh_entry], list):
+        if isinstance(url_dict[refresh_entry], (list, set)):
             url_dict[refresh_entry].clear() 
 
     for key in url_dict.keys():
-        if isinstance(url_dict[key], list):
+        if dict_name in set_backed_dicts and isinstance(url_dict[key], list):
             url_dict[key] = set(url_dict[key])
 
     return url_dict
