@@ -2,18 +2,18 @@
 
 GREETING_MESSAGES = {
     "en": [
-        "Hello and welcome! I’m your Executive Education Advisor for the HSG Executive MBA programs (**IEMBA**, **emba X**, and **EMBA**). How can I best support your MBA planning today?",
-        "Hello and welcome! I’m your Executive Education Advisor for the University of St.Gallen’s Executive MBA programs (**IEMBA**, **emba X**, **EMBA**). How can I support your MBA planning today?",
-        "Hello and welcome! I’m your Executive Education Advisor for the HSG Executive MBA programs (**EMBA**, **IEMBA**, **emba X**). How can I help you with your EMBA journey today?",
-        "Hello and welcome! I’m your Executive Education Advisor for the University of St.Gallen’s EMBA programs, here to help you navigate our **EMBA**, **IEMBA**, and **emba X** options.",
-        "Hello and welcome. I’m your Executive Education Advisor for the University of St.Gallen’s Executive MBA programs, here to help you assess fit and navigate the **EMBA**, **IEMBA**, and **emba X** options.",
+        "Hello and welcome. I am your Executive Education Advisor for the HSG Executive MBA programmes (**IEMBA**, **emba X**, and **EMBA**). How may I support your MBA planning today?",
+        "Hello and welcome. I am your Executive Education Advisor for the University of St.Gallen Executive MBA programmes (**IEMBA**, **emba X**, and **EMBA**). How may I assist you with your programme search?",
+        "Hello and welcome. I am here to help you explore the University of St.Gallen Executive MBA programmes (**EMBA**, **IEMBA**, and **emba X**). What would you like to discuss today?",
+        "Hello and welcome. I am your Executive Education Advisor for the University of St.Gallen’s Executive MBA programmes, and I am here to help you assess fit across **EMBA**, **IEMBA**, and **emba X**.",
+        "Hello and welcome. I am here to support you with questions about the University of St.Gallen Executive MBA programmes and to help you evaluate the **EMBA**, **IEMBA**, and **emba X** options.",
     ],
     "de": [
-        "Guten Tag! Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme und unterstütze Sie gerne bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
-        "Guten Tag, ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**). Ich unterstütze Sie bei Programmwahl, Ablauf und Zulassungsfragen.",
-        "Guten Tag und herzlich willkommen! Ich bin Ihr Executive Education Advisor für die HSG Executive MBA Programme und unterstütze Sie gern bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
-        "Guten Tag, ich bin Ihr Executive-Education-Berater für die HSG Executive MBA-Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei Programmwahl und Zulassungsfragen.",
-        "Guten Tag! Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei Programmwahl und Zulassungsfragen.",
+        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme und unterstütze Sie gerne bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
+        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**). Ich unterstütze Sie bei Programmwahl, Ablauf und Zulassungsfragen.",
+        "Guten Tag und herzlich willkommen. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme und unterstütze Sie gerne bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
+        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei der Einschätzung der passenden Option.",
+        "Guten Tag. Ich unterstütze Sie gerne bei Fragen zu den HSG Executive MBA Programmen und helfe Ihnen, die Optionen **EMBA**, **IEMBA** und **emba X** einzuordnen.",
     ]
 }
 
@@ -29,9 +29,9 @@ NOT_VALID_QUERY_MESSAGE = {
 
 CONFIDENCE_FALLBACK_MESSAGE = {
     "en": (
-        "I'm sorry, but I couldn't find any information in my records that matches your request, "
-        "so I can't answer it with confidence. Could you please rephrase your question?\n\n"
-        "Alternatively, you can book an appointment with a student services advisor using the links below."
+        "I am sorry, but I could not find sufficiently reliable information in my records to answer that question with confidence. "
+        "Could you please rephrase your question?\n\n"
+        "Alternatively, you may book a consultation with an admissions advisor using the contact details and links below."
     ),
     "de": (
         "Es tut mir leid, aber ich konnte in meinen Unterlagen keine Informationen finden, "
@@ -57,7 +57,7 @@ CONVERSATION_END_MESSAGE = {
         "This conversation has reached its maximum length. "
         "To make sure you receive the best possible support, "
         "please continue with a personal consultation.\n\n"
-        "You can book an appointment with a student services advisor using the links below. "
+        "You can book an appointment with an admissions advisor using the contact details and links below. "
         "Thank you for your understanding."
     ),
     "de": (
@@ -69,6 +69,51 @@ CONVERSATION_END_MESSAGE = {
     ),
 }
 
+ADMISSIONS_TEAM_CONTACT = {
+    "en": {
+        "email": "emba@unisg.ch",
+        "phone": "+41 71 224 27 02",
+    },
+    "de": {
+        "email": "emba@unisg.ch",
+        "phone": "+41 71 224 27 02",
+    },
+}
+
+ADVISOR_CONTACTS = [
+    {
+        "name": "Cyra von Müller (EMBA)",
+        "program": "emba",
+        "email": "cyra.vonmueller@unisg.ch",
+        "phone": "+41 71 224 27 12",
+        "url": "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
+    },
+    {
+        "name": "Kristin Fuchs (IEMBA)",
+        "program": "iemba",
+        "email": "kristin.fuchs@unisg.ch",
+        "phone": "+41 71 224 75 46",
+        "url": "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
+    },
+    {
+        "name": "Teyuna Giger (emba X)",
+        "program": "emba_x",
+        "email": "teyuna.giger@unisg.ch",
+        "phone": "+41 71 224 77 65",
+        "url": "https://calendly.com/teyuna-giger-unisg",
+    },
+]
+
+
+def get_admissions_contact_text(language: str = "en") -> str:
+    labels = {
+        "en": "You can reach the Executive MBA admissions team at {email} or {phone}.",
+        "de": "Sie erreichen das Executive-MBA-Zulassungsteam unter {email} oder {phone}.",
+    }
+    contact = ADMISSIONS_TEAM_CONTACT.get(language, ADMISSIONS_TEAM_CONTACT["en"])
+    template = labels.get(language, labels["en"])
+    return template.format(email=contact["email"], phone=contact["phone"])
+
 
 def get_booking_widget(language: str="en", programs: list[str]=None):
     """
@@ -79,29 +124,22 @@ def get_booking_widget(language: str="en", programs: list[str]=None):
         programs = ["emba", "iemba", "emba_x"]
 
     labels = {
-        "en": {"header": "Book a Consultation", "sub": "Select an advisor to view their calendar:"},
-        "de": {"header": "Termin vereinbaren", "sub": "Wählen Sie einen Berater für den Kalender:"}
+        "en": {
+            "header": "Book a Consultation",
+            "sub": "Select an advisor to view available appointment slots and contact details:",
+            "email": "Email",
+            "phone": "Phone",
+        },
+        "de": {
+            "header": "Termin vereinbaren",
+            "sub": "Wählen Sie einen Berater, um verfügbare Termine und Kontaktdaten zu sehen:",
+            "email": "E-Mail",
+            "phone": "Telefon",
+        }
     }
     txt = labels.get(language, labels["en"])
 
     base_params = "?hide_gdpr_banner=1&embed_type=Inline&embed_domain=1"
-    advisors = [
-        {
-            "name": "Cyra von Müller (EMBA)",
-            "url": f"https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg{base_params}",
-            "program": "emba"
-        },
-        {
-            "name": "Kristin Fuchs (IEMBA)",
-            "url": f"https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation{base_params}",
-            "program": "iemba"
-        },
-        {
-            "name": "Teyuna Giger (emba X)",
-            "url": f"https://calendly.com/teyuna-giger-unisg{base_params}",
-            "program": "emba_x"
-        },
-    ]
 
     html_content = f"""
     <div style="width: 100%; min-width: 100%; box-sizing: border-box; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-top: 10px; font-family: sans-serif;">
@@ -109,15 +147,19 @@ def get_booking_widget(language: str="en", programs: list[str]=None):
         <p style="margin: 0 0 20px 0; color: #6b7280; font-size: 1em;">{txt['sub']}</p>
     """
 
-    for advisor in advisors:
+    for advisor in ADVISOR_CONTACTS:
         if advisor["program"] in programs:
             html_content += f"""
             <details style="margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <summary style="cursor: pointer; padding: 16px 20px; background-color: #ffffff; font-weight: 600; color: #374151; font-size: 1.05em; list-style: none; transition: background 0.2s;">
                     {advisor['name']}
                 </summary>
+                <div style="padding: 16px 20px 0 20px; border-top: 1px solid #e5e7eb;">
+                    <p style="margin: 0 0 6px 0; color: #374151;"><strong>{txt['email']}:</strong> <a href="mailto:{advisor['email']}" style="color: #1d4ed8; text-decoration: none;">{advisor['email']}</a></p>
+                    <p style="margin: 0 0 16px 0; color: #374151;"><strong>{txt['phone']}:</strong> <a href="tel:{advisor['phone'].replace(' ', '')}" style="color: #1d4ed8; text-decoration: none;">{advisor['phone']}</a></p>
+                </div>
                 <div style="padding: 0; border-top: 1px solid #e5e7eb;">
-                    <iframe src="{advisor['url']}" width="100%" height="650px" frameborder="0" style="display: block;"></iframe>
+                    <iframe src="{advisor['url']}{base_params}" width="100%" height="650px" frameborder="0" style="display: block;"></iframe>
                 </div>
             </details>
             """

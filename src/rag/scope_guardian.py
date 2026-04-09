@@ -3,6 +3,7 @@ Scope guardian for handling out-of-scope queries and providing appropriate redir
 Ensures the chatbot stays within its defined boundaries.
 """
 import re
+from src.const.agent_response_constants import get_admissions_contact_text
 from src.utils.logging import get_logger
 
 logger = get_logger("scope_guardian")
@@ -101,15 +102,15 @@ class ScopeGuardian:
         """
         messages = {
             'off_topic': {
-                'en': "I'm here to help with questions about HSG Executive MBA programs (EMBA, IEMBA, and emba X). I'd be happy to discuss program details, admissions requirements, or help you find the right program for your goals. What would you like to know about our programs?",
+                'en': "I am here to help with questions about HSG Executive MBA programmes (EMBA, IEMBA, and emba X). I would be happy to discuss programme details, admissions requirements, or help you identify the most suitable option for your goals. What would you like to know about our programmes?",
                 'de': "Ich bin hier, um Fragen zu den HSG Executive MBA-Programmen (EMBA, IEMBA und emba X) zu beantworten. Gerne helfe ich Ihnen bei Programmdetails, Zulassungsvoraussetzungen oder dabei, das richtige Programm für Ihre Ziele zu finden. Was möchten Sie über unsere Programme wissen?"
             },
             'financial_planning': {
-                'en': "For detailed financial planning, payment options, or scholarship applications, I recommend contacting our admissions team directly. They can provide personalized guidance on financing options and available support.\n\nWould you like me to provide general information about program costs and what's included?",
+                'en': "For detailed financial planning, payment options, or scholarship applications, I recommend contacting our admissions team directly. They can provide personalised guidance on financing options and available support.\n\nWould you like me to provide general information about programme costs and what is included?",
                 'de': "Für detaillierte Finanzplanung, Zahlungsoptionen oder Stipendienanträge empfehle ich, direkt mit unserem Zulassungsteam Kontakt aufzunehmen. Sie können Ihnen persönliche Beratung zu Finanzierungsmöglichkeiten und verfügbarer Unterstützung geben.\n\nMöchten Sie allgemeine Informationen über Programmkosten und Leistungen erhalten?"
             },
             'aggressive': {
-                'en': "I'm here to help with questions about HSG Executive MBA programs, but please keep the conversation respectful. If the aggressive language continues, I may need to end the chat and refer you to our admissions team. How can I help you with information about our programs?",
+                'en': "I am here to help with questions about HSG Executive MBA programmes, but I ask that the conversation remain respectful. If the aggressive language continues, I may need to end the chat and refer you to our admissions team. How can I help you with information about our programmes?",
                 'de': "Ich helfe Ihnen gerne bei Fragen zu den HSG Executive MBA-Programmen, aber bitte bleiben Sie respektvoll. Wenn die aggressive Sprache anhält, muss ich das Gespräch ggf. beenden und Sie an unser Zulassungsteam verweisen. Wie kann ich Ihnen bei Informationen über unsere Programme helfen?"
             }
         }
@@ -163,15 +164,15 @@ class ScopeGuardian:
         """
         messages = {
             'escalate_aggressive': {
-                'en': "I can’t continue this chat while the language is aggressive. If you still need help, please book an appointment with our admissions team using the links below.",
+                'en': "I cannot continue this chat while the language is aggressive. If you still need support, please use the contact details and appointment links below to speak with our admissions team.",
                 'de': "Ich kann dieses Gespräch nicht fortsetzen, solange die Sprache aggressiv ist. Wenn Sie weiterhin Unterstützung benötigen, buchen Sie bitte über die untenstehenden Links einen Termin mit unserem Zulassungsteam."
             },
             'escalate_off_topic': {
-                'en': "For questions outside program information, our admissions team would be the best resource. You can reach them at [admissions contact info].\n\nIs there anything specific about the EMBA, IEMBA, or emba X programs I can help you with?",
-                'de': "Für Fragen außerhalb der Programminformationen ist unser Zulassungsteam die beste Anlaufstelle. Sie erreichen diese unter [Zulassungskontaktinfo].\n\nGibt es etwas Spezifisches über die EMBA-, IEMBA- oder emba X-Programme, bei dem ich Ihnen helfen kann?"
+                'en': f"For questions outside programme information, our admissions team would be the best resource. {get_admissions_contact_text('en')}\n\nIs there anything specific about the EMBA, IEMBA, or emba X programmes I can help you with?",
+                'de': f"Für Fragen außerhalb der Programminformationen ist unser Zulassungsteam die beste Anlaufstelle. {get_admissions_contact_text('de')}\n\nGibt es etwas Spezifisches über die EMBA-, IEMBA- oder emba X-Programme, bei dem ich Ihnen helfen kann?"
             },
             'escalate_financial': {
-                'en': "Our admissions team can provide detailed guidance on financing options, payment plans, and scholarships. Please contact them directly for personalized financial planning support.",
+                'en': f"Our admissions team can provide detailed guidance on financing options, payment plans, and scholarships. {get_admissions_contact_text('en')}",
                 'de': "Unser Zulassungsteam kann Ihnen detaillierte Beratung zu Finanzierungsoptionen, Zahlungsplänen und Stipendien geben. Bitte kontaktieren Sie diese direkt für persönliche Unterstützung bei der Finanzplanung."
             }
         }
