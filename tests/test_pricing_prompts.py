@@ -35,6 +35,25 @@ def test_lead_prompt_uses_specific_deadline_figures_instead_of_ranges():
     assert "30 June 2026" in prompt
     assert "31 October 2026" in prompt
 
+def test_embax_prompt_uses_social_impact_not_sustainability():
+    prompt = PromptConfigurator.get_configured_agent_prompt("embax", language="en")
+
+    assert "Social Impact" in prompt
+    assert "Sustainability" not in prompt
+    assert "strong focus on Technology, Leadership, and Transformation" in prompt
+
+
+def test_lead_prompt_uses_updated_embax_positioning():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "Tech/Social Impact?" in prompt
+    assert "Social Impact, Innovation" in prompt
+    assert "strong focus on technology, leadership, and transformation" in prompt
+    assert "Joint Degree Programme from ETH Zurich and the University of St.Gallen" in prompt
+    assert "Access to BOTH alumni networks" in prompt
+    assert "Do NOT attribute international study trips to emba X." in prompt
+    assert "double EMBA degree" not in prompt
+
 
 def test_embax_prompt_highlights_joint_degree_and_core_usps():
     prompt = PromptConfigurator.get_configured_agent_prompt("embax", language="en")
@@ -44,15 +63,6 @@ def test_embax_prompt_highlights_joint_degree_and_core_usps():
     assert "Individual Development Journey" in prompt
     assert "Leadership Skills Labs" in prompt
     assert "Peak Performance Insights" in prompt
-    assert "Technology and Leadership" in prompt
+    assert "Technology, Leadership, and Transformation" in prompt
     assert "There are NO international study trips." in prompt
-    assert "double EMBA degree" not in prompt
-
-
-def test_lead_prompt_uses_embax_joint_degree_positioning():
-    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
-
-    assert "Joint Degree Programme from ETH Zurich and the University of St.Gallen" in prompt
-    assert "Access to BOTH alumni networks" in prompt
-    assert "Do NOT attribute international study trips to emba X." in prompt
     assert "double EMBA degree" not in prompt
