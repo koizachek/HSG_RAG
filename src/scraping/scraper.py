@@ -530,8 +530,6 @@ class Scraper:
 
         for interval_prio, interval in config.scraping.INTERVALS.items():
             if prio == interval_prio:
-                logger.info(
-                    f"prio={prio} interval_prio = {interval_prio} interval={interval} time_difference.days={time_difference.days}")
                 return time_difference.days >= interval
 
         return True

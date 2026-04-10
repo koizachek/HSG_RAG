@@ -1,6 +1,6 @@
 from functools import reduce
 import weaviate as wvt
-import datetime, os
+import datetime, os, yaml
 from threading import Lock
 
 from time import perf_counter, sleep
@@ -11,8 +11,8 @@ from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.classes.query import Filter
 from weaviate.config import AdditionalConfig
 
-from src.utils.logging import get_logger
-from src.config import config
+from ..utils.logging import get_logger
+from ..config import config
 
 logger = get_logger("weaviate_service")
 
@@ -336,6 +336,41 @@ class WeaviateService:
                         raise e
                 else: # Probably not a server issue
                     raise e
+    
+
+    def _load_properties(self) -> list[Property]:
+        properties = {}
+        properties_file = os.path.join(config.weaviate.PROPERTIES_PATH, 'properties.yaml')
+        if not os.path.exists(properties_file):
+            logger.error(f"Required file 'properties.yaml' is missing on path: {properties_file}." + 
+                         "Channot create collection without it") 
+            raise FileNotFoundError()
+
+        try:
+            with open(properties_file, 'r') as stream:
+                properties = yaml.safe_load(stream)
+        except Exception as e: 
+            logger.error(f"Failed to load properties from path {properties_file}: {e}")
+            raise e
+        
+        final_properties = []
+        for name, params in properties.items():
+            try:
+                data_type = params.get('data_type', '')
+                dtype = DataType(data_type)
+            except Exception as e: 
+                logger.error(f"Nonexistent datatype {data_type}")
+                raise e  
+
+            final_properties.append(Property(
+                name=name,
+                data_type=dtype,
+                index_filterable=params.get('filterable', True),
+                index_searchable=params.get('searchable', True),
+                skip_vectorization=params.get('skip_vectorization', False),
+            ))
+
+        return final_properties
 
 
     def _create_collections(self):
@@ -344,6 +379,7 @@ class WeaviateService:
         
         Creates collections for all available languages with vector configuration.
         """
+        properties = self._load_properties()
         try:
             client = self._init_client()
             logger.info('Attempting collections creation...')
@@ -353,7 +389,7 @@ class WeaviateService:
                 else Configure.Vectors.text2vec_huggingface(
                     name='hsg_rag_embeddings',
                     source_properties=['body'],
-                    model=EMBEDDING_MODEL,
+                    model=config.processing.EMBEDDING_MODEL,
                 )
             )
             
@@ -364,14 +400,7 @@ class WeaviateService:
                     try:
                         client.collections.create(
                             name=collection_name,
-                            properties=[
-                                Property(name='body', data_type=DataType.TEXT),
-                                Property(name='chunk_id', data_type=DataType.TEXT),
-                                Property(name='document_id', data_type=DataType.TEXT),
-                                Property(name='programs', data_type=DataType.TEXT_ARRAY),
-                                Property(name='source', data_type=DataType.TEXT),
-                                Property(name='date', data_type=DataType.DATE)
-                            ],
+                            properties=properties,                          
                             vector_config=vector_config
                         )
                         logger.info(f"Created collection {collection_name}")
