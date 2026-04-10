@@ -64,7 +64,7 @@ WEAVIATE_BACKUP_METHOD = 'manual'
 BACKUPS_PATH = 'data/database/backups'
 
 # A string representing a system path where collection properties will be stored.
-PROPERTIES_PATH = 'data/database/properties'
+PROPERTIES_PATH = 'data/database'
 
 # A string representing a system path where property strategies will be stored.
 # More information on property strategies in the documentation.
