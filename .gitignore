@@ -47,6 +47,9 @@ build/
 
 # Output data
 data/
+!data/database/
+!data/database/strategies/
+!data/database/properties.yaml
 
 # Pyright config may differ from one platform to another 
 pyrightconfig.json

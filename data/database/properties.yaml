@@ -1,0 +1,36 @@
+body:
+  data_type: text
+  description: ''
+  filterable: true
+  searchable: true
+  skip_vectorization: false
+chunk_id:
+  data_type: text
+  description: ''
+  filterable: true
+  searchable: true
+  skip_vectorization: false
+date:
+  data_type: date
+  description: ''
+  filterable: true
+  searchable: false
+  skip_vectorization: false
+document_id:
+  data_type: text
+  description: ''
+  filterable: true
+  searchable: true
+  skip_vectorization: false
+programs:
+  data_type: text[]
+  description: ''
+  filterable: true
+  searchable: true
+  skip_vectorization: false
+source:
+  data_type: text
+  description: ''
+  filterable: true
+  searchable: true
+  skip_vectorization: false
