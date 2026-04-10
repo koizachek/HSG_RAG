@@ -50,6 +50,7 @@ class ChatbotApplication:
                     ),
                     additional_inputs=[agent_state],
                     title="Executive Education Adviser",
+                    type="messages",
                 )
             
             with gr.Row():
@@ -321,7 +322,7 @@ class ChatbotApplication:
 
     def run(self):
         self._app.launch(
-            share=os.getenv("GRADIO_SHARE", "false").lower() == "true",
-            server_name=os.getenv("SERVER_NAME", "0.0.0.0"),
-            server_port=int(os.getenv("PORT", 7860)),
+            share=False,
+            server_name="0.0.0.0",
+            server_port=7860,
         )
