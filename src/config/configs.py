@@ -10,6 +10,9 @@ def _get(param: str, default=None, type_=None):
 
     if value is None:
         value = os.getenv(param)
+
+    if value is None:
+        return default
     
     if not type_: return value
     
