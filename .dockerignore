@@ -1,0 +1,17 @@
+.git
+.gitignore
+.env
+__pycache__
+*.pyc
+*.pyo
+venv/
+logs/
+data/database/backups/
+tests/
+docs/
+README.md
+README_UPDATES.md
+*.md
+.github/
+.pytest_cache/
+htmlcov/
