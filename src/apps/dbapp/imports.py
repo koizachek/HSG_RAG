@@ -5,10 +5,12 @@ from tkinter import ttk
 from tkinter import filedialog
 from queue import Queue
 
+from .framebase import CustomFrameBase
+
 from src.pipeline.pipeline import ImportPipeline
-from src.apps.dbapp.framebase import CustomFrameBase
+from src.pipeline.utils import ProcessingResult
+
 from src.database.weavservice import WeaviateService
-from src.pipeline.utilclasses import ProcessingResult
 from src.utils.lang import get_language_name
 from src.config import config
 
