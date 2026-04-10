@@ -77,6 +77,8 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
     Returns:
         Configured logger instance
     """
+    os.makedirs(config.paths.LOGS, exist_ok=True)
+
     # Convert string level to logging constant
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     
