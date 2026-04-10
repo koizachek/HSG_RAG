@@ -48,25 +48,11 @@ HSG_RAG/
 └── requirements.txt            # Python dependencies
 ```
 
-## Setup
+## Required Environment Variables
+Required values depend on the mode you want to run. 
+See `.env.example` and [docs/configuration_system_documentation.md](docs/configuration_system_documentation.md) for the full configuration surface.
 
-1. Clone the repository.
-2. Create and activate a virtual environment.
-
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-3. Install dependencies.
-
-```bash
-pip install -r requirements.txt
-```
-
-4. Create a local `.env` file from `.env.example`.
-
-Required values depend on the mode you want to run, but in practice you will usually need:
+Following variables are required for every mode to run:
 
 ```bash
 OPENAI_API_KEY=...
@@ -91,9 +77,60 @@ REDIS_CLOUD_PORT=...
 REDIS_CLOUD_PASSWORD=...
 ```
 
-See `.env.example` and [docs/configuration_system_documentation.md](docs/configuration_system_documentation.md) for the full configuration surface.
+## Docker Deployment 
+This application can be run locally or on a cloud VM using Docker.
 
-## Running The Application
+### Prerequisites
+
+1. Install Docker on your machine/VM
+2. Clone this repository 
+2. Fill the `.env` file with all required environment variables (copy from .env.example)
+
+### Building the container 
+You can build the container using the following command (recommended):
+
+```bash
+docker build --no-cache -t hsg-rag .
+```
+
+### Running the container 
+You can use this command to start the container:
+
+```bash
+docker run --env-file .env \
+           -p 7860:7860 \
+           --name hsg-rag \
+           hsg-rag
+```
+
+### Accessing the application 
+After starting the container, open your browser and go to:
+```bash
+http://localhost:7860
+```
+(or http://<your-vm-ip>:7860 on a server)
+
+
+## Local Setup 
+The application can be run directly from the project's root directory.
+
+1. Clone the repository.
+2. Create and activate a virtual environment.
+
+```bash
+python -m venv venv
+source venv/bin/activate
+```
+
+3. Install dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Create a local `.env` file from `.env.example`.
+
+### Running the application locally
 
 Start the chat UI in German:
 
