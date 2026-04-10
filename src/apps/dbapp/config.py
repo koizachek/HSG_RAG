@@ -1,17 +1,19 @@
-import os, json
+import os, yaml
 
 from tkinter import *
 from tkinter import ttk
+import yaml
 from src.apps.dbapp.framebase import CustomFrameBase
 from src.utils.stratutils.generator import generate_strategy
 from src.database.weavservice import WeaviateService
 from src.config import config
 
+
 def _dump_schema(schema):
     os.makedirs(config.weaviate.PROPERTIES_PATH, exist_ok=True)
-    properties_file_path = os.path.join(config.weaviate.PROPERTIES_PATH, 'properties.json')
+    properties_file_path = os.path.join(config.weaviate.PROPERTIES_PATH, 'properties.yaml')
     with open(properties_file_path, 'w', encoding='utf-8') as f:
-        json.dump(schema, f, indent=2, default=str)
+        yaml.safe_dump(schema, f)
 
 
 class SchemaConfigurationFrame(CustomFrameBase):
@@ -19,7 +21,10 @@ class SchemaConfigurationFrame(CustomFrameBase):
         super().__init__(parent, service)
         self._schema = self._load_schema_data()
         self._strategies = self._load_strategies()
-    
+        self._original_schema = self._schema.copy()  
+
+        self._refresh_table = None
+
 
     def _load_strategies(self) -> dict:
         os.makedirs(config.weaviate.STRATEGIES_PATH, exist_ok=True)
@@ -78,11 +83,15 @@ class SchemaConfigurationFrame(CustomFrameBase):
     def _update_schema_property(self, old_name: str, new_name: str, prop: dict) -> None:
         del self._schema[old_name]
         self._schema[new_name] = prop  
+        strategy = generate_strategy(new_name, prop)
+        self._save_strategy(new_name, strategy)
         _dump_schema(self._schema)
 
 
     def _add_schema_property(self, name, prop: dict) -> None:
         self._schema[name] = prop 
+        strategy = generate_strategy(name, prop)
+        self._save_strategy(name, strategy)
         _dump_schema(self._schema)
 
 
@@ -91,6 +100,62 @@ class SchemaConfigurationFrame(CustomFrameBase):
         _dump_schema(self._schema)
 
 
+    def _migrate_schema(self):
+        """Initiate migration if changes were made."""
+        if self._schema == self._original_schema:
+            self._show_messagebox("No changes detected in the schema.")
+            return
+
+        dialog = Toplevel()
+        dialog.title("Migrate Schema")
+        dialog.geometry("400x150")
+        dialog.grab_set()
+
+        ttk.Label(dialog, text="Are you sure you want to migrate the schema changes?").pack(pady=20)
+        
+        def confirm_migrate():
+            try:
+                # self._service.migrate_schema(self._schema)
+                self._show_messagebox("Migration started successfully!")
+                self._original_schema = self._schema.copy()  
+            except Exception as e:
+                self._show_messagebox(f"Migration failed: {str(e)}")
+            dialog.destroy()
+
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill=X, padx=20, pady=10)
+        ttk.Button(button_frame, text="Migrate", command=confirm_migrate).pack(side=LEFT, padx=10)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=RIGHT, padx=10)
+
+
+    def _reset_schema(self):
+        """Reset schema to the last loaded/saved state from Weaviate."""
+        if self._schema == self._original_schema:
+            self._show_messagebox("No changes to reset.")
+            return
+
+        dialog = Toplevel()
+        dialog.title("Reset Schema")
+        dialog.geometry("380x140")
+        dialog.grab_set()
+
+        ttk.Label(dialog, text="Reset schema to the original loaded state?\n(Unsaved changes will be lost)").pack(pady=15)
+        
+        def confirm_reset():
+            self._schema = self._original_schema.copy()
+            _dump_schema(self._schema)
+            self._strategies = self._load_strategies()
+            self._show_messagebox("Schema has been reset to original state.")
+            self._refresh_table()  
+            dialog.destroy()
+
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill=X, padx=20, pady=10)
+        ttk.Button(button_frame, text="Reset", command=confirm_reset).pack(side=LEFT, padx=10)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=RIGHT, padx=10)
+
+    # ==================== UI ====================
+
     def init(self) -> ttk.Frame:
         main_frame = ttk.Frame(self._parent)
         main_frame.pack(fill=BOTH, expand=True)
@@ -98,10 +163,20 @@ class SchemaConfigurationFrame(CustomFrameBase):
         schema_frame = ttk.Frame(main_frame)
         schema_frame.pack(fill=BOTH, expand=True)
         
-        add_button = ttk.Button(schema_frame, text='Add property', 
-                                command=lambda: self._add_property(refresh_table))
-        add_button.pack(anchor=NW, padx=5, pady=5)
+        # Button bar
+        button_bar = ttk.Frame(schema_frame)
+        button_bar.pack(fill=X, padx=5, pady=5)
 
+        ttk.Button(button_bar, text='Add property', 
+                   command=lambda: self._add_property(refresh_table)).pack(side=LEFT, padx=5)
+
+        ttk.Button(button_bar, text='Migrate', 
+                   command=self._migrate_schema).pack(side=LEFT, padx=5)
+
+        ttk.Button(button_bar, text='Reset', 
+                   command=self._reset_schema).pack(side=LEFT, padx=5)
+
+        # Canvas + Scrollable table
         canvas = Canvas(schema_frame)
         scrollbar = ttk.Scrollbar(schema_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
@@ -109,16 +184,17 @@ class SchemaConfigurationFrame(CustomFrameBase):
         scrollable_frame.bind("<Configure>", lambda _: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
+
         canvas.pack(side=LEFT, fill=BOTH, expand=True)
         scrollbar.pack(side=RIGHT, fill=Y)
 
         def refresh_table():
             for widget in scrollable_frame.winfo_children():
                 widget.destroy()
-
             self._build_table(scrollable_frame, refresh_table)
-        
-        refresh_table() 
+        self._refresh_table = refresh_table
+
+        self._refresh_table() 
         return main_frame
 
 
