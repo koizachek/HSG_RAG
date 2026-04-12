@@ -1,6 +1,6 @@
 from functools import reduce
 import weaviate as wvt
-import datetime, os, yaml
+import datetime, os
 from threading import Lock
 
 from time import perf_counter, sleep
@@ -18,6 +18,17 @@ logger = get_logger("weaviate_service")
 
 _get_collection_name = lambda lang: f'{config.weaviate.WEAVIATE_COLLECTION_BASENAME}_{lang}'
 _collection_names = [_get_collection_name(lang) for lang in config.get('AVAILABLE_LANGUAGES')]
+
+
+def _default_properties() -> list[Property]:
+    return [
+        Property(name='body', data_type=DataType.TEXT),
+        Property(name='chunk_id', data_type=DataType.TEXT),
+        Property(name='document_id', data_type=DataType.TEXT),
+        Property(name='programs', data_type=DataType.TEXT_ARRAY),
+        Property(name='source', data_type=DataType.TEXT),
+        Property(name='date', data_type=DataType.DATE),
+    ]
 
 
 class WeaviateService:
@@ -342,16 +353,30 @@ class WeaviateService:
         properties = {}
         properties_file = os.path.join(config.weaviate.PROPERTIES_PATH, 'properties.yaml')
         if not os.path.exists(properties_file):
-            logger.error(f"Required file 'properties.yaml' is missing on path: {properties_file}." + 
-                         "Channot create collection without it") 
-            raise FileNotFoundError()
+            logger.warning(
+                f"Optional file 'properties.yaml' is missing on path: {properties_file}. "
+                "Falling back to built-in default properties."
+            )
+            return _default_properties()
 
         try:
+            import yaml
+
             with open(properties_file, 'r') as stream:
                 properties = yaml.safe_load(stream)
+        except ModuleNotFoundError:
+            logger.warning(
+                "PyYAML is not installed. Falling back to built-in default properties "
+                "for Weaviate collection creation."
+            )
+            return _default_properties()
         except Exception as e: 
             logger.error(f"Failed to load properties from path {properties_file}: {e}")
             raise e
+
+        if not properties:
+            logger.warning("properties.yaml is empty. Falling back to built-in default properties.")
+            return _default_properties()
         
         final_properties = []
         for name, params in properties.items():

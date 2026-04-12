@@ -1,5 +1,6 @@
 from .utils import *
 from .processors import *
+from ..scraping.scraper import Scraper
 
 from ..database.weavservice  import WeaviateService
 from ..utils.logging import get_logger
@@ -48,6 +49,47 @@ class ImportPipeline:
             sources = list(set([chunk.get('source', '') for chunk in chunks]))
             self._service.delete_chunks(lang, property_filters={'source': sources})
             self._service.batch_import(data_rows=chunks, lang=lang)
+
+
+    def scrape_website(self, target_urls: list[str] | None = None, scrape_all: bool = False) -> None:
+        target_urls = [url for url in (target_urls or config.scraping.TARGET_URLS or []) if url]
+        if not target_urls:
+            implogger.warning("No target URLs configured for scraping.")
+            return
+
+        scraper = Scraper(scrape_all=scrape_all)
+        for target_url in target_urls:
+            self._logging_callback(f"Scraping target {target_url}...", 0)
+            scraped_chunks = scraper.scrape_target(target_url)
+            if not scraped_chunks:
+                self._logging_callback(f"No importable chunks scraped from {target_url}.", 100)
+                continue
+
+            self._logging_callback(f"Importing scraped chunks from {target_url}...", 90)
+            self.import_from_scraper(scraped_chunks)
+            self._logging_callback(f"Finished scraping import for {target_url}.", 100)
+
+
+    def import_many_documents(self, sources: list[str]) -> None:
+        self.import_all(paths=sources)
+
+
+    def _import_urls_via_scraper(self, urls: list[str], scrape_all: bool = True) -> None:
+        urls = [url for url in (urls or []) if url]
+        if not urls:
+            return
+
+        scraper = Scraper(scrape_all=scrape_all)
+        for url in urls:
+            self._logging_callback(f"Scraping URL {url}...", 0)
+            scraped_chunks = scraper.scrape_target(url)
+            if not scraped_chunks:
+                self._logging_callback(f"Failed to scrape URL {url}!", 100, failed=True)
+                continue
+
+            self._logging_callback(f"Importing scraped chunks from {url}...", 90)
+            self.import_from_scraper(scraped_chunks)
+            self._logging_callback(f"Stored scraped chunks for {url}.", 100)
                  
         
     def import_all(
@@ -69,19 +111,22 @@ class ImportPipeline:
             reset_collections (bool, optional): If True, reset the database collections before importing.
                 Defaults to False.
         """
-        chunks  = self._pipeline(paths, self._docprocessor, reset_collections)
-        wchunks = self._pipeline(urls,  self._webprocessor, reset_collections)
-        for lang in chunks.keys():
-            chunks[lang].extend(wchunks[lang]) 
+        chunks = self._pipeline(paths, self._docprocessor, reset_collections)
 
         if reset_collections:
             self._logging_callback('Resetting database collections...', 60)
             self._service._reset_collections()
         
-        self._logging_callback('Importing chunks to database...', 90)
+        self._logging_callback('Importing document chunks to database...', 90)
         for lang, ch in chunks.items():
             self._service.batch_import(data_rows=ch, lang=lang) 
-        self._logging_callback(f'Successfully imported {sum([len(ch) for ch in chunks.values()])} chunks!', 100)
+
+        self._import_urls_via_scraper(urls, scrape_all=True)
+
+        self._logging_callback(
+            f'Successfully imported {sum([len(ch) for ch in chunks.values()])} document chunks!',
+            100
+        )
 
 
     def _pipeline(
@@ -106,7 +151,7 @@ class ImportPipeline:
         """
         unique_chunks = {lang: [] for lang in config.get('AVAILABLE_LANGUAGES')}
 
-        sources = [s for s in sources if s!=""]
+        sources = [s for s in (sources or []) if s != ""]
         if not sources:
             return unique_chunks
         
