@@ -1,5 +1,6 @@
 from time import sleep
 from random import randint
+import pytest
 from langchain_core.messages import SystemMessage
 from config import TOP_K_RETRIEVAL
 from src.database.weavservice import WeaviateService
@@ -8,6 +9,8 @@ from src.utils.logging import init_logging
 import unittest, threading
 
 init_logging(level="ERROR", interactive_mode=False)
+
+pytestmark = [pytest.mark.network, pytest.mark.integration]
 
 SYSTEM_MESSAGE_QUERY = "Call three subagents using tools with query 'Provide information about your program' and return their responses with format AGENT_NAME=AGENT_RESPONSE"
 

@@ -1,9 +1,8 @@
 import json, os
 
 from typing import Counter
+from bs4 import BeautifulSoup
 from docling_core.types.doc.document import DoclingDocument
-
-from .utils import url_to_filename
 
 from ..const.cc_whitelist import REPETITION_WHITELIST
 from ..utils.logging import get_logger
@@ -12,9 +11,18 @@ from ..config import config
 logger = get_logger('scraper.cleaning')
 
 class ContentCleaner:
-    def __init__(self) -> None:
+    def __init__(self, full_scraping) -> None:
         self._repetitions_counter: Counter = Counter()
         self._repetitive_content:  list[str] = []
+        self.full_scraping: bool = full_scraping
+    
+    
+    def clean_mobile_content(self, html: str) -> str:
+        soup = BeautifulSoup(html, 'html')
+        for element in soup.find_all(class_='show-sm'):
+            element.decompose()
+
+        return str(soup)
 
 
     def extract_urls(self, document: DoclingDocument) -> list[str]:
@@ -37,24 +45,31 @@ class ContentCleaner:
             self._repetitions_counter[content] += 1   
     
 
-    def perform_content_analysis(self, target_url: str = "index") -> None:
-        self._repetitive_content = [{'content': text, 'amount': count} 
-            for text, count in self._repetitions_counter.items() 
-                if text not in REPETITION_WHITELIST and count > 1]
-        logger.info(f"Content analysis for target URL '{target_url}' " + 
-                    f"yielded {len(self._repetitive_content)} repetitive text lines")
+    def perform_content_analysis(self,target_url: str = "index", url_filename: str = 'index', ) -> None:
+        target_url_filename = url_filename + '-content_analysis.json'
+        target_url_path = os.path.join(config.paths.SCRAPING_OUTPUT, target_url_filename)
 
-        content_analysis = {
-            'target_url': target_url,
-            'repetitive_content': self._repetitive_content,
-        }
-        target_url_filename = url_to_filename(target_url) + '-content_analysis.json'
-        target_url_path = os.path.join(config.paths.SCRAPING_OUTPUT, target_url_filename) 
-        with open(target_url_path, 'w') as f:
-            json.dump(content_analysis, f, indent=4)        
-        logger.info(f"Saved content analysis results under '{target_url_path}'")
+        if not self.full_scraping and os.path.exists(target_url_path):
+            with open(target_url_path, 'r') as f:
+                content_analysis = json.load(f)
+            self._repetitive_content = content_analysis['repetitive_content']
+        else:
+            self._repetitive_content = [{'content': text, 'amount': count}
+                for text, count in self._repetitions_counter.items()
+                    if text not in REPETITION_WHITELIST and count > 1]
+            logger.info(f"Content analysis for target URL '{target_url}' " +
+                        f"yielded {len(self._repetitive_content)} repetitive text lines")
 
-        self._repetitive_content = [rc['content'] for rc in self._repetitive_content]
+            content_analysis = {
+                'target_url': target_url,
+                'repetitive_content': self._repetitive_content,
+            }
+
+            with open(target_url_path, 'w') as f:
+                json.dump(content_analysis, f, indent=4)
+            logger.info(f"Saved content analysis results under '{target_url_path}'")
+
+            self._repetitive_content = [rc['content'] for rc in self._repetitive_content]
 
 
     def clean_document(self, document: DoclingDocument) -> None:

@@ -1,14 +1,9 @@
-from src.pipeline.utilclasses import (
-        _deduplication_callback_placeholder,
-        _logging_callback_placeholder,
-        ProcessingResult,
-)
-from src.pipeline.processors import *
-from src.database.weavservice  import WeaviateService
+from .utils import *
+from .processors import *
 
-from src.utils.logging import get_logger
-
-from src.config import config
+from ..database.weavservice  import WeaviateService
+from ..utils.logging import get_logger
+from ..config import config
 
 pipelogger = get_logger("pipeline_module")
 implogger  = get_logger("import_pipeline")
@@ -37,16 +32,24 @@ class ImportPipeline:
             deduplication_callback (callable, optional): A callback function for handling
                 deduplication decisions. Defaults to a placeholder if not provided.
         """
-        self._logging_callback = logging_callback or _logging_callback_placeholder
-        self._deduplication_callback = deduplication_callback or _deduplication_callback_placeholder
-        self._webprocessor = WebsiteProcessor(self._logging_callback)
-        self._docprocessor = DocumentProcessor(self._logging_callback)
+        self._logging_callback = logging_callback or logging_callback_placeholder
+        self._deduplication_callback = deduplication_callback or deduplication_callback_placeholder
+        self._docprocessor = DocumentProcessor()
         self._service      = WeaviateService()
         self._ids          = self._service._collect_chunk_ids()
         
         implogger.info('Import pipeline initialization finished!')
-        
+    
 
+    def import_from_scraper(self, scraper_chunks: dict[str, dict]) -> None:
+        for lang, chunks in scraper_chunks.items():
+            if not chunks: continue
+
+            sources = list(set([chunk.get('source', '') for chunk in chunks]))
+            self._service.delete_chunks(lang, property_filters={'source': sources})
+            self._service.batch_import(data_rows=chunks, lang=lang)
+                 
+        
     def import_all(
             self, 
             paths: list[str] = None,

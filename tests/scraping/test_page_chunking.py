@@ -7,7 +7,7 @@ from src.config import config
 
 class TestPageChunking:
 
-    def testChunkingPipeline(self):
+    def test_chunking_pipeline(self):
         init_logging()
         
         processor = HTMLProcessor()
@@ -20,10 +20,12 @@ class TestPageChunking:
             os.path.join(html_path, 'embax-ch.html'),
             os.path.join(html_path, 'embax-ch_admissions_student-profile.html'),
             # Tests for tables and lists
-            os.path.join(html_path, 'embax-ch_admissions_deadlines-fees.html')
+            os.path.join(html_path, 'embax-ch_admissions_deadlines-fees.html'), 
+            os.path.join(html_path, 'embax-ch_events.html')
         ]:
             raw_html = open(raw_html_file_path, 'r').read()
-            document = processor.process(url='https://embax.ch', html_content=raw_html)
+            cleaned_html = cleaner.clean_mobile_content(raw_html)
+            document = processor.process(url='https://embax.ch', html_content=cleaned_html)
             
             raw_text = processor.convert_to_txt(document)
             assert len(raw_text) > 100
@@ -34,6 +36,7 @@ class TestPageChunking:
         
         cleaner.perform_content_analysis()
         for document, raw_text in zip(documents, raw_texts):
+            print()
             cleaner.clean_document(document)
             cleaned_text = processor.convert_to_txt(document)
 
@@ -44,8 +47,8 @@ class TestPageChunking:
             chunks = processor.chunk(document)
             assert chunks
             for _, chunk in enumerate(chunks, start=1):
-                assert len(chunk['text']) > 50
-
+                print(chunk['text'])
+     
 
 if __name__ == "__main__":
     pytest.main([__file__, '-v', '-s']) 

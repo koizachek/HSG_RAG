@@ -2,90 +2,23 @@ from collections import defaultdict
 import os, re
 
 from pathlib import Path
-from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer, ChunkingSerializerProvider
-from docling_core.transforms.serializer.base import BaseTableSerializer, SerializationResult
-from docling_core.transforms.serializer.common import create_ser_result
 from transformers import AutoTokenizer
 
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
-from docling.datamodel.pipeline_options import (
-        PdfPipelineOptions, 
-        RapidOcrOptions,
-        LayoutOptions,
-)
+from docling.datamodel.pipeline_options import PdfPipelineOptions, LayoutOptions
 from docling_core.transforms.serializer.markdown import MarkdownDocSerializer 
 from docling.document_converter import DocumentConverter, PdfFormatOption, InputFormat
 from docling.chunking import HybridChunker
-from docling_core.types.doc.document import DoclingDocument, RichTableCell, TableItem
+from docling_core.types.doc.document import DoclingDocument, TableItem
 
-from src.pipeline.utils import StrategiesProcessor, StrategyArguments
-from src.pipeline.utilclasses import ProcessingResult, _logging_callback_placeholder
-from src.utils.lang import detect_language
-from src.utils.logging import get_logger
-from src.config import config
+from .utils import *
+
+from ..utils.lang import detect_language
+from ..utils.logging import get_logger
+from ..config import config
 
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
-
-class EnchansedTableSerializer(BaseTableSerializer):
-    def serialize(self, *, item, doc_serializer, doc, **kwargs) -> SerializationResult:
-        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
-            return create_ser_result(text='')
-
-        grid = item.data.grid
-        if not grid: 
-            return create_ser_result(text='')
-
-        row_count = len(grid)
-        col_count = len(grid[0]) if grid else 0
-
-        if row_count < 7 or col_count < 3: 
-            return create_ser_result(text='')
- 
-        row_cells = []
-        for row in grid:
-            clean_row = []
-            for cell in row:
-                if isinstance(cell, RichTableCell):
-                    ser = doc_serializer.serialize(item=cell.ref.resolve(doc), **kwargs)
-                    clean_row.append(ser.text.strip())
-                else:
-                    clean_row.append((cell.text or "").strip())
-            if any(c for c in clean_row): 
-                row_cells.append(clean_row)
-
-        headers = row_cells[0]
-        data_rows = row_cells[1:]
-
-        lines = []
-
-        for row in data_rows:
-            if len(row) < 2 or not row[0].strip():
-                continue
-
-            main_key = row[0].strip().replace('\n', ' ')
-            top_line = f'- {main_key}:'
-            lines.append(top_line)
-
-            for i in range(1, len(row)):
-                value = row[i].strip().replace('\n', ' ')
-                if not value: continue
-                sub_header = headers[i].strip().replace('\n', ' ') if i < len(headers) else f""
-                sub_line = f'  - {sub_header}: {value}'
-                lines.append(sub_line)
-
-            lines.append("")
-
-        final_text = "\n".join(lines).rstrip() 
-        return create_ser_result(text=final_text, span_source=item)
-
-
-class EnchansedSerializerProvider(ChunkingSerializerProvider):
-    def get_serializer(self, doc):
-        return ChunkingDocSerializer(
-            doc=doc,
-            table_serializer=EnchansedTableSerializer(),
-        )
 
 class ProcessorBase:
     def __init__(self) -> None:
@@ -99,26 +32,17 @@ class ProcessorBase:
             logging_callback (callable): A callback function for logging progress.
         """
         pipeline_options = PdfPipelineOptions(
-            do_ocr=True,
-            ocr_options=RapidOcrOptions(
-                force_full_page_ocr=True,
-            ),
-            generate_page_images=False,
-            images_scale=3.0,
-            do_layout_analysis=True,
-            do_table_structure=True,
-            do_cell_matching=True,
+            do_ocr = False,
+            generate_page_images = False,
+            
+            do_layout_analysis = True,
+            do_table_structure = True,
+            do_cell_matching   = True,
+            
             layout_options=LayoutOptions(
-                model_spec={
-                    "name": "docling_layout_egret_medium",  
-                    "repo_id": "docling-project/docling-layout-egret-medium",
-                    "revision": "main",
-                    "model_path": "",
-                    "supported_devices": ["cuda"]  
-                },
-                create_orphan_clusters=True,  
-                keep_empty_clusters=False,
-                skip_cell_assignment=False,
+                create_orphan_clusters = True,  
+                keep_empty_clusters    = False,
+                skip_cell_assignment   = False,
             ),
         )
         self._converter: DocumentConverter = DocumentConverter(
@@ -132,12 +56,12 @@ class ProcessorBase:
                 tokenizer=tokenizer,
                 max_tokens=config.processing.MAX_TOKENS
             ),
-            serializer_provider=EnchansedSerializerProvider(),
+            serializer_provider=EnhansedSerializerProvider(),
             max_tokens=config.processing.MAX_TOKENS, 
             merge_peers=True
         )
         self.strategies_processor = StrategiesProcessor()
-        self._logging_callback = config.dbapp['logging_callback'] or _logging_callback_placeholder
+        self._logging_callback = config.dbapp['logging_callback'] or logging_callback_placeholder
     
 
     def process(self):
@@ -175,8 +99,8 @@ class ProcessorBase:
             list[dict]: List of dictionaries, each containing properties for a chunk.
         """
         prepared_chunks = []
-        for chunk in chunks:  
-            prepared_chunk.append({
+        for chunk in chunks:
+            prepared_chunks.append({
                 prop: self.strategies_processor.apply_strategy(
                     strategy_name=prop,
                     arguments=StrategyArguments(document_name, document_content, chunk),
@@ -375,47 +299,5 @@ class DocumentProcessor(ProcessorBase):
         return ProcessingResult(
             chunks=prepared_chunks,
             source=document_name,
-            lang=detect_language(document_content), 
-        )
-
-
-class HTMLProcessor(ProcessorBase):
-    def process(self, url: str) -> ProcessingResult:
-        """
-        Process the content of a single webpage URL, converting it to chunks with metadata.
-
-        Handles webpage conversion, chunk collection, preparation, and language detection.
-        Includes a short delay to avoid rapid requests.
-
-        Args:
-            url (str): The URL of the webpage to process.
-
-        Returns:
-            ProcessingResult: The result containing chunks, source URL, and detected language.
-            Returns None if conversion fails.
-        """
-        if not url:
-            return ProcessingResult(source=url, chunks=None, lang='')
-
-        weblogger.info(f"Initiating processing pipeline for url {url}")
-        self._logging_callback(f'Converting url {url}...', 20)
-        try:
-            document = self._converter.convert_string(url, InputFormat.HTML).document
-        except Exception as e:
-            weblogger.error(f"Failed to load the contents of the url page: {e}")
-            return ProcessingResult(source=url, chunks=None, lang='')
-        
-        self._logging_callback(f'Collecting chunks from {url}...', 40)
-        collected_chunks = self._collect_chunks(document)
-        document_content = MarkdownDocSerializer(doc=document).serialize().text
-
-        self._logging_callback(f'Preparing chunks for {url} for importing...', 60)
-        prepared_chunks = self._prepare_chunks(url, document_content, collected_chunks)
-
-        weblogger.info(f"Successfully collected {len(collected_chunks)} chunks from {url}")
-        
-        return ProcessingResult(
-            source=url,
-            chunks=prepared_chunks,
             lang=detect_language(document_content), 
         )

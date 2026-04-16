@@ -1,6 +1,6 @@
 from functools import reduce
 import weaviate as wvt
-import datetime, os
+import datetime, os, yaml
 from threading import Lock
 
 from time import perf_counter, sleep
@@ -11,8 +11,8 @@ from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.classes.query import Filter
 from weaviate.config import AdditionalConfig
 
-from src.utils.logging import get_logger
-from src.config import config
+from ..utils.logging import get_logger
+from ..config import config
 
 logger = get_logger("weaviate_service")
 
@@ -210,14 +210,72 @@ class WeaviateService:
 
         return import_errors
     
+
     @staticmethod
     def _create_property_filter(prop, values) -> Filter:
         match prop:
             case 'programs':
                 return Filter.by_property('programs').contains_any(values)
+            case 'source':
+                return Filter.by_property('source').contains_any(values) \
+                    if isinstance(values, list) else Filter.by_property('source').equal(values)            
             case _:
-                return None
+                return None    
 
+
+    def delete_chunks(self, lang: str, property_filters: dict[str, any] = None) -> int:
+        """
+        Delete all chunks from the specified collection that match given property filters.
+
+        Args:
+            lang (str): Language collection to use.
+            property_filters (dict[str, any]): Key-value pairs for filtering.
+
+        Returns:
+            int: Number of deleted objects (if available, else -1).
+        """
+        retry_count = 0
+        max_retries = 2
+
+        filters = [self._create_property_filter(prop, values)
+                   for prop, values in property_filters.items()] if property_filters else None
+        if filters:
+            filters = [f for f in filters if f is not None]
+            filters = reduce(lambda f1, f2: f1 & f2, filters) if filters else None
+
+        while retry_count < max_retries:
+            try:
+                collection, collection_name = self._select_collection(lang)
+                if collection is None:
+                    logger.error("No working collection selected!")
+                    return 0
+
+                logger.info(f"Deleting chunks from {collection_name} with filters={property_filters}")
+
+                with self._client_lock:
+                    result = collection.data.delete_many(
+                        where=filters
+                    )
+
+                self._last_query_time = perf_counter()
+
+                deleted = getattr(result, "objects_deleted", None)
+                if deleted is None:
+                    logger.info("Deletion executed (count not returned by client)")
+                    return -1
+
+                logger.info(f"Deleted {deleted} objects")
+                return deleted
+
+            except Exception as e:
+                if any(err_type in str(e).lower() for err_type in ['reset', 'closed', 'grpc', 'unavailable']):
+                    retry_count += 1
+                    logger.warning(f"Connection error during deletion: {e}. Retrying...")
+                    if retry_count == max_retries:
+                        raise e
+                else:
+                    raise e
+        
 
     def query(self, query: str, lang: str, property_filters: dict[str] = None, limit: int = 5) -> dict:
         """
@@ -244,7 +302,8 @@ class WeaviateService:
         filters = [self._create_property_filter(prop, values) 
                    for prop, values in property_filters.items()] if property_filters else None
         if filters:
-            filters = reduce(lambda f1, f2: f1 & f2, filters)
+            filters = [f for f in filters if f is not None]
+            filters = reduce(lambda f1, f2: f1 & f2, filters) if filters else None
 
         while retry_count < max_retries:
             try:
@@ -277,6 +336,41 @@ class WeaviateService:
                         raise e
                 else: # Probably not a server issue
                     raise e
+    
+
+    def _load_properties(self) -> list[Property]:
+        properties = {}
+        properties_file = os.path.join(config.weaviate.PROPERTIES_PATH, 'properties.yaml')
+        if not os.path.exists(properties_file):
+            logger.error(f"Required file 'properties.yaml' is missing on path: {properties_file}." + 
+                         "Channot create collection without it") 
+            raise FileNotFoundError()
+
+        try:
+            with open(properties_file, 'r') as stream:
+                properties = yaml.safe_load(stream)
+        except Exception as e: 
+            logger.error(f"Failed to load properties from path {properties_file}: {e}")
+            raise e
+        
+        final_properties = []
+        for name, params in properties.items():
+            try:
+                data_type = params.get('data_type', '')
+                dtype = DataType(data_type)
+            except Exception as e: 
+                logger.error(f"Nonexistent datatype {data_type}")
+                raise e  
+
+            final_properties.append(Property(
+                name=name,
+                data_type=dtype,
+                index_filterable=params.get('filterable', True),
+                index_searchable=params.get('searchable', True),
+                skip_vectorization=params.get('skip_vectorization', False),
+            ))
+
+        return final_properties
 
 
     def _create_collections(self):
@@ -285,6 +379,7 @@ class WeaviateService:
         
         Creates collections for all available languages with vector configuration.
         """
+        properties = self._load_properties()
         try:
             client = self._init_client()
             logger.info('Attempting collections creation...')
@@ -294,7 +389,7 @@ class WeaviateService:
                 else Configure.Vectors.text2vec_huggingface(
                     name='hsg_rag_embeddings',
                     source_properties=['body'],
-                    model=EMBEDDING_MODEL,
+                    model=config.processing.EMBEDDING_MODEL,
                 )
             )
             
@@ -305,14 +400,7 @@ class WeaviateService:
                     try:
                         client.collections.create(
                             name=collection_name,
-                            properties=[
-                                Property(name='body', data_type=DataType.TEXT),
-                                Property(name='chunk_id', data_type=DataType.TEXT),
-                                Property(name='document_id', data_type=DataType.TEXT),
-                                Property(name='programs', data_type=DataType.TEXT_ARRAY),
-                                Property(name='source', data_type=DataType.TEXT),
-                                Property(name='date', data_type=DataType.DATE)
-                            ],
+                            properties=properties,                          
                             vector_config=vector_config
                         )
                         logger.info(f"Created collection {collection_name}")

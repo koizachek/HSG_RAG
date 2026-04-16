@@ -40,6 +40,7 @@ class PathsConfig(ConfigBase):
     LOGS: str = _get('LOGS_PATH')
     URLS_OUTPUT:     str = os.path.join(_get('DATA_PATH'), 'urls')
     CHUNKS_OUTPUT:   str = os.path.join(_get('DATA_PATH'), 'chunks')
+    TEMP_CHUNKS_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'temp_chunks')
     SCRAPING_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'scraping')
     RAW_TEXT_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'raw_text')
     RAW_HTML_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'raw_html')
@@ -53,6 +54,7 @@ class ScrapingConfig(ConfigBase):
     CRAWL_DELAY: int  = _get('SCRAPING_CRAWL_DELAY', 1)
     BACKOFF_RATE: int = _get('SCRAPING_BACKOFF_RATE', 2)
     TARGET_URLS: int  = _get('SCRAPING_TARGET_URLS', None)
+    INTERVALS: dict = _get('SCRAPING_PRIO_INTERVAL', dict())
 
 
 class ConversationStateConfig(ConfigBase):
@@ -223,3 +225,21 @@ class LLMProviderConfig:
             "openai": cls.OPENAI_API_KEY,
             "open_router": cls.OPEN_ROUTER_API_KEY,
         }.get(provider.base)
+
+
+class NotificationCenterConfig(ConfigBase):
+    ENABLE_EMAIL_ALERTS: bool = _get('NOTIFY_ENABLE_EMAIL_ALERTS', True, bool)
+
+    SMTP_HOST: str = _get("NOTIFY_SMTP_HOST")
+    SMTP_PORT: int = _get("NOTIFY_SMTP_PORT", 587, type_=int)
+
+    SMTP_USER: str = _get("NOTIFY_SMTP_USER")
+    SMTP_PASSWORD: str = _get("NOTIFY_SMTP_PASSWORD")
+
+    SMTP_USE_TLS: bool = _get("NOTIFY_SMTP_USE_TLS", "True").lower() in ("1", "true", "yes", "on")
+
+    FROM_EMAIL: str = _get("NOTIFY_FROM_EMAIL")
+    TO_EMAIL: str = _get("NOTIFY_TO_EMAIL")
+
+    ENABLE_SLACK_ALERTS: bool = _get('NOTIFY_ENABLE_SLACK_ALERTS', False, bool)
+    SLACK_WEBHOOK_URL: str = _get("NOTIFY_SLACK_WEBHOOK_URL")

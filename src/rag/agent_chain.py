@@ -52,10 +52,11 @@ class ExecutiveAgentChain:
         self._language_detector = LanguageDetector()
 
         # Generate unique user ID for this session
-        self._user_id = session_id
+        self._user_id = session_id or str(uuid.uuid4())
 
         # Initialize conversation state with user profile tracking
         self._conversation_state: ConversationState = {
+            'session_id': self._user_id,
             'user_id': self._user_id,
             'user_language': None,
             'user_name': None,
@@ -271,7 +272,7 @@ class ExecutiveAgentChain:
         interests = [
             'strategy', 'innovation', 'leadership', 'digital transformation',
             'finance', 'operations', 'marketing', 'entrepreneurship',
-            'sustainability', 'technology', 'management',
+            'social impact', 'technology', 'management',
             'Strategie', 'Innovation', 'Führung', 'Digitalisierung'  # German
         ]
         conversation_lower = conversation.lower()
@@ -404,7 +405,7 @@ class ExecutiveAgentChain:
 
             # Create profile data
             profile_data = {
-                'session_id': self._conversation_state['user_id'],
+                'session_id': self._conversation_state['session_id'],
                 'user_id': self._conversation_state['user_id'],
                 'name': self._conversation_state.get('user_name'),
                 'timestamp': datetime.now().isoformat(),
@@ -420,7 +421,7 @@ class ExecutiveAgentChain:
 
             # Log file path with timestamp
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            log_file = os.path.join(log_dir, f'profile_{self._conversation_state["session_id"]}_{self._conversation_state["user_id"]}_{timestamp}.json')
+            log_file = os.path.join(log_dir, f'profile_{self._user_id}_{timestamp}.json')
 
             # Write to file
             with open(log_file, 'w', encoding='utf-8') as f:
