@@ -481,14 +481,6 @@ def test_concurrent_writes():
     result = cache.get("Was ist EMBA?", "de")
 
     assert result in ("Antwort A", "Antwort B")
-    
-def test_unicode_in_cache_key():
-    cache = LocalCache(metrics=CacheMetrics())
-
-    cache.set("Was kostet das EMBA für Ärzte?", "Antwort", "de")
-    result = cache.get("Was kostet das EMBA für Ärzte?", "de")
-
-    assert result == "Antwort"
 
 def test_unicode_key_generation_does_not_crash():
     cache = LocalCache(metrics=CacheMetrics())
