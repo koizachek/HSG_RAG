@@ -74,8 +74,7 @@ def test_real_agent_context_dependency_and_cacheability():
                 session_id=f"final-{uuid.uuid4()}",
             )
 
-            pre = final_agent.preprocess_query(example["query"])
-            final = final_agent.agent_query(pre.processed_query)
+            final = final_agent.query(example["query"])
 
             assert final.should_cache == example["expected_should_cache"], (
                 f"{example['name']}: expected should_cache="
@@ -90,14 +89,10 @@ def test_real_agent_context_dependency_and_cacheability():
             session_id=f"history-{uuid.uuid4()}",
         )
 
-        first_pre = history_agent.preprocess_query(
-            "Ich habe 8 Jahre Berufserfahrung, 4 Jahre Führungserfahrung und arbeite in der Softwarebranche."
-        )
-        history_agent.agent_query(first_pre.processed_query)
+        history_agent.query("Ich habe 8 Jahre Berufserfahrung, 4 Jahre Führungserfahrung und arbeite in der Softwarebranche.")
 
         followup_query = "Welches Programm passt zu mir?"
-        followup_pre = history_agent.preprocess_query(followup_query)
-        followup_final = history_agent.agent_query(followup_pre.processed_query)
+        followup_final = history_agent.query(followup_query)
 
         assert followup_final.should_cache is False, (
             "Follow-up recommendation based on prior turns must not be cacheable. "

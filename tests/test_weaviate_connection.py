@@ -8,7 +8,7 @@ from src.rag.agent_chain import ExecutiveAgentChain
 from src.utils.logging import init_logging
 import unittest, threading
 
-init_logging(level="ERROR", interactive_mode=False)
+init_logging(level="ERROR")
 
 pytestmark = [pytest.mark.network, pytest.mark.integration]
 
@@ -72,8 +72,6 @@ class TestWeaviateConnection(unittest.TestCase):
                     agent=chain._agents['lead'],
                     messages=[SystemMessage(SYSTEM_MESSAGE_QUERY)]
                 )
-                print(f"{tid}:\n{response}")
-                
                 sleep(randint(3,6))
 
         run_threads(agent_thread, range(5))

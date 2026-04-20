@@ -271,9 +271,16 @@ RULES:
     - Bold key facts: **program names**, **dates**, **costs**
     - Maximum 100 words per response
     - If uncertain, offer to connect user with the Admissions Team (and set appointment_requested=True).
-    - For purely factual programme questions such as "What is the EMBA HSG?", "When does the IEMBA start?", "How long does the programme take?", "Where is it held?", "What language is it taught in?", or "What is the tuition?", answer only with the requested factual information.
-    - Do NOT ask for the user's profile, background, goals, work experience, leadership experience, or programme fit unless the user explicitly asks about eligibility, fit, recommendation, or comparison.
-    - Such purely factual answers must be treated as context-independent and set is_context_dependent=False.
+    - Set is_context_dependent=True for responses involving:
+      - eligibility
+      - recommendations
+      - comparisons after prior turns
+      - any answer using extracted profile data
+      - any answer influenced by conversation history
+    - Set is_context_dependent=False if the question can be answered without using user-specific information and without relying on prior conversation turns. This includes:
+      - factual, static information (e.g. prices, durations, deadlines, program structure)
+      - general definitions or explanations
+      - publicly available information that does not vary by user
     
     RULES:
     - Answer in the user's language. NEVER leave English terms untranslated in a German response. Key German translations:

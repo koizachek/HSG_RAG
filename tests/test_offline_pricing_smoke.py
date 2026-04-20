@@ -140,10 +140,9 @@ def offline_agent(monkeypatch):
 
 
 def test_offline_smoke_emba_pricing_in_german(offline_agent):
-    preprocessed = offline_agent.preprocess_query("Was kostet das EMBA HSG Programm?")
-    response = offline_agent.agent_query(preprocessed.processed_query)
+    response = offline_agent.query("Was kostet das EMBA HSG Programm?")
 
-    assert preprocessed.language == "de"
+    assert response.language == "de"
     assert "CHF 77,500" in response.response
     assert "Unterkunft und Reisen sind nicht enthalten" in response.response
     assert response.appointment_requested is True
@@ -151,10 +150,9 @@ def test_offline_smoke_emba_pricing_in_german(offline_agent):
 
 
 def test_offline_smoke_iemba_pricing_in_english(offline_agent):
-    preprocessed = offline_agent.preprocess_query("What is the tuition for the IEMBA?")
-    response = offline_agent.agent_query(preprocessed.processed_query)
+    response = offline_agent.query("What is the tuition for the IEMBA?")
 
-    assert preprocessed.language == "en"
+    assert response.language == "en"
     assert "CHF 85,000" in response.response
     assert "Accommodation and travel are not included" in response.response
     assert response.appointment_requested is True
@@ -162,10 +160,9 @@ def test_offline_smoke_iemba_pricing_in_english(offline_agent):
 
 
 def test_offline_smoke_embax_pricing_with_deadlines(offline_agent):
-    preprocessed = offline_agent.preprocess_query("How much does emba X cost?")
-    response = offline_agent.agent_query(preprocessed.processed_query)
+    response = offline_agent.query("How much does emba X cost?")
 
-    assert preprocessed.language == "en"
+    assert response.language == "en"
     assert "CHF 99,000" in response.response
     assert "31 August 2026" in response.response
     assert "CHF 110,000" in response.response
@@ -175,8 +172,7 @@ def test_offline_smoke_embax_pricing_with_deadlines(offline_agent):
 
 
 def test_offline_smoke_ambiguous_pricing_question_requests_clarification(offline_agent):
-    preprocessed = offline_agent.preprocess_query("How much does the EMBA cost?")
-    response = offline_agent.agent_query(preprocessed.processed_query)
+    response = offline_agent.query("How much does the EMBA cost?")
 
     assert "German-speaking EMBA HSG" in response.response
     assert "International EMBA (IEMBA)" in response.response
@@ -186,15 +182,13 @@ def test_offline_smoke_ambiguous_pricing_question_requests_clarification(offline
 
 
 def test_offline_smoke_program_name_follow_up_keeps_previous_language(offline_agent):
-    first_turn = offline_agent.preprocess_query("Was kostet der EMBA?")
-    first_response = offline_agent.agent_query(first_turn.processed_query)
+    first_response = offline_agent.query("Was kostet der EMBA?")
 
-    assert first_turn.language == "de"
+    assert first_response.language == "de"
     assert "Meinen Sie" in first_response.response
 
-    second_turn = offline_agent.preprocess_query("EMBA")
-    second_response = offline_agent.agent_query(second_turn.processed_query)
+    second_response = offline_agent.query("EMBA")
 
-    assert second_turn.language == "de"
+    assert second_response.language == "de"
     assert offline_agent._stored_language == "de"
     assert "Die Studiengebühr für das **EMBA HSG** beträgt **CHF 77,500**." in second_response.response
