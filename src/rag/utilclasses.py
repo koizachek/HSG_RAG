@@ -28,7 +28,13 @@ class StructuredAgentResponse(BaseModel):
     response: str = Field(description="Main response to the query.")
     is_context_dependent: bool = Field(
         default=True,
-        description="Set to False if the question can be answered without using information provided by user (e.g. name, age, preferences etc.)"
+        description=(
+            "Set to False only if the question can be answered without using any user-specific "
+            "information (e.g. name, age, preferences, extracted profile data) and without relying "
+            "on prior conversation turns or conversation history. "
+            "Must be True for responses involving eligibility, recommendations, comparisons after prior turns, "
+            "or any answer influenced by user profile data or conversation context."
+        )
     )
     appointment_requested: bool = Field(
         default=False,
