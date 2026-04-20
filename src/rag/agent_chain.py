@@ -610,6 +610,7 @@ class ExecutiveAgentChain:
             messages=self._conversation_history + [language_instruction], 
         )
         agent_response = structured_response.response
+        chain_logger.info(f"Is answer context dependent: {structured_response.is_context_dependent}")
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
@@ -653,7 +654,7 @@ class ExecutiveAgentChain:
             response = formatted_response,
             language = response_language,
             confidence_fallback = confidence_fallback,
-            should_cache = False if (confidence_fallback or structured_response.appointment_requested) else True,
+            should_cache = False if (confidence_fallback or structured_response.appointment_requested or structured_response.is_context_dependent) else True,
             processed_query = preprocessed_query,
             appointment_requested = structured_response.appointment_requested,
             relevant_programs = structured_response.relevant_programs
