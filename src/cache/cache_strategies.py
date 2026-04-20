@@ -2,6 +2,7 @@ import json
 from typing import Any
 from cachetools import TTLCache
 
+from .utils import get_cache_key
 from src.cache.cache_base import CacheStrategy
 from src.database.redisservice import RedisService
 from src.utils.logging import get_logger
@@ -15,39 +16,39 @@ class RedisCache(CacheStrategy):
         self.client = service.get_client()
         self.metrics = metrics
 
+
     def set(self, key: str, value: Any, language: str):
         if not self.client: return
         
         try:
             json_str = json.dumps(value)
-            self.client.set(self._generate_normalized_key(key, language), json_str, ex=config.cache.TTL_CACHE)
-            logger.info("Response cached")
+            cache_key = get_cache_key(key, language)
+            self.client.set(cache_key, json_str, ex=config.cache.TTL_CACHE)
+            logger.info(f"Cached response with key {cache_key[:20]}... to Redis")
         except Exception as e:
             logger.error(f"Could not write to Redis: {e}")
+
 
     def get(self, key: str, language: str):
         if not self.client: return None
 
         try:
-            val = self.client.get(self._generate_normalized_key(key, language))
+            cache_key = get_cache_key(key, language)
+            val = self.client.get(cache_key)
             if val is not None:
                 self.metrics.increment_hit()
-                logger.info(f"Cache HIT {self.metrics.cache_stats.hits} {self.metrics.cache_stats.hits_ratio}")
+                logger.info(f"Found cached data with key {cache_key}")
+                logger.debug(f"Cache statistics: Hit cache {self.metrics.cache_stats.hits} times, ratio[{self.metrics.cache_stats.hits_ratio}]")
                 return json.loads(val)
             
             self.metrics.increment_miss()
-            logger.info(f"Cache MISS {self.metrics.cache_stats.misses} {self.metrics.cache_stats.hits_ratio}")
+            logger.debug(f"Cache statistics: Missed cache {self.metrics.cache_stats.misses} times, ratio[{self.metrics.cache_stats.hits_ratio}]")
             return None
         except Exception as e:
             logger.error(f"Could not read from Redis: {e}")
             return None
+ 
 
-    def _generate_normalized_key(self, key: str, language: str) -> str:
-        import re
-
-        normalized_key = re.sub(r'[^a-z0-9]', '', key.lower())
-        return f"cache:{language}:{normalized_key}"
-    
     def clear_cache(self):
         if not self.client: return
 
@@ -63,27 +64,24 @@ class LocalCache(CacheStrategy):
         self.cache = TTLCache(maxsize=config.cache.MAX_SIZE_CACHE, ttl=config.cache.TTL_CACHE)
         self.metrics = metrics
 
-    def _generate_normalized_key(self, key: str, language: str) -> str:
-        import re
-        
-        normalized_key = re.sub(r'[^a-z0-9]', '', key.lower())
-        return f"cache:{language}:{normalized_key}"
 
     def set(self, key: str, value: Any, language: str):
-        normalized_key = self._generate_normalized_key(key, language)
+        normalized_key = get_cache_key(key, language)
         self.cache[normalized_key] = value
         logger.info("Response cached")
-    
+ 
+
     def get(self, key: str, language: str):
-        normalized_key = self._generate_normalized_key(key, language)
+        normalized_key = get_cache_key(key, language)
         res = self.cache.get(normalized_key, None)
         if res is not None:
             self.metrics.increment_hit()
-            logger.info(f"Cache HIT {self.metrics.cache_stats.hits} {self.metrics.cache_stats.hits_ratio}")
+            logger.debug(f"Cache statistics: Hit cache {self.metrics.cache_stats.hits} times, ratio[{self.metrics.cache_stats.hits_ratio}]")
         else:
             self.metrics.increment_miss()
-            logger.info(f"Cache MISS {self.metrics.cache_stats.misses}")
+            logger.debug(f"Cache statistics: Missed cache {self.metrics.cache_stats.misses} times, ratio[{self.metrics.cache_stats.hits_ratio}]")
         return res
+
 
     def clear_cache(self):
         self.cache.clear()

@@ -26,6 +26,10 @@ class LeadAgentQueryResponse:
 
 class StructuredAgentResponse(BaseModel):
     response: str = Field(description="Main response to the query.")
+    is_context_dependent: bool = Field(
+        default=True,
+        description="Set to False if the question can be answered without using information provided by user (e.g. name, age, preferences etc.)"
+    )
     appointment_requested: bool = Field(
         default=False,
         description="Set to True ONLY if the user explicitly wants to book, asks for help booking, or if a proactive trigger (pricing/eligibility/handover) occurred in THIS specific turn. Otherwise, set to False."
