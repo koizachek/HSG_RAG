@@ -65,8 +65,8 @@ Here are the programs:
 
 | Program | Duration | Cost |
 |---------|----------|------|
-| EMBA    | 18 months | CHF 85,000 |
-| IEMBA   | 18 months | CHF 88,000 |
+| EMBA    | 18 months | CHF 77,500 |
+| IEMBA   | 18 months | CHF 85,000 |
         """
         
         formatted = ResponseFormatter.remove_tables(table_text)
