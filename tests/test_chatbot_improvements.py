@@ -241,10 +241,10 @@ class TestUserAcceptanceScenarios:
             "Was kostet das EMBA HSG Programm?").processed_query
         response = agent.agent_query(pre_processed_query).response
 
-        # Should mention price range
+        # Should mention programme pricing
         assert 'CHF' in response or 'Kosten' in response.lower()
-        # Should mention 85-90k range
-        assert '85' in response or '90' in response
+        # Should mention the updated EMBA tuition figure
+        assert '77' in response
         # Should be concise
         word_count = len(response.split())
         assert word_count < 150
