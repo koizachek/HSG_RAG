@@ -5,7 +5,7 @@ from src.cache.cache_strategies import RedisCache, LocalCache
 from src.utils.logging import get_logger
 from src.config import config
 
-logger = get_logger("cache    ")
+logger = get_logger("cache       ")
 
 class Cache:
     _instance = None
@@ -14,11 +14,12 @@ class Cache:
     _cache_metrics = None
 
     @staticmethod
-    def configure(mode: str, no_cache: bool):
-        config.cache.ENABLED = not no_cache
+    def configure(mode: str, cache: bool):
+        logger.info(f"Cache configured with parameters: mode={mode}, cache={cache}")
+        config.cache.ENABLED = cache
         Cache._settings = {
-            "mode": mode,
-            "enabled": not no_cache
+            "mode":    mode,
+            "enabled": cache
         }
 
     @staticmethod
