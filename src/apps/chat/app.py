@@ -254,7 +254,7 @@ class ChatbotApplication:
         try:
             logger.info(f"Processing user query: {message[:100]}...")
             response = agent.query(message)
-            answers.append(response.reponse) 
+            answers.append(response.response) 
             self._language = response.language
             
             if any([response.confidence_fallback, response.max_turns_reached, response.appointment_requested]):
