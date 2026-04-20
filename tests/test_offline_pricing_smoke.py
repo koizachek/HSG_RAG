@@ -22,6 +22,16 @@ class FakeLanguageDetector:
     def detect_explicit_switch_request(self, query: str) -> str | None:
         return None
 
+    def is_language_neutral_program_reference(self, query: str) -> bool:
+        return query.strip().casefold() in {
+            "emba",
+            "emba hsg",
+            "iemba",
+            "iemba hsg",
+            "emba x",
+            "embax",
+        }
+
     def detect_language(self, query: str) -> str:
         query_lower = query.lower()
         if any(token in query_lower for token in ("was", "kostet", "studiengebühr", "programm")):
@@ -38,7 +48,26 @@ class FakeLeadAgent:
         query = human_messages[-1].content if human_messages else ""
         query_lower = query.lower()
 
-        if "emba hsg" in query_lower and "iemba" not in query_lower:
+        if query_lower.strip() == "emba":
+            response = StructuredAgentResponse(
+                response=(
+                    "Die Studiengebühr für das **EMBA HSG** beträgt **CHF 77,500**. "
+                    "In den Studiengebühren enthalten sind Kursunterlagen sowie die meisten "
+                    "Mahlzeiten und Erfrischungen vor Ort. Unterkunft und Reisen sind nicht enthalten."
+                ),
+                appointment_requested=True,
+                relevant_programs=["emba"],
+            )
+        elif "was kostet der emba" in query_lower:
+            response = StructuredAgentResponse(
+                response=(
+                    "Meinen Sie den deutschsprachigen **EMBA HSG**, den **International EMBA (IEMBA)** "
+                    "oder das **emba X** Programm?"
+                ),
+                appointment_requested=False,
+                relevant_programs=[],
+            )
+        elif "emba hsg" in query_lower and "iemba" not in query_lower:
             response = StructuredAgentResponse(
                 response=(
                     "Die Studiengebühr für das **EMBA HSG** beträgt **CHF 77,500**. "
@@ -154,3 +183,18 @@ def test_offline_smoke_ambiguous_pricing_question_requests_clarification(offline
     assert "emba X" in response.response
     assert response.appointment_requested is False
     assert response.relevant_programs == []
+
+
+def test_offline_smoke_program_name_follow_up_keeps_previous_language(offline_agent):
+    first_turn = offline_agent.preprocess_query("Was kostet der EMBA?")
+    first_response = offline_agent.agent_query(first_turn.processed_query)
+
+    assert first_turn.language == "de"
+    assert "Meinen Sie" in first_response.response
+
+    second_turn = offline_agent.preprocess_query("EMBA")
+    second_response = offline_agent.agent_query(second_turn.processed_query)
+
+    assert second_turn.language == "de"
+    assert offline_agent._stored_language == "de"
+    assert "Die Studiengebühr für das **EMBA HSG** beträgt **CHF 77,500**." in second_response.response

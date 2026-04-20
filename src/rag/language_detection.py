@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage
 from src.rag.models import ModelConfigurator as modconf
 from src.rag.prompts import PromptConfigurator as promptconf
+import re
 
 from src.utils.logging import get_logger
 
@@ -34,6 +35,17 @@ SWITCH_TO_DE_PATTERNS = [
     'bitte deutsch', 'weiter auf deutsch', 'antworten auf deutsch',
     'in german', 'to german', 'switch to german', 'continue in german',
     'speak german', 'german please', 'prefer german',
+]
+
+LANGUAGE_NEUTRAL_PROGRAM_PATTERNS = [
+    r"emba",
+    r"emba hsg",
+    r"iemba",
+    r"iemba hsg",
+    r"international emba",
+    r"international executive mba",
+    r"emba x",
+    r"embax",
 ]
 
 
@@ -84,6 +96,15 @@ class LanguageDetector:
 
         return None
 
+    def is_language_neutral_program_reference(self, query: str) -> bool:
+        """
+        Return True when the query is only a programme name/reference and therefore
+        should not trigger a fresh language detection.
+        """
+        normalized = re.sub(r"[^\w\s]", " ", query.casefold())
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        return normalized in LANGUAGE_NEUTRAL_PROGRAM_PATTERNS
+
     def detect_language(self, query: str) -> str:
         # Try quick detection for short inputs first
         quick_result = self._quick_detect_short_words(query)
@@ -100,4 +121,3 @@ class LanguageDetector:
         except Exception as e:
             logger.error(f"Failed to detect language: {e}")
             return ""
-

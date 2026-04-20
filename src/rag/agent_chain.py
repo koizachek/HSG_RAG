@@ -519,6 +519,11 @@ class ExecutiveAgentChain:
             self._stored_language = explicit_switch
             current_language = explicit_switch
             self._conversation_state['user_language'] = explicit_switch
+        elif self._language_detector.is_language_neutral_program_reference(processed_query):
+            chain_logger.info(
+                f"Skipping language re-detection for language-neutral programme reference: '{processed_query}'"
+            )
+            current_language = self._stored_language
         else:
             # Count user messages in conversation history
             user_message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
