@@ -15,6 +15,7 @@ class Cache:
 
     @staticmethod
     def configure(mode: str, no_cache: bool):
+        config.cache.ENABLED = not no_cache
         Cache._settings = {
             "mode": mode,
             "enabled": not no_cache
