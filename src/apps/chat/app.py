@@ -1,5 +1,8 @@
 import uuid
 import gradio as gr
+from fastapi import FastAPI
+from datetime import datetime
+
 
 from src.const.agent_response_constants import *
 from src.const.data_consent_constants import *
@@ -8,13 +11,54 @@ from src.utils.logging import get_logger, ConsentLogger
 
 logger = get_logger("chatbot_app")
 
+def init_fastapi_app(language):
+    fastapi_app = FastAPI()
+
+    @fastapi_app.get('/health')
+    def healthcheck():
+        from src.database.weavservice import WeaviateService
+        from fastapi.responses import JSONResponse
+        
+        status  = 200
+        message = { 'timestamp': datetime.now().isoformat() }
+        try:
+            message |= {
+                'status': 'ok',
+                'weaviate': True,
+            }
+            response = WeaviateService().ping(language)
+            if response['status'] != 'OK':
+                status = 503
+                message |= {
+                    'status': 'degraded',
+                    'weaviate': False,
+                    'error': str(response['error']),
+                }
+        except Exception as e:
+            status = 503
+            message |= {
+                'status':   'down',
+                'weaviate': False,
+                'error':    str(e),
+            }
+    
+        return JSONResponse(
+            status_code = status, 
+            content     = message,
+        )
+
+    return fastapi_app
+
+
 class ChatbotApplication:
     def __init__(self, language: str = "de") -> None:
-        self._app = gr.Blocks()
+        self._fastapi_app = init_fastapi_app(language) 
+        self._gradio_app  = gr.Blocks()
+        self._app         = gr.mount_gradio_app(self._fastapi_app, self._gradio_app,  path='/')
         self._language = language
         self._consentLogger = ConsentLogger()
-
-        with self._app:
+        
+        with self._gradio_app:
             agent_state = gr.State(None)
             lang_state = gr.State(language)
             consent_state = gr.State(False)
@@ -46,7 +90,6 @@ class ChatbotApplication:
                     ),
                     additional_inputs=[agent_state],
                     title="Executive Education Adviser",
-                    type="messages",
                 )
             
             with gr.Row():
@@ -273,8 +316,10 @@ class ChatbotApplication:
 
 
     def run(self):
-        self._app.launch(
-            share=False,
-            server_name="0.0.0.0",
-            server_port=7860,
+        import uvicorn 
+        uvicorn.run(
+            self._app, 
+            host='0.0.0.0', 
+            port=7860, 
+            log_config=None
         )
