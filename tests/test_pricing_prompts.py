@@ -81,6 +81,45 @@ def test_embax_prompt_highlights_joint_degree_and_core_usps():
     assert "double EMBA degree" not in prompt
 
 
+def test_program_prompts_add_positive_framing_only_after_interest_is_clear():
+    for agent in ("emba", "iemba", "embax"):
+        prompt = PromptConfigurator.get_configured_agent_prompt(agent, language="en")
+
+        assert "If the user has clearly expressed interest" in prompt
+        assert "answer the concrete question first, then add ONE concise value-framing sentence" in prompt
+        assert "do not force promotional language unless the user's wording shows clear programme interest" in prompt
+        assert 'Do not use hype-heavy claims such as "best", "world-leading", "perfect", or "guaranteed".' in prompt
+
+
+def test_emba_prompt_highlights_dach_leadership_value_when_interest_is_clear():
+    prompt = PromptConfigurator.get_configured_agent_prompt("emba", language="en")
+
+    assert "A particularly attractive option for German-speaking leaders" in prompt
+    assert "general-management capability" in prompt
+    assert "practical leadership judgement" in prompt
+    assert "executive peer network in the DACH business context" in prompt
+    assert "HSG management depth" in prompt
+
+
+def test_iemba_prompt_highlights_international_value_when_interest_is_clear():
+    prompt = PromptConfigurator.get_configured_agent_prompt("iemba", language="en")
+
+    assert "broaden their management perspective internationally" in prompt
+    assert "global cohort" in prompt
+    assert "different business environments" in prompt
+    assert "international exposure" in prompt
+    assert "leadership confidence beyond a single local market" in prompt
+
+
+def test_embax_prompt_highlights_business_technology_value_when_interest_is_clear():
+    prompt = PromptConfigurator.get_configured_agent_prompt("embax", language="en")
+
+    assert "distinctive ETH Zurich and University of St.Gallen joint-degree positioning" in prompt
+    assert "business-and-technology leadership intersection" in prompt
+    assert "transformation and innovation relevance" in prompt
+    assert "access to both alumni networks" in prompt
+
+
 def test_lead_prompt_includes_updated_programme_snapshot():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
