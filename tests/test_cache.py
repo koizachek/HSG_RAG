@@ -1,20 +1,99 @@
-import os
 import uuid
 import pytest
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from src.cache.cache import Cache
 from src.rag.agent_chain import ExecutiveAgentChain as RealExecutiveAgentChain
+from src.rag.utilclasses import StructuredAgentResponse
 from src.utils.lang import get_language_name
 from src.config import config
+from src.rag import agent_chain as agent_chain_module
 
 
-def test_real_agent_context_dependency_and_cacheability():
+class DummyWeaviateService:
+    def query(self, *args, **kwargs):
+        class _DummyResponse:
+            objects = []
+
+        return _DummyResponse(), None
+
+
+class FakeLanguageDetector:
+    def detect_explicit_switch_request(self, query: str) -> str | None:
+        return None
+
+    def is_language_neutral_program_reference(self, query: str) -> bool:
+        return False
+
+    def detect_language(self, query: str) -> str:
+        return "de"
+
+
+class FakeLeadAgent:
+    name = "lead_agent"
+
+    def invoke(self, payload, config=None, context=None):
+        messages = payload["messages"]
+        human_messages = [msg for msg in messages if getattr(msg, "type", None) == "human"]
+        query = human_messages[-1].content if human_messages else ""
+        query_lower = query.lower()
+
+        is_context_dependent = any(
+            marker in query_lower
+            for marker in (
+                "geeignet",
+                "berufserfahrung",
+                "führungserfahrung",
+                "tech-bereich",
+                "passt",
+            )
+        )
+
+        if "was ist das emba hsg" in query_lower:
+            response_text = "Das EMBA HSG ist ein berufsbegleitendes Executive-MBA-Programm."
+        elif "wann startet das iemba" in query_lower:
+            response_text = "Das IEMBA startet einmal jährlich."
+        elif "welches programm passt" in query_lower:
+            response_text = "Auf Basis Ihrer Angaben passt wahrscheinlich das IEMBA besser."
+        elif "geeignet" in query_lower:
+            response_text = "Für eine Eignungseinschätzung sind Ihre Erfahrung und Führungsverantwortung relevant."
+        else:
+            response_text = "Ich habe Ihre Angaben aufgenommen."
+
+        response = StructuredAgentResponse(
+            response=response_text,
+            is_context_dependent=is_context_dependent,
+            appointment_requested=False,
+            show_booking_widget=False,
+            relevant_programs=[],
+        )
+
+        return {
+            "structured_response": response,
+            "messages": [type("FakeMessage", (), {"text": response.response})()],
+        }
+
+
+def _fake_init_agents(self):
+    return {"lead": FakeLeadAgent()}, {"configurable": {"thread_id": 0}}
+
+
+def test_chain_context_dependency_and_cacheability_offline(monkeypatch):
+    monkeypatch.setattr(agent_chain_module, "WeaviateService", DummyWeaviateService)
+    monkeypatch.setattr(agent_chain_module, "LanguageDetector", FakeLanguageDetector)
+    monkeypatch.setattr(RealExecutiveAgentChain, "_init_agents", _fake_init_agents)
+
     old_eval_quality = config.chain.EVALUATE_RESPONSE_QUALITY
     old_track_profile = config.convstate.TRACK_USER_PROFILE
+    old_cache_enabled = config.cache.ENABLED
+    old_cache_settings = Cache._settings
+    old_cache_instance = Cache._instance
 
     config.chain.EVALUATE_RESPONSE_QUALITY = False
     config.convstate.TRACK_USER_PROFILE = False
+    Cache._instance = None
+    Cache.configure(mode="dict", cache=True)
 
     try:
         examples = [
@@ -102,3 +181,6 @@ def test_real_agent_context_dependency_and_cacheability():
     finally:
         config.chain.EVALUATE_RESPONSE_QUALITY = old_eval_quality
         config.convstate.TRACK_USER_PROFILE = old_track_profile
+        config.cache.ENABLED = old_cache_enabled
+        Cache._settings = old_cache_settings
+        Cache._instance = old_cache_instance

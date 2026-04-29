@@ -300,7 +300,7 @@ class ChatbotApplication:
             answers.append(response.response) 
             self._language = response.language
             
-            if any([response.confidence_fallback, response.max_turns_reached, response.appointment_requested]):
+            if response.show_booking_widget:
                 html_code = get_booking_widget(language=self._language, programs=response.relevant_programs)
                 answers.append(gr.HTML(value=html_code))
             

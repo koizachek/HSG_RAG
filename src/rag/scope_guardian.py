@@ -164,8 +164,8 @@ class ScopeGuardian:
         """
         messages = {
             'escalate_aggressive': {
-                'en': "I cannot continue this chat while the language is aggressive. If you still need support, please use the contact details and appointment links below to speak with our admissions team.",
-                'de': "Ich kann dieses Gespräch nicht fortsetzen, solange die Sprache aggressiv ist. Wenn Sie weiterhin Unterstützung benötigen, buchen Sie bitte über die untenstehenden Links einen Termin mit unserem Zulassungsteam."
+                'en': "I cannot continue this chat while the language is aggressive. If you still need support, please contact our admissions team directly.",
+                'de': "Ich kann dieses Gespräch nicht fortsetzen, solange die Sprache aggressiv ist. Wenn Sie weiterhin Unterstützung benötigen, kontaktieren Sie bitte unser Zulassungsteam direkt."
             },
             'escalate_off_topic': {
                 'en': f"For questions outside programme information, our admissions team would be the best resource. {get_admissions_contact_text('en')}\n\nIs there anything specific about the EMBA, IEMBA, or emba X programmes I can help you with?",

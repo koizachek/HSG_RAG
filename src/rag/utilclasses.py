@@ -21,6 +21,7 @@ class LeadAgentQueryResponse:
     max_turns_reached: bool = False
     should_cache: bool = False
     appointment_requested: bool = False
+    show_booking_widget: bool = False
     relevant_programs: List[str] = field(default_factory=list)
 
 
@@ -38,7 +39,11 @@ class StructuredAgentResponse(BaseModel):
     )
     appointment_requested: bool = Field(
         default=False,
-        description="Set to True ONLY if the user explicitly wants to book, asks for help booking, or if a proactive trigger (pricing/eligibility/handover) occurred in THIS specific turn. Otherwise, set to False."
+        description="Set to True ONLY if the user explicitly asks to book, schedule, speak with admissions/an advisor, see appointment slots, or accepts a previous consultation offer. Routine pricing, comparisons, recommendations, and exploratory fit questions must be False."
+    )
+    show_booking_widget: bool = Field(
+        default=False,
+        description="Set to True ONLY when appointment_requested is True and the booking widget should be shown now. Never use this for soft contact mentions or routine informational answers."
     )
     relevant_programs: Optional[List[Literal["emba", "iemba", "emba_x"]]] = Field(
         default=None,
