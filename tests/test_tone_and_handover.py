@@ -45,6 +45,41 @@ def test_lead_prompt_keeps_booking_user_led():
     assert "If you would like to discuss this personally, I can also help you with appointment booking." in prompt
 
 
+def test_lead_prompt_uses_stage_sensitive_programme_positioning():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "CRITICAL - STAGE-SENSITIVE PROGRAMME POSITIONING" in prompt
+    assert "**Early discovery / generic comparison:** Keep the answer balanced, factual, and advisory." in prompt
+    assert "**Expressed programme interest:**" in prompt
+    assert "answer the concrete question first, then add positive value framing" in prompt
+    assert "**Late-stage / high-intent:**" in prompt
+    assert "Do not push booking; booking flags still require explicit user intent." in prompt
+    assert "Clear interest signals include" in prompt
+
+
+def test_lead_prompt_contains_programme_specific_positive_value_framing():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "PROGRAMME-SPECIFIC VALUE FRAMING" in prompt
+    assert "German-speaking leaders in the DACH context" in prompt
+    assert "strong general-management depth" in prompt
+    assert "practical leadership development" in prompt
+    assert "global exposure" in prompt
+    assert "international cohort" in prompt
+    assert "cross-cultural management perspective" in prompt
+    assert "intersection of business, technology, innovation, and transformation" in prompt
+    assert "access to both alumni networks" in prompt
+    assert "strong Personal Development Programme" in prompt
+
+
+def test_lead_prompt_preserves_credibility_and_avoids_hype():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "Avoid generic hype." in prompt
+    assert 'Do not use claims such as "best", "perfect", "guaranteed", or "world-class"' in prompt
+    assert "Keep the structure consultative" in prompt
+
+
 def test_booking_intent_detector_requires_user_initiative():
     agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
     agent._conversation_history = []
