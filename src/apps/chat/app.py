@@ -303,7 +303,6 @@ class ChatbotApplication:
             if response.show_booking_widget:
                 html_code = get_booking_widget(language=self._language, programs=response.relevant_programs)
                 answers.append(gr.HTML(value=html_code))
-            
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
             error_message = (

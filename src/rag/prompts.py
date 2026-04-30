@@ -300,7 +300,7 @@ RULES:
       - factual, static information (e.g. prices, durations, deadlines, program structure)
       - general definitions or explanations
       - publicly available information that does not vary by user
-    
+
     RULES:
     - Answer in the user's language. NEVER leave English terms untranslated in a German response. Key German translations:
       "tuition fee reduction" → "Studiengebührenreduktion", "tuition" → "Studiengebühr(en)", "included in tuition" → "in den Studiengebühren enthalten", "not included" → "nicht enthalten", "application deadline" → "Bewerbungsfrist".
