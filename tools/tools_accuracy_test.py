@@ -5,7 +5,7 @@ Collect bot responses for an accuracy test catalog.
 What it does
 ------------
 - reads a CSV catalog with at least: id, language, program, question
-- disables cache by default via Cache.configure(mode="dict", no_cache=True)
+- disables cache by default
 - runs each question against ExecutiveAgentChain directly
 - stores responses and metadata in a results CSV
 
@@ -18,7 +18,7 @@ Default behavior
 
 Example
 -------
-python tools/accuracy_test.py \
+python tools/tools_accuracy_test.py \
   --catalog docs/accuracy_test_catalog.csv \
   --output docs/accuracy_test_results.csv
 
@@ -64,65 +64,78 @@ class RunResult:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Collect bot responses for an accuracy test catalog.")
+    parser = argparse.ArgumentParser(
+        description="Collect bot responses for an accuracy test catalog."
+    )
+
     parser.add_argument(
         "--catalog",
         default="docs/accuracy_test_catalog.csv",
         help="Path to the input CSV catalog relative to repo root.",
     )
+
     parser.add_argument(
         "--output",
         default="docs/accuracy_test_results.csv",
         help="Path to the output CSV results relative to repo root.",
     )
+
     parser.add_argument(
         "--repo-root",
         default=".",
         help="Path to the HSG_RAG repository root.",
     )
+
     parser.add_argument(
         "--cache-mode",
         default="dict",
         choices=["dict", "local", "cloud"],
         help="Cache mode passed to Cache.configure.",
     )
+
     parser.add_argument(
         "--use-cache",
         action="store_true",
         help="Enable cache. By default the script disables caching.",
     )
+
     parser.add_argument(
         "--session-mode",
         default="isolated",
         choices=["isolated", "grouped"],
         help=(
             "isolated: fresh session per row. "
-            "grouped: reuse session per conversation_id (requires conversation_id column; "
-            "turns sorted by turn_index if present)."
+            "grouped: reuse session per conversation_id "
+            "(requires conversation_id column; turns sorted by turn_index if present)."
         ),
     )
+
     parser.add_argument(
         "--limit",
         type=int,
         default=0,
-        help="Optional max number of rows to process (0 = all).",
+        help="Optional max number of rows to process. 0 means all.",
     )
+
     parser.add_argument(
         "--sleep-seconds",
         type=float,
         default=0.0,
         help="Optional pause between requests.",
     )
+
     parser.add_argument(
         "--overwrite",
         action="store_true",
         help="Overwrite the output file if it exists. Otherwise the script aborts.",
     )
+
     parser.add_argument(
         "--disable-profile-tracking",
         action="store_true",
         help="Best effort: disable user profile tracking during the run to avoid extra profile logs.",
     )
+
     return parser.parse_args()
 
 
@@ -153,12 +166,16 @@ def load_catalog(path: Path) -> Tuple[List[Dict[str, str]], List[str]]:
         reader = csv.DictReader(f)
         rows = list(reader)
         fieldnames = reader.fieldnames or []
+
     if not rows:
         raise ValueError(f"Catalog is empty: {path}")
+
     required = {"id", "language", "program", "question"}
     missing = required - set(fieldnames)
+
     if missing:
         raise ValueError(f"Catalog is missing required columns: {sorted(missing)}")
+
     return rows, fieldnames
 
 
@@ -166,24 +183,45 @@ def maybe_sort_grouped_rows(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
     def turn_key(row: Dict[str, str]) -> Tuple[str, int, int]:
         conv = row.get("conversation_id", "")
         turn_raw = row.get("turn_index", "")
+
         try:
             turn = int(turn_raw)
         except Exception:
             turn = 0
+
         try:
             row_id = int(row.get("id", "0"))
         except Exception:
             row_id = 0
+
         return conv, turn, row_id
 
     return sorted(rows, key=turn_key)
 
 
-def configure_runtime(repo_root: Path, cache_mode: str, use_cache: bool, disable_profile_tracking: bool) -> None:
+def configure_runtime(
+    repo_root: Path,
+    cache_mode: str,
+    use_cache: bool,
+    disable_profile_tracking: bool,
+) -> None:
     from src.cache.cache import Cache
     from src.config import config
 
-    Cache.configure(mode=cache_mode, no_cache=not use_cache)
+    # Cache zusätzlich in der zentralen Config setzen.
+    # Falls die Attribute in deiner Version read-only oder anders aufgebaut sind,
+    # wird der Fehler ignoriert, weil Cache.configure unten entscheidend ist.
+    try:
+        config.cache.ENABLED = use_cache
+    except Exception:
+        pass
+
+    try:
+        config.cache.CACHE_MODE = cache_mode
+    except Exception:
+        pass
+
+    Cache.configure(mode=cache_mode, cache=use_cache)
 
     if disable_profile_tracking:
         try:
@@ -194,32 +232,17 @@ def configure_runtime(repo_root: Path, cache_mode: str, use_cache: bool, disable
 
 def make_agent(language: str, session_id: str):
     from src.rag.agent_chain import ExecutiveAgentChain
+
     return ExecutiveAgentChain(language=language, session_id=session_id)
 
 
 def run_single_question(agent, question: str) -> RunResult:
-    pre = agent.preprocess_query(question)
-
-    if pre.response is not None:
-        return RunResult(
-            bot_response=pre.response,
-            processed_query=pre.processed_query or question,
-            response_language=pre.language,
-            confidence_fallback=getattr(pre, "confidence_fallback", False),
-            should_cache=getattr(pre, "should_cache", False),
-            appointment_requested=getattr(pre, "appointment_requested", False),
-            relevant_programs="|".join(getattr(pre, "relevant_programs", []) or []),
-            status="preprocess_returned_response",
-            error_message="",
-        )
-
-    query_to_run = pre.processed_query or question
-    final = agent.agent_query(query_to_run)
+    final = agent.query(question)
 
     return RunResult(
-        bot_response=final.response,
-        processed_query=final.processed_query or query_to_run,
-        response_language=final.language,
+        bot_response=getattr(final, "response", str(final)),
+        processed_query=getattr(final, "processed_query", question) or question,
+        response_language=getattr(final, "language", ""),
         confidence_fallback=getattr(final, "confidence_fallback", False),
         should_cache=getattr(final, "should_cache", False),
         appointment_requested=getattr(final, "appointment_requested", False),
@@ -250,14 +273,21 @@ def build_output_fieldnames(input_fieldnames: List[str]) -> List[str]:
         "run_started_at_epoch",
         "tested_at_epoch",
     ]
+
     return input_fieldnames + extra
 
 
-def write_results(path: Path, fieldnames: List[str], rows: Iterable[Dict[str, Any]]) -> None:
+def write_results(
+    path: Path,
+    fieldnames: List[str],
+    rows: Iterable[Dict[str, Any]],
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+
     with path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
+
         for row in rows:
             writer.writerow(row)
 
@@ -265,16 +295,21 @@ def write_results(path: Path, fieldnames: List[str], rows: Iterable[Dict[str, An
 def add_timestamp_to_filename(path: Path, timestamp_str: str) -> Path:
     stem = path.stem
     suffix = path.suffix or ".csv"
+
     return path.with_name(f"{stem}_{timestamp_str}{suffix}")
 
 
 def main() -> int:
     args = parse_args()
+
     repo_root = Path(args.repo_root).resolve()
     ensure_import_path(repo_root)
 
     run_started_epoch = int(time.time())
-    run_started_at = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(run_started_epoch))
+    run_started_at = time.strftime(
+        "%Y-%m-%d_%H-%M-%S",
+        time.localtime(run_started_epoch),
+    )
 
     catalog_path = repo_abspath(args.repo_root, args.catalog)
     output_path = repo_abspath(args.repo_root, args.output)
@@ -289,6 +324,7 @@ def main() -> int:
         return 2
 
     input_rows, input_fieldnames = load_catalog(catalog_path)
+
     if args.limit and args.limit > 0:
         input_rows = input_rows[: args.limit]
 
@@ -297,6 +333,7 @@ def main() -> int:
             raise ValueError(
                 "session-mode=grouped requires a conversation_id column in the catalog."
             )
+
         input_rows = maybe_sort_grouped_rows(input_rows)
 
     configure_runtime(
@@ -327,17 +364,30 @@ def main() -> int:
 
         if args.session_mode == "grouped":
             session_id = row.get("conversation_id") or f"group_{uuid.uuid4()}"
+
             if session_id not in grouped_agents:
-                grouped_agents[session_id] = make_agent(language=lang, session_id=session_id)
+                grouped_agents[session_id] = make_agent(
+                    language=lang,
+                    session_id=session_id,
+                )
+
             agent = grouped_agents[session_id]
+
         else:
             session_id = f"isolated_{row.get('id', idx)}_{uuid.uuid4().hex[:8]}"
             agent = make_agent(language=lang, session_id=session_id)
 
-        print(f"[{idx}/{total}] {row.get('id', '')} {lang} {row.get('program', '')}: {question}")
+        print(
+            f"[{idx}/{total}] "
+            f"{row.get('id', '')} "
+            f"{lang} "
+            f"{row.get('program', '')}: "
+            f"{question}"
+        )
 
         try:
             result = run_single_question(agent=agent, question=question)
+
         except Exception as exc:
             result = RunResult(
                 bot_response="",
@@ -350,9 +400,11 @@ def main() -> int:
                 status="exception",
                 error_message=f"{type(exc).__name__}: {exc}",
             )
+
             traceback.print_exc()
 
         out_row = dict(row)
+
         out_row.update(
             {
                 "bot_response": result.bot_response,
@@ -375,6 +427,7 @@ def main() -> int:
                 "tested_at_epoch": str(int(time.time())),
             }
         )
+
         output_rows.append(out_row)
 
         if args.sleep_seconds > 0:
@@ -383,7 +436,9 @@ def main() -> int:
     write_results(output_path, output_fieldnames, output_rows)
 
     ok = sum(1 for r in output_rows if r["run_status"] == "ok")
-    pre = sum(1 for r in output_rows if r["run_status"] == "preprocess_returned_response")
+    pre = sum(
+        1 for r in output_rows if r["run_status"] == "preprocess_returned_response"
+    )
     exc = sum(1 for r in output_rows if r["run_status"] == "exception")
 
     print("\nDone.")

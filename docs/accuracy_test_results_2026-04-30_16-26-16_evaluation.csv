@@ -1,0 +1,101 @@
+﻿id,rating,score,error_type,review_notes
+1,Richtig,1.,,
+2,Richtig,0.8,,Raten gibt Informationen aber keine konkreten
+3,Richtig ,1.,,
+4,Richtig ,1.,,
+5,Richtig ,1.,,
+6,Richtig ,1.,,
+7,Richtig,1.,,
+8,Richtig,1.,,
+9,Richtig ,1.,,
+10,Richtig ,1.,,
+11,Richtig,1.,,
+12,Richtig,1.,,
+13,Richtig ,1.,,
+14,Richtig,1.,,
+15,Richtig,1.,,
+16,Richtig ,1.,,
+17,Teilweise_Richtig,0.7,,Die genauen Kontaktinfos werden nicht genannt. Ist das so gewollt?
+18,Richtig ,1.,,
+19,Richtig,0.9,,"Es werden keine Raten erwähnt, aber zum Admission Team weitergeleitet, wenn vom Nutzer gewollt"
+20,Richtig ,1.,,
+21,Richtig ,1.,,
+22,Richtig,1.,,
+23,Richtig,1.,,
+24,Richtig,1.,,
+25,Richtig,1.,,
+26,Richtig ,1.,,
+27,Richtig,1.,,
+28,Richtig,1.,,
+29,Richtig,1.,,
+30,Richtig,1.,,
+31,Richtig,1.,,
+32,Richtig,1.,,
+33,Richtig,1.,,
+34,Richtig,0.9,,Es werden keine konkreten Kontaktinformationen angegeben. Ist das so gewollt?
+35,Richtig ,1.,,
+36,Richtig,0.9,,"Es werden keine Raten erwähnt, aber zum Admission Team weitergeleitet, wenn vom Nutzer gewollt"
+37,Richtig ,1.,,
+38,Teilweise_Richtig,0.7,,Kein genauer Monat genannt
+39,Richtig,1.,,
+40,Richtig,1.,,
+41,Richtig,1.,,
+42,Richtig,1.,,
+43,Richtig ,1.,,
+44,Richtig,1.,,
+45,Richtig,1.,,
+46,Falsch,0,,Keine Credits werden erwähnt. Es sind 75 Credits
+47,Richtig,1.,,
+48,Richtig,1.,,
+49,Richtig,1.,,
+50,Richtig,1.,,
+51,Falsch,1.,,Keine Credits werden erwähnt. Es sind 75 Credits
+52,Richtig ,0.9,,Genaue Raten werden nicht erwähnt. Man wird zum Admission Team weitergeleitet.Ist das so gewollt?
+53,Richtig ,1.,,
+54,Richtig,1.,,
+55,Richtig,1.,,
+56,Richtig ,1.,,
+57,Richtig,1.,,
+58,Richtig,1.,,
+59,Falsch,1.,,
+60,Richtig,1.,,
+61,Richtig,1.,,
+62,Richtig,1.,,
+63,Richtig ,1.,,
+64,Richtig,1.,,
+65,Richtig,1.,,
+66,Richtig,1.,,
+67,Richtig,0.9,,Eventuell sollen die Information direkt angezeigt werden?
+68,Richtig ,1.,,
+69,Teilweise_Richtig,0.9,,Keine konkreten Raten werden genannt. Ist das so gewollt?
+70,Teilweise_Richtig,0.75,,"Antwortet mit yes, aber sagt dann das es es nicht gibt."
+71,Richtig,1.,,
+72,Richtig,1.,,
+73,Richtig,1.,,
+74,Richtig,1.,,
+75,Richtig,1.,,
+76,Richtig,1.,,
+77,Richtig,1.,,
+78,Richtig,1.,,
+79,Falsch,1.,,Keine konkrete Zahlen genannt
+80,Richtig,1.,,
+81,Richtig,1.,,
+82,Richtig,1.,,
+83,Richtig,1.,,
+84,Richtig,0.9,,Eventuell sollen die Information direkt angezeigt werden?
+85,Richtig,1.,,
+86,Richtig,0.9,,Keine genauen Raten. Man wird aber zum Admission weitergeleitet. Soll das so sein
+87,Richtig ,1.,,
+88,Teilweise_Richtig,0.95,,Genauer Monat wird nicht genannt
+89,Richtig,1,,
+90,Richtig,1,,
+91,Richtig,1,,
+92,Richtig,1,,
+93,Richtig,1,,
+94,Richtig,1,,
+95,Richtig,1,,
+96,Falsch,0,,Es sind 75 Credits. Keine Credits werden erwähnt 
+97,Richtig,1,,
+98,Richtig,1,,
+99,Richtig,1,,Kontaktinformationen werden genannt. Soll das so sein?
+100,Richtig,1
