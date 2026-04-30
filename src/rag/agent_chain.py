@@ -28,7 +28,7 @@ from src.rag.models import ModelConfigurator as modelconf
 from src.rag.input_handler import InputHandler
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
-from src.rag.quality_score_handler import QualityEvaluationResult, QualityScoreHandler
+# from src.rag.quality_score_handler import QualityEvaluationResult, QualityScoreHandler
 from src.rag.language_detection import LanguageDetector
 
 from src.utils.logging import get_logger
@@ -49,9 +49,10 @@ class ExecutiveAgentChain:
         self._conversation_history = [] 
         self._cache = Cache.get_cache()
 
-        # AI-middlewares
-        if config.chain.EVALUATE_RESPONSE_QUALITY:
-            self._quality_handler = QualityScoreHandler()
+        # Confidence scoring is intentionally disabled here because the extra
+        # model call adds latency and has not been reliable enough to justify it.
+        # if config.chain.EVALUATE_RESPONSE_QUALITY:
+        #     self._quality_handler = QualityScoreHandler()
         self._language_detector = LanguageDetector()
 
         # Generate unique user ID for this session
@@ -919,18 +920,17 @@ class ExecutiveAgentChain:
 
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
-        # Step 7: Language fallback mechanisms and response quality evaluation
         confidence_fallback = False
-        if config.chain.EVALUATE_RESPONSE_QUALITY:
-            quality_evaluation: QualityEvaluationResult = self._quality_handler. \
-                evaluate_response_quality(preprocessed_query, formatted_response)
-            
-            chain_logger.info(f"Quality Score: {quality_evaluation.overall_score:1.2f}")
-
-            if quality_evaluation.overall_score < config.chain.CONFIDENCE_THRESHOLD:
-                confidence_fallback = True
-                formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
-                chain_logger.info(f"Fallback Mechanism activated!")
+        # if config.chain.EVALUATE_RESPONSE_QUALITY:
+        #     quality_evaluation: QualityEvaluationResult = self._quality_handler. \
+        #         evaluate_response_quality(preprocessed_query, formatted_response)
+        #
+        #     chain_logger.info(f"Quality Score: {quality_evaluation.overall_score:1.2f}")
+        #
+        #     if quality_evaluation.overall_score < config.chain.CONFIDENCE_THRESHOLD:
+        #         confidence_fallback = True
+        #         formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
+        #         chain_logger.info("Fallback Mechanism activated!")
 
         # Add to history
         self._conversation_history.append(AIMessage(formatted_response))
