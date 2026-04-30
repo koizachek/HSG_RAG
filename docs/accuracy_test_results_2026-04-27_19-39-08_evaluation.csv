@@ -1,0 +1,101 @@
+id,rating,score,error_type,review_notes
+1,Richtig,0.5,old_info,"Es scheint, dass die alten Infos richtig sind, aber die Infos wurden nicht aktualisiert"
+2,Richtig,0.9,,Unsicher ob es wirklich keine Informationen gibt keine konkreten zu EMA HSG ja aber https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse werden Raten erwähnt.
+3,Falsch,0.,old_info,"Schwer zu bewerten da die Information veraltet sein können, im jetztigen Stand findet man nichts dazu konkretes"
+4,Teilweise_Richtig,0.4,old_info,Unkonkreter Datum nur Zeitraum Herbst genannt
+5,Teilweise_Richtig,0.6,,"Es wird der Zeitraum von 2 Jahren genannt. Es dauert 18 Monate, kann aber auf 2 Jahre streckt werden."
+6,Falsch,0.,,Der Bot sagt dass es grundsätlich nicht gestreckt werden kann. Siehe id 5 review notes.
+7,Richtig,1.,,Korrekt. Es wurde sogar Alternativen der Programme angeboten um sich an die Sprache der Nutzer anzupassen
+8,Richtig,1.,,
+9,Falsch,0.,,Es werden nicht die 14 Wochen am Campus erwähnt sondern mehr über Kurse und Tage.
+10,Richtig,0.9,,"St.Gallen wird erwähnt, aber das Land Schweiz nicht"
+11,Richtig,1.,,
+12,Richtig,0.95,,Die relevantesten werden genanht. Zeit am Campus wird nicht genannt.
+13,Falsch,0.,,"Anzahl der Wahlkurse ist richtig, aber Anzahl der Pflichkurse ist falsch es sind 9 und nicht 11"
+14,Richtig,1.,,
+15,Richtig,1.,,
+16,Richtig ,1.,,Kontakt wird angezeigt
+17,Richtig,1.,,
+18,Falsch,0.5,old_info,
+19,Richtig,0.9,,"Es werden keine Raten erwähnt, aber zum Admission Team weitergeleitet, wenn vom Nutzer gewollt"
+20,Falsch,0.,,"Schwer zu bewerten da die Information veraltet sein können, im jetztigen Stand findet man nicht dazu konkretes"
+21,Falsch,0.,old_info,"Es scheint, dass die alten Infos richtig sind, aber die Infos wurden nicht aktualisiert"
+22,Richtig,1.,,
+23,Richtig,1.,,
+24,Richtig,1.,,
+25,Teilweise_Richtig,0.65,,Keine konkrete Zahlen genannt
+26,Teilweise_Richtig,0.45,,Keine konkrete Länder genannt
+27,Richtig,1.,,
+28,Richtig,1.,,
+29,Richtig,1.,,
+30,Richtig,1.,,
+31,Richtig,1.,,
+32,Richtig,1.,,
+33,Richtig,1.,,
+34,Richtig,1.,,
+35,Falsch,0.,old_info,
+36,Richtig,0.9,,"Es werden keine Raten erwähnt, aber zum Admission Team weitergeleitet, wenn vom Nutzer gewollt"
+37,Teilweise_Richtig,0.5,,Kein konkretes Datum. Dafür Erwähnung einmal im Jahr und kann sich variieren
+38,Teilweise_Richtig,0.7,,Versteht das Wort ‘endet‘ in dem Kontext nicht ganz. Fragt aber nach in welchem Kontext wir das meinen
+39,Richtig,1.,,
+40,Richtig,1.,,
+41,Richtig,1.,,
+42,Richtig,1.,,
+43,Teilweise_Richtig,0.5,,Es werden keine konkreten Zahlen genannt
+44,Richtig,1.,,
+45,Richtig,1.,,
+46,,,,Kann nicht bewerten da keine Credits
+47,Richtig,1.,,
+48,Richtig,1.,,
+49,Richtig,1.,,
+50,Richtig,1.,,
+51,Falsch,0.2,old_info,Fees richtig aber Anmeldefristen falsch
+52,Falsch,0.,old_info,
+53,Falsch,0.,old_info,
+54,Teilweise_Richtig,0.6,,Kein konkretes Datum. Dafür Erwähnung einmal im Jahr und kann sich variieren
+55,Richtig,0.98,,Könnte konkreter sagen normalerweise 18 Monate aber kann bis zu 24 Monate gehen anstatt 18 bis 24 Monate zu sagen
+56,Falsch,0.2,,Keine konkreten Zahlen. Viellleicht denkt der Bot ob man das über 24  Monate verlängern kann
+57,Richtig,1.,,
+58,Richtig,1.,,
+59,Falsch,0.1,,Keine konkrete Zahlen genannt
+60,Teilweise_Richtig,0.8,,"Belgien wird nicht erwähnt, aber der Hauptpunkt schon "
+61,Richtig,1.,,
+62,Teilweise_Richtig,0.6,,Keine konkreten Zahlen genannt
+63,Falsch,0.1,,Keine konkrete Zahlen genannt
+64,Richtig,1.,,
+65,Richtig,1.,,
+66,Richtig,1.,,
+67,Richtig,1.,,Eventuell sollen die Information direkt angezeigt werden?
+68,Falsch,0.1,,Fees richtig aber Anmeldefristen falsch
+69,Teilweise_Richtig,0.3,,
+70,Falsch,0.,old_info,
+71,Teilweise_Richtig,0.65,,Kein konkretes Datum. Dafür Erwähnung einmal im Jahr im Herbst beginnt und kann sich leicht variieren
+72,Richtig,1.,,
+73,Richtig,1.,,
+74,Richtig,1.,,
+75,Teilweise_Richtig,0.7,,Keine konkrete Zahlen genannt. Dafür Erwähnungen von Campus und internationale Module
+76,Teilweise_Richtig,0.8,,"St.Gallen wird erwähnt, aber das Land Schweiz nicht. Die anderen Länder werden nicht erwähnt, aber der Bot sagt es ist abhängig von den Wahlkursen"
+77,Richtig,1.,,
+78,Richtig,1.,,
+79,Falsch,0.,,Keine konkrete Zahlen genannt
+80,Richtig,0.,,
+81,Richtig,1.,,
+82,Richtig,1.,,
+83,Richtig,,,
+84,Richtig,0.9,,Eventuell sollen die Information direkt angezeigt werden?
+85,Richtig,1.,,
+86,Richtig,1.,,
+87,Falsch,0.,,Das Datum wird nicht genannt
+88,Falsch,0.,,Das Datum wird nicht genannt
+89,Richtig,1.,,
+90,Richtig,1.,,
+91,Richtig,1.,,
+92,Richtig,1.,,
+93,Richtig,1.,,
+94,Richtig,1.,,
+95,Richtig,1.,,
+96,Falsch,0.,,Es sind 75 Credits und nicht 60 
+97,Richtig,1.,,
+98,Richtig,1.,,
+99,Richtig,1.,,
+100,Richtig,1.,,

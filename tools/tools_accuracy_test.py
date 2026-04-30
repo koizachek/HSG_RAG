@@ -14,6 +14,7 @@ Default behavior
 - one fresh ExecutiveAgentChain session per row
 - preserves original catalog columns in the output
 - appends response metadata columns
+- appends a timestamp to the output filename automatically
 
 Example
 -------
@@ -39,13 +40,11 @@ from __future__ import annotations
 
 import argparse
 import csv
-import os
 import subprocess
 import sys
 import time
 import traceback
 import uuid
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple
@@ -181,14 +180,12 @@ def maybe_sort_grouped_rows(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
 
 
 def configure_runtime(repo_root: Path, cache_mode: str, use_cache: bool, disable_profile_tracking: bool) -> None:
-    # imports happen after sys.path is adjusted
     from src.cache.cache import Cache
     from src.config import config
 
     Cache.configure(mode=cache_mode, no_cache=not use_cache)
 
     if disable_profile_tracking:
-        # Best effort only; the config object shape comes from the repo's config system.
         try:
             config.convstate.TRACK_USER_PROFILE = False
         except Exception:
@@ -216,11 +213,12 @@ def run_single_question(agent, question: str) -> RunResult:
             error_message="",
         )
 
-    final = agent.agent_query(pre.processed_query)
+    query_to_run = pre.processed_query or question
+    final = agent.agent_query(query_to_run)
 
     return RunResult(
         bot_response=final.response,
-        processed_query=final.processed_query or pre.processed_query or question,
+        processed_query=final.processed_query or query_to_run,
         response_language=final.language,
         confidence_fallback=getattr(final, "confidence_fallback", False),
         should_cache=getattr(final, "should_cache", False),
@@ -248,6 +246,8 @@ def build_output_fieldnames(input_fieldnames: List[str]) -> List[str]:
         "commit_hash",
         "cache_mode",
         "cache_enabled",
+        "run_started_at",
+        "run_started_at_epoch",
         "tested_at_epoch",
     ]
     return input_fieldnames + extra
@@ -262,13 +262,23 @@ def write_results(path: Path, fieldnames: List[str], rows: Iterable[Dict[str, An
             writer.writerow(row)
 
 
+def add_timestamp_to_filename(path: Path, timestamp_str: str) -> Path:
+    stem = path.stem
+    suffix = path.suffix or ".csv"
+    return path.with_name(f"{stem}_{timestamp_str}{suffix}")
+
+
 def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
     ensure_import_path(repo_root)
 
+    run_started_epoch = int(time.time())
+    run_started_at = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(run_started_epoch))
+
     catalog_path = repo_abspath(args.repo_root, args.catalog)
     output_path = repo_abspath(args.repo_root, args.output)
+    output_path = add_timestamp_to_filename(output_path, run_started_at)
 
     if output_path.exists() and not args.overwrite:
         print(
@@ -298,7 +308,6 @@ def main() -> int:
 
     commit_hash = get_git_commit(repo_root)
 
-    # Import config after import path + runtime config are ready
     from src.config import config
 
     try:
@@ -361,6 +370,8 @@ def main() -> int:
                 "commit_hash": commit_hash,
                 "cache_mode": args.cache_mode,
                 "cache_enabled": str(args.use_cache),
+                "run_started_at": run_started_at,
+                "run_started_at_epoch": str(run_started_epoch),
                 "tested_at_epoch": str(int(time.time())),
             }
         )
@@ -385,6 +396,7 @@ def main() -> int:
     print(f"Cache mode: {args.cache_mode}")
     print(f"Commit hash: {commit_hash or 'n/a'}")
     print(f"Model: {model_name or 'n/a'}")
+    print(f"Run started at: {run_started_at}")
 
     return 0
 
