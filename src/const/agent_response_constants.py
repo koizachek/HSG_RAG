@@ -31,13 +31,13 @@ CONFIDENCE_FALLBACK_MESSAGE = {
     "en": (
         "I am sorry, but I could not find sufficiently reliable information in my records to answer that question with confidence. "
         "Could you please rephrase your question?\n\n"
-        "Alternatively, you may book a consultation with an admissions advisor using the contact details and links below."
+        "If you would like a personal consultation, I can also help you with appointment booking."
     ),
     "de": (
         "Es tut mir leid, aber ich konnte in meinen Unterlagen keine Informationen finden, "
         "die zu Ihrer Anfrage passen, sodass ich sie nicht mit ausreichender Sicherheit beantworten kann. "
         "Könnten Sie Ihre Frage bitte umformulieren?\n\n"
-        "Alternativ können Sie über die untenstehenden Links einen Termin bei der Studienberatung buchen."
+        "Wenn Sie ein persönliches Beratungsgespräch wünschen, kann ich Ihnen auch bei der Terminbuchung helfen."
     ),
 }
 
@@ -57,14 +57,14 @@ CONVERSATION_END_MESSAGE = {
         "This conversation has reached its maximum length. "
         "To make sure you receive the best possible support, "
         "please continue with a personal consultation.\n\n"
-        "You can book an appointment with an admissions advisor using the contact details and links below. "
+        "If you would like to see appointment options with an admissions advisor, please ask me to show them. "
         "Thank you for your understanding."
     ),
     "de": (
         "Dieses Gespräch hat die maximale Länge erreicht. "
         "Damit Sie bestmöglich unterstützt werden, bitten wir Sie, "
         "das Anliegen in einem persönlichen Beratungsgespräch fortzusetzen.\n\n"
-        "Über die untenstehenden Links können Sie einen Termin mit der Studienberatung buchen. "
+        "Wenn Sie Terminoptionen mit der Studienberatung sehen möchten, sagen Sie mir bitte kurz Bescheid. "
         "Vielen Dank für Ihr Verständnis."
     ),
 }

@@ -169,7 +169,7 @@ class WeaviateService:
             return None, ''
 
         collection_name = _get_collection_name(lang)
-        logger.info(f"Using collection {collection_name}")
+        logger.debug(f"Using collection {collection_name}")
 
         client = self._init_client()
         return client.collections.use(collection_name), collection_name
@@ -286,7 +286,17 @@ class WeaviateService:
                         raise e
                 else:
                     raise e
-        
+
+
+    def ping(self, lang: str) -> dict:
+        try:
+            collection, _ = self._select_collection(lang)
+            with self._client_lock:
+                collection.query.hybrid("health check query")
+            return { 'status': 'OK' }
+        except Exception as e: 
+            return { 'status': 'ERROR', 'error': e } 
+
 
     def query(self, query: str, lang: str, property_filters: dict[str] = None, limit: int = 5) -> dict:
         """

@@ -35,6 +35,8 @@ from src.utils.logging import get_logger
 from src.utils.lang import get_language_name
 from src.config import config
 
+from ..cache.cache import Cache
+
 chain_logger = get_logger('agent_chain')
 
 
@@ -44,8 +46,9 @@ class ExecutiveAgentChain:
         self._stored_language = language
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
-        self._conversation_history = []
-        
+        self._conversation_history = [] 
+        self._cache = Cache.get_cache()
+
         # AI-middlewares
         if config.chain.EVALUATE_RESPONSE_QUALITY:
             self._quality_handler = QualityScoreHandler()
@@ -491,7 +494,6 @@ class ExecutiveAgentChain:
             any(term in response_lower for term in positive_terms)
             and not any(term in response_lower for term in defer_terms)
         )
-
     def _is_explicit_booking_intent(self, query: str) -> bool:
         """Detect whether the user is actively asking to book or accepting a booking offer."""
         query_lower = query.lower()
@@ -738,7 +740,7 @@ class ExecutiveAgentChain:
         return greeting_message
 
     @traceable
-    def preprocess_query(self, query: str) -> LeadAgentQueryResponse:
+    def query(self, query: str) -> LeadAgentQueryResponse:
         """
         Phase 1: Validation, Scope-Check and language detection.
         Does not call the agent directly.
@@ -841,16 +843,40 @@ class ExecutiveAgentChain:
                 appointment_requested=False,
                 show_booking_widget=False,
             )
+        
+        # 5. Check if cached data already exists for this session 
+        if config.cache.ENABLED:
+            cached_data = self._cache.get(query, current_language, self._user_id)
+            if cached_data and isinstance(cached_data, dict):
+                return LeadAgentQueryResponse(
+                    response=cached_data["response"],
+                    language=current_language,
+                    appointment_requested=cached_data.get("appointment_requested", False),
+                    show_booking_widget=cached_data.get("show_booking_widget", False),
+                    relevant_programs=cached_data.get("relevant_programs", []),
+                )
+            
 
-        # Response = None indicates that agent needs to answer the processed query
-        return LeadAgentQueryResponse(
-            response=None, 
-            processed_query=processed_query,
-            language=current_language
-        )
-    
-    @traceable
-    def agent_query(self, preprocessed_query: str) -> LeadAgentQueryResponse:
+        # 6. Preprocessing is finished - the agent has to answer the query 
+        response = self._query_lead(query) 
+        
+        if config.cache.ENABLED and response.should_cache:
+            self._cache.set(
+                key=query,
+                value={
+                    "response":              response.response,
+                    "appointment_requested": response.appointment_requested,
+                    "show_booking_widget":    response.show_booking_widget,
+                    "relevant_programs":     response.relevant_programs,
+                },
+                language   = current_language,
+                session_id = self._user_id,
+            )
+        
+        return response 
+
+
+    def _query_lead(self, preprocessed_query: str) -> LeadAgentQueryResponse:
         """
         Phase 2: Execute agent.
         Takes the ALREADY validated query from the preprocessing phase.

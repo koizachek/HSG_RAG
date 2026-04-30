@@ -216,6 +216,7 @@ def configure_external_loggers(level: str = "WARNING") -> None:
         'chromadb',
         'docling',
         'docling_core',
+        'uvicorn',
         'weaviate',
         'langchain',
         'langgraph',

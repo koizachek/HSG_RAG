@@ -85,6 +85,7 @@ class ChainConfig(ConfigBase):
 
 
 class CacheConfig(ConfigBase):
+    ENABLED: bool = _get('CACHE_ENABLED', False)
     CACHE_MODE: Literal['local', 'cloud', 'dict'] = _get('CACHE_MODE')
 
     LOCAL_HOST: str = _get('CACHE_LOCAL_HOST', 'localhost')

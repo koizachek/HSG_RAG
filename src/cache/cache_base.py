@@ -7,11 +7,11 @@ class CacheStrategy(ABC):
     """
     
     @abstractmethod
-    def set(self, key: str, value: Any, language: str):
+    def set(self, key: str, value: Any, language: str, session_id: str):
         pass
 
     @abstractmethod
-    def get(self, key: str, language: str):
+    def get(self, key: str, language: str, session_id: str):
         pass
 
     @abstractmethod

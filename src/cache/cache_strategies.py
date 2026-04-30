@@ -17,23 +17,23 @@ class RedisCache(CacheStrategy):
         self.metrics = metrics
 
 
-    def set(self, key: str, value: Any, language: str):
+    def set(self, key: str, value: Any, language: str, session_id: str):
         if not self.client: return
         
         try:
             json_str = json.dumps(value)
-            cache_key = get_cache_key(key, language)
+            cache_key = get_cache_key(key, language, session_id)
             self.client.set(cache_key, json_str, ex=config.cache.TTL_CACHE)
             logger.info(f"Cached response with key {cache_key[:20]}... to Redis")
         except Exception as e:
             logger.error(f"Could not write to Redis: {e}")
 
 
-    def get(self, key: str, language: str):
+    def get(self, key: str, language: str, session_id: str):
         if not self.client: return None
 
         try:
-            cache_key = get_cache_key(key, language)
+            cache_key = get_cache_key(key, language, session_id)
             val = self.client.get(cache_key)
             if val is not None:
                 self.metrics.increment_hit()
@@ -65,14 +65,14 @@ class LocalCache(CacheStrategy):
         self.metrics = metrics
 
 
-    def set(self, key: str, value: Any, language: str):
-        normalized_key = get_cache_key(key, language)
+    def set(self, key: str, value: Any, language: str, session_id: str):
+        normalized_key = get_cache_key(key, language, session_id)
         self.cache[normalized_key] = value
         logger.info("Response cached")
  
 
-    def get(self, key: str, language: str):
-        normalized_key = get_cache_key(key, language)
+    def get(self, key: str, language: str, session_id: str):
+        normalized_key = get_cache_key(key, language, session_id)
         res = self.cache.get(normalized_key, None)
         if res is not None:
             self.metrics.increment_hit()
