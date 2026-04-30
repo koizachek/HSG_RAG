@@ -15,6 +15,8 @@ TEST_DEPENDENCIES = {
     "tests/test_cache.py": {"langchain"},
     "tests/test_chatbot_improvements.py": {"langchain_core", "langchain", "langsmith"},
     "tests/test_language_handling.py": {"langchain_core"},
+    "tests/test_programme_positioning_real_agent.py": {"langchain_core", "langchain", "langsmith", "weaviate"},
+    "tests/test_reply_speed_real_agent.py": {"langchain_core", "langchain", "langsmith", "weaviate"},
     "tests/test_weaviate_connection.py": {"langchain_core", "langchain", "colorama"},
 }
 
