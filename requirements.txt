@@ -29,6 +29,7 @@ fake-useragent>=1.5.1
 
 # Weaviate Vector DB 
 weaviate-client>=4.16.9
+PyYAML>=6.0
 
 # Cache 
 cachetools>=5.0.0

@@ -35,6 +35,8 @@ from src.utils.logging import get_logger
 from src.utils.lang import get_language_name
 from src.config import config
 
+from ..cache.cache import Cache
+
 chain_logger = get_logger('agent_chain')
 
 
@@ -44,8 +46,9 @@ class ExecutiveAgentChain:
         self._stored_language = language
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
-        self._conversation_history = []
-        
+        self._conversation_history = [] 
+        self._cache = Cache.get_cache()
+
         # AI-middlewares
         if config.chain.EVALUATE_RESPONSE_QUALITY:
             self._quality_handler = QualityScoreHandler()
@@ -310,6 +313,104 @@ class ExecutiveAgentChain:
         conversation_lower = conversation.lower()
         return any(keyword.lower() in conversation_lower for keyword in handover_keywords)
 
+    def _previous_response_offered_booking(self) -> bool:
+        """Return True if the latest assistant turn offered booking as a next step."""
+        booking_offer_terms = [
+            "appointment slots",
+            "book an appointment",
+            "book a consultation",
+            "appointment booking",
+            "show you available appointments",
+            "show appointment options",
+            "terminbuchung",
+            "termin buchen",
+            "termine anzeigen",
+            "verfügbare termine",
+            "beratungstermin",
+        ]
+
+        for message in reversed(self._conversation_history):
+            if not isinstance(message, AIMessage):
+                continue
+            content = getattr(message, "content", "") or getattr(message, "text", "")
+            if isinstance(content, list):
+                content = " ".join(str(part) for part in content)
+            content_lower = str(content).lower()
+            return any(term in content_lower for term in booking_offer_terms)
+
+        return False
+
+    def _is_explicit_booking_intent(self, query: str) -> bool:
+        """Detect whether the user is actively asking to book or accepting a booking offer."""
+        query_lower = query.lower()
+        direct_booking_terms = [
+            "book",
+            "schedule",
+            "appointment",
+            "consultation",
+            "speak with",
+            "talk to an advisor",
+            "talk to admissions",
+            "connect me",
+            "show me available",
+            "show appointment",
+            "available slots",
+            "termin",
+            "termin buchen",
+            "termin vereinbaren",
+            "beratungstermin",
+            "beratungsgespräch",
+            "mit jemandem sprechen",
+            "mit admissions sprechen",
+            "mit der zulassung sprechen",
+            "termine anzeigen",
+            "verfügbare termine",
+        ]
+        rejection_terms = [
+            "do not want",
+            "don't want",
+            "no appointment",
+            "not book",
+            "not schedule",
+            "no thanks",
+            "no thank you",
+            "kein termin",
+            "keinen termin",
+            "keine beratung",
+            "nicht buchen",
+            "nicht vereinbaren",
+            "nein danke",
+        ]
+        acceptance_terms = [
+            "yes",
+            "yes please",
+            "please do",
+            "that would be helpful",
+            "show me",
+            "ja",
+            "ja bitte",
+            "gerne",
+            "bitte",
+            "mach das",
+            "zeige",
+        ]
+
+        def contains_term(term: str) -> bool:
+            if term in {"yes", "ja", "bitte"}:
+                return re.search(rf"\b{re.escape(term)}\b", query_lower) is not None
+            return term in query_lower
+
+        if any(contains_term(term) for term in rejection_terms):
+            return False
+
+        if any(contains_term(term) for term in direct_booking_terms):
+            return True
+
+        return (
+            self._previous_response_offered_booking()
+            and any(contains_term(term) for term in acceptance_terms)
+        )
+
     def _determine_suggested_program(self) -> str | None:
         """Determine recommended program based on user profile."""
         state = self._conversation_state
@@ -375,8 +476,8 @@ class ExecutiveAgentChain:
                 self._conversation_state['user_name'] = name
                 chain_logger.info(f"Extracted name: {name}")
 
-        # Detect handover request
-        if self._detect_handover_request(conversation_text):
+        # Detect handover request from the user only; assistant soft offers should not count.
+        if self._detect_handover_request(user_query):
             self._conversation_state['handover_requested'] = True
             chain_logger.info("Handover request detected")
 
@@ -477,7 +578,7 @@ class ExecutiveAgentChain:
         return greeting_message
 
     @traceable
-    def preprocess_query(self, query: str) -> LeadAgentQueryResponse:
+    def query(self, query: str) -> LeadAgentQueryResponse:
         """
         Phase 1: Validation, Scope-Check and language detection.
         Does not call the agent directly.
@@ -519,6 +620,11 @@ class ExecutiveAgentChain:
             self._stored_language = explicit_switch
             current_language = explicit_switch
             self._conversation_state['user_language'] = explicit_switch
+        elif self._language_detector.is_language_neutral_program_reference(processed_query):
+            chain_logger.info(
+                f"Skipping language re-detection for language-neutral programme reference: '{processed_query}'"
+            )
+            current_language = self._stored_language
         else:
             # Count user messages in conversation history
             user_message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
@@ -572,18 +678,43 @@ class ExecutiveAgentChain:
                 response=redirect_msg,
                 language=current_language,
                 processed_query=processed_query,
-                appointment_requested=(should_escalate and escalation_type == "escalate_aggressive"),
+                appointment_requested=False,
+                show_booking_widget=False,
             )
+        
+        # 5. Check if cached data already exists for this session 
+        if config.cache.ENABLED:
+            cached_data = self._cache.get(query, current_language, self._user_id)
+            if cached_data and isinstance(cached_data, dict):
+                return LeadAgentQueryResponse(
+                    response=cached_data["response"],
+                    language=current_language,
+                    appointment_requested=cached_data.get("appointment_requested", False),
+                    show_booking_widget=cached_data.get("show_booking_widget", False),
+                    relevant_programs=cached_data.get("relevant_programs", []),
+                )
+            
 
-        # Response = None indicates that agent needs to answer the processed query
-        return LeadAgentQueryResponse(
-            response=None, 
-            processed_query=processed_query,
-            language=current_language
-        )
-    
-    @traceable
-    def agent_query(self, preprocessed_query: str) -> LeadAgentQueryResponse:
+        # 6. Preprocessing is finished - the agent has to answer the query 
+        response = self._query_lead(query) 
+        
+        if config.cache.ENABLED and response.should_cache:
+            self._cache.set(
+                key=query,
+                value={
+                    "response":              response.response,
+                    "appointment_requested": response.appointment_requested,
+                    "show_booking_widget":    response.show_booking_widget,
+                    "relevant_programs":     response.relevant_programs,
+                },
+                language   = current_language,
+                session_id = self._user_id,
+            )
+        
+        return response 
+
+
+    def _query_lead(self, preprocessed_query: str) -> LeadAgentQueryResponse:
         """
         Phase 2: Execute agent.
         Takes the ALREADY validated query from the preprocessing phase.
@@ -592,6 +723,7 @@ class ExecutiveAgentChain:
         self._scope_violation_counts = {}
         
         response_language = self._stored_language
+        explicit_booking_intent = self._is_explicit_booking_intent(preprocessed_query)
        
         # 1. History Update 
         self._conversation_history.append(HumanMessage(preprocessed_query))
@@ -605,7 +737,9 @@ class ExecutiveAgentChain:
             messages=self._conversation_history + [language_instruction], 
         )
         agent_response = structured_response.response
+        chain_logger.info(f"Is answer context dependent: {structured_response.is_context_dependent}")
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
+        chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
         # 4. Formatting
@@ -643,14 +777,20 @@ class ExecutiveAgentChain:
                 self._log_user_profile()
 
         formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
+        appointment_requested = bool(explicit_booking_intent)
+        show_booking_widget = bool(explicit_booking_intent)
+
+        if structured_response.appointment_requested and not explicit_booking_intent:
+            chain_logger.info("Suppressed booking widget because no explicit booking intent was detected.")
         
         return LeadAgentQueryResponse(
             response = formatted_response,
             language = response_language,
             confidence_fallback = confidence_fallback,
-            should_cache = False if (confidence_fallback or structured_response.appointment_requested) else True,
+            should_cache = not any([confidence_fallback, appointment_requested, structured_response.is_context_dependent]),
             processed_query = preprocessed_query,
-            appointment_requested = structured_response.appointment_requested,
+            appointment_requested = appointment_requested,
+            show_booking_widget = show_booking_widget,
             relevant_programs = structured_response.relevant_programs
         )
 

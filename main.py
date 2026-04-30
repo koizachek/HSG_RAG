@@ -68,16 +68,17 @@ def run_weaviate_command(command: str, backup_id: str = None):
 
 
 def clear_cache():
-    logger = logging_startup()
     cache = Cache.get_cache()
     if cache:
         cache.clear_cache()
 
 
-def run_application(lang: str) -> None:
+def run_application(lang: str, cache_mode, cache) -> None:
     """Run the chatbot web application."""
     from src.apps.chat.app import ChatbotApplication
     logger = logging_startup()
+    
+    Cache.configure(cache_mode, cache)
 
     logger.info("Starting chatbot web application...")
     app = ChatbotApplication(language=lang)
@@ -109,7 +110,7 @@ def parse_args():
     parser.add_argument("--cache-mode", type=str, choices=['local', 'cloud', 'dict'], default=config.cache.CACHE_MODE,
                         help="Defines whether to use the local or cloud Redis database or the special python dict as cache")
 
-    parser.add_argument("--no-cache", action="store_true", help="Deactivates the caching mechanism")
+    parser.add_argument("--cache", action="store_false", help="(De-)activates the caching mechanism")
 
     parser.add_argument("--clear-cache", action="store_true",
                         help="Clears the cache")
@@ -125,15 +126,13 @@ def main():
     """Main entry point for the application."""
     args = parse_args()
     
-    # Load cache settings with the cache args
-    Cache.configure(args.cache_mode, args.no_cache)
-    
+    # Load cache settings with the cache args  
     must_clear_cache = False
 
     # Check if any argument is provided
-    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.no_cache, args.app, args.dbapp]):
+    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.cache, args.app, args.dbapp]):
         # If no argument is provided, run the chatbot by default
-        run_application()
+        run_application(cache_mode=args.cache_mode, cache=args.cache)
         return
 
     # Run the specified components
@@ -154,7 +153,7 @@ def main():
         clear_cache()
 
     if args.app:
-        run_application(args.app)
+        run_application(lang=args.app, cache_mode=args.cache_mode, cache=args.cache)
 
     if args.dbapp:
         run_dbapp()

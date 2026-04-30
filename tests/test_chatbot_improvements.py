@@ -65,8 +65,8 @@ Here are the programs:
 
 | Program | Duration | Cost |
 |---------|----------|------|
-| EMBA    | 18 months | CHF 85,000 |
-| IEMBA   | 18 months | CHF 88,000 |
+| EMBA    | 18 months | CHF 77,500 |
+| IEMBA   | 18 months | CHF 85,000 |
         """
         
         formatted = ResponseFormatter.remove_tables(table_text)
@@ -199,8 +199,7 @@ class TestLanguageLocking:
         agent = ExecutiveAgentChain(language='en')
         
         # First query in German
-        pre_processed_query = agent.preprocess_query("Hallo, ich interessiere mich für das EMBA Programm").processed_query
-        response = agent.agent_query(pre_processed_query).response
+        response = agent.query("Hallo, ich interessiere mich für das EMBA Programm").response
         
         # Language should now be locked to German
         assert agent._stored_language == 'de'
@@ -220,9 +219,7 @@ class TestUserAcceptanceScenarios:
         agent.generate_greeting()
         
         # User asks about requirements in German
-        pre_processed_query = agent.preprocess_query(
-            "Welche Voraussetzungen brauche ich für das EMBA Programm?").processed_query
-        response = agent.agent_query(pre_processed_query).response
+        response = agent.query("Welche Voraussetzungen brauche ich für das EMBA HSG Programm?").response
         
         # Response should be in German
         assert any(word in response.lower() for word in ['bachelor', 'master', 'jahre', 'erfahrung'])
@@ -237,14 +234,12 @@ class TestUserAcceptanceScenarios:
         agent = ExecutiveAgentChain(language='de')
         agent.generate_greeting()
 
-        pre_processed_query = agent.preprocess_query(
-            "Was kostet das EMBA HSG Programm?").processed_query
-        response = agent.agent_query(pre_processed_query).response
+        response = agent.query("Was kostet das EMBA HSG Programm?").response
 
-        # Should mention price range
+        # Should mention programme pricing
         assert 'CHF' in response or 'Kosten' in response.lower()
-        # Should mention 85-90k range
-        assert '85' in response or '90' in response
+        # Should mention the updated EMBA tuition figure
+        assert '77' in response
         # Should be concise
         word_count = len(response.split())
         assert word_count < 150
@@ -258,9 +253,7 @@ class TestEdgeCases:
         agent = ExecutiveAgentChain(language='en')
         
         # Mixed language should be handled gracefully
-        pre_processed_query = agent.preprocess_query(
-            "Hello I want to know über das EMBA program").processed_query
-        response = agent.agent_query(pre_processed_query).response
+        response = agent.query("Hello I want to know über das EMBA program").response
         
         # Should receive a response (not crash)
         assert len(response) > 0
@@ -269,10 +262,8 @@ class TestEdgeCases:
     def test_very_short_input(self):
         """Test single character or word inputs"""
         agent = ExecutiveAgentChain(language='en')
-        
-        pre_processed_query = agent.preprocess_query(
-            "hi").processed_query
-        response = agent.agent_query(pre_processed_query).response
+
+        response = agent.query("hi").response
         
         # Should handle gracefully
         assert len(response) > 0
@@ -280,10 +271,8 @@ class TestEdgeCases:
     def test_special_characters(self):
         """Test handling of special characters"""
         agent = ExecutiveAgentChain(language='en')
-        
-        pre_processed_query = agent.preprocess_query(
-            "Cost??? $$$ EMBA HSG!!!!").processed_query
-        response = agent.agent_query(pre_processed_query).response
+
+        response = agent.query("Cost??? $$$ EMBA HSG!!!!").response
         
         # Should handle and respond appropriately
         assert len(response) > 0

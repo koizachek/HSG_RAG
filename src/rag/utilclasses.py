@@ -21,14 +21,29 @@ class LeadAgentQueryResponse:
     max_turns_reached: bool = False
     should_cache: bool = False
     appointment_requested: bool = False
+    show_booking_widget: bool = False
     relevant_programs: List[str] = field(default_factory=list)
 
 
 class StructuredAgentResponse(BaseModel):
     response: str = Field(description="Main response to the query.")
+    is_context_dependent: bool = Field(
+        default=True,
+        description=(
+            "Set to False only if the question can be answered without using any user-specific "
+            "information (e.g. name, age, preferences, extracted profile data) and without relying "
+            "on prior conversation turns or conversation history. "
+            "Must be True for responses involving eligibility, recommendations, comparisons after prior turns, "
+            "or any answer influenced by user profile data or conversation context."
+        )
+    )
     appointment_requested: bool = Field(
         default=False,
-        description="Set to True ONLY if the user explicitly wants to book, asks for help booking, or if a proactive trigger (pricing/eligibility/handover) occurred in THIS specific turn. Otherwise, set to False."
+        description="Set to True ONLY if the user explicitly asks to book, schedule, speak with admissions/an advisor, see appointment slots, or accepts a previous consultation offer. Routine pricing, comparisons, recommendations, and exploratory fit questions must be False."
+    )
+    show_booking_widget: bool = Field(
+        default=False,
+        description="Set to True ONLY when appointment_requested is True and the booking widget should be shown now. Never use this for soft contact mentions or routine informational answers."
     )
     relevant_programs: Optional[List[Literal["emba", "iemba", "emba_x"]]] = Field(
         default=None,
