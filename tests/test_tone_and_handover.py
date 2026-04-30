@@ -78,8 +78,6 @@ def test_lead_prompt_preserves_credibility_and_avoids_hype():
     assert "Avoid generic hype." in prompt
     assert 'Do not use claims such as "best", "perfect", "guaranteed", or "world-class"' in prompt
     assert "Keep the structure consultative" in prompt
-
-
 def test_booking_intent_detector_requires_user_initiative():
     agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
     agent._conversation_history = []
@@ -106,6 +104,35 @@ def test_booking_intent_detector_accepts_previous_soft_offer():
     assert not agent_without_offer._is_explicit_booking_intent("Yes please")
 
 
+def test_booking_preference_follow_up_is_detected_in_active_flow():
+    agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
+    agent._conversation_history = [
+        AIMessage(
+            "Vielen Dank für die Rückmeldung. Ich kann Ihnen nun passende Terminoptionen "
+            "anzeigen. Eine kurze letzte Frage, damit die Slots besser passen: "
+            "Haben Sie eine Tagespräferenz und bevorzugen Sie vormittags oder nachmittags?"
+        )
+    ]
+    agent._conversation_state = {"handover_requested": True}
+
+    assert agent._previous_response_requested_booking_preferences()
+    assert agent._is_booking_preference_follow_up("online")
+    assert agent._is_booking_preference_follow_up("vormittags, anfang der woche")
+    assert not agent._is_booking_preference_follow_up("Was kostet das Programm?")
+
+
+def test_response_commit_detector_requires_show_now_not_soft_offer():
+    agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
+
+    assert agent._response_commits_to_showing_booking_widget(
+        "Ich kann Ihnen nun passende Terminoptionen anzeigen. Unten werden Ihnen die verfügbaren Slots eingeblendet."
+    )
+    assert not agent._response_commits_to_showing_booking_widget(
+        "Wenn Sie möchten, kann ich Ihnen später auch bei der Terminbuchung helfen."
+    )
+    assert not agent._response_commits_to_showing_booking_widget(
+        "Bitte noch kurz: Bevorzugen Sie vormittags oder nachmittags?"
+    )
 def test_soft_booking_offer_does_not_mark_handover_state(monkeypatch):
     monkeypatch.setattr(agent_chain_module.config.convstate, "TRACK_USER_PROFILE", True)
 

@@ -52,7 +52,50 @@ class FakeLeadAgent:
             "respond in german" in getattr(msg, "content", "").lower() for msg in system_messages
         ) else "en"
 
-        if any(term in query_lower for term in ("termin", "appointment", "consultation", "beratungstermin")):
+        if query_lower == "ich brauche eine beratung für emba hsg":
+            response = StructuredAgentResponse(
+                response=(
+                    "Für eine individuelle Beratung zum **EMBA HSG** kann ich Ihnen gerne einen Termin "
+                    "mit unserer Studienberaterin Cyra von Müller vorschlagen.\n"
+                    "Bitte noch kurz:\n"
+                    "• Bevorzugen Sie ein **Online-Gespräch** oder ein Gespräch **vor Ort in St.Gallen**?\n"
+                    "• Haben Sie zeitliche Präferenzen (z.B. eher vormittags / nachmittags)?\n\n"
+                    "Sobald ich das weiss, kann ich Ihnen geeignete Terminoptionen für ein persönliches "
+                    "Beratungsgespräch anzeigen."
+                ),
+                appointment_requested=True,
+                show_booking_widget=False,
+                relevant_programs=["emba"],
+            )
+        elif query_lower == "online":
+            response = StructuredAgentResponse(
+                response=(
+                    "Vielen Dank für die Rückmeldung.\n"
+                    "Ich kann Ihnen nun passende Terminoptionen für ein **Online-Beratungsgespräch** "
+                    "zum **EMBA HSG** mit Cyra von Müller anzeigen.\n"
+                    "Eine kurze letzte Frage, damit die Slots besser passen:\n"
+                    "• Haben Sie eine Tagespräferenz (z.B. eher Anfang der Woche / Ende der Woche)?\n"
+                    "• Bevorzugen Sie vormittags oder nachmittags?\n\n"
+                    "Sobald ich dies weiss, kann ich Ihnen die konkreten verfügbaren Online-Termine zeigen."
+                ),
+                appointment_requested=True,
+                show_booking_widget=False,
+                relevant_programs=["emba"],
+            )
+        elif query_lower == "vormittags, anfang der woche":
+            response = StructuredAgentResponse(
+                response=(
+                    "Perfekt, danke für die Präzisierung.\n"
+                    "Ich kann Ihnen nun **Online-Terminoptionen am Wochenanfang, vormittags,** "
+                    "für eine **EMBA HSG** Beratung mit Cyra von Müller anzeigen. "
+                    "Unten werden Ihnen die verfügbaren Slots sowie die Kontaktdaten eingeblendet, "
+                    "aus denen Sie einen passenden Termin auswählen können."
+                ),
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=["emba"],
+            )
+        elif any(term in query_lower for term in ("termin", "appointment", "consultation", "beratungstermin")):
             response = StructuredAgentResponse(
                 response=(
                     "Gerne. Ich kann Ihnen passende Terminoptionen für das **EMBA HSG** anzeigen."
@@ -319,3 +362,23 @@ def test_formal_assessment_appointment_request_shows_widget(offline_agent):
 
     assert response.appointment_requested is True
     assert response.show_booking_widget is True
+
+
+def test_booking_follow_up_preferences_keep_flow_active_until_widget_is_shown(offline_agent):
+    first_response = offline_agent.query("Ich brauche eine Beratung für EMBA HSG")
+
+    assert first_response.appointment_requested is True
+    assert first_response.show_booking_widget is False
+    assert first_response.relevant_programs == ["emba"]
+
+    second_response = offline_agent.query("online")
+
+    assert second_response.appointment_requested is True
+    assert second_response.show_booking_widget is False
+    assert second_response.relevant_programs == ["emba"]
+
+    third_response = offline_agent.query("vormittags, anfang der woche")
+
+    assert third_response.appointment_requested is True
+    assert third_response.show_booking_widget is True
+    assert third_response.relevant_programs == ["emba"]
