@@ -45,18 +45,126 @@ class FakeLeadAgent:
     def invoke(self, payload, config=None, context=None):
         messages = payload["messages"]
         human_messages = [msg for msg in messages if getattr(msg, "type", None) == "human"]
+        system_messages = [msg for msg in messages if getattr(msg, "type", None) == "system"]
         query = human_messages[-1].content if human_messages else ""
         query_lower = query.lower()
+        response_language = "de" if any(
+            "respond in german" in getattr(msg, "content", "").lower() for msg in system_messages
+        ) else "en"
 
-        if query_lower.strip() == "emba":
+        if query_lower == "ich brauche eine beratung für emba hsg":
+            response = StructuredAgentResponse(
+                response=(
+                    "Für eine individuelle Beratung zum **EMBA HSG** kann ich Ihnen gerne einen Termin "
+                    "mit unserer Studienberaterin Cyra von Müller vorschlagen.\n"
+                    "Bitte noch kurz:\n"
+                    "• Bevorzugen Sie ein **Online-Gespräch** oder ein Gespräch **vor Ort in St.Gallen**?\n"
+                    "• Haben Sie zeitliche Präferenzen (z.B. eher vormittags / nachmittags)?\n\n"
+                    "Sobald ich das weiss, kann ich Ihnen geeignete Terminoptionen für ein persönliches "
+                    "Beratungsgespräch anzeigen."
+                ),
+                appointment_requested=True,
+                show_booking_widget=False,
+                relevant_programs=["emba"],
+            )
+        elif query_lower == "online":
+            response = StructuredAgentResponse(
+                response=(
+                    "Vielen Dank für die Rückmeldung.\n"
+                    "Ich kann Ihnen nun passende Terminoptionen für ein **Online-Beratungsgespräch** "
+                    "zum **EMBA HSG** mit Cyra von Müller anzeigen.\n"
+                    "Eine kurze letzte Frage, damit die Slots besser passen:\n"
+                    "• Haben Sie eine Tagespräferenz (z.B. eher Anfang der Woche / Ende der Woche)?\n"
+                    "• Bevorzugen Sie vormittags oder nachmittags?\n\n"
+                    "Sobald ich dies weiss, kann ich Ihnen die konkreten verfügbaren Online-Termine zeigen."
+                ),
+                appointment_requested=True,
+                show_booking_widget=False,
+                relevant_programs=["emba"],
+            )
+        elif query_lower == "vormittags, anfang der woche":
+            response = StructuredAgentResponse(
+                response=(
+                    "Perfekt, danke für die Präzisierung.\n"
+                    "Ich kann Ihnen nun **Online-Terminoptionen am Wochenanfang, vormittags,** "
+                    "für eine **EMBA HSG** Beratung mit Cyra von Müller anzeigen. "
+                    "Unten werden Ihnen die verfügbaren Slots sowie die Kontaktdaten eingeblendet, "
+                    "aus denen Sie einen passenden Termin auswählen können."
+                ),
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=["emba"],
+            )
+        elif any(term in query_lower for term in ("termin", "appointment", "consultation", "beratungstermin")):
+            response = StructuredAgentResponse(
+                response=(
+                    "Gerne. Ich kann Ihnen passende Terminoptionen für das **EMBA HSG** anzeigen."
+                    if response_language == "de"
+                    else
+                    "Certainly. I can show you suitable appointment options for the **EMBA HSG**."
+                ),
+                appointment_requested=True,
+                show_booking_widget=True,
+                relevant_programs=["emba"],
+            )
+        elif "welches programm passt" in query_lower or "which programme fits" in query_lower:
+            response = StructuredAgentResponse(
+                response=(
+                    "Auf Basis Ihrer Angaben wirkt das **IEMBA HSG** naheliegend. "
+                    "Wenn Sie später ein persönliches Gespräch wünschen, kann ich Ihnen auch "
+                    "bei der Terminbuchung helfen."
+                ),
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=[],
+            )
+        elif query_lower.strip() in {"emba", "emba hsg"}:
             response = StructuredAgentResponse(
                 response=(
                     "Die Studiengebühr für das **EMBA HSG** beträgt **CHF 77,500**. "
                     "In den Studiengebühren enthalten sind Kursunterlagen sowie die meisten "
                     "Mahlzeiten und Erfrischungen vor Ort. Unterkunft und Reisen sind nicht enthalten."
+                    if response_language == "de"
+                    else
+                    "The tuition for the **EMBA HSG** is **CHF 77,500**. "
+                    "Included are course materials and most on-site meals and refreshments. "
+                    "Accommodation and travel are not included."
                 ),
-                appointment_requested=True,
-                relevant_programs=["emba"],
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=[],
+            )
+        elif query_lower.strip() in {"iemba", "iemba hsg"}:
+            response = StructuredAgentResponse(
+                response=(
+                    "Die Studiengebühr für den **IEMBA HSG** beträgt **CHF 85,000**. "
+                    "In den Studiengebühren enthalten sind Kursunterlagen sowie die meisten "
+                    "Mahlzeiten und Erfrischungen vor Ort. Unterkunft und Reisen sind nicht enthalten."
+                    if response_language == "de"
+                    else
+                    "The tuition for the **IEMBA HSG** is **CHF 85,000**. "
+                    "Included are course materials and most on-site meals and refreshments. "
+                    "Accommodation and travel are not included."
+                ),
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=[],
+            )
+        elif query_lower.strip() in {"emba x", "embax"}:
+            response = StructuredAgentResponse(
+                response=(
+                    "Die Studiengebühr für **emba X** beträgt bis zur ersten Bewerbungsfrist "
+                    "**31 August 2026** **CHF 99,000** und bis zur finalen Bewerbungsfrist "
+                    "**31 October 2026** **CHF 110,000**. Unterkunft und Reisen sind nicht enthalten."
+                    if response_language == "de"
+                    else
+                    "The tuition for **emba X** is **CHF 99,000** by the first application deadline "
+                    "of **31 August 2026** and **CHF 110,000** by the final application deadline of "
+                    "**31 October 2026**. Accommodation and travel are not included."
+                ),
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=[],
             )
         elif "was kostet der emba" in query_lower:
             response = StructuredAgentResponse(
@@ -74,8 +182,9 @@ class FakeLeadAgent:
                     "In den Studiengebühren enthalten sind Kursunterlagen sowie die meisten "
                     "Mahlzeiten und Erfrischungen vor Ort. Unterkunft und Reisen sind nicht enthalten."
                 ),
-                appointment_requested=True,
-                relevant_programs=["emba"],
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=[],
             )
         elif "iemba" in query_lower:
             response = StructuredAgentResponse(
@@ -84,8 +193,9 @@ class FakeLeadAgent:
                     "Included are course materials and most on-site meals and refreshments. "
                     "Accommodation and travel are not included."
                 ),
-                appointment_requested=True,
-                relevant_programs=["iemba"],
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=[],
             )
         elif "emba x" in query_lower or "embax" in query_lower:
             response = StructuredAgentResponse(
@@ -94,8 +204,9 @@ class FakeLeadAgent:
                     "of **31 August 2026** and **CHF 110,000** by the final application deadline of "
                     "**31 October 2026**. Accommodation and travel are not included."
                 ),
-                appointment_requested=True,
-                relevant_programs=["emba_x"],
+                appointment_requested=False,
+                show_booking_widget=False,
+                relevant_programs=[],
             )
         elif "how much does the emba cost" in query_lower or "was kostet das emba programm" in query_lower:
             response = StructuredAgentResponse(
@@ -146,8 +257,8 @@ def test_offline_smoke_emba_pricing_in_german(offline_agent):
     assert preprocessed.language == "de"
     assert "CHF 77,500" in response.response
     assert "Unterkunft und Reisen sind nicht enthalten" in response.response
-    assert response.appointment_requested is True
-    assert response.relevant_programs == ["emba"]
+    assert response.appointment_requested is False
+    assert response.show_booking_widget is False
 
 
 def test_offline_smoke_iemba_pricing_in_english(offline_agent):
@@ -157,8 +268,8 @@ def test_offline_smoke_iemba_pricing_in_english(offline_agent):
     assert preprocessed.language == "en"
     assert "CHF 85,000" in response.response
     assert "Accommodation and travel are not included" in response.response
-    assert response.appointment_requested is True
-    assert response.relevant_programs == ["iemba"]
+    assert response.appointment_requested is False
+    assert response.show_booking_widget is False
 
 
 def test_offline_smoke_embax_pricing_with_deadlines(offline_agent):
@@ -170,8 +281,8 @@ def test_offline_smoke_embax_pricing_with_deadlines(offline_agent):
     assert "31 August 2026" in response.response
     assert "CHF 110,000" in response.response
     assert "31 October 2026" in response.response
-    assert response.appointment_requested is True
-    assert response.relevant_programs == ["emba_x"]
+    assert response.appointment_requested is False
+    assert response.show_booking_widget is False
 
 
 def test_offline_smoke_ambiguous_pricing_question_requests_clarification(offline_agent):
@@ -182,6 +293,7 @@ def test_offline_smoke_ambiguous_pricing_question_requests_clarification(offline
     assert "International EMBA (IEMBA)" in response.response
     assert "emba X" in response.response
     assert response.appointment_requested is False
+    assert response.show_booking_widget is False
     assert response.relevant_programs == []
 
 
@@ -198,3 +310,86 @@ def test_offline_smoke_program_name_follow_up_keeps_previous_language(offline_ag
     assert second_turn.language == "de"
     assert offline_agent._stored_language == "de"
     assert "Die Studiengebühr für das **EMBA HSG** beträgt **CHF 77,500**." in second_response.response
+
+
+@pytest.mark.parametrize(
+    ("follow_up", "expected_snippet"),
+    [
+        ("EMBA", "Die Studiengebühr für das **EMBA HSG** beträgt **CHF 77,500**."),
+        ("IEMBA", "Die Studiengebühr für den **IEMBA HSG** beträgt **CHF 85,000**."),
+        (
+            "emba X",
+            "Die Studiengebühr für **emba X** beträgt bis zur ersten Bewerbungsfrist **31 August 2026** **CHF 99,000**",
+        ),
+    ],
+)
+def test_offline_smoke_all_programme_names_as_second_user_reply_keep_german(
+    offline_agent, follow_up, expected_snippet
+):
+    first_turn = offline_agent.preprocess_query("Was kostet der EMBA?")
+    first_response = offline_agent.agent_query(first_turn.processed_query)
+
+    assert first_turn.language == "de"
+    assert "Meinen Sie" in first_response.response
+
+    second_turn = offline_agent.preprocess_query(follow_up)
+    second_response = offline_agent.agent_query(second_turn.processed_query)
+
+    assert second_turn.language == "de"
+    assert offline_agent._stored_language == "de"
+    assert expected_snippet in second_response.response
+    assert second_response.appointment_requested is False
+    assert second_response.show_booking_widget is False
+    assert second_response.relevant_programs == []
+
+
+def test_explicit_booking_request_shows_widget(offline_agent):
+    preprocessed = offline_agent.preprocess_query("Ich möchte einen Termin für das EMBA HSG buchen.")
+    response = offline_agent.agent_query(preprocessed.processed_query)
+
+    assert response.appointment_requested is True
+    assert response.show_booking_widget is True
+    assert response.relevant_programs == ["emba"]
+
+
+def test_basic_recommendation_does_not_show_widget(offline_agent):
+    preprocessed = offline_agent.preprocess_query("Welches Programm passt zu meinem Profil?")
+    response = offline_agent.agent_query(preprocessed.processed_query)
+
+    assert "IEMBA HSG" in response.response
+    assert "Terminbuchung" in response.response
+    assert response.appointment_requested is False
+    assert response.show_booking_widget is False
+
+
+def test_formal_assessment_appointment_request_shows_widget(offline_agent):
+    preprocessed = offline_agent.preprocess_query(
+        "Ich möchte einen Termin für eine formale Einschätzung meines Profils buchen."
+    )
+    response = offline_agent.agent_query(preprocessed.processed_query)
+
+    assert response.appointment_requested is True
+    assert response.show_booking_widget is True
+
+
+def test_booking_follow_up_preferences_keep_flow_active_until_widget_is_shown(offline_agent):
+    first_turn = offline_agent.preprocess_query("Ich brauche eine Beratung für EMBA HSG")
+    first_response = offline_agent.agent_query(first_turn.processed_query)
+
+    assert first_response.appointment_requested is True
+    assert first_response.show_booking_widget is False
+    assert first_response.relevant_programs == ["emba"]
+
+    second_turn = offline_agent.preprocess_query("online")
+    second_response = offline_agent.agent_query(second_turn.processed_query)
+
+    assert second_response.appointment_requested is True
+    assert second_response.show_booking_widget is False
+    assert second_response.relevant_programs == ["emba"]
+
+    third_turn = offline_agent.preprocess_query("vormittags, anfang der woche")
+    third_response = offline_agent.agent_query(third_turn.processed_query)
+
+    assert third_response.appointment_requested is True
+    assert third_response.show_booking_widget is True
+    assert third_response.relevant_programs == ["emba"]

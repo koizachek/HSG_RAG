@@ -310,6 +310,267 @@ class ExecutiveAgentChain:
         conversation_lower = conversation.lower()
         return any(keyword.lower() in conversation_lower for keyword in handover_keywords)
 
+    def _previous_response_offered_booking(self) -> bool:
+        """Return True if the latest assistant turn offered booking as a next step."""
+        booking_offer_terms = [
+            "appointment slots",
+            "book an appointment",
+            "book a consultation",
+            "appointment booking",
+            "show you available appointments",
+            "show appointment options",
+            "terminbuchung",
+            "termin buchen",
+            "termine anzeigen",
+            "verfügbare termine",
+            "beratungstermin",
+        ]
+
+        for message in reversed(self._conversation_history):
+            if not isinstance(message, AIMessage):
+                continue
+            content = getattr(message, "content", "") or getattr(message, "text", "")
+            if isinstance(content, list):
+                content = " ".join(str(part) for part in content)
+            content_lower = str(content).lower()
+            return any(term in content_lower for term in booking_offer_terms)
+
+        return False
+
+    def _get_latest_ai_message_content(self, skip_latest: bool = False) -> str:
+        """Return the latest assistant message content from conversation history."""
+        ai_messages_seen = 0
+
+        for message in reversed(self._conversation_history):
+            if not isinstance(message, AIMessage):
+                continue
+
+            ai_messages_seen += 1
+            if skip_latest and ai_messages_seen == 1:
+                continue
+
+            content = getattr(message, "content", "") or getattr(message, "text", "")
+            if isinstance(content, list):
+                return " ".join(str(part) for part in content)
+            return str(content)
+
+        return ""
+
+    def _is_booking_preference_follow_up(self, query: str) -> bool:
+        """Detect short follow-up answers that continue an active booking flow."""
+        query_lower = query.lower().strip()
+        if not query_lower:
+            return False
+
+        preference_terms = [
+            "online",
+            "on-site",
+            "onsite",
+            "in person",
+            "in-person",
+            "st.gallen",
+            "st. gallen",
+            "morning",
+            "mornings",
+            "afternoon",
+            "afternoons",
+            "evening",
+            "beginning of the week",
+            "start of the week",
+            "end of the week",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "morgens",
+            "vormittag",
+            "vormittags",
+            "nachmittag",
+            "nachmittags",
+            "abends",
+            "wochenanfang",
+            "anfang der woche",
+            "ende der woche",
+            "montag",
+            "dienstag",
+            "mittwoch",
+            "donnerstag",
+            "freitag",
+            "vor ort",
+            "vor-ort",
+            "persönlich",
+            "persoenlich",
+            "hybrid",
+        ]
+
+        if any(term in query_lower for term in preference_terms):
+            return True
+
+        return False
+
+    def _previous_response_requested_booking_preferences(self) -> bool:
+        """Return True when the previous assistant turn asked clarifying booking questions."""
+        content_lower = self._get_latest_ai_message_content().lower()
+        if not content_lower:
+            return False
+
+        booking_context_terms = [
+            "appointment options",
+            "available appointments",
+            "available slots",
+            "appointment slots",
+            "online-terminoptionen",
+            "terminoptionen",
+            "verfügbare slots",
+            "verfügbare termine",
+            "beratungsgespräch",
+            "beratung",
+        ]
+        clarification_terms = [
+            "do you prefer",
+            "would you prefer",
+            "which programme",
+            "which program",
+            "one short question",
+            "final question",
+            "when i know this",
+            "bitte noch kurz",
+            "eine kurze rückfrage",
+            "eine kurze letzte frage",
+            "bevorzugen sie",
+            "haben sie eine tagespräferenz",
+            "sobald ich das weiss",
+            "damit die slots besser passen",
+        ]
+
+        return (
+            any(term in content_lower for term in booking_context_terms)
+            and any(term in content_lower for term in clarification_terms)
+        )
+
+    def _response_commits_to_showing_booking_widget(self, response: str) -> bool:
+        """Detect when the assistant says booking options are being shown now."""
+        response_lower = response.lower()
+
+        positive_terms = [
+            "i can show you",
+            "contact details and available appointment slots are shown below",
+            "appointment options are shown below",
+            "available slots are shown below",
+            "i can now show you",
+            "ich kann ihnen nun",
+            "ich kann ihnen jetzt",
+            "unten werden ihnen",
+            "unten finden sie",
+            "unten sehen sie",
+            "terminoptionen anzeigen",
+            "verfügbaren slots",
+            "verfügbaren termine",
+        ]
+        defer_terms = [
+            "if you would like",
+            "if you later wish",
+            "you can ask me",
+            "if that would be helpful",
+            "sobald ich das weiss",
+            "wenn ich das weiss",
+            "damit die slots besser passen",
+            "bitte noch kurz",
+            "eine kurze rückfrage",
+            "eine kurze letzte frage",
+            "bevorzugen sie",
+            "have you got a preference",
+            "do you prefer",
+            "would you prefer",
+            "which programme",
+            "which program",
+        ]
+
+        return (
+            any(term in response_lower for term in positive_terms)
+            and not any(term in response_lower for term in defer_terms)
+        )
+
+    def _is_explicit_booking_intent(self, query: str) -> bool:
+        """Detect whether the user is actively asking to book or accepting a booking offer."""
+        query_lower = query.lower()
+        direct_booking_terms = [
+            "book",
+            "schedule",
+            "appointment",
+            "consultation",
+            "need a consultation",
+            "personal consultation",
+            "speak with",
+            "talk to an advisor",
+            "talk to admissions",
+            "connect me",
+            "show me available",
+            "show appointment",
+            "available slots",
+            "termin",
+            "termin buchen",
+            "termin vereinbaren",
+            "beratungstermin",
+            "beratungsgespräch",
+            "ich brauche eine beratung",
+            "ich möchte eine beratung",
+            "ich will eine beratung",
+            "beratung für",
+            "persönliche beratung",
+            "persoenliche beratung",
+            "mit jemandem sprechen",
+            "mit admissions sprechen",
+            "mit der zulassung sprechen",
+            "termine anzeigen",
+            "verfügbare termine",
+        ]
+        rejection_terms = [
+            "do not want",
+            "don't want",
+            "no appointment",
+            "not book",
+            "not schedule",
+            "no thanks",
+            "no thank you",
+            "kein termin",
+            "keinen termin",
+            "keine beratung",
+            "nicht buchen",
+            "nicht vereinbaren",
+            "nein danke",
+        ]
+        acceptance_terms = [
+            "yes",
+            "yes please",
+            "please do",
+            "that would be helpful",
+            "show me",
+            "ja",
+            "ja bitte",
+            "gerne",
+            "bitte",
+            "mach das",
+            "zeige",
+        ]
+
+        def contains_term(term: str) -> bool:
+            if term in {"yes", "ja", "bitte"}:
+                return re.search(rf"\b{re.escape(term)}\b", query_lower) is not None
+            return term in query_lower
+
+        if any(contains_term(term) for term in rejection_terms):
+            return False
+
+        if any(contains_term(term) for term in direct_booking_terms):
+            return True
+
+        return (
+            self._previous_response_offered_booking()
+            and any(contains_term(term) for term in acceptance_terms)
+        )
+
     def _determine_suggested_program(self) -> str | None:
         """Determine recommended program based on user profile."""
         state = self._conversation_state
@@ -375,8 +636,8 @@ class ExecutiveAgentChain:
                 self._conversation_state['user_name'] = name
                 chain_logger.info(f"Extracted name: {name}")
 
-        # Detect handover request
-        if self._detect_handover_request(conversation_text):
+        # Detect handover request from the user only; assistant soft offers should not count.
+        if self._detect_handover_request(user_query):
             self._conversation_state['handover_requested'] = True
             chain_logger.info("Handover request detected")
 
@@ -577,7 +838,8 @@ class ExecutiveAgentChain:
                 response=redirect_msg,
                 language=current_language,
                 processed_query=processed_query,
-                appointment_requested=(should_escalate and escalation_type == "escalate_aggressive"),
+                appointment_requested=False,
+                show_booking_widget=False,
             )
 
         # Response = None indicates that agent needs to answer the processed query
@@ -597,6 +859,12 @@ class ExecutiveAgentChain:
         self._scope_violation_counts = {}
         
         response_language = self._stored_language
+        explicit_booking_intent = self._is_explicit_booking_intent(preprocessed_query)
+        booking_preference_follow_up = (
+            self._conversation_state.get('handover_requested') is True
+            and self._previous_response_requested_booking_preferences()
+            and self._is_booking_preference_follow_up(preprocessed_query)
+        )
        
         # 1. History Update 
         self._conversation_history.append(HumanMessage(preprocessed_query))
@@ -612,6 +880,7 @@ class ExecutiveAgentChain:
         agent_response = structured_response.response
         chain_logger.info(f"Is answer context dependent: {structured_response.is_context_dependent}")
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
+        chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
         # 4. Formatting
@@ -649,14 +918,28 @@ class ExecutiveAgentChain:
                 self._log_user_profile()
 
         formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
+        booking_flow_requested = explicit_booking_intent or booking_preference_follow_up
+        appointment_requested = bool(booking_flow_requested)
+        show_booking_widget = bool(
+            booking_flow_requested and (
+                structured_response.show_booking_widget
+                or self._response_commits_to_showing_booking_widget(formatted_response)
+            )
+        )
+
+        if structured_response.appointment_requested and not booking_flow_requested:
+            chain_logger.info("Suppressed booking state because no user-led booking intent was detected.")
+        elif booking_preference_follow_up and show_booking_widget:
+            chain_logger.info("Continuing active booking flow and showing booking widget for a preference follow-up.")
         
         return LeadAgentQueryResponse(
             response = formatted_response,
             language = response_language,
             confidence_fallback = confidence_fallback,
-            should_cache = False if (confidence_fallback or structured_response.appointment_requested or structured_response.is_context_dependent) else True,
+            should_cache = False if (confidence_fallback or appointment_requested or structured_response.is_context_dependent) else True,
             processed_query = preprocessed_query,
-            appointment_requested = structured_response.appointment_requested,
+            appointment_requested = appointment_requested,
+            show_booking_widget = show_booking_widget,
             relevant_programs = structured_response.relevant_programs
         )
 

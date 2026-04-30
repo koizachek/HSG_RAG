@@ -278,6 +278,7 @@ class ChatbotApplication:
                             response=cached_data["response"],
                             language=current_lang,
                             appointment_requested=cached_data.get("appointment_requested", False),
+                            show_booking_widget=cached_data.get("show_booking_widget", False),
                             relevant_programs=cached_data.get("relevant_programs", []),
                         )
                     else:
@@ -294,7 +295,7 @@ class ChatbotApplication:
             answers.append(final_response.response)
             self._language = final_response.language
 
-            if final_response.confidence_fallback or final_response.max_turns_reached or final_response.appointment_requested:
+            if final_response.show_booking_widget:
                 html_code = get_booking_widget(language=self._language, programs=final_response.relevant_programs)
                 answers.append(gr.HTML(value=html_code))
 
@@ -305,6 +306,7 @@ class ChatbotApplication:
                     value={
                         "response": final_response.response,
                         "appointment_requested": final_response.appointment_requested,
+                        "show_booking_widget": final_response.show_booking_widget,
                         "relevant_programs": final_response.relevant_programs,
                     },
                     language=current_lang
