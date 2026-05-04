@@ -12,17 +12,19 @@ logger = get_logger("scope_guardian")
 class ScopeGuardian:
     """Guards conversation scope and provides appropriate redirections"""
     
-    # Keywords indicating off-topic queries
+    # Keywords indicating off-topic queries.
+    # Healthcare/medical terms are intentionally NOT listed — clinicians and
+    # hospital leaders are a primary target audience for executive education.
     OFF_TOPIC_KEYWORDS = {
         'en': [
             'weather', 'sports', 'politics', 'vacation', 'travel',
             'restaurant', 'movie', 'entertainment', 'news', 'dating',
-            'health', 'medical', 'recipe', 'cooking'
+            'recipe', 'cooking'
         ],
         'de': [
             'wetter', 'sport', 'politik', 'urlaub', 'reise',
             'restaurant', 'film', 'unterhaltung', 'nachrichten',
-            'gesundheit', 'medizin', 'rezept', 'kochen'
+            'rezept', 'kochen'
         ]
     }
     
@@ -49,43 +51,54 @@ class ScopeGuardian:
     ]
     
     @staticmethod
+    def _matches_any(message_lower: str, keywords: list[str]) -> bool:
+        """
+        Match each keyword as a whole token or whole phrase against the message.
+        Single-word keywords match on word boundaries; multi-word keywords match
+        the full phrase. This avoids the previous bug where 'payment plan' was
+        split into ['payment', 'plan'] and matched if either word appeared
+        anywhere in the message.
+        """
+        for keyword in keywords:
+            pattern = rf'\b{re.escape(keyword.lower())}\b'
+            if re.search(pattern, message_lower):
+                return True
+        return False
+
+    @staticmethod
     def check_scope(message: str, language: str = 'en') -> str:
         """
         Check if message is within scope.
-        
+
         Args:
             message: User message
             language: 'en' or 'de'
-            
+
         Returns:
             'on_topic' | 'off_topic' | 'financial_planning' | 'aggressive'
         """
         message_lower = message.lower()
-        words_list = message_lower.split()
-        
-        # Check for aggressive behavior
-        if any(word in words_list for keyword in ScopeGuardian.AGGRESSIVE_KEYWORDS for word in keyword.split()):
-            logger.warning(f"Detected aggressive language in message")
+
+        if ScopeGuardian._matches_any(message_lower, ScopeGuardian.AGGRESSIVE_KEYWORDS):
+            logger.warning("Detected aggressive language in message")
             return 'aggressive'
-        
-        # Check for off-topic
+
         off_topic_keywords = (
-            ScopeGuardian.OFF_TOPIC_KEYWORDS.get('en', []) +
-            ScopeGuardian.OFF_TOPIC_KEYWORDS.get('de', [])
+            ScopeGuardian.OFF_TOPIC_KEYWORDS.get('en', [])
+            + ScopeGuardian.OFF_TOPIC_KEYWORDS.get('de', [])
         )
-        if any(word in words_list for keyword in off_topic_keywords for word in keyword.split()):
-            logger.info(f"Detected off-topic query")
+        if ScopeGuardian._matches_any(message_lower, off_topic_keywords):
+            logger.info("Detected off-topic query")
             return 'off_topic'
-        
-        # Check for financial planning
+
         financial_keywords = (
-            ScopeGuardian.FINANCIAL_KEYWORDS.get('en', []) +
-            ScopeGuardian.FINANCIAL_KEYWORDS.get('de', [])
+            ScopeGuardian.FINANCIAL_KEYWORDS.get('en', [])
+            + ScopeGuardian.FINANCIAL_KEYWORDS.get('de', [])
         )
-        if any(word in words_list for keyword in financial_keywords for word in keyword.split()):
-            logger.info(f"Detected financial planning query")
+        if ScopeGuardian._matches_any(message_lower, financial_keywords):
+            logger.info("Detected financial planning query")
             return 'financial_planning'
-        
+
         return 'on_topic'
     
     @staticmethod
