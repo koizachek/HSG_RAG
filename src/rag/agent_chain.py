@@ -944,7 +944,29 @@ class ExecutiveAgentChain:
                 self._log_user_profile()
 
         formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
-        booking_flow_requested = explicit_booking_intent or booking_preference_follow_up
+
+        # Proactive booking offer.
+        # When the lead model signals booking readiness AND the assessment chain
+        # has identified a clear programme match, the booking widget is shown
+        # without waiting for an explicit "book"/"appointment" word from the user.
+        # The match comes from the existing profile-based assessment
+        # (suggested_program, set by _update_conversation_state above) or from
+        # relevant_programs returned by the lead model. Without this gate, the
+        # earlier user-led-only logic meant the widget effectively never fired.
+        clear_programme_match = (
+            self._conversation_state.get('suggested_program') is not None
+            or bool(structured_response.relevant_programs)
+        )
+        proactive_booking_offer = (
+            clear_programme_match
+            and structured_response.show_booking_widget
+        )
+
+        booking_flow_requested = (
+            explicit_booking_intent
+            or booking_preference_follow_up
+            or proactive_booking_offer
+        )
         appointment_requested = bool(booking_flow_requested)
         show_booking_widget = bool(
             booking_flow_requested and (
@@ -953,8 +975,14 @@ class ExecutiveAgentChain:
             )
         )
 
-        if structured_response.appointment_requested and not booking_flow_requested:
-            chain_logger.info("Suppressed booking state because no user-led booking intent was detected.")
+        if proactive_booking_offer and not (explicit_booking_intent or booking_preference_follow_up):
+            chain_logger.info(
+                "Proactive booking offer triggered "
+                f"(suggested_program={self._conversation_state.get('suggested_program')}, "
+                f"relevant_programs={structured_response.relevant_programs})"
+            )
+        elif structured_response.appointment_requested and not booking_flow_requested:
+            chain_logger.info("Suppressed booking state because no programme match or booking intent was detected.")
         elif booking_preference_follow_up and show_booking_widget:
             chain_logger.info("Continuing active booking flow and showing booking widget for a preference follow-up.")
         
