@@ -225,9 +225,10 @@ class Scraper:
         if len(discovered_urls) == 0:
             return UrlAnalysisReport([], [])
 
-        documents    = []
-        discoveries  = discovered_urls.copy()
-        visited_urls = set(sitemap_urls.copy())
+        documents     = []
+        discoveries   = discovered_urls.copy()
+        visited_urls  = set(sitemap_urls.copy())
+        rejected_urls = []
 
         discovered_urls = [{'url': url, 'depth': 0} for url in discovered_urls]
         logger.info(f"Starting validation and scraping for discovered URLs...")
@@ -238,7 +239,10 @@ class Scraper:
             result = self._scrape_page(url, domain.delay, visited_urls, discovery_depth=discovered_url['depth'])
             visited_urls.add(url)
 
-            if not result: continue
+            if result.status != ScrapingStatus.OK:
+                if result.status == ScrapingStatus.REJECTED:
+                    rejected_urls.append(url)
+                continue
 
             final_url = result.final_url
             documents.append(result.document)
@@ -249,6 +253,17 @@ class Scraper:
 
             for new_url in self._normalizer.filter_discovered_urls(result.discovered_urls, visited_urls, domain.target):
                 discovered_urls.append({'url': new_url, 'depth': result.discovery_depth})
+        
+        if len(rejected_urls) > len(visited_urls)*0.1:
+            rejection_rate = len(rejected_urls)/len(visited_urls)
+            logger.warning(f"Rejection rate is {rejection_rate}")
+            self._notif_center.send_notification(
+                subject = "⚠  WARNING: Scraping rejection rate is >10%!",
+                body    = f"Rejection rate: {int(rejection_rate*100)}%\n" +
+                          f"Failed to scrape following URLs for target domain {domain.target}:\n" +
+                          "\n".join([f"\t- {url}" for url in rejected_urls]),
+                channel = "slack",
+            ) 
 
         return UrlAnalysisReport(
             documents       = documents,
