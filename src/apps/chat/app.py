@@ -89,6 +89,7 @@ class ChatbotApplication:
                         message=msg, history=history, agent=agent
                     ),
                     additional_inputs=[agent_state],
+                    additional_outputs=[agent_state],
                     title="Executive Education Adviser",
                 )
             
@@ -291,7 +292,7 @@ class ChatbotApplication:
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
         if agent is None:
             logger.error("Agent not initialized")
-            return ["I apologize, but the chatbot is not properly initialized."]
+            return ["I apologize, but the chatbot is not properly initialized."], agent
 
         answers = []
         try:
@@ -311,7 +312,7 @@ class ChatbotApplication:
             )
             answers.append(error_message)
 
-        return answers
+        return answers, agent
 
 
     def run(self):

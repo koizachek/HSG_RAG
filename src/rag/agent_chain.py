@@ -22,7 +22,10 @@ from src.database.weavservice import WeaviateService
 
 from src.rag.utilclasses import *
 from src.const.agent_response_constants import *
-from src.rag.middleware import AgentChainMiddleware as chainmdw
+from src.rag.middleware import (
+    AgentChainMiddleware as chainmdw,
+    ContextRetrievalError,
+)
 from src.rag.prompts import PromptConfigurator as promptconf
 from src.rag.models import ModelConfigurator as modelconf
 from src.rag.input_handler import InputHandler
@@ -47,6 +50,8 @@ class ExecutiveAgentChain:
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
         self._conversation_history = [] 
+        self._pending_continuation: str | None = None
+        self._programme_overview_detail_level = 0
         self._cache = Cache.get_cache()
 
         # Confidence scoring is intentionally disabled here because the extra
@@ -81,6 +86,35 @@ class ExecutiveAgentChain:
         self._aggressive_violation_count = 0
 
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
+
+    @staticmethod
+    def _subagent_retrieval_fallback(program: str) -> str:
+        fallback_by_program = {
+            'emba': (
+                "Die Kontextdatenbank ist momentan nicht verfuegbar, daher kann ich keine "
+                "aktuellen Rankings oder Alumni-Fakten nachladen. Verlaesslich fest hinterlegt "
+                "sind fuer den **EMBA HSG**: deutschsprachig, berufsbegleitend, **18 Monate** "
+                "(verlaengerbar bis 48 Monate), Start **14. September 2026**, "
+                "**CHF 77'500** Studiengebuehren und ein klarer Fokus auf General Management, "
+                "Leadership und den DACH-Raum."
+            ),
+            'iemba': (
+                "Die Kontextdatenbank ist momentan nicht verfuegbar, daher kann ich keine "
+                "aktuellen Rankings oder Alumni-Fakten nachladen. Verlaesslich fest hinterlegt "
+                "sind fuer den **IEMBA HSG**: englischsprachig, berufsbegleitend, "
+                "**18 Monate**, Start **24. August 2026**, internationaler Fokus und "
+                "**CHF 85'000** Studiengebuehren."
+            ),
+            'embax': (
+                "Die Kontextdatenbank ist momentan nicht verfuegbar, daher kann ich keine "
+                "aktuellen Rankings oder Alumni-Fakten nachladen. Verlaesslich fest hinterlegt "
+                "sind fuer **emba X**: englischsprachig, berufsbegleitend, Fokus auf Business, "
+                "Technologie und Transformation, Start **31. August 2026** und "
+                "Studiengebuehren von **CHF 99'000** bis zur ersten Bewerbungsfrist "
+                "beziehungsweise **CHF 110'000** bis zur finalen Frist."
+            ),
+        }
+        return fallback_by_program[program]
 
     def _retrieve_context(self, query: str, program: str, language: str = None):
         """
@@ -120,6 +154,9 @@ class ExecutiveAgentChain:
                 thread_id=f"emba_{hash(query)}",
             )
             return structured_response.response
+        except ContextRetrievalError as e:
+            chain_logger.error(f"EMBA retrieval error: {e}")
+            return self._subagent_retrieval_fallback('emba')
         except Exception as e:
             chain_logger.error(f"EMBA Agent error: {e}")
             raise RuntimeError("Unable to retrieve EMBA information at this time.")
@@ -138,6 +175,9 @@ class ExecutiveAgentChain:
                 thread_id=f"emba_{hash(query)}",
             )
             return structured_response.response
+        except ContextRetrievalError as e:
+            chain_logger.error(f"IEMBA retrieval error: {e}")
+            return self._subagent_retrieval_fallback('iemba')
         except Exception as e:
             chain_logger.error(f"IEMBA Agent error: {e}")
             raise RuntimeError("Unable to retrieve IEMBA information at this time.")
@@ -156,6 +196,9 @@ class ExecutiveAgentChain:
                 thread_id=f"emba_{hash(query)}",
             )
             return structured_response.response
+        except ContextRetrievalError as e:
+            chain_logger.error(f"emba X retrieval error: {e}")
+            return self._subagent_retrieval_fallback('embax')
         except Exception as e:
             chain_logger.error(f"emba X Agent error: {e}")
             raise RuntimeError("Unable to retrieve emba X information at this time.")
@@ -701,6 +744,8 @@ class ExecutiveAgentChain:
 
         # --- 1) In-memory wipe ---
         self._conversation_history = []
+        self._pending_continuation = None
+        self._programme_overview_detail_level = 0
         self._conversation_state.update({
             'user_language': None,
             'user_name': None,
@@ -813,6 +858,37 @@ class ExecutiveAgentChain:
                         processed_query=processed_query
                     )
 
+        if (
+            self._is_continuation_request(processed_query)
+            and self._latest_ai_mentions_multiple_programmes()
+        ):
+            return self._serve_programme_overview(
+                processed_query=processed_query,
+                response_language=current_language,
+                detailed=True,
+            )
+
+        if (
+            self._latest_ai_mentions_multiple_programmes()
+            and self._is_profile_context_update(processed_query)
+            and not self._query_mentions_specific_programme(processed_query)
+        ):
+            return self._serve_programme_overview(
+                processed_query=processed_query,
+                response_language=current_language,
+                detailed=False,
+            )
+
+        if self._pending_continuation and self._is_continuation_request(processed_query):
+            return self._serve_pending_continuation(
+                processed_query=processed_query,
+                response_language=current_language,
+            )
+
+        if self._pending_continuation:
+            chain_logger.info("Discarding pending continuation because the user started a new request.")
+            self._pending_continuation = None
+
         # 4. Scope Check
         scope_type = ScopeGuardian.check_scope(processed_query, current_language)
 
@@ -843,6 +919,13 @@ class ExecutiveAgentChain:
                 processed_query=processed_query,
                 appointment_requested=False,
                 show_booking_widget=False,
+            )
+
+        if self._is_general_mba_overview_request(processed_query):
+            return self._serve_programme_overview(
+                processed_query=processed_query,
+                response_language=current_language,
+                detailed=False,
             )
         
         # 5. Check if cached data already exists for this session 
@@ -910,13 +993,27 @@ class ExecutiveAgentChain:
         chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
+        # Keep the complete answer in internal memory even when the UI only
+        # shows the first chunk. Otherwise follow-up turns only "remember" the
+        # truncated version and tend to repeat themselves.
+        full_response = ResponseFormatter.clean_response(
+            ResponseFormatter.remove_tables(agent_response)
+        )
+
         # 4. Formatting
-        if config.chain.ENABLE_RESPONSE_CHUNKING:
-            formatted_response = ResponseFormatter.format_response(
-                agent_response, agent_type='lead', enable_chunking=True, language=response_language
+        if (
+            config.chain.ENABLE_RESPONSE_CHUNKING
+            and not self._text_mentions_multiple_programmes(full_response)
+        ):
+            formatted_response, continuation = ResponseFormatter.chunk_response(
+                full_response,
+                config.chain.MAX_RESPONSE_WORDS_LEAD,
+                response_language,
             )
+            self._pending_continuation = continuation
         else:
-            formatted_response = ResponseFormatter.remove_tables(agent_response)
+            formatted_response = full_response
+            self._pending_continuation = None
 
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
@@ -932,18 +1029,26 @@ class ExecutiveAgentChain:
         #         formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
         #         chain_logger.info("Fallback Mechanism activated!")
 
-        # Add to history
-        self._conversation_history.append(AIMessage(formatted_response))
+        history_response = ResponseFormatter.format_name_of_university(
+            full_response,
+            language=response_language,
+        )
+
+        # Add the full answer to internal history, not the visible chunk.
+        self._conversation_history.append(AIMessage(history_response))
 
         # 6. Profiling
         if config.convstate.TRACK_USER_PROFILE:
-            self._update_conversation_state(preprocessed_query, formatted_response)
+            self._update_conversation_state(preprocessed_query, history_response)
             
             message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
             if message_count % 5 == 0 or self._conversation_state.get('suggested_program'):
                 self._log_user_profile()
 
-        formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
+        formatted_response = ResponseFormatter.format_name_of_university(
+            formatted_response,
+            language=response_language,
+        )
 
         # Proactive booking offer.
         # When the lead model signals booking readiness AND the assessment chain
@@ -995,6 +1100,273 @@ class ExecutiveAgentChain:
             appointment_requested = appointment_requested,
             show_booking_widget = show_booking_widget,
             relevant_programs = structured_response.relevant_programs
+        )
+
+    def _is_continuation_request(self, query: str) -> bool:
+        normalized = re.sub(r"[.!?,;:]", " ", query.lower()).strip()
+        normalized = re.sub(r"\s+", " ", normalized)
+        continuation_terms = {
+            "ja",
+            "ja bitte",
+            "bitte",
+            "gerne",
+            "weiter",
+            "bitte weiter",
+            "mehr",
+            "mehr details",
+            "mehr details bitte",
+            "ja mehr details",
+            "noch mehr",
+            "fortfahren",
+            "weiter bitte",
+            "and",
+            "and more",
+            "continue",
+            "continue please",
+            "more",
+            "more details",
+            "more details please",
+        }
+        return normalized in continuation_terms
+
+    def _query_mentions_specific_programme(self, query: str) -> bool:
+        query_lower = query.lower()
+        return any(
+            term in query_lower
+            for term in [
+                "emba hsg",
+                "international emba",
+                "iemba",
+                "emba x",
+                "embax",
+            ]
+        )
+
+    def _is_general_mba_overview_request(self, query: str) -> bool:
+        query_lower = query.lower()
+        if self._query_mentions_specific_programme(query_lower):
+            return False
+
+        general_mba_terms = [
+            "mba",
+            "executive mba",
+            "weiterbildungs-mba",
+            "weiterbildungsmba",
+        ]
+        discovery_terms = [
+            "interessiere",
+            "interested",
+            "welche",
+            "which",
+            "option",
+            "programm",
+            "program",
+            "passt",
+            "fit",
+            "geeignet",
+            "empfehlen",
+            "recommend",
+        ]
+        return (
+            any(term in query_lower for term in general_mba_terms)
+            and any(term in query_lower for term in discovery_terms)
+        )
+
+    def _is_profile_context_update(self, query: str) -> bool:
+        query_lower = query.lower()
+        profile_terms = [
+            "jahre",
+            "years",
+            "chefarzt",
+            "chief physician",
+            "arzt",
+            "doctor",
+            "leadership",
+            "führung",
+            "fuehrung",
+            "leiter",
+            "leitung",
+            "manager",
+            "experience",
+            "erfahrung",
+            "berufserfahrung",
+        ]
+        return any(term in query_lower for term in profile_terms)
+
+    def _text_mentions_multiple_programmes(self, text: str) -> bool:
+        text_lower = text.lower()
+        if not text_lower:
+            return False
+
+        programme_mentions = [
+            "emba hsg" in text_lower or "deutschsprachig" in text_lower,
+            "iemba" in text_lower or "international emba" in text_lower,
+            "emba x" in text_lower or "embax" in text_lower,
+        ]
+        return sum(programme_mentions) >= 2
+
+    def _latest_ai_mentions_multiple_programmes(self) -> bool:
+        return self._text_mentions_multiple_programmes(
+            self._get_latest_ai_message_content()
+        )
+
+    def _build_programme_overview_response(self, language: str, detailed: bool) -> str:
+        if language == 'en':
+            if not detailed:
+                return (
+                    "Your profile mainly clarifies the admissions level: with substantial medical leadership experience, "
+                    "the Executive MBA options are broadly plausible. The programme choice should now be based on goals, "
+                    "not on an automatic classification.\n\n"
+                    "1. **EMBA HSG**: German-speaking, DACH-focused general management programme. It is part-time, "
+                    "**18 months** long, extendable up to **48 months**, with **9 core courses**, **5 electives**, "
+                    "about **14 campus weeks**, a capstone project, and **CHF 77,500** tuition. It fits leaders who "
+                    "want stronger strategy, finance, organisation, and leadership capability in the German-speaking market.\n\n"
+                    "2. **IEMBA HSG**: English-speaking international Executive MBA. It is part-time, **18 months** long, "
+                    "with **10 core courses**, **4 electives**, **10 campus weeks**, **4 weeks abroad**, a thesis, and "
+                    "**CHF 85,000** tuition. It fits leaders who want global exposure, international peer learning, and "
+                    "management confidence beyond one national healthcare system.\n\n"
+                    "3. **emba X**: English-speaking joint degree from **ETH Zurich** and the **University of St.Gallen**. "
+                    "It is part-time, **18 months**, blended across Zurich and St.Gallen, with a strong focus on business, "
+                    "technology, innovation, transformation, and **CHF 99,000 / CHF 110,000** tuition depending on the "
+                    "application deadline. It fits leaders driving digital transformation, MedTech, Health-IT, or innovation."
+                )
+
+            if self._programme_overview_detail_level <= 1:
+                return (
+                    "More detail across all three programmes:\n\n"
+                    "**EMBA HSG** aims to strengthen broad general-management judgement for leaders in the DACH context. "
+                    "For a hospital leader, the practical value is strategy, finance, governance, organisation design, "
+                    "negotiation, and change leadership in German-speaking healthcare organisations. The capstone project "
+                    "can be tied to a real clinic or hospital transformation topic.\n\n"
+                    "**IEMBA HSG** aims to build international management perspective. The value is not only the English "
+                    "language; it is the global cohort and modules across different regions. For healthcare leadership, "
+                    "that is useful when you work with international partners, global health organisations, industry, "
+                    "research networks, or cross-border clinical initiatives.\n\n"
+                    "**emba X** aims at leadership where business and technology meet. It is the most relevant option if "
+                    "your goals include digital transformation, MedTech, Health-IT, AI-enabled processes, innovation, or "
+                    "large organisational change. Its distinctive feature is the integrated **ETH Zurich** plus "
+                    "**University of St.Gallen** joint-degree setting and access to both alumni networks."
+                )
+
+            return (
+                "The next useful distinction is by goals and working context:\n\n"
+                "- Choose **EMBA HSG** if your main goal is stronger economic and organisational steering of a hospital "
+                "in the DACH environment: budgeting, governance, leadership, negotiation, and operational change.\n"
+                "- Choose **IEMBA HSG** if your main goal is international exposure: learning with a global cohort, "
+                "working across health systems, and building confidence for international partnerships or organisations.\n"
+                "- Choose **emba X** if your main goal is transformation through technology: digital care pathways, "
+                "MedTech collaboration, innovation portfolios, data/AI initiatives, or culture change around new tools.\n\n"
+                "For a senior medical leadership role, all three can be plausible. The deciding factor is whether your next "
+                "development goal is DACH management depth, international management breadth, or technology-led transformation."
+            )
+
+        if not detailed:
+            return (
+                "Das Profil klärt vor allem die Zulassungsebene: Mit langjähriger ärztlicher Führungsverantwortung sind "
+                "die Executive-MBA-Optionen grundsätzlich plausibel. Die Programmwahl sollte jetzt über Ihre Ziele laufen, "
+                "nicht über eine automatische Einordnung.\n\n"
+                "1. **EMBA HSG**: deutschsprachig, DACH-Fokus, General Management und Leadership. Das Programm ist "
+                "berufsbegleitend, dauert **18 Monate** und kann auf **48 Monate** verlängert werden. Es umfasst "
+                "**9 Kernkurse**, **5 Wahlfächer**, rund **14 Präsenzwochen** und ein Capstone-Projekt. Studiengebühr: "
+                "**CHF 77'500**. Ziel: Management-, Finanz-, Strategie- und Führungskompetenz im deutschsprachigen Kontext stärken.\n\n"
+                "2. **IEMBA HSG**: englischsprachig, international ausgerichtet. Das Programm ist berufsbegleitend, "
+                "**18 Monate** lang, mit **10 Kernkursen**, **4 Wahlkursen**, **10 Präsenzwochen**, **4 Wochen Auslandsmodule** "
+                "und Thesis. Studiengebühr: **CHF 85'000**. Ziel: internationale Managementperspektive, globale Peer Group "
+                "und Führung über verschiedene Märkte und Systeme hinweg.\n\n"
+                "3. **emba X**: englischsprachiges Joint Degree von **ETH Zürich** und **Universität St.Gallen**. "
+                "Berufsbegleitend, **18 Monate**, blended in Zürich und St.Gallen, mit Fokus auf Business, Technologie, "
+                "Innovation und Transformation. Studiengebühr: **CHF 99'000 / CHF 110'000** je nach Bewerbungsfrist. "
+                "Ziel: Führung an der Schnittstelle von Management, Technologie und Veränderung."
+            )
+
+        if self._programme_overview_detail_level <= 1:
+            return (
+                "Weitere Details zu **allen drei Programmen**, ohne Sie vorschnell auf eines festzulegen:\n\n"
+                "**EMBA HSG** zielt auf breite General-Management-Kompetenz im DACH-Raum. Für eine Chefarzt-Rolle ist das "
+                "relevant, wenn Sie Strategie, Finanzen, Governance, Organisation, Verhandlung und Change Management in "
+                "einer Klinik oder einem Spital stärken wollen. Das Capstone-Projekt kann direkt auf ein reales "
+                "Klinikthema ausgerichtet werden, etwa Prozessoptimierung, Ressourcensteuerung oder Organisationsentwicklung.\n\n"
+                "**IEMBA HSG** zielt auf internationale Managementkompetenz. Der Mehrwert liegt in der englischsprachigen "
+                "globalen Kohorte und den internationalen Modulen. Für das Gesundheitswesen ist das besonders sinnvoll, "
+                "wenn Sie mit internationalen Partnern, globalen Gesundheitsorganisationen, Industrie, Forschung oder "
+                "grenzüberschreitenden Versorgungsfragen arbeiten.\n\n"
+                "**emba X** zielt auf Führung an der Schnittstelle von Business und Technologie. Das ist besonders relevant, "
+                "wenn Ihre Ziele Digitalisierung, MedTech, Health-IT, datengetriebene Prozesse, Innovation oder grosse "
+                "Transformationsprojekte im Spital betreffen. Der besondere Punkt ist die Kombination aus **ETH Zürich** "
+                "und **Universität St.Gallen** sowie der Zugang zu beiden Netzwerken."
+            )
+
+        return (
+            "Die nächste sinnvolle Unterscheidung läuft über Ziele und Arbeitskontext:\n\n"
+            "- **EMBA HSG** passt am besten, wenn Sie Ihre ökonomische, organisatorische und strategische Steuerung im "
+            "deutschsprachigen Spitalumfeld vertiefen wollen: Budget, Governance, Personalführung, Verhandlung, Change.\n"
+            "- **IEMBA HSG** passt am besten, wenn Sie internationaler arbeiten möchten: Vergleich von Märkten und "
+            "Organisationen, globale Peer Group, internationale Kooperationen, Industrie- oder Forschungspartner.\n"
+            "- **emba X** passt am besten, wenn Technologie und Transformation im Zentrum stehen: digitale Patientenpfade, "
+            "MedTech, Health-IT, Daten-/AI-Projekte, Innovationsportfolios oder kultureller Wandel im Spital.\n\n"
+            "Für eine Chefarzt-Rolle sind alle drei plausibel. Ausschlaggebend ist, ob Ihr nächster Entwicklungsschwerpunkt "
+            "DACH-Management, Internationalität oder technologiegetriebene Transformation ist."
+        )
+
+    def _serve_programme_overview(
+        self,
+        processed_query: str,
+        response_language: str,
+        detailed: bool,
+    ) -> LeadAgentQueryResponse:
+        chain_logger.info("Serving deterministic three-programme overview without a model call.")
+        response = self._build_programme_overview_response(response_language, detailed=detailed)
+        response = ResponseFormatter.format_name_of_university(response, language=response_language)
+        response = ResponseFormatter.clean_response(response)
+
+        self._pending_continuation = None
+        self._programme_overview_detail_level = (
+            max(2, self._programme_overview_detail_level + 1)
+            if detailed
+            else 1
+        )
+        self._conversation_history.append(HumanMessage(processed_query))
+        self._conversation_history.append(AIMessage(response))
+
+        return LeadAgentQueryResponse(
+            response=response,
+            language=response_language,
+            confidence_fallback=False,
+            should_cache=False,
+            processed_query=processed_query,
+            appointment_requested=False,
+            show_booking_widget=False,
+            relevant_programs=["emba", "iemba", "emba_x"],
+        )
+
+    def _serve_pending_continuation(
+        self,
+        processed_query: str,
+        response_language: str,
+    ) -> LeadAgentQueryResponse:
+        chain_logger.info("Serving pending continuation without a new model call.")
+
+        formatted_response, continuation = ResponseFormatter.chunk_response(
+            self._pending_continuation or "",
+            config.chain.MAX_RESPONSE_WORDS_LEAD,
+            response_language,
+        )
+        self._pending_continuation = continuation
+        formatted_response = ResponseFormatter.clean_response(formatted_response)
+        formatted_response = ResponseFormatter.format_name_of_university(
+            formatted_response,
+            language=response_language,
+        )
+
+        return LeadAgentQueryResponse(
+            response=formatted_response,
+            language=response_language,
+            confidence_fallback=False,
+            should_cache=False,
+            processed_query=processed_query,
+            appointment_requested=False,
+            show_booking_widget=False,
+            relevant_programs=[],
         )
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:

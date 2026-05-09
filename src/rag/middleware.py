@@ -24,6 +24,9 @@ from src.utils.logging import get_logger
 model_logger = get_logger('chain_model_call')
 tool_logger  = get_logger('chain_tool_call')
 
+class ContextRetrievalError(RuntimeError):
+    pass
+
 class AgentChainMiddleware:
     _tool_wrapper_middleware = None 
     _model_wrapper_middleware = None
@@ -121,6 +124,9 @@ class AgentChainMiddleware:
             return response       
         except Exception as e:
             tool_logger.error(f"Failed to use tool {tool_call['name']} with id {tool_call['id']}")
+            if tool_call['name'] == 'retrieve_context':
+                raise ContextRetrievalError(str(e)) from e
+
             artifact = {
                 'error_type': type(e).__name__,
                 'error_message': str(e),

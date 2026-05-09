@@ -8,12 +8,11 @@ Tests cover:
 - Edge cases: numeric input, mixed language, off-topic, aggressive
 """
 import pytest
+from langchain_core.messages import AIMessage, HumanMessage
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.input_handler import InputHandler
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
-
-
 class TestInputHandling:
     """Test numeric input interpretation"""
     
@@ -95,6 +94,79 @@ Here are the programs:
         
         assert continuation is None
         assert chunked == short_text
+
+    def test_pending_continuation_is_served_without_new_agent_call(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._pending_continuation = " ".join(["detail"] * 140)
+
+        response = agent._serve_pending_continuation(
+            processed_query="ja, mehr details.",
+            response_language="de",
+        )
+
+        assert response.language == "de"
+        assert "Möchten Sie, dass ich mit weiteren Details fortfahre?" in response.response
+        assert agent._pending_continuation is not None
+        assert agent._conversation_history == []
+
+    def test_continuation_request_handles_punctuation(self):
+        agent = object.__new__(ExecutiveAgentChain)
+
+        assert agent._is_continuation_request("ja, mehr details. ")
+
+    def test_programme_overview_covers_all_three_without_chunk_prompt(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._pending_continuation = None
+        agent._programme_overview_detail_level = 0
+
+        response = agent._serve_programme_overview(
+            processed_query="ich interessiere mich für einen MBA",
+            response_language="de",
+            detailed=False,
+        )
+
+        assert "EMBA HSG" in response.response
+        assert "IEMBA HSG" in response.response
+        assert "emba X" in response.response
+        assert "Programmwahl sollte jetzt über Ihre Ziele laufen" in response.response
+        assert "Möchten Sie, dass ich mit weiteren Details fortfahre?" not in response.response
+        assert response.relevant_programs == ["emba", "iemba", "emba_x"]
+        assert isinstance(agent._conversation_history[0], HumanMessage)
+        assert isinstance(agent._conversation_history[1], AIMessage)
+
+    def test_profile_context_update_after_overview_is_not_single_programme_diagnosis(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("EMBA HSG, IEMBA HSG und emba X sind relevant.")
+        ]
+
+        assert agent._latest_ai_mentions_multiple_programmes()
+        assert agent._is_profile_context_update("10 jahre chefarzt, 5 jahre leadership")
+        assert not agent._query_mentions_specific_programme("10 jahre chefarzt, 5 jahre leadership")
+
+    def test_more_details_after_programme_overview_keeps_all_programmes(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("EMBA HSG, IEMBA HSG und emba X sind relevant.")
+        ]
+        agent._pending_continuation = None
+        agent._programme_overview_detail_level = 1
+
+        assert agent._latest_ai_mentions_multiple_programmes()
+
+        response = agent._serve_programme_overview(
+            processed_query="mehr details",
+            response_language="de",
+            detailed=True,
+        )
+
+        assert "EMBA HSG" in response.response
+        assert "IEMBA HSG" in response.response
+        assert "emba X" in response.response
+        assert "vorzeitig" not in response.response.lower()
+        assert "Möchten Sie, dass ich mit weiteren Details fortfahre?" not in response.response
 
 
 class TestScopeGuardian:
