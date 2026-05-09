@@ -73,15 +73,19 @@ class ModelConfigurator:
     def get_subagent_model(cls) -> BaseChatModel:
         if cls._subagent_model_instance:
             return cls._subagent_model_instance
-        
-        from langchain_openai import ChatOpenAI
-        cls._subagent_model_instance = ChatOpenAI(
-            model='gpt-5.1-instant',
-            openai_api_key=config.llm.get_api_key(),
-            max_tokens=3072,
-            temperature=0.01,
-            timeout=60,
-            request_timeout=60,
+
+        subagent_provider = config.llm.LLM_PROVIDER
+        subagent_model = (
+            'gpt-5-mini'
+            if subagent_provider.base == 'openai'
+            else config.llm.get_default_model(subagent_provider)
+        )
+        cls._subagent_model_instance = cls._initialize_model(
+            provider=subagent_provider,
+            model=subagent_model,
+        )
+        logger.info(
+            f"Initialized subagent model '{subagent_provider.name}:{subagent_model}'"
         )
         return cls._subagent_model_instance
 
@@ -118,7 +122,7 @@ class ModelConfigurator:
     @classmethod
     def _initialize_fallback_models(cls) -> list[BaseChatModel]:
         fallback_models_instances = []
-        for fallback_provider, fallback_model in config.llm.get_fallback_models().items():
+        for fallback_provider, fallback_model in config.llm.get_fallback_models():
             try:
                 fallback_model_instance = cls._initialize_model(
                     provider=fallback_provider,

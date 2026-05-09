@@ -177,28 +177,28 @@ class LLMProviderConfig:
     # ----------------------------------------------------------------------------------------
 
     @classmethod
-    def get_fallback_models(cls, provider: LLMProvider | None = None) -> list[str]:
+    def get_fallback_models(
+        cls,
+        provider: LLMProvider | None = None,
+    ) -> list[tuple[LLMProvider, str]]:
         provider = provider or cls.LLM_PROVIDER
         match provider.base:
             case 'openai':
-                return {
-                    provider: fallback_model
-                    for fallback_model in [
-                        'gpt-5-mini', 
-                        'gpt-5-nano',
-                    ]
-                }
+                return [
+                    (provider, 'gpt-5-mini'),
+                    (provider, 'gpt-5-nano'),
+                ]
             case 'open_router':
-                return {
-                    provider.with_sub('openai'):   "gpt-oss-20b",
-                    provider.with_sub('openai'):   "gpt-oss-120b",
-                    provider.with_sub('alibaba'):  "alibaba/tongyi-deepresearch-30b-a3b:free",
-                    provider: "openrouter/polaris-alpha",
+                return [
+                    (provider.with_sub('openai'), "gpt-oss-20b"),
+                    (provider.with_sub('openai'), "gpt-oss-120b"),
+                    (provider.with_sub('alibaba'), "alibaba/tongyi-deepresearch-30b-a3b:free"),
+                    (provider, "openrouter/polaris-alpha"),
                     # Currently unusable because has no tool support
-                    #provider.with_sub('deepseek'): "deepseek/deepseek-chat-v3.1:free",
-                }
+                    #(provider.with_sub('deepseek'), "deepseek/deepseek-chat-v3.1:free"),
+                ]
             case _:
-                return {}
+                return []
 
     @classmethod
     def get_reasoning_support(cls, provider: LLMProvider | None = None) -> bool:
