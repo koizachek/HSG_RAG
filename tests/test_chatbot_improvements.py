@@ -12,9 +12,73 @@ from langchain_core.messages import AIMessage, HumanMessage
 from src.apps.chat.app import ChatbotApplication
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.input_handler import InputHandler
+from src.rag.programme_facts import ProgrammeFacts
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.utilclasses import LeadAgentQueryResponse
+
+
+PROGRAMME_FACT_FIXTURES = {
+    "emba": ProgrammeFacts(
+        programme="emba",
+        source_available=True,
+        focus_points=[
+            "EMBA HSG focuses on General Management, Leadership and the DACH context.",
+        ],
+        fit_points=[
+            "Hochschulabschluss, 5+ Jahre Berufserfahrung, 3+ Jahre Führungserfahrung und starke Deutschkenntnisse.",
+        ],
+        timing_points=[
+            "Start 14.09.2026, 18 Monate berufsbegleitend, verlängerbar bis 48 Monate, Studiengebühr CHF 77'500.",
+        ],
+        document_points=[
+            "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation und eine erste Capstone-Idee vorbereiten.",
+        ],
+    ),
+    "iemba": ProgrammeFacts(
+        programme="iemba",
+        source_available=True,
+        focus_points=[
+            "IEMBA HSG focuses on international management, global peer learning and cross-border leadership.",
+        ],
+        fit_points=[
+            "Hochschulabschluss, 5+ Jahre Berufserfahrung, 3+ Jahre Führungserfahrung und sehr gutes Englisch.",
+        ],
+        timing_points=[
+            "Start 24.08.2026, 18 Monate berufsbegleitend, 10 Kernkurse, 4 Wahlkurse, 4 Wochen Auslandsmodule, Studiengebühr CHF 85'000.",
+        ],
+        document_points=[
+            "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, internationale Zielsetzung und Englisch-Niveau vorbereiten.",
+        ],
+    ),
+    "emba_x": ProgrammeFacts(
+        programme="emba_x",
+        source_available=True,
+        focus_points=[
+            "emba X focuses on business, technology, innovation and transformation.",
+        ],
+        fit_points=[
+            "Anerkannter Hochschulabschluss, 10+ Jahre Berufserfahrung, 5+ Jahre Führungserfahrung und sehr gutes Englisch.",
+        ],
+        timing_points=[
+            "Erste Bewerbungsfrist 31.08.2026 mit CHF 99'000 Studiengebühr; finale Bewerbungsfrist 31.10.2026 mit CHF 110'000.",
+        ],
+        document_points=[
+            "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation, Englisch-Niveau und ein Transformationsvorhaben vorbereiten.",
+        ],
+    ),
+}
+
+
+class FakeProgrammeFactsProvider:
+    def get_facts(self, programme: str, language: str) -> ProgrammeFacts:
+        return PROGRAMME_FACT_FIXTURES.get(programme, ProgrammeFacts(programme=programme))
+
+
+def attach_fake_programme_facts(agent: ExecutiveAgentChain) -> None:
+    agent._programme_facts_provider = FakeProgrammeFactsProvider()
+
+
 class TestInputHandling:
     """Test numeric input interpretation"""
     
@@ -199,6 +263,7 @@ Here are the programs:
             "suggested_program": None,
         }
         agent._pending_continuation = None
+        attach_fake_programme_facts(agent)
 
         assert agent._extract_programme_preference("ich finde emba X besser") == "emba_x"
 
@@ -225,6 +290,7 @@ Here are the programs:
             "handover_requested": None,
             "suggested_program": None,
         }
+        attach_fake_programme_facts(agent)
 
         response = agent._serve_programme_next_steps(
             processed_query="ich finde EMBA HSG besser",
@@ -246,6 +312,7 @@ Here are the programs:
             "handover_requested": None,
             "suggested_program": None,
         }
+        attach_fake_programme_facts(agent)
 
         response = agent._serve_programme_next_steps(
             processed_query="ich finde IEMBA HSG besser",
@@ -271,6 +338,7 @@ Here are the programs:
             "program_interest": [],
         }
         agent._pending_continuation = None
+        attach_fake_programme_facts(agent)
 
         assert agent._resolve_application_programmes("Wie läuft die Bewerbung ab?") == ["emba_x"]
 
@@ -295,6 +363,7 @@ Here are the programs:
             "program_interest": ["emba_x"],
         }
         agent._pending_continuation = None
+        attach_fake_programme_facts(agent)
 
         first_response = agent._serve_application_next_steps(
             processed_query="Wie bewerbe ich mich?",
@@ -330,6 +399,7 @@ Here are the programs:
             "suggested_program": "emba",
             "program_interest": ["emba"],
         }
+        attach_fake_programme_facts(agent)
 
         response = agent._serve_application_process_details(
             processed_query="Wie läuft der Prozess?",
@@ -355,6 +425,7 @@ Here are the programs:
             "suggested_program": "iemba",
             "program_interest": ["iemba"],
         }
+        attach_fake_programme_facts(agent)
 
         response = agent._serve_application_process_details(
             processed_query="Welche Unterlagen und Fristen?",
@@ -529,6 +600,7 @@ Here are the programs:
             "suggested_program": None,
             "program_interest": [],
         }
+        attach_fake_programme_facts(agent)
 
         response = agent._serve_application_process_details(
             processed_query="Wie läuft der Prozess?",
