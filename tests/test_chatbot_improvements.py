@@ -9,10 +9,12 @@ Tests cover:
 """
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
+from src.apps.chat.app import ChatbotApplication
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.input_handler import InputHandler
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
+from src.rag.utilclasses import LeadAgentQueryResponse
 class TestInputHandling:
     """Test numeric input interpretation"""
     
@@ -130,11 +132,30 @@ Here are the programs:
         assert "EMBA HSG" in response.response
         assert "IEMBA HSG" in response.response
         assert "emba X" in response.response
-        assert "Programmwahl sollte jetzt über Ihre Ziele laufen" in response.response
+        assert "Bei HSG gibt es drei relevante Executive-MBA-Optionen" in response.response
+        assert "Das Profil klärt" not in response.response
         assert "Möchten Sie, dass ich mit weiteren Details fortfahre?" not in response.response
         assert response.relevant_programs == ["emba", "iemba", "emba_x"]
         assert isinstance(agent._conversation_history[0], HumanMessage)
         assert isinstance(agent._conversation_history[1], AIMessage)
+
+    def test_profile_context_programme_overview_uses_profile_framing(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._pending_continuation = None
+        agent._programme_overview_detail_level = 0
+
+        response = agent._serve_programme_overview(
+            processed_query="ich bin chefarzt mit 10 jahren erfahrung",
+            response_language="de",
+            detailed=False,
+            profile_context=True,
+        )
+
+        assert "Das Profil klärt vor allem die Zulassungsebene" in response.response
+        assert "EMBA HSG" in response.response
+        assert "IEMBA HSG" in response.response
+        assert "emba X" in response.response
 
     def test_profile_context_update_after_overview_is_not_single_programme_diagnosis(self):
         agent = object.__new__(ExecutiveAgentChain)
@@ -167,6 +188,310 @@ Here are the programs:
         assert "emba X" in response.response
         assert "vorzeitig" not in response.response.lower()
         assert "Möchten Sie, dass ich mit weiteren Details fortfahre?" not in response.response
+
+    def test_embax_preference_moves_to_next_steps_not_repetition(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("EMBA HSG, IEMBA HSG und emba X sind relevant.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+        }
+        agent._pending_continuation = None
+
+        assert agent._extract_programme_preference("ich finde emba X besser") == "emba_x"
+
+        response = agent._serve_programme_next_steps(
+            processed_query="ich finde emba X besser",
+            response_language="de",
+            programme="emba_x",
+        )
+
+        assert "Fit- und Zulassungsabklärung" in response.response
+        assert "31.08.2026" in response.response
+        assert "31.10.2026" in response.response
+        assert "Teyuna Giger" in response.response
+        assert response.appointment_requested is True
+        assert response.show_booking_widget is True
+        assert response.relevant_programs == ["emba_x"]
+        assert agent._conversation_state["handover_requested"] is True
+        assert agent._conversation_state["suggested_program"] == "emba_x"
+
+    def test_application_question_after_programme_choice_shows_booking_widget(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("Für emba X sind die nächsten Schritte ein Fit- und Zulassungsgespräch.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": "emba_x",
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+
+        assert agent._resolve_application_programmes("Wie läuft die Bewerbung ab?") == ["emba_x"]
+
+        response = agent._serve_application_next_steps(
+            processed_query="Wie läuft die Bewerbung ab?",
+            response_language="de",
+            programmes=["emba_x"],
+        )
+
+        assert "Bewerbung zum **emba X**" in response.response
+        assert "Teyuna Giger" in response.response
+        assert response.appointment_requested is True
+        assert response.show_booking_widget is True
+        assert response.relevant_programs == ["emba_x"]
+
+    def test_application_process_follow_up_adds_details_without_repeating_widget(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": "emba_x",
+            "program_interest": ["emba_x"],
+        }
+        agent._pending_continuation = None
+
+        first_response = agent._serve_application_next_steps(
+            processed_query="Wie bewerbe ich mich?",
+            response_language="de",
+            programmes=["emba_x"],
+        )
+
+        assert agent._previous_response_was_application_next_step()
+        assert agent._is_application_process_detail_request("Wie läuft der Prozess?")
+        assert agent._resolve_known_application_programmes("Wie läuft der Prozess?") == ["emba_x"]
+
+        second_response = agent._serve_application_process_details(
+            processed_query="Wie läuft der Prozess?",
+            response_language="de",
+            programmes=["emba_x"],
+        )
+
+        assert second_response.response != first_response.response
+        assert "Unterlagen vorbereiten" in second_response.response
+        assert "31.08.2026" in second_response.response
+        assert "31.10.2026" in second_response.response
+        assert second_response.appointment_requested is False
+        assert second_response.show_booking_widget is False
+        assert second_response.relevant_programs == ["emba_x"]
+
+    def test_embax_user_interest_is_not_misclassified_as_emba_hsg(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "session_id": "session-1",
+            "user_id": "session-1",
+            "user_language": "de",
+            "user_name": None,
+            "experience_years": None,
+            "leadership_years": None,
+            "field": None,
+            "interest": None,
+            "qualification_level": None,
+            "program_interest": [],
+            "suggested_program": None,
+            "handover_requested": None,
+            "topics_discussed": [],
+            "preferences_known": False,
+        }
+
+        agent._update_conversation_state(
+            "Ich interessiere mich für den EMBA x.",
+            "Gerne, emba X ist das Joint Degree mit ETH Zürich und Universität St.Gallen.",
+        )
+
+        assert agent._conversation_state["program_interest"] == ["emba_x"]
+        assert agent._conversation_state["suggested_program"] == "emba_x"
+        assert agent._resolve_application_programmes("Wie läuft die Bewerbung?") == ["emba_x"]
+
+        response = agent._serve_application_next_steps(
+            processed_query="Wie läuft die Bewerbung?",
+            response_language="de",
+            programmes=["emba_x"],
+        )
+
+        assert "Teyuna Giger" in response.response
+        assert response.relevant_programs == ["emba_x"]
+
+    def test_later_embax_selection_overrides_stale_emba_suggestion(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "session_id": "session-1",
+            "user_id": "session-1",
+            "user_language": "de",
+            "user_name": None,
+            "experience_years": None,
+            "leadership_years": None,
+            "field": None,
+            "interest": None,
+            "qualification_level": None,
+            "program_interest": [],
+            "suggested_program": "emba",
+            "handover_requested": None,
+            "topics_discussed": [],
+            "preferences_known": False,
+        }
+
+        assert agent._extract_programme_preference("ich denke der emba X ist der beste") == "emba_x"
+
+        agent._update_conversation_state(
+            "ich denke der emba X ist der beste",
+            "Dann sind die nächsten Schritte für emba X relevant.",
+        )
+
+        assert agent._conversation_state["program_interest"] == ["emba_x"]
+        assert agent._conversation_state["suggested_program"] == "emba_x"
+        assert agent._resolve_application_programmes("wie bewerbe ich mich?") == ["emba_x"]
+
+    def test_assistant_multi_programme_text_does_not_set_user_programme_interest(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "session_id": "session-1",
+            "user_id": "session-1",
+            "user_language": "de",
+            "user_name": None,
+            "experience_years": None,
+            "leadership_years": None,
+            "field": None,
+            "interest": None,
+            "qualification_level": None,
+            "program_interest": [],
+            "suggested_program": None,
+            "handover_requested": None,
+            "topics_discussed": [],
+            "preferences_known": False,
+        }
+
+        agent._update_conversation_state(
+            "Was ist ein Capstone-Projekt?",
+            "Das kann im EMBA HSG, IEMBA HSG oder emba X relevant sein.",
+        )
+
+        assert agent._conversation_state["program_interest"] == []
+        assert agent._conversation_state["suggested_program"] is None
+
+    def test_application_question_with_specific_programme_shows_correct_advisor(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+
+        programmes = agent._resolve_application_programmes(
+            "Wie bewerbe ich mich für den IEMBA HSG?"
+        )
+
+        assert programmes == ["iemba"]
+
+        response = agent._serve_application_next_steps(
+            processed_query="Wie bewerbe ich mich für den IEMBA HSG?",
+            response_language="de",
+            programmes=programmes,
+        )
+
+        assert "IEMBA HSG" in response.response
+        assert "Kristin Fuchs" in response.response
+        assert response.show_booking_widget is True
+        assert response.relevant_programs == ["iemba"]
+
+    def test_general_application_question_after_multi_programme_overview_shows_all_advisors(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("EMBA HSG, IEMBA HSG und emba X sind relevant.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+
+        programmes = agent._resolve_application_programmes("Wie läuft die Bewerbung?")
+
+        assert programmes == ["emba", "iemba", "emba_x"]
+
+        response = agent._serve_application_next_steps(
+            processed_query="Wie läuft die Bewerbung?",
+            response_language="de",
+            programmes=programmes,
+        )
+
+        assert "alle drei Studienberatungen" in response.response
+        assert response.appointment_requested is True
+        assert response.show_booking_widget is True
+        assert response.relevant_programs == ["emba", "iemba", "emba_x"]
+
+    def test_reset_conversation_state_clears_profile_and_history(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [HumanMessage("ich bin chefarzt")]
+        agent._pending_continuation = "more"
+        agent._programme_overview_detail_level = 2
+        agent._scope_violation_counts = {"weather": 1}
+        agent._aggressive_violation_count = 1
+        agent._conversation_state = {
+            "session_id": "session-1",
+            "user_id": "session-1",
+            "user_language": "de",
+            "user_name": None,
+            "experience_years": 10,
+            "leadership_years": 5,
+            "field": "medicine",
+            "interest": "emba",
+            "qualification_level": None,
+            "program_interest": ["emba_x"],
+            "suggested_program": "emba_x",
+            "handover_requested": True,
+            "topics_discussed": ["profile"],
+            "preferences_known": True,
+        }
+
+        agent.reset_conversation_state()
+
+        assert agent._conversation_history == []
+        assert agent._pending_continuation is None
+        assert agent._programme_overview_detail_level == 0
+        assert agent._scope_violation_counts == {}
+        assert agent._aggressive_violation_count == 0
+        assert agent._conversation_state["experience_years"] is None
+        assert agent._conversation_state["field"] is None
+        assert agent._conversation_state["suggested_program"] is None
+        assert agent._conversation_state["program_interest"] == []
+
+    def test_chat_resets_stale_agent_when_visible_history_is_empty(self):
+        class FakeAgent:
+            def __init__(self):
+                self._conversation_history = [HumanMessage("ich bin chefarzt")]
+                self.reset_called = False
+
+            def reset_conversation_state(self):
+                self.reset_called = True
+                self._conversation_history = []
+
+            def query(self, message):
+                assert self.reset_called
+                assert self._conversation_history == []
+                return LeadAgentQueryResponse(response="fresh answer", language="de")
+
+        app = ChatbotApplication.__new__(ChatbotApplication)
+        app._language = "de"
+        agent = FakeAgent()
+
+        answers, returned_agent = app._chat("ich interessiere mich für einen mba", [], agent)
+
+        assert answers == ["fresh answer"]
+        assert returned_agent is agent
+        assert agent.reset_called is True
+
+    def test_chatbot_application_constructs_with_clear_handler(self):
+        app = ChatbotApplication(language="de")
+
+        assert app.app is not None
 
 
 class TestScopeGuardian:

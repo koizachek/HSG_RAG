@@ -52,6 +52,7 @@ class ExecutiveAgentChain:
         self._conversation_history = [] 
         self._pending_continuation: str | None = None
         self._programme_overview_detail_level = 0
+        self._programme_overview_profile_context = False
         self._cache = Cache.get_cache()
 
         # Confidence scoring is intentionally disabled here because the extra
@@ -623,22 +624,22 @@ class ExecutiveAgentChain:
 
         # If program interest was explicitly mentioned
         if state['program_interest']:
-            return state['program_interest'][0]
+            return self._normalise_programme_id(state['program_interest'][0])
 
         # Make recommendation based on profile
         experience = state.get('experience_years', 0) or 0
         leadership = state.get('leadership_years', 0) or 0
 
+        if state.get('interest') and any(kw in state.get('interest', '').lower()
+                                         for kw in ['digital', 'digitalisierung', 'innovation', 'technology', 'technologie']):
+            return 'emba_x'
+
         # EMBA: 5+ years experience, 2+ years leadership
         if experience >= 5 and leadership >= 2:
-            return 'EMBA'
+            return 'emba'
         # IEMBA: International focus, 3+ years experience
         elif experience >= 3:
-            return 'IEMBA'
-        # EMBA X: Digital/Innovation focus
-        elif state.get('interest') and any(kw in state.get('interest', '').lower()
-                                           for kw in ['digital', 'innovation', 'technology']):
-            return 'emba X'
+            return 'iemba'
 
         return None
 
@@ -687,12 +688,16 @@ class ExecutiveAgentChain:
             self._conversation_state['handover_requested'] = True
             chain_logger.info("Handover request detected")
 
-        # Check for program mentions
-        programs = ['EMBA', 'IEMBA', 'EMBA X']
-        for program in programs:
-            if program.lower() in conversation_text.lower():
-                if program not in self._conversation_state['program_interest']:
-                    self._conversation_state['program_interest'].append(program)
+        # Check for program mentions. Match the most specific names first so
+        # "emba X" is not misclassified as the generic EMBA HSG.
+        user_programmes = self._extract_programmes_from_text(user_query)
+        for program in user_programmes:
+            if program not in self._conversation_state['program_interest']:
+                self._conversation_state['program_interest'].append(program)
+
+        if len(user_programmes) == 1:
+            self._conversation_state['suggested_program'] = user_programmes[0]
+            chain_logger.info(f"Suggested program updated from user selection: {user_programmes[0]}")
 
         # Update suggested program
         suggested = self._determine_suggested_program()
@@ -739,13 +744,12 @@ class ExecutiveAgentChain:
         except Exception as e:
             chain_logger.error(f"Failed to log user profile: {e}")
     
-    def wipe_session_data(self) -> None:
-        """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
-
-        # --- 1) In-memory wipe ---
+    def reset_conversation_state(self) -> None:
+        """Clear in-memory conversation state while keeping the same session id."""
         self._conversation_history = []
         self._pending_continuation = None
         self._programme_overview_detail_level = 0
+        self._programme_overview_profile_context = False
         self._conversation_state.update({
             'user_language': None,
             'user_name': None,
@@ -762,6 +766,12 @@ class ExecutiveAgentChain:
         })
         self._scope_violation_counts = {}
         self._aggressive_violation_count = 0
+
+    def wipe_session_data(self) -> None:
+        """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
+
+        # --- 1) In-memory wipe ---
+        self.reset_conversation_state()
 
         # --- 2) On-disk wipe (delete profile_<user_id>_*.json) ---
         if not self._user_id:
@@ -866,6 +876,7 @@ class ExecutiveAgentChain:
                 processed_query=processed_query,
                 response_language=current_language,
                 detailed=True,
+                profile_context=getattr(self, "_programme_overview_profile_context", False),
             )
 
         if (
@@ -877,6 +888,35 @@ class ExecutiveAgentChain:
                 processed_query=processed_query,
                 response_language=current_language,
                 detailed=False,
+                profile_context=True,
+            )
+
+        preferred_programme = self._extract_programme_preference(processed_query)
+        if preferred_programme and self._latest_ai_mentions_multiple_programmes():
+            return self._serve_programme_next_steps(
+                processed_query=processed_query,
+                response_language=current_language,
+                programme=preferred_programme,
+            )
+
+        if (
+            self._previous_response_was_application_next_step()
+            and self._is_application_process_detail_request(processed_query)
+        ):
+            application_programmes = self._resolve_known_application_programmes(processed_query)
+            if application_programmes:
+                return self._serve_application_process_details(
+                    processed_query=processed_query,
+                    response_language=current_language,
+                    programmes=application_programmes,
+                )
+
+        application_programmes = self._resolve_application_programmes(processed_query)
+        if application_programmes:
+            return self._serve_application_next_steps(
+                processed_query=processed_query,
+                response_language=current_language,
+                programmes=application_programmes,
             )
 
         if self._pending_continuation and self._is_continuation_request(processed_query):
@@ -926,6 +966,7 @@ class ExecutiveAgentChain:
                 processed_query=processed_query,
                 response_language=current_language,
                 detailed=False,
+                profile_context=False,
             )
         
         # 5. Check if cached data already exists for this session 
@@ -1142,6 +1183,185 @@ class ExecutiveAgentChain:
             ]
         )
 
+    def _extract_programme_preference(self, query: str) -> str | None:
+        query_lower = query.lower()
+        preference_terms = [
+            "besser",
+            "besserer fit",
+            "beste",
+            "am besten",
+            "passt",
+            "passender",
+            "interessanter",
+            "favorisiere",
+            "tendiere",
+            "klingt gut",
+            "klingt besser",
+            "finde ich gut",
+            "finde ich besser",
+            "nehme",
+            "wähle",
+            "waehle",
+            "will",
+            "möchte",
+            "moechte",
+            "sounds better",
+            "best",
+            "better fit",
+            "prefer",
+            "lean toward",
+            "interested in",
+            "i want",
+            "i would choose",
+        ]
+        if not any(term in query_lower for term in preference_terms):
+            return None
+
+        if "emba x" in query_lower or "embax" in query_lower:
+            return "emba_x"
+        if "iemba" in query_lower or "international emba" in query_lower:
+            return "iemba"
+        if "emba hsg" in query_lower or re.search(r"\bemba\b", query_lower):
+            return "emba"
+
+        return None
+
+    def _extract_programme_from_text(self, text: str) -> str | None:
+        text_lower = text.lower()
+        if "emba x" in text_lower or "embax" in text_lower:
+            return "emba_x"
+        if "iemba" in text_lower or "international emba" in text_lower:
+            return "iemba"
+        if "emba hsg" in text_lower:
+            return "emba"
+        return None
+
+    def _extract_programmes_from_text(self, text: str) -> list[str]:
+        text_lower = text.lower()
+        programmes: list[str] = []
+
+        if "emba x" in text_lower or "embax" in text_lower:
+            programmes.append("emba_x")
+        if "iemba" in text_lower or "international emba" in text_lower:
+            programmes.append("iemba")
+        if "emba hsg" in text_lower or re.search(r"\bgerman(?:-speaking)?\s+emba\b", text_lower):
+            programmes.append("emba")
+
+        return programmes
+
+    @staticmethod
+    def _normalise_programme_id(programme: str | None) -> str | None:
+        if not programme:
+            return None
+        programme_lower = str(programme).lower().replace("-", "_").replace(" ", "_")
+        if programme_lower in {"emba_x", "embax"}:
+            return "emba_x"
+        if programme_lower in {"iemba", "iemba_hsg", "international_emba"}:
+            return "iemba"
+        if programme_lower in {"emba", "emba_hsg"}:
+            return "emba"
+        return None
+
+    def _is_application_next_step_request(self, query: str) -> bool:
+        query_lower = query.lower()
+        application_terms = [
+            "bewerb",
+            "bewerbung",
+            "bewerben",
+            "bewerbungsprozess",
+            "bewerbungsunterlagen",
+            "zulassung",
+            "assessment",
+            "application",
+            "apply",
+            "admission",
+            "admissions",
+            "admissions process",
+            "application documents",
+        ]
+        return any(term in query_lower for term in application_terms)
+
+    def _is_application_process_detail_request(self, query: str) -> bool:
+        query_lower = query.lower()
+        detail_terms = [
+            "prozess",
+            "ablauf",
+            "schritt",
+            "schritte",
+            "unterlagen",
+            "dokument",
+            "dokumente",
+            "fristen",
+            "frist",
+            "deadline",
+            "deadlines",
+            "timeline",
+            "process",
+            "steps",
+            "documents",
+            "wie läuft",
+            "wie laeuft",
+            "how does it work",
+            "how does the process work",
+        ]
+        return any(term in query_lower for term in detail_terms)
+
+    def _previous_response_was_application_next_step(self) -> bool:
+        content_lower = self._get_latest_ai_message_content().lower()
+        if not content_lower:
+            return False
+
+        application_terms = [
+            "bewerbung zum",
+            "bewerbungsschritt",
+            "zulassungs- und beratungsgespräch",
+            "terminoptionen und kontaktdaten",
+            "application step",
+            "application, the next useful step",
+            "appointment options and contact details",
+            "admissions conversation",
+        ]
+        return any(term in content_lower for term in application_terms)
+
+    def _resolve_known_application_programmes(self, query: str) -> list[str]:
+        programme = self._extract_programme_from_text(query)
+        if programme:
+            return [programme]
+
+        programme_interest = self._conversation_state.get("program_interest") or []
+        normalised_interests = []
+        for item in programme_interest:
+            programme = self._normalise_programme_id(item)
+            if programme and programme not in normalised_interests:
+                normalised_interests.append(programme)
+        if normalised_interests:
+            return normalised_interests
+
+        programme = self._normalise_programme_id(
+            self._conversation_state.get("suggested_program")
+        )
+        if programme:
+            return [programme]
+
+        latest_ai = self._get_latest_ai_message_content()
+        if self._text_mentions_multiple_programmes(latest_ai) or "alle drei" in latest_ai.lower():
+            return ["emba", "iemba", "emba_x"]
+
+        return []
+
+    def _resolve_application_programmes(self, query: str) -> list[str]:
+        if not self._is_application_next_step_request(query):
+            return []
+
+        programmes = self._resolve_known_application_programmes(query)
+        if programmes:
+            return programmes
+
+        if self._latest_ai_mentions_multiple_programmes():
+            return ["emba", "iemba", "emba_x"]
+
+        return []
+
     def _is_general_mba_overview_request(self, query: str) -> bool:
         query_lower = query.lower()
         if self._query_mentions_specific_programme(query_lower):
@@ -1170,6 +1390,281 @@ class ExecutiveAgentChain:
         return (
             any(term in query_lower for term in general_mba_terms)
             and any(term in query_lower for term in discovery_terms)
+        )
+
+    def _build_programme_next_steps_response(self, language: str, programme: str) -> str:
+        if programme == "emba_x":
+            if language == "en":
+                return (
+                    "If **emba X** is currently the strongest option, the next step is not another programme overview. "
+                    "It is a fit and admissions check.\n\n"
+                    "1. **Clarify the development goal**: emba X is strongest when your next leadership step involves "
+                    "digital transformation, Health-IT, MedTech, data/AI initiatives, innovation, or large organisational "
+                    "change.\n"
+                    "2. **Check formal fit**: recognised academic degree, **10+ years** professional experience, "
+                    "**5+ years** leadership experience, and fluent English.\n"
+                    "3. **Plan deadlines and tuition**: first application deadline **31 August 2026** with **CHF 99,000** "
+                    "tuition; final application deadline **31 October 2026** with **CHF 110,000** tuition.\n"
+                    "4. **Prepare the admissions conversation**: bring your CV, leadership scope, degree background, "
+                    "English readiness, and one concrete transformation topic from your hospital context.\n\n"
+                    "For the non-binding assessment and next steps, the right advisor is **Teyuna Giger** for **emba X**. "
+                    "I can show appointment options and contact details below."
+                )
+            return (
+                "Wenn **emba X** aktuell am besten klingt, ist der nächste Schritt keine weitere Programmbeschreibung, "
+                "sondern eine Fit- und Zulassungsabklärung.\n\n"
+                "1. **Ziel schärfen**: emba X passt besonders, wenn Ihr nächster Entwicklungsschritt mit Digitalisierung, "
+                "Health-IT, MedTech, Daten/AI, Innovation oder grosser organisatorischer Transformation verbunden ist.\n"
+                "2. **Formalen Fit prüfen**: anerkannter Hochschulabschluss, **10+ Jahre Berufserfahrung**, "
+                "**5+ Jahre Führungserfahrung** und sehr gutes Englisch.\n"
+                "3. **Fristen und Gebühren planen**: erste Bewerbungsfrist **31.08.2026** mit **CHF 99'000** "
+                "Studiengebühr; finale Bewerbungsfrist **31.10.2026** mit **CHF 110'000** Studiengebühr.\n"
+                "4. **Assessment-Gespräch vorbereiten**: CV, Führungsverantwortung, Studienabschluss, Englisch-Niveau "
+                "und ein konkretes Transformationsvorhaben aus Ihrer Klinik-/Spitalpraxis mitbringen.\n\n"
+                "Für die unverbindliche Einschätzung und die nächsten Bewerbungsschritte ist **Teyuna Giger** die "
+                "passende Studienberaterin für **emba X**. Ich zeige Ihnen unten Terminoptionen und Kontaktdaten."
+            )
+
+        programme_names = {
+            "emba": ("EMBA HSG", "Cyra von Müller"),
+            "iemba": ("IEMBA HSG", "Kristin Fuchs"),
+        }
+        programme_name, advisor = programme_names.get(programme, ("Executive MBA", "dem Admissions Team"))
+        if language == "en":
+            return (
+                f"If **{programme_name}** is currently the strongest option, the next step is a fit and admissions "
+                "conversation rather than another overview. Check the formal requirements, prepare your CV, degree "
+                "background, leadership scope, language readiness, and the main goal you want to achieve through the "
+                f"programme. The appropriate advisor is **{advisor}**. I can show appointment options and contact details below."
+            )
+        return (
+            f"Wenn **{programme_name}** aktuell am besten passt, ist der nächste Schritt ein Fit- und Zulassungsgespräch "
+            "statt einer weiteren Übersicht. Sinnvoll vorzubereiten sind CV, Studienabschluss, Führungsverantwortung, "
+            "Sprachniveau und das konkrete Entwicklungsziel, das Sie mit dem Programm erreichen möchten. "
+            f"Die passende Studienberatung ist **{advisor}**. Ich zeige Ihnen unten Terminoptionen und Kontaktdaten."
+        )
+
+    def _serve_programme_next_steps(
+        self,
+        processed_query: str,
+        response_language: str,
+        programme: str,
+    ) -> LeadAgentQueryResponse:
+        chain_logger.info(f"Serving next-step guidance for selected programme: {programme}")
+        response = self._build_programme_next_steps_response(response_language, programme)
+        response = ResponseFormatter.format_name_of_university(response, language=response_language)
+        response = ResponseFormatter.clean_response(response)
+
+        self._pending_continuation = None
+        self._conversation_history.append(HumanMessage(processed_query))
+        self._conversation_history.append(AIMessage(response))
+        self._conversation_state['handover_requested'] = True
+        self._conversation_state['suggested_program'] = programme
+
+        return LeadAgentQueryResponse(
+            response=response,
+            language=response_language,
+            confidence_fallback=False,
+            should_cache=False,
+            processed_query=processed_query,
+            appointment_requested=True,
+            show_booking_widget=True,
+            relevant_programs=[programme],
+        )
+
+    def _build_application_next_steps_response(self, language: str, programmes: list[str]) -> str:
+        programme_labels = {
+            "emba": ("EMBA HSG", "Cyra von Müller"),
+            "iemba": ("IEMBA HSG", "Kristin Fuchs"),
+            "emba_x": ("emba X", "Teyuna Giger"),
+        }
+        selected = [programme_labels[p] for p in programmes if p in programme_labels]
+
+        if len(selected) == 1:
+            programme_name, advisor = selected[0]
+            if language == "en":
+                return (
+                    f"For the **{programme_name}** application, the next useful step is an admissions conversation with "
+                    f"**{advisor}**. Prepare your CV, degree certificates, leadership scope, motivation, language readiness, "
+                    "and your target start date. In that conversation, admissions can confirm formal eligibility, documents, "
+                    "deadlines, and the best timing for submission.\n\n"
+                    "I am showing the appointment options and contact details below."
+                )
+            return (
+                f"Für die Bewerbung zum **{programme_name}** ist der nächste sinnvolle Schritt ein Zulassungs- und "
+                f"Beratungsgespräch mit **{advisor}**. Vorbereiten sollten Sie CV, Studienabschluss, Umfang Ihrer "
+                "Führungsverantwortung, Motivation, Sprachniveau und den gewünschten Startzeitpunkt. In dem Gespräch "
+                "können formaler Fit, Unterlagen, Fristen und der beste Zeitpunkt für die Einreichung geklärt werden.\n\n"
+                "Ich zeige Ihnen unten die Terminoptionen und Kontaktdaten."
+            )
+
+        if language == "en":
+            return (
+                "For the application step, the important point is to clarify the right programme before submitting "
+                "documents. Prepare your CV, degree certificates, leadership scope, motivation, language readiness, and "
+                "preferred start timing. Because more than one Executive MBA option is still relevant, I am showing the "
+                "appointment options and contact details for all three programme advisors below."
+            )
+
+        return (
+            "Für den Bewerbungsschritt sollte zuerst geklärt werden, welches der drei Executive-MBA-Programme wirklich "
+            "das richtige Ziel ist. Vorbereiten sollten Sie CV, Studienabschluss, Führungsverantwortung, Motivation, "
+            "Sprachniveau und den gewünschten Startzeitpunkt. Da noch mehrere Programme relevant sind, zeige ich Ihnen "
+            "unten die Terminoptionen und Kontaktdaten für alle drei Studienberatungen."
+        )
+
+    def _serve_application_next_steps(
+        self,
+        processed_query: str,
+        response_language: str,
+        programmes: list[str],
+    ) -> LeadAgentQueryResponse:
+        chain_logger.info(f"Serving application next-step guidance for programmes: {programmes}")
+        response = self._build_application_next_steps_response(response_language, programmes)
+        response = ResponseFormatter.format_name_of_university(response, language=response_language)
+        response = ResponseFormatter.clean_response(response)
+
+        self._pending_continuation = None
+        self._conversation_history.append(HumanMessage(processed_query))
+        self._conversation_history.append(AIMessage(response))
+        self._conversation_state["handover_requested"] = True
+        if len(programmes) == 1:
+            self._conversation_state["suggested_program"] = programmes[0]
+
+        return LeadAgentQueryResponse(
+            response=response,
+            language=response_language,
+            confidence_fallback=False,
+            should_cache=False,
+            processed_query=processed_query,
+            appointment_requested=True,
+            show_booking_widget=True,
+            relevant_programs=programmes,
+        )
+
+    def _build_application_process_details_response(self, language: str, programmes: list[str]) -> str:
+        if len(programmes) == 1:
+            programme = programmes[0]
+            programme_names = {
+                "emba": "EMBA HSG",
+                "iemba": "IEMBA HSG",
+                "emba_x": "emba X",
+            }
+            programme_name = programme_names.get(programme, "Executive MBA")
+
+            if programme == "emba_x":
+                if language == "en":
+                    return (
+                        f"The appointment options are already shown. For the **{programme_name}** application process, "
+                        "the practical sequence is:\n\n"
+                        "1. **Fit check**: confirm recognised degree, **10+ years** professional experience, **5+ years** "
+                        "leadership experience, and fluent English.\n"
+                        "2. **Prepare documents**: CV, degree certificates/transcripts, overview of leadership scope, "
+                        "motivation and goals for emba X, English readiness, and one concrete transformation topic you "
+                        "could discuss in admissions.\n"
+                        "3. **Plan timing**: first application deadline **31 August 2026** with **CHF 99,000** tuition; "
+                        "final deadline **31 October 2026** with **CHF 110,000** tuition.\n"
+                        "4. **Admissions assessment**: discuss fit, motivation, leadership responsibility, English level, "
+                        "and whether emba X is the right programme for your goals.\n"
+                        "5. **Decision and enrolment**: after admissions confirmation, finalise participation, timing, and "
+                        "tuition/payment details."
+                    )
+                return (
+                    f"Die Terminoptionen sind bereits eingeblendet. Für die Bewerbung zum **{programme_name}** läuft der "
+                    "Prozess praktisch so:\n\n"
+                    "1. **Fit prüfen**: anerkannter Hochschulabschluss, **10+ Jahre Berufserfahrung**, **5+ Jahre "
+                    "Führungserfahrung** und sehr gutes Englisch.\n"
+                    "2. **Unterlagen vorbereiten**: CV, Studienabschluss/Zeugnisse, Übersicht zur Führungsverantwortung, "
+                    "Motivation und Ziele für emba X, Englisch-Niveau sowie ein konkretes Transformationsvorhaben, das "
+                    "Sie im Admissions-Gespräch besprechen können.\n"
+                    "3. **Timing planen**: erste Bewerbungsfrist **31.08.2026** mit **CHF 99'000** Studiengebühr; finale "
+                    "Bewerbungsfrist **31.10.2026** mit **CHF 110'000** Studiengebühr.\n"
+                    "4. **Admissions-/Assessment-Gespräch**: Fit, Motivation, Führungsverantwortung, Englisch-Niveau und "
+                    "Zielsetzung werden geprüft.\n"
+                    "5. **Entscheid und Einschreibung**: nach positiver Rückmeldung werden Teilnahme, Startzeitpunkt und "
+                    "Zahlungs-/Gebührenthemen finalisiert."
+                )
+
+            requirements = (
+                "**5+ Jahre Berufserfahrung**, **3+ Jahre Führungserfahrung**"
+                if language == "de"
+                else "**5+ years** professional experience and **3+ years** leadership experience"
+            )
+            language_requirement = {
+                ("emba", "de"): "starke Deutschkenntnisse",
+                ("iemba", "de"): "sehr gutes Englisch",
+                ("emba", "en"): "strong German",
+                ("iemba", "en"): "strong English",
+            }.get((programme, language), "passende Sprachkenntnisse" if language == "de" else "the relevant language readiness")
+
+            if language == "en":
+                return (
+                    f"The appointment options are already shown. For the **{programme_name}** application process, the "
+                    "practical sequence is:\n\n"
+                    f"1. **Fit check**: university degree, {requirements}, and {language_requirement}.\n"
+                    "2. **Prepare documents**: CV, degree certificates/transcripts, overview of leadership scope, "
+                    "motivation and development goals, and language readiness.\n"
+                    "3. **Admissions conversation**: confirm formal eligibility, programme fit, goals, timing, and open "
+                    "questions about the application file.\n"
+                    "4. **Submit application**: admissions confirms the exact submission route, missing documents, and "
+                    "current deadlines.\n"
+                    "5. **Decision and enrolment**: after admission, finalise participation, start timing, and tuition/payment details."
+                )
+            return (
+                f"Die Terminoptionen sind bereits eingeblendet. Für die Bewerbung zum **{programme_name}** läuft der Prozess "
+                "praktisch so:\n\n"
+                f"1. **Fit prüfen**: Hochschulabschluss, {requirements} und {language_requirement}.\n"
+                "2. **Unterlagen vorbereiten**: CV, Studienabschluss/Zeugnisse, Übersicht zur Führungsverantwortung, "
+                "Motivation und Entwicklungsziele sowie Sprachniveau.\n"
+                "3. **Zulassungs-/Beratungsgespräch**: formaler Fit, Programm-Fit, Ziele, Timing und offene Fragen zur "
+                "Bewerbungsakte klären.\n"
+                "4. **Bewerbung einreichen**: Admissions bestätigt den genauen Einreichungsweg, fehlende Unterlagen und "
+                "aktuelle Fristen.\n"
+                "5. **Entscheid und Einschreibung**: nach positiver Zulassung Teilnahme, Startzeitpunkt und Zahlungs-/Gebührenthemen finalisieren."
+            )
+
+        if language == "en":
+            return (
+                "The appointment options are already shown. Before applying, first decide which programme you want to "
+                "target. The process then follows the same structure: fit check, documents, admissions conversation, "
+                "application submission, decision, and enrolment.\n\n"
+                "Prepare CV, degree certificates/transcripts, leadership overview, motivation, language readiness, and "
+                "your preferred start timing. For **emba X**, also plan around the published deadlines: **31 August 2026** "
+                "and **31 October 2026**."
+            )
+        return (
+            "Die Terminoptionen sind bereits eingeblendet. Vor der Bewerbung sollte zuerst geklärt werden, welches Programm "
+            "Sie konkret ansteuern. Danach ist der Ablauf grundsätzlich: Fit prüfen, Unterlagen vorbereiten, "
+            "Zulassungs-/Beratungsgespräch, Bewerbung einreichen, Entscheid und Einschreibung.\n\n"
+            "Vorbereiten sollten Sie CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation, Sprachniveau und "
+            "gewünschten Startzeitpunkt. Für **emba X** sind zusätzlich die veröffentlichten Fristen relevant: "
+            "**31.08.2026** und **31.10.2026**."
+        )
+
+    def _serve_application_process_details(
+        self,
+        processed_query: str,
+        response_language: str,
+        programmes: list[str],
+    ) -> LeadAgentQueryResponse:
+        chain_logger.info(f"Serving application process details for programmes: {programmes}")
+        response = self._build_application_process_details_response(response_language, programmes)
+        response = ResponseFormatter.format_name_of_university(response, language=response_language)
+        response = ResponseFormatter.clean_response(response)
+
+        self._pending_continuation = None
+        self._conversation_history.append(HumanMessage(processed_query))
+        self._conversation_history.append(AIMessage(response))
+
+        return LeadAgentQueryResponse(
+            response=response,
+            language=response_language,
+            confidence_fallback=False,
+            should_cache=False,
+            processed_query=processed_query,
+            appointment_requested=False,
+            show_booking_widget=False,
+            relevant_programs=programmes,
         )
 
     def _is_profile_context_update(self, query: str) -> bool:
@@ -1210,9 +1705,32 @@ class ExecutiveAgentChain:
             self._get_latest_ai_message_content()
         )
 
-    def _build_programme_overview_response(self, language: str, detailed: bool) -> str:
+    def _build_programme_overview_response(
+        self,
+        language: str,
+        detailed: bool,
+        profile_context: bool = False,
+    ) -> str:
         if language == 'en':
             if not detailed:
+                if not profile_context:
+                    return (
+                        "At HSG, there are three relevant Executive MBA options. The main difference is not that one is "
+                        "universally better, but their language, focus, network, and development goal.\n\n"
+                        "1. **EMBA HSG**: German-speaking, DACH-focused general management programme. It is part-time, "
+                        "**18 months** long, extendable up to **48 months**, with **9 core courses**, **5 electives**, "
+                        "about **14 campus weeks**, a capstone project, and **CHF 77,500** tuition. Goal: strengthen "
+                        "strategy, finance, organisation, and leadership capability in the German-speaking market.\n\n"
+                        "2. **IEMBA HSG**: English-speaking international Executive MBA. It is part-time, **18 months** "
+                        "long, with **10 core courses**, **4 electives**, **10 campus weeks**, **4 weeks abroad**, a "
+                        "thesis, and **CHF 85,000** tuition. Goal: build international management perspective, global "
+                        "peer learning, and leadership confidence across markets and systems.\n\n"
+                        "3. **emba X**: English-speaking joint degree from **ETH Zurich** and the **University of St.Gallen**. "
+                        "It is part-time, **18 months**, blended across Zurich and St.Gallen, focused on business, "
+                        "technology, innovation, and transformation. Tuition is **CHF 99,000 / CHF 110,000** depending "
+                        "on the application deadline. Goal: lead at the intersection of management, technology, and change."
+                    )
+
                 return (
                     "Your profile mainly clarifies the admissions level: with substantial medical leadership experience, "
                     "the Executive MBA options are broadly plausible. The programme choice should now be based on goals, "
@@ -1232,6 +1750,21 @@ class ExecutiveAgentChain:
                 )
 
             if self._programme_overview_detail_level <= 1:
+                if not profile_context:
+                    return (
+                        "More detail across all three programmes:\n\n"
+                        "**EMBA HSG** aims to strengthen broad general-management judgement in the DACH context. It is "
+                        "the most natural fit if the goal is stronger strategic, financial, organisational, governance, "
+                        "negotiation, and leadership capability in German-speaking organisations.\n\n"
+                        "**IEMBA HSG** aims to build international management perspective. The value is not only the "
+                        "English language; it is the global cohort, international modules, and broader comparison across "
+                        "markets, systems, and leadership environments.\n\n"
+                        "**emba X** aims at leadership where business and technology meet. It is the strongest option if "
+                        "the goal is digital transformation, innovation, technology-driven business models, AI/data "
+                        "initiatives, or large organisational change. Its distinctive feature is the integrated **ETH "
+                        "Zurich** plus **University of St.Gallen** joint-degree setting and access to both networks."
+                    )
+
                 return (
                     "More detail across all three programmes:\n\n"
                     "**EMBA HSG** aims to strengthen broad general-management judgement for leaders in the DACH context. "
@@ -1248,6 +1781,19 @@ class ExecutiveAgentChain:
                     "**University of St.Gallen** joint-degree setting and access to both alumni networks."
                 )
 
+            if not profile_context:
+                return (
+                    "The next useful distinction is by goals and working context:\n\n"
+                    "- Choose **EMBA HSG** if the main goal is DACH-focused general management: strategy, finance, "
+                    "governance, organisation, negotiation, and leadership.\n"
+                    "- Choose **IEMBA HSG** if the main goal is international exposure: global peer learning, "
+                    "international modules, markets, organisations, and partnerships.\n"
+                    "- Choose **emba X** if the main goal is technology-led transformation: digitalisation, innovation, "
+                    "data/AI initiatives, new business models, or major change programmes.\n\n"
+                    "The next step is therefore not an automatic recommendation, but clarifying the development goal: "
+                    "DACH management depth, international management breadth, or technology-led transformation."
+                )
+
             return (
                 "The next useful distinction is by goals and working context:\n\n"
                 "- Choose **EMBA HSG** if your main goal is stronger economic and organisational steering of a hospital "
@@ -1261,6 +1807,24 @@ class ExecutiveAgentChain:
             )
 
         if not detailed:
+            if not profile_context:
+                return (
+                    "Bei HSG gibt es drei relevante Executive-MBA-Optionen. Der Unterschied liegt nicht darin, dass ein "
+                    "Programm pauschal besser ist, sondern in Sprache, Fokus, Netzwerk und Entwicklungsziel.\n\n"
+                    "1. **EMBA HSG**: deutschsprachig, DACH-Fokus, General Management und Leadership. Das Programm ist "
+                    "berufsbegleitend, dauert **18 Monate** und kann auf **48 Monate** verlängert werden. Es umfasst "
+                    "**9 Kernkurse**, **5 Wahlfächer**, rund **14 Präsenzwochen** und ein Capstone-Projekt. Studiengebühr: "
+                    "**CHF 77'500**. Ziel: Management-, Finanz-, Strategie- und Führungskompetenz im deutschsprachigen Kontext stärken.\n\n"
+                    "2. **IEMBA HSG**: englischsprachig, international ausgerichtet. Das Programm ist berufsbegleitend, "
+                    "**18 Monate** lang, mit **10 Kernkursen**, **4 Wahlkursen**, **10 Präsenzwochen**, **4 Wochen Auslandsmodule** "
+                    "und Thesis. Studiengebühr: **CHF 85'000**. Ziel: internationale Managementperspektive, globale Peer Group "
+                    "und Führung über verschiedene Märkte und Systeme hinweg.\n\n"
+                    "3. **emba X**: englischsprachiges Joint Degree von **ETH Zürich** und **Universität St.Gallen**. "
+                    "Berufsbegleitend, **18 Monate**, blended in Zürich und St.Gallen, mit Fokus auf Business, Technologie, "
+                    "Innovation und Transformation. Studiengebühr: **CHF 99'000 / CHF 110'000** je nach Bewerbungsfrist. "
+                    "Ziel: Führung an der Schnittstelle von Management, Technologie und Veränderung."
+                )
+
             return (
                 "Das Profil klärt vor allem die Zulassungsebene: Mit langjähriger ärztlicher Führungsverantwortung sind "
                 "die Executive-MBA-Optionen grundsätzlich plausibel. Die Programmwahl sollte jetzt über Ihre Ziele laufen, "
@@ -1280,6 +1844,22 @@ class ExecutiveAgentChain:
             )
 
         if self._programme_overview_detail_level <= 1:
+            if not profile_context:
+                return (
+                    "Weitere Details zu **allen drei Programmen**:\n\n"
+                    "**EMBA HSG** zielt auf breite General-Management-Kompetenz im DACH-Raum. Das Programm ist sinnvoll, "
+                    "wenn Sie Strategie, Finanzen, Governance, Organisation, Verhandlung und Change Management im "
+                    "deutschsprachigen Kontext vertiefen möchten. Das Capstone-Projekt kann auf ein reales "
+                    "Organisations- oder Transformationsvorhaben ausgerichtet werden.\n\n"
+                    "**IEMBA HSG** zielt auf internationale Managementkompetenz. Der Mehrwert liegt in der englischsprachigen "
+                    "globalen Kohorte, den internationalen Modulen und dem Vergleich verschiedener Märkte, Systeme und "
+                    "Führungsumfelder.\n\n"
+                    "**emba X** zielt auf Führung an der Schnittstelle von Business und Technologie. Das ist besonders "
+                    "relevant, wenn Ihre Ziele Digitalisierung, datengetriebene Prozesse, Innovation, neue Geschäftsmodelle "
+                    "oder grosse Transformationsprojekte betreffen. Der besondere Punkt ist die Kombination aus **ETH Zürich** "
+                    "und **Universität St.Gallen** sowie der Zugang zu beiden Netzwerken."
+                )
+
             return (
                 "Weitere Details zu **allen drei Programmen**, ohne Sie vorschnell auf eines festzulegen:\n\n"
                 "**EMBA HSG** zielt auf breite General-Management-Kompetenz im DACH-Raum. Für eine Chefarzt-Rolle ist das "
@@ -1294,6 +1874,19 @@ class ExecutiveAgentChain:
                 "wenn Ihre Ziele Digitalisierung, MedTech, Health-IT, datengetriebene Prozesse, Innovation oder grosse "
                 "Transformationsprojekte im Spital betreffen. Der besondere Punkt ist die Kombination aus **ETH Zürich** "
                 "und **Universität St.Gallen** sowie der Zugang zu beiden Netzwerken."
+            )
+
+        if not profile_context:
+            return (
+                "Die nächste sinnvolle Unterscheidung läuft über Ziele und Arbeitskontext:\n\n"
+                "- **EMBA HSG** passt am besten, wenn der Schwerpunkt auf General Management im DACH-Raum liegt: "
+                "Strategie, Finanzen, Governance, Organisation, Verhandlung und Leadership.\n"
+                "- **IEMBA HSG** passt am besten, wenn Internationalität zentral ist: globale Peer Group, "
+                "Auslandsmodule, internationale Märkte, Organisationen und Partnerschaften.\n"
+                "- **emba X** passt am besten, wenn Technologie und Transformation im Zentrum stehen: Digitalisierung, "
+                "Innovation, Daten-/AI-Projekte, neue Geschäftsmodelle oder grosse Veränderungsprogramme.\n\n"
+                "Der nächste Schritt ist daher nicht eine pauschale Empfehlung, sondern die Klärung Ihres Ziels: "
+                "DACH-Management, Internationalität oder technologiegetriebene Transformation."
             )
 
         return (
@@ -1313,13 +1906,19 @@ class ExecutiveAgentChain:
         processed_query: str,
         response_language: str,
         detailed: bool,
+        profile_context: bool = False,
     ) -> LeadAgentQueryResponse:
         chain_logger.info("Serving deterministic three-programme overview without a model call.")
-        response = self._build_programme_overview_response(response_language, detailed=detailed)
+        response = self._build_programme_overview_response(
+            response_language,
+            detailed=detailed,
+            profile_context=profile_context,
+        )
         response = ResponseFormatter.format_name_of_university(response, language=response_language)
         response = ResponseFormatter.clean_response(response)
 
         self._pending_continuation = None
+        self._programme_overview_profile_context = profile_context
         self._programme_overview_detail_level = (
             max(2, self._programme_overview_detail_level + 1)
             if detailed
