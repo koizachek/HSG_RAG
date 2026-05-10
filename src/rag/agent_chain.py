@@ -1425,23 +1425,65 @@ class ExecutiveAgentChain:
                 "passende Studienberaterin für **emba X**. Ich zeige Ihnen unten Terminoptionen und Kontaktdaten."
             )
 
-        programme_names = {
-            "emba": ("EMBA HSG", "Cyra von Müller"),
-            "iemba": ("IEMBA HSG", "Kristin Fuchs"),
+        programme_details = {
+            "emba": {
+                "name": "EMBA HSG",
+                "advisor": "Cyra von Müller",
+                "focus_de": "General Management, Leadership und Unternehmensführung im DACH-Kontext",
+                "focus_en": "general management, leadership, and executive decision-making in the DACH context",
+                "fit_de": "anerkannter Hochschulabschluss, **5+ Jahre Berufserfahrung**, **3+ Jahre Führungserfahrung** und starke Deutschkenntnisse",
+                "fit_en": "recognised degree, **5+ years** professional experience, **3+ years** leadership experience, and strong German",
+                "timing_de": "Start **14.09.2026**, **18 Monate** berufsbegleitend, verlängerbar bis **48 Monate**, Studiengebühr **CHF 77'500**",
+                "timing_en": "start **14 September 2026**, **18 months** part-time, extendable up to **48 months**, tuition **CHF 77,500**",
+                "prepare_de": "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Deutsch-Niveau, Entwicklungsziel und idealerweise eine erste Idee für ein Capstone-/Praxisprojekt",
+                "prepare_en": "CV, degree certificates/transcripts, leadership scope, German readiness, development goal, and ideally an initial idea for a capstone/practice project",
+            },
+            "iemba": {
+                "name": "IEMBA HSG",
+                "advisor": "Kristin Fuchs",
+                "focus_de": "internationale Managementperspektive, globale Peer Group und Führung über Märkte und Systeme hinweg",
+                "focus_en": "international management perspective, a global peer group, and leadership across markets and systems",
+                "fit_de": "anerkannter Hochschulabschluss, **5+ Jahre Berufserfahrung**, **3+ Jahre Führungserfahrung** und sehr gutes Englisch",
+                "fit_en": "recognised degree, **5+ years** professional experience, **3+ years** leadership experience, and strong English",
+                "timing_de": "Start **24.08.2026**, **18 Monate** berufsbegleitend, **10 Kernkurse**, **4 Wahlkurse**, **10 Präsenzwochen**, **4 Wochen Auslandsmodule**, Studiengebühr **CHF 85'000**",
+                "timing_en": "start **24 August 2026**, **18 months** part-time, **10 core courses**, **4 electives**, **10 campus weeks**, **4 weeks abroad**, tuition **CHF 85,000**",
+                "prepare_de": "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Englisch-Niveau, internationale Zielsetzung und relevante Ausland-/Partner-/Markterfahrung",
+                "prepare_en": "CV, degree certificates/transcripts, leadership scope, English readiness, international goals, and relevant cross-border, partner, or market experience",
+            },
         }
-        programme_name, advisor = programme_names.get(programme, ("Executive MBA", "dem Admissions Team"))
+        details = programme_details.get(programme)
+        if not details:
+            programme_name, advisor = "Executive MBA", "dem Admissions Team"
+            if language == "en":
+                return (
+                    f"If **{programme_name}** is currently the strongest option, the next step is a fit and admissions "
+                    "conversation rather than another overview. Check the formal requirements, prepare your CV, degree "
+                    "background, leadership scope, language readiness, and the main goal you want to achieve through the "
+                    f"programme. The appropriate advisor is **{advisor}**. I can show appointment options and contact details below."
+                )
+            return (
+                f"Wenn **{programme_name}** aktuell am besten passt, ist der nächste Schritt ein Fit- und Zulassungsgespräch "
+                "statt einer weiteren Übersicht. Sinnvoll vorzubereiten sind CV, Studienabschluss, Führungsverantwortung, "
+                "Sprachniveau und das konkrete Entwicklungsziel, das Sie mit dem Programm erreichen möchten. "
+                f"Die passende Studienberatung ist **{advisor}**. Ich zeige Ihnen unten Terminoptionen und Kontaktdaten."
+            )
+
         if language == "en":
             return (
-                f"If **{programme_name}** is currently the strongest option, the next step is a fit and admissions "
-                "conversation rather than another overview. Check the formal requirements, prepare your CV, degree "
-                "background, leadership scope, language readiness, and the main goal you want to achieve through the "
-                f"programme. The appropriate advisor is **{advisor}**. I can show appointment options and contact details below."
+                f"If **{details['name']}** is currently the strongest option, the next step is a fit and admissions check.\n\n"
+                f"1. **Clarify the development goal**: {details['name']} is strongest for {details['focus_en']}.\n"
+                f"2. **Check formal fit**: {details['fit_en']}.\n"
+                f"3. **Plan timing and tuition**: {details['timing_en']}.\n"
+                f"4. **Prepare the admissions conversation**: bring {details['prepare_en']}.\n\n"
+                f"The right advisor is **{details['advisor']}** for **{details['name']}**. I can show appointment options and contact details below."
             )
         return (
-            f"Wenn **{programme_name}** aktuell am besten passt, ist der nächste Schritt ein Fit- und Zulassungsgespräch "
-            "statt einer weiteren Übersicht. Sinnvoll vorzubereiten sind CV, Studienabschluss, Führungsverantwortung, "
-            "Sprachniveau und das konkrete Entwicklungsziel, das Sie mit dem Programm erreichen möchten. "
-            f"Die passende Studienberatung ist **{advisor}**. Ich zeige Ihnen unten Terminoptionen und Kontaktdaten."
+            f"Wenn **{details['name']}** aktuell am besten passt, ist der nächste Schritt eine Fit- und Zulassungsabklärung.\n\n"
+            f"1. **Ziel schärfen**: {details['name']} passt besonders für {details['focus_de']}.\n"
+            f"2. **Formalen Fit prüfen**: {details['fit_de']}.\n"
+            f"3. **Timing und Gebühren planen**: {details['timing_de']}.\n"
+            f"4. **Admissions-Gespräch vorbereiten**: {details['prepare_de']}.\n\n"
+            f"Die passende Studienberatung ist **{details['advisor']}** für **{details['name']}**. Ich zeige Ihnen unten Terminoptionen und Kontaktdaten."
         )
 
     def _serve_programme_next_steps(
@@ -1585,23 +1627,43 @@ class ExecutiveAgentChain:
                     "Zahlungs-/Gebührenthemen finalisiert."
                 )
 
-            requirements = (
-                "**5+ Jahre Berufserfahrung**, **3+ Jahre Führungserfahrung**"
-                if language == "de"
-                else "**5+ years** professional experience and **3+ years** leadership experience"
-            )
-            language_requirement = {
-                ("emba", "de"): "starke Deutschkenntnisse",
-                ("iemba", "de"): "sehr gutes Englisch",
-                ("emba", "en"): "strong German",
-                ("iemba", "en"): "strong English",
-            }.get((programme, language), "passende Sprachkenntnisse" if language == "de" else "the relevant language readiness")
+            programme_process_details = {
+                "emba": {
+                    "requirements_de": "Hochschulabschluss, **5+ Jahre Berufserfahrung**, **3+ Jahre Führungserfahrung** und starke Deutschkenntnisse",
+                    "requirements_en": "university degree, **5+ years** professional experience, **3+ years** leadership experience, and strong German",
+                    "documents_de": "CV, Studienabschluss/Zeugnisse, Übersicht zur Führungsverantwortung, Motivation, Entwicklungsziele, Deutsch-Niveau und idealerweise eine erste Idee für ein Capstone-/Praxisprojekt",
+                    "documents_en": "CV, degree certificates/transcripts, overview of leadership scope, motivation, development goals, German readiness, and ideally an initial idea for a capstone/practice project",
+                    "timing_de": "Start **14.09.2026**, **18 Monate** berufsbegleitend, verlängerbar bis **48 Monate**, Studiengebühr **CHF 77'500**. Aktuelle Bewerbungsfristen und verfügbare Plätze sollten im Zulassungsgespräch bestätigt werden",
+                    "timing_en": "start **14 September 2026**, **18 months** part-time, extendable up to **48 months**, tuition **CHF 77,500**. Current application deadlines and available seats should be confirmed in the admissions conversation",
+                },
+                "iemba": {
+                    "requirements_de": "Hochschulabschluss, **5+ Jahre Berufserfahrung**, **3+ Jahre Führungserfahrung** und sehr gutes Englisch",
+                    "requirements_en": "university degree, **5+ years** professional experience, **3+ years** leadership experience, and strong English",
+                    "documents_de": "CV, Studienabschluss/Zeugnisse, Übersicht zur Führungsverantwortung, Motivation, internationale Zielsetzung, Englisch-Niveau und relevante Ausland-/Partner-/Markterfahrung",
+                    "documents_en": "CV, degree certificates/transcripts, overview of leadership scope, motivation, international goals, English readiness, and relevant cross-border, partner, or market experience",
+                    "timing_de": "Start **24.08.2026**, **18 Monate** berufsbegleitend, **10 Kernkurse**, **4 Wahlkurse**, **10 Präsenzwochen**, **4 Wochen Auslandsmodule**, Studiengebühr **CHF 85'000**. Aktuelle Bewerbungsfristen und verfügbare Plätze sollten im Zulassungsgespräch bestätigt werden",
+                    "timing_en": "start **24 August 2026**, **18 months** part-time, **10 core courses**, **4 electives**, **10 campus weeks**, **4 weeks abroad**, tuition **CHF 85,000**. Current application deadlines and available seats should be confirmed in the admissions conversation",
+                },
+            }
+            details = programme_process_details.get(programme)
 
             if language == "en":
+                if details:
+                    return (
+                        f"The appointment options are already shown. For the **{programme_name}** application process, the "
+                        "practical sequence is:\n\n"
+                        f"1. **Fit check**: {details['requirements_en']}.\n"
+                        f"2. **Prepare documents**: {details['documents_en']}.\n"
+                        f"3. **Plan timing and tuition**: {details['timing_en']}.\n"
+                        "4. **Admissions conversation**: confirm formal eligibility, programme fit, goals, timing, current "
+                        "application deadlines, and open questions about the application file.\n"
+                        "5. **Submit application and enrol**: admissions confirms the exact submission route, missing "
+                        "documents, decision process, enrolment steps, and payment details."
+                    )
                 return (
                     f"The appointment options are already shown. For the **{programme_name}** application process, the "
                     "practical sequence is:\n\n"
-                    f"1. **Fit check**: university degree, {requirements}, and {language_requirement}.\n"
+                    "1. **Fit check**: university degree, professional experience, leadership experience, and language readiness.\n"
                     "2. **Prepare documents**: CV, degree certificates/transcripts, overview of leadership scope, "
                     "motivation and development goals, and language readiness.\n"
                     "3. **Admissions conversation**: confirm formal eligibility, programme fit, goals, timing, and open "
@@ -1610,10 +1672,22 @@ class ExecutiveAgentChain:
                     "current deadlines.\n"
                     "5. **Decision and enrolment**: after admission, finalise participation, start timing, and tuition/payment details."
                 )
+            if details:
+                return (
+                    f"Die Terminoptionen sind bereits eingeblendet. Für die Bewerbung zum **{programme_name}** läuft der Prozess "
+                    "praktisch so:\n\n"
+                    f"1. **Fit prüfen**: {details['requirements_de']}.\n"
+                    f"2. **Unterlagen vorbereiten**: {details['documents_de']}.\n"
+                    f"3. **Timing und Gebühren planen**: {details['timing_de']}.\n"
+                    "4. **Zulassungs-/Beratungsgespräch**: formaler Fit, Programm-Fit, Ziele, Timing, aktuelle "
+                    "Bewerbungsfristen und offene Fragen zur Bewerbungsakte klären.\n"
+                    "5. **Bewerbung einreichen und Einschreibung finalisieren**: Admissions bestätigt den genauen "
+                    "Einreichungsweg, fehlende Unterlagen, Entscheidungsprozess, Einschreibung und Zahlungs-/Gebührenthemen."
+                )
             return (
                 f"Die Terminoptionen sind bereits eingeblendet. Für die Bewerbung zum **{programme_name}** läuft der Prozess "
                 "praktisch so:\n\n"
-                f"1. **Fit prüfen**: Hochschulabschluss, {requirements} und {language_requirement}.\n"
+                "1. **Fit prüfen**: Hochschulabschluss, Berufserfahrung, Führungserfahrung und Sprachkenntnisse.\n"
                 "2. **Unterlagen vorbereiten**: CV, Studienabschluss/Zeugnisse, Übersicht zur Führungsverantwortung, "
                 "Motivation und Entwicklungsziele sowie Sprachniveau.\n"
                 "3. **Zulassungs-/Beratungsgespräch**: formaler Fit, Programm-Fit, Ziele, Timing und offene Fragen zur "
@@ -1628,17 +1702,29 @@ class ExecutiveAgentChain:
                 "The appointment options are already shown. Before applying, first decide which programme you want to "
                 "target. The process then follows the same structure: fit check, documents, admissions conversation, "
                 "application submission, decision, and enrolment.\n\n"
-                "Prepare CV, degree certificates/transcripts, leadership overview, motivation, language readiness, and "
-                "your preferred start timing. For **emba X**, also plan around the published deadlines: **31 August 2026** "
-                "and **31 October 2026**."
+                "**EMBA HSG**: start **14 September 2026**, tuition **CHF 77,500**, requires degree, **5+ years** "
+                "professional experience, **3+ years** leadership experience, and strong German.\n"
+                "**IEMBA HSG**: start **24 August 2026**, tuition **CHF 85,000**, requires degree, **5+ years** "
+                "professional experience, **3+ years** leadership experience, and strong English.\n"
+                "**emba X**: first application deadline **31 August 2026** with **CHF 99,000** tuition; final deadline "
+                "**31 October 2026** with **CHF 110,000** tuition; requires degree, **10+ years** professional experience, "
+                "**5+ years** leadership experience, and fluent English.\n\n"
+                "For all three: prepare CV, degree certificates/transcripts, leadership overview, motivation, language "
+                "readiness, and preferred start timing."
             )
         return (
             "Die Terminoptionen sind bereits eingeblendet. Vor der Bewerbung sollte zuerst geklärt werden, welches Programm "
             "Sie konkret ansteuern. Danach ist der Ablauf grundsätzlich: Fit prüfen, Unterlagen vorbereiten, "
             "Zulassungs-/Beratungsgespräch, Bewerbung einreichen, Entscheid und Einschreibung.\n\n"
-            "Vorbereiten sollten Sie CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation, Sprachniveau und "
-            "gewünschten Startzeitpunkt. Für **emba X** sind zusätzlich die veröffentlichten Fristen relevant: "
-            "**31.08.2026** und **31.10.2026**."
+            "**EMBA HSG**: Start **14.09.2026**, Studiengebühr **CHF 77'500**, Hochschulabschluss, **5+ Jahre "
+            "Berufserfahrung**, **3+ Jahre Führungserfahrung** und starke Deutschkenntnisse.\n"
+            "**IEMBA HSG**: Start **24.08.2026**, Studiengebühr **CHF 85'000**, Hochschulabschluss, **5+ Jahre "
+            "Berufserfahrung**, **3+ Jahre Führungserfahrung** und sehr gutes Englisch.\n"
+            "**emba X**: erste Bewerbungsfrist **31.08.2026** mit **CHF 99'000** Studiengebühr; finale Bewerbungsfrist "
+            "**31.10.2026** mit **CHF 110'000** Studiengebühr; Hochschulabschluss, **10+ Jahre Berufserfahrung**, "
+            "**5+ Jahre Führungserfahrung** und sehr gutes Englisch.\n\n"
+            "Für alle drei sollten Sie CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation, Sprachniveau "
+            "und gewünschten Startzeitpunkt vorbereiten."
         )
 
     def _serve_application_process_details(

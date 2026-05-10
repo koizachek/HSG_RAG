@@ -218,6 +218,48 @@ Here are the programs:
         assert agent._conversation_state["handover_requested"] is True
         assert agent._conversation_state["suggested_program"] == "emba_x"
 
+    def test_emba_next_steps_include_programme_specific_details(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+        }
+
+        response = agent._serve_programme_next_steps(
+            processed_query="ich finde EMBA HSG besser",
+            response_language="de",
+            programme="emba",
+        )
+
+        assert "Cyra von Müller" in response.response
+        assert "14.09.2026" in response.response
+        assert "CHF 77'500" in response.response
+        assert "5+ Jahre Berufserfahrung" in response.response
+        assert "3+ Jahre Führungserfahrung" in response.response
+        assert response.relevant_programs == ["emba"]
+
+    def test_iemba_next_steps_include_programme_specific_details(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+        }
+
+        response = agent._serve_programme_next_steps(
+            processed_query="ich finde IEMBA HSG besser",
+            response_language="de",
+            programme="iemba",
+        )
+
+        assert "Kristin Fuchs" in response.response
+        assert "24.08.2026" in response.response
+        assert "CHF 85'000" in response.response
+        assert "10 Kernkurse" in response.response
+        assert "4 Wochen Auslandsmodule" in response.response
+        assert response.relevant_programs == ["iemba"]
+
     def test_application_question_after_programme_choice_shows_booking_widget(self):
         agent = object.__new__(ExecutiveAgentChain)
         agent._conversation_history = [
@@ -277,6 +319,56 @@ Here are the programs:
         assert second_response.appointment_requested is False
         assert second_response.show_booking_widget is False
         assert second_response.relevant_programs == ["emba_x"]
+
+    def test_emba_application_process_details_include_start_fee_and_requirements(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("Für die Bewerbung zum **EMBA HSG** ist der nächste sinnvolle Schritt ein Zulassungsgespräch.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": True,
+            "suggested_program": "emba",
+            "program_interest": ["emba"],
+        }
+
+        response = agent._serve_application_process_details(
+            processed_query="Wie läuft der Prozess?",
+            response_language="de",
+            programmes=["emba"],
+        )
+
+        assert "EMBA HSG" in response.response
+        assert "14.09.2026" in response.response
+        assert "CHF 77'500" in response.response
+        assert "5+ Jahre Berufserfahrung" in response.response
+        assert "3+ Jahre Führungserfahrung" in response.response
+        assert "Capstone" in response.response
+        assert response.show_booking_widget is False
+
+    def test_iemba_application_process_details_include_start_fee_and_requirements(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("Für die Bewerbung zum **IEMBA HSG** ist der nächste sinnvolle Schritt ein Zulassungsgespräch.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": True,
+            "suggested_program": "iemba",
+            "program_interest": ["iemba"],
+        }
+
+        response = agent._serve_application_process_details(
+            processed_query="Welche Unterlagen und Fristen?",
+            response_language="de",
+            programmes=["iemba"],
+        )
+
+        assert "IEMBA HSG" in response.response
+        assert "24.08.2026" in response.response
+        assert "CHF 85'000" in response.response
+        assert "5+ Jahre Berufserfahrung" in response.response
+        assert "3+ Jahre Führungserfahrung" in response.response
+        assert "sehr gutes Englisch" in response.response
+        assert response.show_booking_widget is False
 
     def test_embax_user_interest_is_not_misclassified_as_emba_hsg(self):
         agent = object.__new__(ExecutiveAgentChain)
@@ -426,6 +518,34 @@ Here are the programs:
         assert response.appointment_requested is True
         assert response.show_booking_widget is True
         assert response.relevant_programs == ["emba", "iemba", "emba_x"]
+
+    def test_multi_programme_application_process_details_include_all_programmes(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("Für den Bewerbungsschritt sollte zuerst geklärt werden, welches Programm Sie konkret ansteuern.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": True,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+
+        response = agent._serve_application_process_details(
+            processed_query="Wie läuft der Prozess?",
+            response_language="de",
+            programmes=["emba", "iemba", "emba_x"],
+        )
+
+        assert "EMBA HSG" in response.response
+        assert "14.09.2026" in response.response
+        assert "CHF 77'500" in response.response
+        assert "IEMBA HSG" in response.response
+        assert "24.08.2026" in response.response
+        assert "CHF 85'000" in response.response
+        assert "emba X" in response.response
+        assert "31.08.2026" in response.response
+        assert "31.10.2026" in response.response
+        assert response.show_booking_widget is False
 
     def test_reset_conversation_state_clears_profile_and_history(self):
         agent = object.__new__(ExecutiveAgentChain)
