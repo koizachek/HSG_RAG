@@ -12,7 +12,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from src.apps.chat.app import ChatbotApplication
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.input_handler import InputHandler
-from src.rag.programme_facts import ProgrammeFacts
+from src.rag.programme_facts import ProgrammeFacts, ProgrammeFactsProvider
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.utilclasses import LeadAgentQueryResponse
@@ -120,6 +120,26 @@ class TestInputHandling:
         assert not is_valid
 
 
+class TestProgrammeFactsProvider:
+    def test_extracted_facts_skip_scraped_contact_noise(self):
+        raw_context = """
+        Vielen Dank für Ihr Interesse an unserem Executive MBA Programm!
+        Kontakt Cyra von Müller Senior Recruitment & Admissions Manager EMBA HSG Programm.
+        Bewerbungsfristen im Überblick:
+        Studiengebühr: CHF 77'500.
+        Start: 14.09.2026.
+        Dauer: 18 Monate berufsbegleitend.
+        """
+        facts = ProgrammeFactsProvider(lambda *_args: raw_context).get_facts("emba", "de")
+
+        joined = " ".join(facts.timing_points + facts.fit_points + facts.focus_points)
+
+        assert "CHF 77'500" in joined
+        assert "14.09.2026" in joined
+        assert "Vielen Dank" not in joined
+        assert "Senior Recruitment" not in joined
+
+
 class TestResponseFormatting:
     """Test response formatting and table removal"""
     
@@ -197,8 +217,15 @@ Here are the programs:
         assert "IEMBA HSG" in response.response
         assert "emba X" in response.response
         assert "Bei HSG gibt es drei relevante Executive-MBA-Optionen" in response.response
+        assert "Kontak" not in response.response
+        assert "Senior Recruitment" not in response.response
+        assert "Bewerbungsfristen im Überblick" not in response.response
+        assert "Programmfakten unten stammen" not in response.response
+        assert "importierten Programmdaten" not in response.response
+        assert "Interessieren Sie sich für Kosten" in response.response
         assert "Das Profil klärt" not in response.response
         assert "Möchten Sie, dass ich mit weiteren Details fortfahre?" not in response.response
+        assert len(response.response.split()) < 170
         assert response.relevant_programs == ["emba", "iemba", "emba_x"]
         assert isinstance(agent._conversation_history[0], HumanMessage)
         assert isinstance(agent._conversation_history[1], AIMessage)
@@ -326,6 +353,181 @@ Here are the programs:
         assert "10 Kernkurse" in response.response
         assert "4 Wochen Auslandsmodule" in response.response
         assert response.relevant_programs == ["iemba"]
+
+    def test_cost_and_start_follow_up_uses_subagent_from_context(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("Für den **EMBA HSG** ist der nächste Schritt eine Zulassungsabklärung.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        attach_fake_programme_facts(agent)
+
+        assert agent._resolve_programmes_for_fact_request("was kostet der und wann beginnt der") == ["emba"]
+
+        response = agent._serve_programme_fact_request(
+            processed_query="was kostet der und wann beginnt der",
+            response_language="de",
+            programmes=["emba"],
+        )
+
+        assert "**Kosten**" in response.response
+        assert "**Start**" in response.response
+        assert "RAG" not in response.response
+        assert "Formaler Fit" not in response.response
+        assert "Programmunterlagen" not in response.response
+        assert "CHF 77'500" in response.response
+        assert "14.09.2026" in response.response
+        assert response.relevant_programs == ["emba"]
+
+    def test_programme_costs_are_cleaned_without_fit_or_scrape_noise(self):
+        class FakeRetrieveTool:
+            def __init__(self):
+                self.payloads = []
+
+            def invoke(self, payload):
+                self.payloads.append(payload)
+                program = payload["program"]
+                contexts = {
+                    "emba": (
+                        "Bewerbungsfristen im Überblick; IEMBA 14 Programm-Start: 24.; "
+                        "Bewerbungsfrist Studiengebühr: 31.; März 2026 CHF 80'000.\n"
+                        "EMBA HSG Studiengebühr: CHF 77'500."
+                    ),
+                    "iemba": (
+                        "IEMBA HSG Studiengebühr: CHF 85'000.\n"
+                        "St.Gallen, Schweiz 5 Tage Start with you: Find your Leadership Identity Wahlkurs 5 Tage."
+                    ),
+                    "emba x": (
+                        "emba X Studiengebühr: CHF 99'000 bis zur ersten Bewerbungsfrist "
+                        "31.08.2026 und CHF 110'000 bis zur finalen Bewerbungsfrist 31.10.2026."
+                    ),
+                }
+                return contexts[program]
+
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._retrieve_context_tool = FakeRetrieveTool()
+
+        response = agent._serve_programme_fact_request(
+            processed_query="was kosten die programme?",
+            response_language="de",
+            programmes=["emba", "iemba", "emba_x"],
+        )
+
+        assert len(agent._retrieve_context_tool.payloads) == 3
+        assert "EMBA HSG" in response.response
+        assert "IEMBA HSG" in response.response
+        assert "emba X" in response.response
+        assert "CHF 77'500" in response.response
+        assert "CHF 85'000" in response.response
+        assert "CHF 99'000" in response.response
+        assert "CHF 110'000" in response.response
+        assert "Formaler Fit" not in response.response
+        assert "aus derselben Quelle" not in response.response
+        assert "Programmunterlagen" not in response.response
+        assert "Bewerbungsfristen im Überblick" not in response.response
+        assert "Start with you" not in response.response
+
+    def test_single_programme_application_info_uses_rag_not_booking(self):
+        class FakeRetrieveTool:
+            def __init__(self):
+                self.payloads = []
+
+            def invoke(self, payload):
+                self.payloads.append(payload)
+                return (
+                    "1. Setzen Sie sich mit uns in Verbindung - senden Sie uns Ihren Lebenslauf, "
+                    "um zu erfahren, ob Ihr Profil zu unserem Programm passt 2. Vollständig "
+                    "ausgefüllte Online-Bewerbung 3. Absolvierung des Online-Assessments "
+                    "(nach Einladung) 4. Online-Interview 5. Finaler Entscheid durch den "
+                    "Zulassungsausschuss. Unser Bewerbungsprozess ist kostenlos.\n"
+                    "#### EMBA 71 Programm-Start: 14. September 2026:\n"
+                    "- 1. Bewerbungsfrist Studiengebühr: 29. Juni 2026 CHF 72'500\n"
+                    "- Finale Bewerbungsfrist Studiengebühr: 10. August 2026 CHF 77'500"
+                )
+
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._retrieve_context_tool = FakeRetrieveTool()
+
+        query = "Wie bewerbe ich mich für den EMBA HSG?"
+        assert agent._resolve_programmes_for_fact_request(query) == ["emba"]
+        assert agent._requested_fact_categories(query, "de") == [
+            "application_process",
+            "documents",
+            "deadline",
+        ]
+
+        response = agent._serve_programme_fact_request(
+            processed_query=query,
+            response_language="de",
+            programmes=["emba"],
+        )
+
+        assert len(agent._retrieve_context_tool.payloads) == 1
+        assert "**Bewerbungsprozess**" in response.response
+        assert "Online-Bewerbung" in response.response
+        assert "Online-Assessment" in response.response
+        assert "**Unterlagen**" in response.response
+        assert "Lebenslauf/CV" in response.response
+        assert "29. Juni 2026" in response.response
+        assert "10. August 2026" in response.response
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
+        assert "Terminoptionen" not in response.response
+
+    def test_explicit_booking_request_stays_out_of_fact_routing(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+
+        assert agent._resolve_programmes_for_fact_request(
+            "Ich möchte einen Termin für EMBA HSG buchen."
+        ) == []
+
+    def test_retrieve_context_via_tool_invokes_langchain_tool(self):
+        class FakeRetrieveTool:
+            def __init__(self):
+                self.payload = None
+
+            def invoke(self, payload):
+                self.payload = payload
+                return "retrieved context"
+
+        agent = object.__new__(ExecutiveAgentChain)
+        fake_tool = FakeRetrieveTool()
+        agent._retrieve_context_tool = fake_tool
+
+        result = agent._retrieve_context_via_tool(
+            query="Studiengebühr Startdatum",
+            program="emba",
+            language="de",
+        )
+
+        assert result == "retrieved context"
+        assert fake_tool.payload == {
+            "query": "Studiengebühr Startdatum",
+            "program": "emba",
+            "language": "de",
+        }
 
     def test_application_question_after_programme_choice_shows_booking_widget(self):
         agent = object.__new__(ExecutiveAgentChain)
@@ -537,6 +739,98 @@ Here are the programs:
 
         assert agent._conversation_state["program_interest"] == []
         assert agent._conversation_state["suggested_program"] is None
+
+    def test_assistant_overview_text_does_not_create_embax_suggestion(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "session_id": "session-1",
+            "user_id": "session-1",
+            "user_language": "de",
+            "user_name": None,
+            "experience_years": None,
+            "leadership_years": None,
+            "field": None,
+            "interest": None,
+            "qualification_level": None,
+            "program_interest": [],
+            "suggested_program": None,
+            "handover_requested": None,
+            "topics_discussed": [],
+            "preferences_known": False,
+        }
+
+        agent._update_conversation_state(
+            "ich interessiere mich für einen MBA",
+            (
+                "EMBA HSG, IEMBA HSG und emba X sind relevant. "
+                "emba X passt zu Technologie, Innovation und Transformation."
+            ),
+        )
+
+        assert agent._conversation_state["interest"] is None
+        assert agent._conversation_state["program_interest"] == []
+        assert agent._conversation_state["suggested_program"] is None
+
+    def test_application_timing_after_multi_programme_overview_is_fact_request_not_embax_booking(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("EMBA HSG, IEMBA HSG und emba X sind relevante Optionen.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        attach_fake_programme_facts(agent)
+
+        programmes = agent._resolve_programmes_for_fact_request("wann soll ich mich denn bewerben?")
+        assert programmes == [
+            "emba",
+            "iemba",
+            "emba_x",
+        ]
+
+        response = agent._serve_programme_fact_request(
+            processed_query="wann soll ich mich denn bewerben?",
+            response_language="de",
+            programmes=programmes,
+        )
+
+        assert response.show_booking_widget is False
+        assert response.appointment_requested is False
+        assert response.relevant_programs == ["emba", "iemba", "emba_x"]
+
+    def test_each_programme_start_dates_ignore_stale_embax_suggestion(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("EMBA HSG, IEMBA HSG und emba X sind relevante Optionen.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": "emba_x",
+            "program_interest": ["emba_x"],
+        }
+
+        programmes = agent._resolve_programmes_for_fact_request(
+            "was sind die startdaten für die programme jeweils?"
+        )
+
+        assert programmes == ["emba", "iemba", "emba_x"]
+
+    def test_empty_programme_facts_are_not_cached(self):
+        calls = []
+
+        def fake_retrieve(query, program, language):
+            calls.append((query, program, language))
+            return ""
+
+        provider = ProgrammeFactsProvider(fake_retrieve)
+
+        provider.get_facts("emba", "de")
+        provider.get_facts("emba", "de")
+
+        assert len(calls) == 2
 
     def test_application_question_with_specific_programme_shows_correct_advisor(self):
         agent = object.__new__(ExecutiveAgentChain)

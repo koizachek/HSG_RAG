@@ -114,6 +114,29 @@ class ProgrammeFactsProvider:
         "application file",
         "bewerbungsakte",
     )
+    _NOISE_TERMS = (
+        "vielen dank für ihr interesse",
+        "vielen dank fuer ihr interesse",
+        "senior recruitment",
+        "admissions manager",
+        "bei allgemeinen anfragen",
+        "allgemeinen anfragen",
+        "kontakt cyra",
+        "kontakt kristin",
+        "kontakt teyuna",
+        "impact story",
+        "alumnus",
+        "alumni",
+        "wir sprachen mit",
+        "du warst teilnehmer",
+        "für mich war die",
+        "fuer mich war die",
+        "unterlagen und werkzeuge",
+        "jeder kurswoche",
+        "lernerfahrungen",
+        "diplomarbeit",
+        "preis ausgezeichnet",
+    )
 
     def __init__(self, retrieve_context: Callable[[str, str, str], str]) -> None:
         self._retrieve_context = retrieve_context
@@ -135,7 +158,8 @@ class ProgrammeFactsProvider:
             context = ""
 
         facts = self._extract_facts(normalized_programme, context)
-        self._cache[cache_key] = facts
+        if facts.source_available:
+            self._cache[cache_key] = facts
         return facts
 
     def _extract_facts(self, programme: str, context: str) -> ProgrammeFacts:
@@ -161,15 +185,21 @@ class ProgrammeFactsProvider:
 
     @staticmethod
     def _split_sentences(text: str) -> list[str]:
-        cleaned = re.sub(r"\s+", " ", text or "").strip()
-        if not cleaned:
+        raw_text = (text or "").strip()
+        if not raw_text:
             return []
 
-        chunks = re.split(r"(?<=[.!?])\s+|(?:\s+-\s+)|(?:\s+•\s+)", cleaned)
+        raw_text = re.sub(r"#{1,6}\s*", "\n", raw_text)
+        raw_text = re.sub(r"\|", "\n", raw_text)
+        chunks = re.split(r"\n+|(?<=[.!?])\s+|(?:\s+•\s+)", raw_text)
         sentences = []
         for chunk in chunks:
-            normalized = chunk.strip(" -•\t\n")
-            if len(normalized) < 20:
+            normalized = re.sub(r"\s+", " ", chunk).strip(" -•\t\n")
+            normalized_lower = normalized.lower()
+            has_compact_fact = bool(re.search(r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b|chf\s*[\d']", normalized_lower))
+            if len(normalized) < 20 and not has_compact_fact:
+                continue
+            if any(term in normalized_lower for term in ProgrammeFactsProvider._NOISE_TERMS):
                 continue
             if len(normalized) > 320:
                 normalized = normalized[:317].rstrip() + "..."
