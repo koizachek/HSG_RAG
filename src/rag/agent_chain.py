@@ -899,14 +899,6 @@ class ExecutiveAgentChain:
                 programme=preferred_programme,
             )
 
-        fact_programmes = self._resolve_programmes_for_fact_request(processed_query)
-        if fact_programmes:
-            return self._serve_programme_fact_request(
-                processed_query=processed_query,
-                response_language=current_language,
-                programmes=fact_programmes,
-            )
-
         if (
             self._previous_response_was_application_next_step()
             and self._is_application_process_detail_request(processed_query)
@@ -925,6 +917,14 @@ class ExecutiveAgentChain:
                 processed_query=processed_query,
                 response_language=current_language,
                 programmes=application_programmes,
+            )
+
+        fact_programmes = self._resolve_programmes_for_fact_request(processed_query)
+        if fact_programmes:
+            return self._serve_programme_fact_request(
+                processed_query=processed_query,
+                response_language=current_language,
+                programmes=fact_programmes,
             )
 
         if self._pending_continuation and self._is_continuation_request(processed_query):
@@ -1289,6 +1289,78 @@ class ExecutiveAgentChain:
         ]
         return any(term in query_lower for term in application_terms)
 
+    def _is_application_next_step_route(self, query: str) -> bool:
+        """Return True for process/next-step application questions, not deadline-only fact questions."""
+        if not self._is_application_next_step_request(query):
+            return False
+
+        query_lower = query.lower()
+        timing_or_price_terms = [
+            "wann",
+            "frist",
+            "fristen",
+            "bewerbungsfrist",
+            "bewerbungszeitraum",
+            "bewerbungsperiode",
+            "deadline",
+            "deadlines",
+            "application deadline",
+            "application period",
+            "start",
+            "startdatum",
+            "beginnt",
+            "startet",
+            "kosten",
+            "kostet",
+            "preis",
+            "gebühr",
+            "gebuehr",
+            "chf",
+            "dauer",
+            "wie lange",
+        ]
+        process_terms = [
+            "wie bewerbe ich mich",
+            "wie kann ich mich",
+            "wie bewirbt man sich",
+            "wie läuft die bewerbung",
+            "wie laeuft die bewerbung",
+            "bewerbungsprozess",
+            "bewerbungsablauf",
+            "prozess",
+            "ablauf",
+            "schritte",
+            "unterlagen",
+            "dokument",
+            "dokumente",
+            "zulassung",
+            "assessment",
+            "how do i apply",
+            "how can i apply",
+            "how to apply",
+            "application process",
+            "admissions process",
+            "application steps",
+            "application documents",
+            "documents",
+        ]
+
+        if any(term in query_lower for term in process_terms):
+            return True
+
+        if re.search(r"\bwie\b.{0,100}\b(bewerben|bewerbe|bewerbung|bewirbt)\b", query_lower):
+            return True
+        if re.search(r"\bhow\b.{0,100}\b(apply|application|admission|admissions)\b", query_lower):
+            return True
+
+        if any(term in query_lower for term in timing_or_price_terms):
+            return False
+
+        return any(
+            term in query_lower
+            for term in ["bewerben", "bewerbung", "apply", "application", "admission", "admissions"]
+        )
+
     def _is_application_process_detail_request(self, query: str) -> bool:
         query_lower = query.lower()
         detail_terms = [
@@ -1358,7 +1430,7 @@ class ExecutiveAgentChain:
         return []
 
     def _resolve_application_programmes(self, query: str) -> list[str]:
-        if not self._is_application_next_step_request(query):
+        if not self._is_application_next_step_route(query):
             return []
 
         programmes = self._resolve_known_application_programmes(query)
@@ -1436,6 +1508,9 @@ class ExecutiveAgentChain:
 
     def _resolve_programmes_for_fact_request(self, query: str) -> list[str]:
         if self._is_explicit_booking_intent(query):
+            return []
+
+        if self._is_application_next_step_route(query):
             return []
 
         if not self._is_programme_fact_request(query):
@@ -1624,7 +1699,13 @@ class ExecutiveAgentChain:
             "requirements",
         ]
 
-        if any(term in query_lower for term in application_process_terms):
+        if any(term in query_lower for term in application_process_terms) or re.search(
+            r"\bwie\b.{0,100}\b(bewerben|bewerbe|bewerbung|bewirbt)\b",
+            query_lower,
+        ) or re.search(
+            r"\bhow\b.{0,100}\b(apply|application|admission|admissions)\b",
+            query_lower,
+        ):
             categories.extend(["application_process", "documents", "deadline"])
         elif any(term in query_lower for term in document_terms):
             categories.append("documents")
@@ -2556,29 +2637,110 @@ class ExecutiveAgentChain:
             relevant_programs=[programme],
         )
 
+    def _get_application_timing_fact_values(
+        self,
+        programme: str,
+        language: str,
+    ) -> dict[str, list[str]]:
+        categories = ["cost", "start", "deadline"]
+        contexts: list[str] = []
+
+        cross_context = self._get_cross_programme_fact_context(language, categories)
+        if cross_context:
+            contexts.append(cross_context)
+
+        facts_by_category = self._extract_requested_programme_facts(
+            context="\n".join(contexts),
+            programme=programme,
+            categories=categories,
+            language=language,
+        )
+
+        if self._has_missing_requested_facts(facts_by_category, categories):
+            targeted_context = self._get_targeted_programme_fact_context(
+                programme=programme,
+                language=language,
+                user_query=(
+                    "Bewerbungsfrist Studiengebühr Programm-Start"
+                    if language == "de"
+                    else "application deadline tuition programme start"
+                ),
+                categories=categories,
+            )
+            if targeted_context:
+                contexts.append(targeted_context)
+                facts_by_category = self._extract_requested_programme_facts(
+                    context="\n".join(contexts),
+                    programme=programme,
+                    categories=categories,
+                    language=language,
+                )
+
+        return facts_by_category
+
+    def _format_application_timing_summary(self, programme: str, language: str) -> str:
+        facts_by_category = self._get_application_timing_fact_values(programme, language)
+        lines: list[str] = []
+
+        start_values = facts_by_category.get("start") or []
+        if start_values:
+            label = "Start" if language == "de" else "Start"
+            lines.append(
+                f"- **{label}**: {self._format_requested_fact_values(start_values, 'start', language)}"
+            )
+
+        cost_values = facts_by_category.get("cost") or []
+        if cost_values:
+            label = "Fristen/Gebühren" if language == "de" else "Deadlines/tuition"
+            lines.append(
+                f"- **{label}**: {self._format_requested_fact_values(cost_values, 'cost', language)}"
+            )
+        else:
+            deadline_values = facts_by_category.get("deadline") or []
+            if deadline_values:
+                label = "Bewerbungsfristen" if language == "de" else "Application deadlines"
+                lines.append(
+                    f"- **{label}**: {self._format_requested_fact_values(deadline_values, 'deadline', language)}"
+                )
+
+        if not lines:
+            return ""
+
+        heading = "Aktuell relevant:" if language == "de" else "Currently relevant:"
+        return f"{heading}\n" + "\n".join(lines)
+
     def _build_application_next_steps_response(self, language: str, programmes: list[str]) -> str:
         programme_labels = {
             "emba": ("EMBA HSG", "Cyra von Müller"),
             "iemba": ("IEMBA HSG", "Kristin Fuchs"),
             "emba_x": ("emba X", "Teyuna Giger"),
         }
-        selected = [programme_labels[p] for p in programmes if p in programme_labels]
+        selected = [(p, *programme_labels[p]) for p in programmes if p in programme_labels]
 
         if len(selected) == 1:
-            programme_name, advisor = selected[0]
+            programme, programme_name, advisor = selected[0]
+            facts = self._get_programme_facts(programme, language)
+            timing_summary = self._format_application_timing_summary(programme, language)
+            timing_block = f"\n\n{timing_summary}" if timing_summary else ""
             if language == "en":
+                documents = self._format_fact_points(
+                    facts.document_points,
+                    "CV, degree certificates/transcripts, leadership scope, motivation, language readiness, and target start timing",
+                ).rstrip(". ")
                 return (
                     f"For the **{programme_name}** application, the next useful step is an admissions conversation with "
-                    f"**{advisor}**. Prepare your CV, degree certificates, leadership scope, motivation, language readiness, "
-                    "and your target start date. In that conversation, admissions can confirm formal eligibility, documents, "
-                    "deadlines, and the best timing for submission.\n\n"
+                    f"**{advisor}**. Preparation: {documents}. In that conversation, admissions can confirm formal eligibility, "
+                    f"documents, deadlines, and the best timing for submission.{timing_block}\n\n"
                     "I am showing the appointment options and contact details below."
                 )
+            documents = self._format_fact_points(
+                facts.document_points,
+                "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation, Sprachniveau und gewünschter Startzeitpunkt",
+            ).rstrip(". ")
             return (
                 f"Für die Bewerbung zum **{programme_name}** ist der nächste sinnvolle Schritt ein Zulassungs- und "
-                f"Beratungsgespräch mit **{advisor}**. Vorbereiten sollten Sie CV, Studienabschluss, Umfang Ihrer "
-                "Führungsverantwortung, Motivation, Sprachniveau und den gewünschten Startzeitpunkt. In dem Gespräch "
-                "können formaler Fit, Unterlagen, Fristen und der beste Zeitpunkt für die Einreichung geklärt werden.\n\n"
+                f"Beratungsgespräch mit **{advisor}**. Als Vorbereitung relevant: {documents}. In dem Gespräch "
+                f"können formaler Fit, Unterlagen, Fristen und der beste Zeitpunkt für die Einreichung geklärt werden.{timing_block}\n\n"
                 "Ich zeige Ihnen unten die Terminoptionen und Kontaktdaten."
             )
 

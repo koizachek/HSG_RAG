@@ -139,6 +139,20 @@ class TestProgrammeFactsProvider:
         assert "Vielen Dank" not in joined
         assert "Senior Recruitment" not in joined
 
+    def test_document_facts_do_not_use_alumni_motivation_quotes(self):
+        raw_context = """
+        Ich bin mir ganz sicher, dass ich meinen beruflichen Fortschritt zu einem ganz großen Teil
+        der Tools, dem Netzwerk und der Motivation, die ich aus der HSG mitnehmen durfte, zu verdanken habe.
+        Bewerbungsunterlagen: CV, Studienabschluss, Zeugnisse und vollständig ausgefüllte Online-Bewerbung.
+        """
+
+        facts = ProgrammeFactsProvider(lambda *_args: raw_context).get_facts("iemba", "de")
+        joined_documents = " ".join(facts.document_points)
+
+        assert "beruflichen Fortschritt" not in joined_documents
+        assert "CV" in joined_documents
+        assert "Online-Bewerbung" in joined_documents
+
 
 class TestResponseFormatting:
     """Test response formatting and table removal"""
@@ -450,7 +464,7 @@ Here are the programs:
         assert "Bewerbungsfristen im Überblick" not in response.response
         assert "Start with you" not in response.response
 
-    def test_single_programme_application_info_uses_rag_not_booking(self):
+    def test_single_programme_deadline_info_uses_rag_not_booking(self):
         class FakeRetrieveTool:
             def __init__(self):
                 self.payloads = []
@@ -477,13 +491,10 @@ Here are the programs:
         }
         agent._retrieve_context_tool = FakeRetrieveTool()
 
-        query = "Wie bewerbe ich mich für den EMBA HSG?"
+        query = "Welche Bewerbungsfristen gelten für den EMBA HSG?"
+        assert agent._resolve_application_programmes(query) == []
         assert agent._resolve_programmes_for_fact_request(query) == ["emba"]
-        assert agent._requested_fact_categories(query, "de") == [
-            "application_process",
-            "documents",
-            "deadline",
-        ]
+        assert agent._requested_fact_categories(query, "de") == ["deadline"]
 
         response = agent._serve_programme_fact_request(
             processed_query=query,
@@ -492,16 +503,42 @@ Here are the programs:
         )
 
         assert len(agent._retrieve_context_tool.payloads) == 1
-        assert "**Bewerbungsprozess**" in response.response
-        assert "Online-Bewerbung" in response.response
-        assert "Online-Assessment" in response.response
-        assert "**Unterlagen**" in response.response
-        assert "Lebenslauf/CV" in response.response
+        assert "**Bewerbungsfrist**" in response.response
         assert "29. Juni 2026" in response.response
         assert "10. August 2026" in response.response
         assert response.appointment_requested is False
         assert response.show_booking_widget is False
         assert "Terminoptionen" not in response.response
+
+    def test_specific_how_to_apply_routes_to_application_next_steps_with_widget(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+        attach_fake_programme_facts(agent)
+
+        query = "Wie kann ich mich für emba x bewerben?"
+
+        assert agent._resolve_programmes_for_fact_request(query) == []
+        assert agent._resolve_application_programmes(query) == ["emba_x"]
+
+        response = agent._serve_application_next_steps(
+            processed_query=query,
+            response_language="de",
+            programmes=["emba_x"],
+        )
+
+        assert "Bewerbung zum **emba X**" in response.response
+        assert "Teyuna Giger" in response.response
+        assert "31.08.2026" in response.response
+        assert "CHF 99'000" in response.response
+        assert response.appointment_requested is True
+        assert response.show_booking_widget is True
+        assert response.relevant_programs == ["emba_x"]
 
     def test_explicit_booking_request_stays_out_of_fact_routing(self):
         agent = object.__new__(ExecutiveAgentChain)

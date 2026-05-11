@@ -109,8 +109,10 @@ class ProgrammeFactsProvider:
         "certificate",
         "certificates",
         "transcript",
-        "motivation",
-        "motivations",
+        "online-bewerbung",
+        "online application",
+        "online-assessment",
+        "online assessment",
         "application file",
         "bewerbungsakte",
     )
@@ -136,6 +138,10 @@ class ProgrammeFactsProvider:
         "lernerfahrungen",
         "diplomarbeit",
         "preis ausgezeichnet",
+        "ich bin mir ganz sicher",
+        "beruflichen fortschritt",
+        "tools, dem netzwerk",
+        "hsg mitnehmen",
     )
 
     def __init__(self, retrieve_context: Callable[[str, str, str], str]) -> None:
