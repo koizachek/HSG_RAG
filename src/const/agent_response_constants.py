@@ -80,30 +80,6 @@ ADMISSIONS_TEAM_CONTACT = {
     },
 }
 
-ADVISOR_CONTACTS = [
-    {
-        "name": "Cyra von Müller (EMBA)",
-        "program": "emba",
-        "email": "cyra.vonmueller@unisg.ch",
-        "phone": "+41 71 224 27 12",
-        "url": "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
-    },
-    {
-        "name": "Kristin Fuchs (IEMBA)",
-        "program": "iemba",
-        "email": "kristin.fuchs@unisg.ch",
-        "phone": "+41 71 224 75 46",
-        "url": "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
-    },
-    {
-        "name": "Teyuna Giger (emba X)",
-        "program": "emba_x",
-        "email": "teyuna.giger@unisg.ch",
-        "phone": "+41 71 224 77 65",
-        "url": "https://calendly.com/teyuna-giger-unisg",
-    },
-]
-
 
 def get_admissions_contact_text(language: str = "en") -> str:
     labels = {
@@ -113,59 +89,6 @@ def get_admissions_contact_text(language: str = "en") -> str:
     contact = ADMISSIONS_TEAM_CONTACT.get(language, ADMISSIONS_TEAM_CONTACT["en"])
     template = labels.get(language, labels["en"])
     return template.format(email=contact["email"], phone=contact["phone"])
-
-
-def get_booking_widget(language: str="en", programs: list[str]=None):
-    """
-    Returns an HTML string representing a Booking Widget.
-    """
-
-    if programs is None or programs == []:
-        programs = ["emba", "iemba", "emba_x"]
-
-    labels = {
-        "en": {
-            "header": "Book a Consultation",
-            "sub": "Select an advisor to view available appointment slots and contact details:",
-            "email": "Email",
-            "phone": "Phone",
-        },
-        "de": {
-            "header": "Termin vereinbaren",
-            "sub": "Wählen Sie einen Berater, um verfügbare Termine und Kontaktdaten zu sehen:",
-            "email": "E-Mail",
-            "phone": "Telefon",
-        }
-    }
-    txt = labels.get(language, labels["en"])
-
-    base_params = "?hide_gdpr_banner=1&embed_type=Inline&embed_domain=1"
-
-    html_content = f"""
-    <div style="width: 100%; min-width: 100%; box-sizing: border-box; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-top: 10px; font-family: sans-serif;">
-        <h3 style="margin: 0 0 10px 0; color: #111827; font-size: 1.2em;">{txt['header']}</h3>
-        <p style="margin: 0 0 20px 0; color: #6b7280; font-size: 1em;">{txt['sub']}</p>
-    """
-
-    for advisor in ADVISOR_CONTACTS:
-        if advisor["program"] in programs:
-            html_content += f"""
-            <details style="margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <summary style="cursor: pointer; padding: 16px 20px; background-color: #ffffff; font-weight: 600; color: #374151; font-size: 1.05em; list-style: none; transition: background 0.2s;">
-                    {advisor['name']}
-                </summary>
-                <div style="padding: 16px 20px 0 20px; border-top: 1px solid #e5e7eb;">
-                    <p style="margin: 0 0 6px 0; color: #374151;"><strong>{txt['email']}:</strong> <a href="mailto:{advisor['email']}" style="color: #1d4ed8; text-decoration: none;">{advisor['email']}</a></p>
-                    <p style="margin: 0 0 16px 0; color: #374151;"><strong>{txt['phone']}:</strong> <a href="tel:{advisor['phone'].replace(' ', '')}" style="color: #1d4ed8; text-decoration: none;">{advisor['phone']}</a></p>
-                </div>
-                <div style="padding: 0; border-top: 1px solid #e5e7eb;">
-                    <iframe src="{advisor['url']}{base_params}" width="100%" height="650px" frameborder="0" style="display: block;"></iframe>
-                </div>
-            </details>
-            """
-
-    html_content += "</div>"
-    return html_content
 
 
 def get_disclaimer_widget(language: str = "en"):
