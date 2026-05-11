@@ -752,6 +752,7 @@ class ExecutiveAgentChain:
         if len(self._conversation_history) >= config.convstate.MAX_CONVERSATION_TURNS:
             return LeadAgentQueryResponse(
                 response = CONVERSATION_END_MESSAGE[current_language],
+                additional_details="",
                 language = current_language,
                 max_turns_reached = True,
                 processed_query = query
@@ -767,6 +768,7 @@ class ExecutiveAgentChain:
             chain_logger.warning(f"Invalid input received: '{query}'")
             return LeadAgentQueryResponse(
                 response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
+                additional_details="",
                 language=current_language,
                 processed_query=query
             )
@@ -808,6 +810,7 @@ class ExecutiveAgentChain:
                     chain_logger.info("Invalid language detected.")
                     return LeadAgentQueryResponse(
                         response=LANGUAGE_FALLBACK_MESSAGE[current_language],
+                        additional_details="",
                         language=current_language,
                         processed_query=processed_query
                     )
@@ -838,6 +841,7 @@ class ExecutiveAgentChain:
 
             return LeadAgentQueryResponse(
                 response=redirect_msg,
+                additional_details="",
                 language=current_language,
                 processed_query=processed_query,
             )
@@ -848,6 +852,7 @@ class ExecutiveAgentChain:
             if cached_data and isinstance(cached_data, dict):
                 return LeadAgentQueryResponse(
                     response=cached_data["response"],
+                    additional_details=cached_data["additional_details"],
                     language=current_language,
                 )
             
@@ -859,7 +864,8 @@ class ExecutiveAgentChain:
             self._cache.set(
                 key=query,
                 value={
-                    "response":              response.response,
+                    "response":                     response.response,
+                    "additional_details": response.additional_details,
                 },
                 language   = current_language,
                 session_id = self._user_id,
@@ -896,16 +902,17 @@ class ExecutiveAgentChain:
             messages=self._conversation_history + [language_instruction], 
         )
         agent_response = structured_response.response
+        additional_details = structured_response.additional_details
+        chain_logger.info(f"Are additional details added: {structured_response.additional_details != ""}")
         chain_logger.info(f"Is answer context dependent: {structured_response.is_context_dependent}")
 
         # 4. Formatting
-        if config.chain.ENABLE_RESPONSE_CHUNKING:
-            formatted_response = ResponseFormatter.format_response(
-                agent_response, agent_type='lead', enable_chunking=True, language=response_language
-            )
-        else:
-            formatted_response = ResponseFormatter.remove_tables(agent_response)
-
+        # if config.chain.ENABLE_RESPONSE_CHUNKING:
+        #     formatted_response = ResponseFormatter.format_response(
+        #         agent_response, agent_type='lead', enable_chunking=True, language=response_language
+        #     )
+        # else:
+        formatted_response = ResponseFormatter.remove_tables(agent_response)
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
         confidence_fallback = False
@@ -935,6 +942,7 @@ class ExecutiveAgentChain:
         
         return LeadAgentQueryResponse(
             response = formatted_response,
+            additional_details=additional_details,
             language = response_language,
             confidence_fallback = confidence_fallback,
             should_cache = False if (confidence_fallback or structured_response.is_context_dependent) else True,

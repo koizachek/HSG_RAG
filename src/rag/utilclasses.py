@@ -1,5 +1,4 @@
-from dataclasses import dataclass, field
-from typing import List, Literal, Optional
+from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
@@ -16,6 +15,7 @@ class AgentContext:
 class LeadAgentQueryResponse:
     response: str
     language: str
+    additional_details: str | None = None
     processed_query: str = None
     confidence_fallback: bool = False
     max_turns_reached: bool = False
@@ -23,7 +23,22 @@ class LeadAgentQueryResponse:
 
 
 class StructuredAgentResponse(BaseModel):
-    response: str = Field(description="Main response to the query.")
+    response: str = Field(
+        description="Main response shown directly to the user."
+    )
+
+    additional_details: str = Field(
+        default="",
+        description=(
+            "Optional secondary details shown in an expandable UI section. "
+            "Use this only when answering a single programme question where the full answer "
+            "would otherwise become too long. "
+            "Do NOT use this for multi-programme comparisons—those must appear fully in `response`. "
+            "Do NOT move critical facts such as tuition, duration, deadlines, eligibility requirements, "
+            "or direct answers to the user's question into this field."
+        )
+    )
+
     is_context_dependent: bool = Field(
         default=True,
         description=(

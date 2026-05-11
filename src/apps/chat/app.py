@@ -123,10 +123,10 @@ class ChatbotApplication:
             # Language change: before consent => only update consent UI text.
             # After consent: keep chat running (or optionally re-init agent on language change).
             def on_language_change(
-                language_label: str,
-                consent_given: bool,
-                agent,
-                session_id: str,
+                    language_label: str,
+                    consent_given: bool,
+                    agent,
+                    session_id: str,
             ):
                 lang_code = label_to_lang_code(language_label)
 
@@ -284,21 +284,69 @@ class ChatbotApplication:
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
         if agent is None:
             logger.error("Agent not initialized")
-            return "I apologize, but the chatbot is not properly initialized."
+            return ["I apologize, but the chatbot is not properly initialized."]
+
+        answers = []
 
         try:
             logger.info(f"Processing user query: {message[:100]}...")
             response = agent.query(message)
             self._language = response.language
-            return response.response
+
+            answers.append(response.response)
+
+            if response.additional_details:
+                details_label = (
+                    "Weitere Informationen"
+                    if response.language == "de"
+                    else "More information"
+                )
+
+                # Remove leading/trailing whitespace/newlines from LLM output
+                clean_details = response.additional_details.strip()
+
+                # Convert line breaks into HTML breaks
+                formatted_details = clean_details.replace("\n", "<br>")
+
+                details_html = f"""
+                <details style="
+                    margin-top:10px;
+                    padding:12px;
+                    border:1px solid #374151;
+                    border-radius:8px;
+                    background:#1f2937;
+                    color:#f9fafb;
+                ">
+                    <summary style="
+                        cursor:pointer;
+                        font-weight:600;
+                        color:#93c5fd;
+                        list-style:none;
+                    ">
+                        {details_label}
+                    </summary>
+
+                    <div style="
+                        margin-top:8px;
+                        color:#e5e7eb;
+                        line-height:1.6;
+                    ">
+                        {formatted_details}
+                    </div>
+                </details>
+                """
+
+                answers.append(gr.HTML(value=details_html))
+
+            return answers
 
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
-            error_message = (
+
+            return [
                 "I apologize, but I encountered an error processing your request. "
                 "Please try rephrasing your question or contact our admissions team for assistance."
-            )
-            return error_message
+            ]
 
     def run(self):
         import uvicorn
