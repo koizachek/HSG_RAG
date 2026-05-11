@@ -113,9 +113,16 @@ class ChatbotApplication:
 
                 disclaimer_html = get_disclaimer_widget(lang)
 
-                full_content = f"{disclaimer_html}{greeting}"
-
-                return agent, [{"role": "assistant", "content": full_content}]
+                return agent, [
+                    {
+                        "role": "assistant",
+                        "content": disclaimer_html
+                    },
+                    {
+                        "role": "assistant",
+                        "content": greeting
+                    }
+                ]
 
             def label_to_lang_code(label: str) -> str:
                 return "en" if label == "English" else "de"
