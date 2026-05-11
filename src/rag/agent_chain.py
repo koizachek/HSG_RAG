@@ -1506,7 +1506,7 @@ class ExecutiveAgentChain:
             categories=categories,
             language=language,
         )
-        if self._has_missing_requested_facts(facts_by_category, categories):
+        if self._needs_cross_programme_fact_context(facts_by_category, categories):
             fallback_context = self._get_cross_programme_fact_context(language, categories)
             if fallback_context:
                 facts_by_category = self._extract_requested_programme_facts(
@@ -1741,6 +1741,20 @@ class ExecutiveAgentChain:
     @staticmethod
     def _has_missing_requested_facts(facts_by_category: dict[str, list[str]], categories: list[str]) -> bool:
         return any(not facts_by_category.get(category) for category in categories)
+
+    @staticmethod
+    def _needs_cross_programme_fact_context(
+        facts_by_category: dict[str, list[str]],
+        categories: list[str],
+    ) -> bool:
+        if ExecutiveAgentChain._has_missing_requested_facts(facts_by_category, categories):
+            return True
+
+        cost_values = facts_by_category.get("cost") or []
+        if "cost" in categories and cost_values and not any(":" in value for value in cost_values):
+            return True
+
+        return False
 
     @staticmethod
     def _build_targeted_fact_query(
@@ -2062,12 +2076,16 @@ class ExecutiveAgentChain:
             )
 
         if category == "cost":
-            return self._unique_texts(
+            values = self._unique_texts(
                 value
                 for sentence in candidates
                 if not self._sentence_has_only_past_years(sentence)
                 for value in self._extract_cost_values(sentence, language)
             )
+            deadline_linked_values = [value for value in values if ":" in value]
+            if deadline_linked_values:
+                return deadline_linked_values
+            return values
         if category in {"start", "deadline"}:
             values = self._unique_texts(
                 value

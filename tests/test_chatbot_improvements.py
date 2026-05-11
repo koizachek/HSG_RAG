@@ -391,10 +391,21 @@ Here are the programs:
             def invoke(self, payload):
                 self.payloads.append(payload)
                 program = payload["program"]
+                if "Bewerbungsfristen im Überblick" in payload["query"]:
+                    return (
+                        "Bewerbungsfristen im Überblick\n"
+                        "#### IEMBA 14 Programm-Start: 24. August 2026:\n"
+                        "- 1. Bewerbungsfrist Studiengebühr: 31. März 2026 CHF 80'000\n"
+                        "- Finale Bewerbungsfrist Studiengebühr: 30. Juni 2026 CHF 85'000\n"
+                        "#### EMBA 71 Programm-Start: 14. September 2026:\n"
+                        "- 1. Bewerbungsfrist Studiengebühr: 29. Juni 2026 CHF 72'500\n"
+                        "- Finale Bewerbungsfrist Studiengebühr: 10. August 2026 CHF 77'500\n"
+                        "#### emba X Programm-Start: 2. Februar 2027:\n"
+                        "- 1. Bewerbungsfrist Studiengebühr: 31. August 2026 CHF 99'000\n"
+                        "- Finale Bewerbungsfrist Studiengebühr: 31. Oktober 2026 CHF 110'000"
+                    )
                 contexts = {
                     "emba": (
-                        "Bewerbungsfristen im Überblick; IEMBA 14 Programm-Start: 24.; "
-                        "Bewerbungsfrist Studiengebühr: 31.; März 2026 CHF 80'000.\n"
                         "EMBA HSG Studiengebühr: CHF 77'500."
                     ),
                     "iemba": (
@@ -423,11 +434,13 @@ Here are the programs:
             programmes=["emba", "iemba", "emba_x"],
         )
 
-        assert len(agent._retrieve_context_tool.payloads) == 3
+        assert len(agent._retrieve_context_tool.payloads) >= 4
         assert "EMBA HSG" in response.response
         assert "IEMBA HSG" in response.response
         assert "emba X" in response.response
         assert "CHF 77'500" in response.response
+        assert "31. März 2026: CHF 80'000" in response.response
+        assert "30. Juni 2026: CHF 85'000" in response.response
         assert "CHF 85'000" in response.response
         assert "CHF 99'000" in response.response
         assert "CHF 110'000" in response.response
