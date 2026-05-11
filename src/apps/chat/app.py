@@ -90,6 +90,7 @@ class ChatbotApplication:
                     ),
                     additional_inputs=[agent_state],
                     title="Executive Education Adviser",
+                    type="messages",
                 )
             
             with gr.Row():
