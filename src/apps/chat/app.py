@@ -3,13 +3,13 @@ import gradio as gr
 from fastapi import FastAPI
 from datetime import datetime
 
-
 from src.const.agent_response_constants import *
 from src.const.data_consent_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.utils.logging import get_logger, ConsentLogger
 
 logger = get_logger("chatbot_app")
+
 
 def init_fastapi_app(language):
     fastapi_app = FastAPI()
@@ -18,15 +18,18 @@ def init_fastapi_app(language):
     def healthcheck():
         from src.database.weavservice import WeaviateService
         from fastapi.responses import JSONResponse
-        
-        status  = 200
-        message = { 'timestamp': datetime.now().isoformat() }
+
+        status = 200
+        message = {'timestamp': datetime.now().isoformat()}
+
         try:
             message |= {
                 'status': 'ok',
                 'weaviate': True,
             }
+
             response = WeaviateService().ping(language)
+
             if response['status'] != 'OK':
                 status = 503
                 message |= {
@@ -34,17 +37,18 @@ def init_fastapi_app(language):
                     'weaviate': False,
                     'error': str(response['error']),
                 }
+
         except Exception as e:
             status = 503
             message |= {
-                'status':   'down',
+                'status': 'down',
                 'weaviate': False,
-                'error':    str(e),
+                'error': str(e),
             }
-    
+
         return JSONResponse(
-            status_code = status, 
-            content     = message,
+            status_code=status,
+            content=message,
         )
 
     return fastapi_app
@@ -52,12 +56,12 @@ def init_fastapi_app(language):
 
 class ChatbotApplication:
     def __init__(self, language: str = "de") -> None:
-        self._fastapi_app = init_fastapi_app(language) 
-        self._gradio_app  = gr.Blocks()
-        self._app         = gr.mount_gradio_app(self._fastapi_app, self._gradio_app,  path='/')
+        self._fastapi_app = init_fastapi_app(language)
+        self._gradio_app = gr.Blocks()
+        self._app = gr.mount_gradio_app(self._fastapi_app, self._gradio_app, path='/')
         self._language = language
         self._consentLogger = ConsentLogger()
-        
+
         with self._gradio_app:
             agent_state = gr.State(None)
             lang_state = gr.State(language)
@@ -86,14 +90,18 @@ class ChatbotApplication:
             with gr.Column(visible=False) as chat_screen:
                 chat = gr.ChatInterface(
                     fn=lambda msg, history, agent: self._chat(
-                        message=msg, history=history, agent=agent
+                        message=msg,
+                        history=history,
+                        agent=agent,
                     ),
                     additional_inputs=[agent_state],
                     title="Executive Education Adviser",
                 )
-            
-            with gr.Row():
-                withdraw_button = gr.Button(WITHDRAW_TEXT[language], visible=False, variant="stop")
+
+            booking_widget = gr.HTML(
+                value=BOOKING_WIDGET_HTML[language],
+                visible=False,
+            )
 
             def create_session_id() -> str:
                 return str(uuid.uuid4())
@@ -104,9 +112,16 @@ class ChatbotApplication:
 
                 disclaimer_html = get_disclaimer_widget(lang)
 
-                full_content = f"{disclaimer_html}{greeting}"
-
-                return agent, [{"role": "assistant", "content": full_content}]
+                return agent, [
+                    {
+                        "role": "assistant",
+                        "content": disclaimer_html
+                    },
+                    {
+                        "role": "assistant",
+                        "content": greeting
+                    }
+                ]
 
             def label_to_lang_code(label: str) -> str:
                 return "en" if label == "English" else "de"
@@ -114,10 +129,10 @@ class ChatbotApplication:
             # Language change: before consent => only update consent UI text.
             # After consent: keep chat running (or optionally re-init agent on language change).
             def on_language_change(
-                language_label: str,
-                consent_given: bool,
-                agent,
-                session_id: str,
+                    language_label: str,
+                    consent_given: bool,
+                    agent,
+                    session_id: str,
             ):
                 lang_code = label_to_lang_code(language_label)
 
@@ -129,13 +144,14 @@ class ChatbotApplication:
                         gr.update(value=DECLINE[lang_code]),
                         gr.update(value=ACCEPT[lang_code]),
                         gr.update(visible=False, value=""),
-                        None,   # agent_state stays None
-                        None,   # chat stays as it is
-                        gr.update(value=WITHDRAW_TEXT[lang_code], visible=False),
+                        None,  # agent_state stays None
+                        [],  # chat stays empty
+                        gr.update(value=BOOKING_WIDGET_HTML[lang_code], visible=False)
                     )
 
                 # After consent
                 new_agent, greeting = initialize_agent(lang_code, session_id=session_id)
+
                 return (
                     lang_code,
                     gr.update(value=PRIVACY_NOTICE[lang_code]),
@@ -144,88 +160,73 @@ class ChatbotApplication:
                     gr.update(visible=False, value=""),
                     new_agent,
                     greeting,
-                    gr.update(value=WITHDRAW_TEXT[lang_code], visible=True),
+                    gr.update(value=BOOKING_WIDGET_HTML[lang_code], visible=True)
                 )
 
             def on_accept(lang: str, session_id: str):
                 agent, greeting = initialize_agent(lang, session_id=session_id)
                 self._consentLogger.log(session_id, "accepted", policy_version="1.0")
                 self._language = lang
+
                 return (
-                    gr.update(visible=False),        # consent_screen hide
-                    gr.update(visible=True),         # chat_screen show
-                    True,                            # consent_state
-                    agent,                           # agent_state
-                    greeting,                         # chat initial history
+                    gr.update(visible=False),  # consent_screen hide
+                    gr.update(visible=True),  # chat_screen show
+                    True,  # consent_state
+                    agent,  # agent_state
+                    greeting,  # chat initial history
                     gr.update(visible=False, value=""),  # decline_info hide
-                    gr.update(visible=True),         # show reset_button
-                    gr.update(value=WITHDRAW_TEXT[lang], visible=True),
+                    gr.update(visible=True),  # show reset_button
+                    gr.update(value=BOOKING_WIDGET_HTML[lang], visible=True)
                 )
 
             def on_decline(lang: str, session_id: str):
                 self._language = lang
                 self._consentLogger.log(session_id, "declined", policy_version="1.0")
+
                 return (
-                    gr.update(visible=True),   # consent_screen stays
+                    gr.update(visible=True),  # consent_screen stays
                     gr.update(visible=False),  # chat_screen stays hidden
-                    False,                     # consent_state
-                    None,                      # agent_state
-                    [],                        # chat history empty
+                    False,  # consent_state
+                    None,  # agent_state
+                    [],  # chat history empty
                     gr.update(visible=True, value=DECLINE_MESSAGE[lang]),
+                    gr.update(visible=False),  # hide reset_button
+                    gr.update(
+                        value=BOOKING_WIDGET_HTML[lang],
+                        visible=False,
+                    ),
                 )
 
             def on_reset_chat(lang: str, session_id: str):
                 agent, greeting = initialize_agent(lang, session_id=session_id)
                 self._language = lang
+
                 return (
                     agent,
-                    greeting,  
-                )
-            
-            def on_withdraw(lang: str, agent, session_id: str):
-                self._consentLogger.log(session_id, "withdrawn", policy_version="1.0")
-                
-                # 1) wipe server-side
-                if agent is not None:
-                    try:
-                        agent.wipe_session_data()
-                        logger.info("wipe_session_data executed")
-                    except Exception as e:
-                        logger.error(f"wipe_session_data failed: {e}", exc_info=True)
-                
-                # 2) lock chat again (back to consent screen)
-                new_session_id = create_session_id()
-                return (
-                    gr.update(visible=True),                                    # consent_screen
-                    gr.update(value=PRIVACY_NOTICE[lang]),                      # data_policy
-                    gr.update(value=DECLINE[lang]),                             # decline_btn
-                    gr.update(value=ACCEPT[lang]),                              # accept_btn
-                    gr.update(visible=False),                                   # chat_screen
-                    gr.update(visible=True, value=WITHDRAW_CONFIRMATION_MESSAGE[lang]),  # decline_info
-                    False,                                                      # consent_state
-                    None,                                                       # agent_state
-                    [],                                                         # chat.chatbot_value (history)
-                    gr.update(visible=False),                                   # reset_button
-                    gr.update(visible=False),                                   # withdraw_button
-                    new_session_id,                                             # session_id_state
+                    greeting,
+                    gr.update(
+                        value=BOOKING_WIDGET_HTML[lang],
+                        visible=True,
+                    ),
                 )
 
             # Language switch updates consent UI if consent not given
             lang_selector.change(
                 fn=on_language_change,
                 inputs=[lang_selector, consent_state, agent_state, session_id_state],
-                outputs=[lang_state, 
-                        data_policy, 
-                        decline_btn, 
-                        accept_btn,
-                        decline_info, 
-                        agent_state, 
-                        chat.chatbot_value,
-                        withdraw_button,
-                    ],
+                outputs=[
+                    lang_state,
+                    data_policy,
+                    decline_btn,
+                    accept_btn,
+                    decline_info,
+                    agent_state,
+                    chat.chatbot_value,
+                    booking_widget,
+                ],
                 queue=True,
             )
-            
+
             # Accept/Decline data consent
             accept_btn.click(
                 fn=on_accept,
@@ -238,7 +239,7 @@ class ChatbotApplication:
                     chat.chatbot_value,
                     decline_info,
                     reset_button,
-                    withdraw_button,
+                    booking_widget,
                 ],
                 queue=True,
             )
@@ -246,7 +247,16 @@ class ChatbotApplication:
             decline_btn.click(
                 fn=on_decline,
                 inputs=[lang_state, session_id_state],
-                outputs=[consent_screen, chat_screen, consent_state, agent_state, chat.chatbot_value, decline_info],
+                outputs=[
+                    consent_screen,
+                    chat_screen,
+                    consent_state,
+                    agent_state,
+                    chat.chatbot_value,
+                    decline_info,
+                    reset_button,
+                    booking_widget,
+                ],
                 queue=True,
             )
 
@@ -257,31 +267,10 @@ class ChatbotApplication:
                 outputs=[
                     agent_state,
                     chat.chatbot_value,
+                    booking_widget,
                 ],
                 queue=True,
             )
-            
-            # Withdraw consent
-            withdraw_button.click(
-                fn=on_withdraw,
-                inputs=[lang_state, agent_state, session_id_state],
-                outputs=[
-                    consent_screen,
-                    data_policy, 
-                    decline_btn, 
-                    accept_btn, 
-                    chat_screen,
-                    decline_info,
-                    consent_state,
-                    agent_state,
-                    chat.chatbot_value,    
-                    reset_button,
-                    withdraw_button,
-                    session_id_state,
-                ],
-                queue=True,
-            )
-
 
     @property
     def app(self) -> gr.Blocks:
@@ -294,31 +283,73 @@ class ChatbotApplication:
             return ["I apologize, but the chatbot is not properly initialized."]
 
         answers = []
+
         try:
             logger.info(f"Processing user query: {message[:100]}...")
             response = agent.query(message)
-            answers.append(response.response) 
             self._language = response.language
-            
-            if response.show_booking_widget:
-                html_code = get_booking_widget(language=self._language, programs=response.relevant_programs)
-                answers.append(gr.HTML(value=html_code))
+
+            answers.append(response.response)
+
+            if response.additional_details:
+                details_label = (
+                    "Weitere Informationen"
+                    if response.language == "de"
+                    else "More information"
+                )
+
+                # Remove leading/trailing whitespace/newlines from LLM output
+                clean_details = response.additional_details.strip()
+
+                # Convert line breaks into HTML breaks
+                formatted_details = clean_details.replace("\n", "<br>")
+
+                details_html = f"""
+                <details style="
+                    margin-top:10px;
+                    padding:12px;
+                    border:1px solid #374151;
+                    border-radius:8px;
+                    background:#1f2937;
+                    color:#f9fafb;
+                ">
+                    <summary style="
+                        cursor:pointer;
+                        font-weight:600;
+                        color:#93c5fd;
+                        list-style:none;
+                    ">
+                        {details_label}
+                    </summary>
+
+                    <div style="
+                        margin-top:8px;
+                        color:#e5e7eb;
+                        line-height:1.6;
+                    ">
+                        {formatted_details}
+                    </div>
+                </details>
+                """
+
+                answers.append(gr.HTML(value=details_html))
+
+            return answers
+
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
-            error_message = (
+
+            return [
                 "I apologize, but I encountered an error processing your request. "
                 "Please try rephrasing your question or contact our admissions team for assistance."
-            )
-            answers.append(error_message)
-
-        return answers
-
+            ]
 
     def run(self):
-        import uvicorn 
+        import uvicorn
+
         uvicorn.run(
-            self._app, 
-            host='0.0.0.0', 
-            port=7860, 
-            log_config=None
+            self._app,
+            host='0.0.0.0',
+            port=7860,
+            log_config=None,
         )

@@ -752,9 +752,9 @@ class ExecutiveAgentChain:
         if len(self._conversation_history) >= config.convstate.MAX_CONVERSATION_TURNS:
             return LeadAgentQueryResponse(
                 response = CONVERSATION_END_MESSAGE[current_language],
+                additional_details="",
                 language = current_language,
                 max_turns_reached = True,
-                relevant_programs=[],
                 processed_query = query
             ) 
 
@@ -768,6 +768,7 @@ class ExecutiveAgentChain:
             chain_logger.warning(f"Invalid input received: '{query}'")
             return LeadAgentQueryResponse(
                 response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
+                additional_details="",
                 language=current_language,
                 processed_query=query
             )
@@ -809,6 +810,7 @@ class ExecutiveAgentChain:
                     chain_logger.info("Invalid language detected.")
                     return LeadAgentQueryResponse(
                         response=LANGUAGE_FALLBACK_MESSAGE[current_language],
+                        additional_details="",
                         language=current_language,
                         processed_query=processed_query
                     )
@@ -839,10 +841,9 @@ class ExecutiveAgentChain:
 
             return LeadAgentQueryResponse(
                 response=redirect_msg,
+                additional_details="",
                 language=current_language,
                 processed_query=processed_query,
-                appointment_requested=False,
-                show_booking_widget=False,
             )
         
         # 5. Check if cached data already exists for this session 
@@ -851,10 +852,8 @@ class ExecutiveAgentChain:
             if cached_data and isinstance(cached_data, dict):
                 return LeadAgentQueryResponse(
                     response=cached_data["response"],
+                    additional_details=cached_data["additional_details"],
                     language=current_language,
-                    appointment_requested=cached_data.get("appointment_requested", False),
-                    show_booking_widget=cached_data.get("show_booking_widget", False),
-                    relevant_programs=cached_data.get("relevant_programs", []),
                 )
             
 
@@ -865,10 +864,8 @@ class ExecutiveAgentChain:
             self._cache.set(
                 key=query,
                 value={
-                    "response":              response.response,
-                    "appointment_requested": response.appointment_requested,
-                    "show_booking_widget":    response.show_booking_widget,
-                    "relevant_programs":     response.relevant_programs,
+                    "response":                     response.response,
+                    "additional_details": response.additional_details,
                 },
                 language   = current_language,
                 session_id = self._user_id,
@@ -905,19 +902,17 @@ class ExecutiveAgentChain:
             messages=self._conversation_history + [language_instruction], 
         )
         agent_response = structured_response.response
+        additional_details = structured_response.additional_details
+        chain_logger.info(f"Are additional details added: {structured_response.additional_details != ""}")
         chain_logger.info(f"Is answer context dependent: {structured_response.is_context_dependent}")
-        chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
-        chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
-        chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
         # 4. Formatting
-        if config.chain.ENABLE_RESPONSE_CHUNKING:
-            formatted_response = ResponseFormatter.format_response(
-                agent_response, agent_type='lead', enable_chunking=True, language=response_language
-            )
-        else:
-            formatted_response = ResponseFormatter.remove_tables(agent_response)
-
+        # if config.chain.ENABLE_RESPONSE_CHUNKING:
+        #     formatted_response = ResponseFormatter.format_response(
+        #         agent_response, agent_type='lead', enable_chunking=True, language=response_language
+        #     )
+        # else:
+        formatted_response = ResponseFormatter.remove_tables(agent_response)
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
         confidence_fallback = False
@@ -944,29 +939,14 @@ class ExecutiveAgentChain:
                 self._log_user_profile()
 
         formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
-        booking_flow_requested = explicit_booking_intent or booking_preference_follow_up
-        appointment_requested = bool(booking_flow_requested)
-        show_booking_widget = bool(
-            booking_flow_requested and (
-                structured_response.show_booking_widget
-                or self._response_commits_to_showing_booking_widget(formatted_response)
-            )
-        )
-
-        if structured_response.appointment_requested and not booking_flow_requested:
-            chain_logger.info("Suppressed booking state because no user-led booking intent was detected.")
-        elif booking_preference_follow_up and show_booking_widget:
-            chain_logger.info("Continuing active booking flow and showing booking widget for a preference follow-up.")
         
         return LeadAgentQueryResponse(
             response = formatted_response,
+            additional_details=additional_details,
             language = response_language,
             confidence_fallback = confidence_fallback,
-            should_cache = False if (confidence_fallback or appointment_requested or structured_response.is_context_dependent) else True,
+            should_cache = False if (confidence_fallback or structured_response.is_context_dependent) else True,
             processed_query = preprocessed_query,
-            appointment_requested = appointment_requested,
-            show_booking_widget = show_booking_widget,
-            relevant_programs = structured_response.relevant_programs
         )
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:

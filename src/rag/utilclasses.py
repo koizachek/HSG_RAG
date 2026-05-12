@@ -1,5 +1,4 @@
-from dataclasses import dataclass, field
-from typing import List, Literal, Optional
+from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
@@ -16,17 +15,30 @@ class AgentContext:
 class LeadAgentQueryResponse:
     response: str
     language: str
+    additional_details: str | None = None
     processed_query: str = None
     confidence_fallback: bool = False
     max_turns_reached: bool = False
     should_cache: bool = False
-    appointment_requested: bool = False
-    show_booking_widget: bool = False
-    relevant_programs: List[str] = field(default_factory=list)
 
 
 class StructuredAgentResponse(BaseModel):
-    response: str = Field(description="Main response to the query.")
+    response: str = Field(
+        description="Main response shown directly to the user."
+    )
+
+    additional_details: str = Field(
+        default="",
+        description=(
+            "Optional secondary details shown in an expandable UI section. "
+            "Use this only when answering a single programme question where the full answer "
+            "would otherwise become too long. "
+            "Do NOT use this for multi-programme comparisons—those must appear fully in `response`. "
+            "Do NOT move critical facts such as tuition, duration, deadlines, eligibility requirements, "
+            "or direct answers to the user's question into this field."
+        )
+    )
+
     is_context_dependent: bool = Field(
         default=True,
         description=(
@@ -36,18 +48,6 @@ class StructuredAgentResponse(BaseModel):
             "Must be True for responses involving eligibility, recommendations, comparisons after prior turns, "
             "or any answer influenced by user profile data or conversation context."
         )
-    )
-    appointment_requested: bool = Field(
-        default=False,
-        description="Set to True ONLY if the user explicitly asks to book, schedule, speak with admissions/an advisor, see appointment slots, or accepts a previous consultation offer. Routine pricing, comparisons, recommendations, and exploratory fit questions must be False."
-    )
-    show_booking_widget: bool = Field(
-        default=False,
-        description="Set to True ONLY when appointment_requested is True and the booking widget should be shown now. Never use this for soft contact mentions or routine informational answers."
-    )
-    relevant_programs: Optional[List[Literal["emba", "iemba", "emba_x"]]] = Field(
-        default=None,
-        description="If appointment_requested is True, list the programs relevant to the user. Options: 'emba', 'iemba', 'emba_x'. If the user is undecided or general, leave this list empty."
     )
 
 
