@@ -3,6 +3,11 @@ import pytest
 from src.rag.language_detection import LanguageDetector
 
 class TestQueryLanguageDetection:
+    def test_program_names_are_treated_as_language_neutral(self):
+        detector = LanguageDetector()
+
+        for query in ("EMBA", "IEMBA", "emba X", "EMBA HSG", "IEMBA HSG", "embax"):
+            assert detector.is_language_neutral_program_reference(query)
 
     def test_basic_language_detection(self):
         queries = {

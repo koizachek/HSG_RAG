@@ -76,7 +76,7 @@ class ModelConfigurator:
         
         from langchain_openai import ChatOpenAI
         cls._subagent_model_instance = ChatOpenAI(
-            model='gpt-5.1',
+            model='gpt-5.1-instant',
             openai_api_key=config.llm.get_api_key(),
             max_tokens=3072,
             temperature=0.01,

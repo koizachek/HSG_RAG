@@ -10,6 +10,9 @@ def _get(param: str, default=None, type_=None):
 
     if value is None:
         value = os.getenv(param)
+
+    if value is None:
+        return default
     
     if not type_: return value
     
@@ -82,6 +85,7 @@ class ChainConfig(ConfigBase):
 
 
 class CacheConfig(ConfigBase):
+    ENABLED: bool = _get('CACHE_ENABLED', False)
     CACHE_MODE: Literal['local', 'cloud', 'dict'] = _get('CACHE_MODE')
 
     LOCAL_HOST: str = _get('CACHE_LOCAL_HOST', 'localhost')

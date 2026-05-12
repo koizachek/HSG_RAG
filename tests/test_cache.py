@@ -1,79 +1,186 @@
-from src.rag.utilclasses import LeadAgentQueryResponse
+import uuid
+import pytest
+
+from langchain_core.messages import HumanMessage, SystemMessage
+
 from src.cache.cache import Cache
+from src.rag.agent_chain import ExecutiveAgentChain as RealExecutiveAgentChain
+from src.rag.utilclasses import StructuredAgentResponse
+from src.utils.lang import get_language_name
+from src.config import config
+from src.rag import agent_chain as agent_chain_module
 
-class ExecutiveAgentChain:
-    def preprocess_query(self, message: str):
-        return LeadAgentQueryResponse(
-            response=None,
-            processed_query=message,
-            language="de",
-            should_cache=True,
-            confidence_fallback=False,
-            max_turns_reached=False,
+
+class DummyWeaviateService:
+    def query(self, *args, **kwargs):
+        class _DummyResponse:
+            objects = []
+
+        return _DummyResponse(), None
+
+
+class FakeLanguageDetector:
+    def detect_explicit_switch_request(self, query: str) -> str | None:
+        return None
+
+    def is_language_neutral_program_reference(self, query: str) -> bool:
+        return False
+
+    def detect_language(self, query: str) -> str:
+        return "de"
+
+
+class FakeLeadAgent:
+    name = "lead_agent"
+
+    def invoke(self, payload, config=None, context=None):
+        messages = payload["messages"]
+        human_messages = [msg for msg in messages if getattr(msg, "type", None) == "human"]
+        query = human_messages[-1].content if human_messages else ""
+        query_lower = query.lower()
+
+        is_context_dependent = any(
+            marker in query_lower
+            for marker in (
+                "geeignet",
+                "berufserfahrung",
+                "führungserfahrung",
+                "tech-bereich",
+                "passt",
+            )
         )
 
-    def agent_query(self, query: str):
-        return LeadAgentQueryResponse(
-            response=f"Antwort auf: {query}",
-            processed_query=query,
-            language="de",
-            should_cache=True,
-            confidence_fallback=False,
-            max_turns_reached=False,
+        if "was ist das emba hsg" in query_lower:
+            response_text = "Das EMBA HSG ist ein berufsbegleitendes Executive-MBA-Programm."
+        elif "wann startet das iemba" in query_lower:
+            response_text = "Das IEMBA startet einmal jährlich."
+        elif "welches programm passt" in query_lower:
+            response_text = "Auf Basis Ihrer Angaben passt wahrscheinlich das IEMBA besser."
+        elif "geeignet" in query_lower:
+            response_text = "Für eine Eignungseinschätzung sind Ihre Erfahrung und Führungsverantwortung relevant."
+        else:
+            response_text = "Ich habe Ihre Angaben aufgenommen."
+
+        response = StructuredAgentResponse(
+            response=response_text,
+            is_context_dependent=is_context_dependent,
+            appointment_requested=False,
+            show_booking_widget=False,
+            relevant_programs=[],
         )
 
-class ChatBotApplication:
-    def __init__(self):
-        self._cache = Cache.get_cache()
-        self._language = "de"
+        return {
+            "structured_response": response,
+            "messages": [type("FakeMessage", (), {"text": response.response})()],
+        }
 
-    def _chat(self, message: str, agent: ExecutiveAgentChain):
-        preprocess_resp = agent.preprocess_query(message)
-        current_lang = preprocess_resp.language
-        processed_q = preprocess_resp.processed_query
 
-        final_response = None
+def _fake_init_agents(self):
+    return {"lead": FakeLeadAgent()}, {"configurable": {"thread_id": 0}}
 
-        if preprocess_resp.response is not None:
-            final_response = preprocess_resp
 
-        elif Cache._settings["enabled"]:
-            cached_text = self._cache.get(processed_q, language=current_lang)
-            if cached_text is not None:
-                final_response = LeadAgentQueryResponse(
-                    response=cached_text,
-                    processed_query=processed_q,
-                    language=current_lang,
-                    should_cache=False,
-                    confidence_fallback=False,
-                    max_turns_reached=False,
-                )
+def test_chain_context_dependency_and_cacheability_offline(monkeypatch):
+    monkeypatch.setattr(agent_chain_module, "WeaviateService", DummyWeaviateService)
+    monkeypatch.setattr(agent_chain_module, "LanguageDetector", FakeLanguageDetector)
+    monkeypatch.setattr(RealExecutiveAgentChain, "_init_agents", _fake_init_agents)
 
-        if final_response is None:
-            final_response = agent.agent_query(processed_q)
+    old_eval_quality = config.chain.EVALUATE_RESPONSE_QUALITY
+    old_track_profile = config.convstate.TRACK_USER_PROFILE
+    old_cache_enabled = config.cache.ENABLED
+    old_cache_settings = Cache._settings
+    old_cache_instance = Cache._instance
 
-        if final_response.should_cache and Cache._settings["enabled"]:
-            self._cache.set(
-                key=processed_q,
-                value=final_response.response,
-                language=current_lang
+    config.chain.EVALUATE_RESPONSE_QUALITY = False
+    config.convstate.TRACK_USER_PROFILE = False
+    Cache._instance = None
+    Cache.configure(mode="dict", cache=True)
+
+    try:
+        examples = [
+            {
+                "name": "static FAQ should be context-independent and cacheable",
+                "query": "Was ist das EMBA HSG?",
+                "expected_context_dependent": False,
+                "expected_should_cache": True,
+            },
+            {
+                "name": "programme fact should be context-independent and cacheable",
+                "query": "Wann startet das IEMBA?",
+                "expected_context_dependent": False,
+                "expected_should_cache": True,
+            },
+            {
+                "name": "eligibility question should be context-dependent and not cacheable",
+                "query": "Bin ich mit 6 Jahren Berufserfahrung und 3 Jahren Führungserfahrung für das EMBA HSG geeignet?",
+                "expected_context_dependent": True,
+                "expected_should_cache": False,
+            },
+            {
+                "name": "recommendation question should be context-dependent and not cacheable",
+                "query": "Ich arbeite im Tech-Bereich. Welches Programm passt besser zu mir, IEMBA oder emba X?",
+                "expected_context_dependent": True,
+                "expected_should_cache": False,
+            },
+        ]
+
+        for example in examples:
+            # Agent instance for checking raw structured output
+            raw_agent = RealExecutiveAgentChain(
+                language="de",
+                session_id=f"raw-{uuid.uuid4()}",
             )
 
-        return final_response.response
+            raw_messages = [
+                HumanMessage(example["query"]),
+                SystemMessage(f"Respond in {get_language_name('de')} language."),
+            ]
 
+            structured = raw_agent._query(
+                agent=raw_agent._agents["lead"],
+                messages=raw_messages,
+                thread_id=f"test-{uuid.uuid4()}",
+            )
 
-def test_cache_hit_miss():
-    Cache.configure(mode="dict", no_cache=False)
-    
-    app = ChatBotApplication()
-    agent = ExecutiveAgentChain()
+            assert structured.is_context_dependent == example["expected_context_dependent"], (
+                f"{example['name']}: expected is_context_dependent="
+                f"{example['expected_context_dependent']}, got {structured.is_context_dependent}. "
+                f"Response was: {structured.response}"
+            )
 
-    r1 = app._chat("Was ist EMBA?", agent)
-    r2 = app._chat("Was ist EMBA?", agent)
+            # Fresh agent instance for checking final should_cache behaviour
+            final_agent = RealExecutiveAgentChain(
+                language="de",
+                session_id=f"final-{uuid.uuid4()}",
+            )
 
-    assert r1 == "Antwort auf: Was ist EMBA?"
-    assert r2 == "Antwort auf: Was ist EMBA?"
+            final = final_agent.query(example["query"])
 
-    stats = Cache._cache_metrics.cache_stats
-    assert stats.misses == 1
-    assert stats.hits == 1   
+            assert final.should_cache == example["expected_should_cache"], (
+                f"{example['name']}: expected should_cache="
+                f"{example['expected_should_cache']}, got {final.should_cache}. "
+                f"Response was: {final.response}"
+            )
+
+        # Extra real history-based example:
+        # follow-up after prior turns must be context-dependent / not cacheable
+        history_agent = RealExecutiveAgentChain(
+            language="de",
+            session_id=f"history-{uuid.uuid4()}",
+        )
+
+        history_agent.query("Ich habe 8 Jahre Berufserfahrung, 4 Jahre Führungserfahrung und arbeite in der Softwarebranche.")
+
+        followup_query = "Welches Programm passt zu mir?"
+        followup_final = history_agent.query(followup_query)
+
+        assert followup_final.should_cache is False, (
+            "Follow-up recommendation based on prior turns must not be cacheable. "
+            f"Response was: {followup_final.response}"
+        )
+
+    finally:
+        config.chain.EVALUATE_RESPONSE_QUALITY = old_eval_quality
+        config.convstate.TRACK_USER_PROFILE = old_track_profile
+        config.cache.ENABLED = old_cache_enabled
+        Cache._settings = old_cache_settings
+        Cache._instance = old_cache_instance
