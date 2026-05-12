@@ -96,7 +96,6 @@ class ChatbotApplication:
                     ),
                     additional_inputs=[agent_state],
                     title="Executive Education Adviser",
-                    type="messages",
                 )
 
             booking_widget = gr.HTML(
@@ -193,11 +192,6 @@ class ChatbotApplication:
                     gr.update(visible=True, value=DECLINE_MESSAGE[lang]),
                     gr.update(visible=False),  # hide reset_button
                     gr.update(
-                        choices=[BOOK_TEXT[lang]],
-                        value=BOOK_TEXT[lang],
-                        visible=False,
-                    ),
-                    gr.update(
                         value=BOOKING_WIDGET_HTML[lang],
                         visible=False,
                     ),
@@ -210,11 +204,6 @@ class ChatbotApplication:
                 return (
                     agent,
                     greeting,
-                    gr.update(
-                        choices=[BOOK_TEXT[lang]],
-                        value=BOOK_TEXT[lang],
-                        visible=True,
-                    ),
                     gr.update(
                         value=BOOKING_WIDGET_HTML[lang],
                         visible=True,
