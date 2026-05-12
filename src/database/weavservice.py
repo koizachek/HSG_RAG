@@ -337,12 +337,27 @@ class WeaviateService:
                 query_start_time = perf_counter()
 
                 with self._client_lock:
-                    resp = collection.query.hybrid(
-                        query=query,
-                        filters=filters,
-                        limit=limit,
-                        return_metadata=MetadataQuery.full()
-                    )
+                    try:
+                        resp = collection.query.hybrid(
+                            query=query,
+                            filters=filters,
+                            limit=limit,
+                            return_metadata=MetadataQuery.full()
+                        )
+                    except Exception as hybrid_err:
+                        if not self._should_fallback_to_bm25(hybrid_err):
+                            raise hybrid_err
+                        logger.warning(
+                            "Hybrid query failed during remote vectorization. "
+                            "Falling back to BM25 keyword retrieval: %s",
+                            hybrid_err,
+                        )
+                        resp = collection.query.bm25(
+                            query=query,
+                            filters=filters,
+                            limit=limit,
+                            return_metadata=MetadataQuery.full()
+                        )
                 elapsed = perf_counter() - query_start_time
                 self._last_query_time = perf_counter()
                 logger.info(f"Querying retrieved {len(resp.objects)} objects in {elapsed:3.2f} seconds")
@@ -357,6 +372,15 @@ class WeaviateService:
                         raise e
                 else: # Probably not a server issue
                     raise e
+
+    @staticmethod
+    def _should_fallback_to_bm25(error: Exception) -> bool:
+        error_text = str(error).lower()
+        return (
+            "remote client vectorize" in error_text
+            or "vectorize" in error_text and "401" in error_text
+            or "invalid username or password" in error_text
+        )
     
 
     def _load_properties(self) -> list[Property]:

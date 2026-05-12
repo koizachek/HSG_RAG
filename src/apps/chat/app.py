@@ -89,6 +89,7 @@ class ChatbotApplication:
                         message=msg, history=history, agent=agent
                     ),
                     additional_inputs=[agent_state],
+                    additional_outputs=[agent_state],
                     title="Executive Education Adviser",
                 )
             
@@ -181,6 +182,12 @@ class ChatbotApplication:
                     agent,
                     greeting,  
                 )
+
+            def on_builtin_clear(agent):
+                if agent is not None:
+                    agent.reset_conversation_state()
+                    logger.info("Cleared agent state after Gradio chat clear event")
+                return agent
             
             def on_withdraw(lang: str, agent, session_id: str):
                 self._consentLogger.log(session_id, "withdrawn", policy_version="1.0")
@@ -260,6 +267,13 @@ class ChatbotApplication:
                 ],
                 queue=True,
             )
+
+            chat.chatbot.clear(
+                fn=on_builtin_clear,
+                inputs=[agent_state],
+                outputs=[agent_state],
+                queue=False,
+            )
             
             # Withdraw consent
             withdraw_button.click(
@@ -291,10 +305,17 @@ class ChatbotApplication:
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
         if agent is None:
             logger.error("Agent not initialized")
-            return ["I apologize, but the chatbot is not properly initialized."]
+            return ["I apologize, but the chatbot is not properly initialized."], agent
 
         answers = []
         try:
+            if self._visible_history_is_empty(history) and self._agent_has_conversation(agent):
+                logger.warning(
+                    "Visible chat history is empty but agent state contains prior turns; "
+                    "resetting agent state before processing query."
+                )
+                agent.reset_conversation_state()
+
             logger.info(f"Processing user query: {message[:100]}...")
             response = agent.query(message)
             answers.append(response.response) 
@@ -311,7 +332,20 @@ class ChatbotApplication:
             )
             answers.append(error_message)
 
-        return answers
+        return answers, agent
+
+    @staticmethod
+    def _visible_history_is_empty(history: list[dict] | None) -> bool:
+        if not history:
+            return True
+        for item in history:
+            if isinstance(item, dict) and item.get("content"):
+                return False
+        return True
+
+    @staticmethod
+    def _agent_has_conversation(agent: ExecutiveAgentChain) -> bool:
+        return bool(getattr(agent, "_conversation_history", []))
 
 
     def run(self):

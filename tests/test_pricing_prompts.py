@@ -13,17 +13,28 @@ def test_program_prompts_use_tuition_fee_reduction_language():
         assert "Early Bird discount" not in prompt
 
 
-def test_program_prompts_use_updated_published_tuition_figures():
-    expected_snippets = {
-        "emba": ["14 September 2026", "CHF 77,500", "9 core courses", "5 elective courses"],
-        "iemba": ["24 August 2026", "CHF 85,000", "10 core courses", "4 elective courses"],
-        "embax": ["31 August 2026", "CHF 99,000", "31 October 2026", "CHF 110,000"],
-    }
+def test_program_prompts_do_not_embed_volatile_programme_facts():
+    volatile_snippets = [
+        "14 September 2026",
+        "24 August 2026",
+        "31 August 2026",
+        "31 October 2026",
+        "CHF 77,500",
+        "CHF 85,000",
+        "CHF 99,000",
+        "CHF 110,000",
+        "9 core courses",
+        "5 elective courses",
+        "10 core courses",
+        "4 elective courses",
+    ]
 
-    for agent, snippets in expected_snippets.items():
+    for agent in ("emba", "iemba", "embax"):
         prompt = PromptConfigurator.get_configured_agent_prompt(agent, language="en")
-        for snippet in snippets:
-            assert snippet in prompt
+        assert "They are NOT authoritative for volatile facts" in prompt
+        assert "must come from retrieve_context()" in prompt
+        for snippet in volatile_snippets:
+            assert snippet not in prompt
 
 
 def test_emba_and_iemba_prompts_do_not_invent_deadline_pricing():
@@ -34,18 +45,19 @@ def test_emba_and_iemba_prompts_do_not_invent_deadline_pricing():
     assert "9 February 2026" not in emba_prompt
     assert "31 March 2026" not in iemba_prompt
     assert "30 June 2026" not in iemba_prompt
-    assert "Do NOT mention a tuition fee reduction schedule unless retrieved context explicitly provides one." in emba_prompt
-    assert "Do NOT mention a tuition fee reduction schedule unless retrieved context explicitly provides one." in iemba_prompt
+    assert "do NOT invent a tuition fee reduction schedule" in emba_prompt
+    assert "do NOT invent a tuition fee reduction schedule" in iemba_prompt
 
 
-def test_lead_prompt_uses_specific_programme_figures_instead_of_ranges():
+def test_lead_prompt_does_not_embed_specific_programme_figures():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
     assert "tuition fee reduction" in prompt
     assert "CHF 77,500 - 110,000" not in prompt
-    assert "**EMBA HSG**: **CHF 77,500**." in prompt
-    assert "**IEMBA HSG**: **CHF 85,000**." in prompt
-    assert "31 October 2026" in prompt
+    assert "CHF 77,500" not in prompt
+    assert "CHF 85,000" not in prompt
+    assert "31 October 2026" not in prompt
+    assert "route programme-specific questions to the relevant sub-agent" in prompt
 
 
 def test_embax_prompt_uses_social_responsibility_positioning():
@@ -59,12 +71,9 @@ def test_embax_prompt_uses_social_responsibility_positioning():
 def test_lead_prompt_uses_updated_embax_positioning():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "Technology/Innovation?" in prompt
-    assert "Technology, Innovation, Social Responsibility" in prompt
-    assert "strong focus on technology, leadership, business innovation, and social responsibility" in prompt
-    assert "Joint Degree Programme from ETH Zurich and the University of St.Gallen" in prompt
-    assert "Access to BOTH alumni networks" in prompt
-    assert "Do NOT attribute international study trips to emba X." in prompt
+    assert "call_embax_agent" in prompt
+    assert "Tech / innovation / transformation focus or tech background" in prompt
+    assert "route to a sub-agent based on the language heuristic" in prompt
     assert "double EMBA degree" not in prompt
 
 
@@ -76,8 +85,8 @@ def test_embax_prompt_highlights_joint_degree_and_core_usps():
     assert "socially responsible leadership" in prompt
     assert "tailored Personal Development Programme with peer-to-peer coaching" in prompt
     assert "Technology, International Management, Leadership, Business Innovation, and Social Responsibility" in prompt
-    assert "There are NO international study trips." in prompt
-    assert "Tuition is payable in four instalments." in prompt
+    assert "There are NO international study trips unless retrieved context explicitly says otherwise." in prompt
+    assert "Tuition is payable in four instalments." not in prompt
     assert "double EMBA degree" not in prompt
 
 
@@ -86,9 +95,9 @@ def test_program_prompts_add_positive_framing_only_after_interest_is_clear():
         prompt = PromptConfigurator.get_configured_agent_prompt(agent, language="en")
 
         assert "If the user has clearly expressed interest" in prompt
-        assert "answer the concrete question first, then add ONE concise value-framing sentence" in prompt
+        assert "answer the concrete question first, then add positive value framing" in prompt
         assert "do not force promotional language unless the user's wording shows clear programme interest" in prompt
-        assert 'Do not use hype-heavy claims such as "best", "world-leading", "perfect", or "guaranteed".' in prompt
+        assert 'Do not use hype-heavy claims such as "best", "world-leading", "perfect", or "guaranteed"' in prompt
 
 
 def test_emba_prompt_highlights_dach_leadership_value_when_interest_is_clear():
@@ -120,10 +129,11 @@ def test_embax_prompt_highlights_business_technology_value_when_interest_is_clea
     assert "access to both alumni networks" in prompt
 
 
-def test_lead_prompt_includes_updated_programme_snapshot():
+def test_lead_prompt_does_not_include_static_programme_snapshot():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "Starts **14 September 2026**" in prompt
-    assert "Starts **24 August 2026**" in prompt
-    assert "January 2027 to July 2028" in prompt
-    assert "programme starts in **February 2027**" in prompt
+    assert "Starts **14 September 2026**" not in prompt
+    assert "Starts **24 August 2026**" not in prompt
+    assert "January 2027 to July 2028" not in prompt
+    assert "programme starts in **February 2027**" not in prompt
+    assert "retrieved context" in prompt

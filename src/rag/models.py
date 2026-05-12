@@ -76,7 +76,7 @@ class ModelConfigurator:
         
         from langchain_openai import ChatOpenAI
         cls._subagent_model_instance = ChatOpenAI(
-            model='gpt-5.1-nano',
+            model='gpt-5.1-mini',
             openai_api_key=config.llm.get_api_key(),
             max_tokens=3072,
             temperature=0.01,
@@ -118,7 +118,7 @@ class ModelConfigurator:
     @classmethod
     def _initialize_fallback_models(cls) -> list[BaseChatModel]:
         fallback_models_instances = []
-        for fallback_provider, fallback_model in config.llm.get_fallback_models().items():
+        for fallback_provider, fallback_model in config.llm.get_fallback_models():
             try:
                 fallback_model_instance = cls._initialize_model(
                     provider=fallback_provider,

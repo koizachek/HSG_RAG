@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.rag import agent_chain as agent_chain_module
 from src.rag.agent_chain import ExecutiveAgentChain
+from src.rag.programme_facts import ProgrammeFacts
 from src.rag.utilclasses import StructuredAgentResponse
 
 
@@ -230,6 +231,41 @@ class FakeLeadAgent:
         }
 
 
+class FakeProgrammeFactsProvider:
+    _facts = {
+        "emba": ProgrammeFacts(
+            programme="emba",
+            timing_points=[
+                "Die Studiengebühr für das **EMBA HSG** beträgt **CHF 77,500**. In den Studiengebühren enthalten sind Kursunterlagen sowie die meisten Mahlzeiten und Erfrischungen vor Ort. Unterkunft und Reisen sind nicht enthalten.",
+            ],
+            fit_points=[
+                "Hochschulabschluss, Berufserfahrung und Führungserfahrung werden im Zulassungsprozess geprüft.",
+            ],
+        ),
+        "iemba": ProgrammeFacts(
+            programme="iemba",
+            timing_points=[
+                "The tuition for the **IEMBA HSG** is **CHF 85,000**. Included are course materials and most on-site meals and refreshments. Accommodation and travel are not included.",
+            ],
+            fit_points=[
+                "Degree, professional experience, leadership experience and English readiness are checked in admissions.",
+            ],
+        ),
+        "emba_x": ProgrammeFacts(
+            programme="emba_x",
+            timing_points=[
+                "The tuition for **emba X** is **CHF 99,000** by the first application deadline of **31 August 2026** and **CHF 110,000** by the final application deadline of **31 October 2026**. Accommodation and travel are not included.",
+            ],
+            fit_points=[
+                "Degree, professional experience, leadership experience and English readiness are checked in admissions.",
+            ],
+        ),
+    }
+
+    def get_facts(self, programme: str, language: str) -> ProgrammeFacts:
+        return self._facts.get(programme, ProgrammeFacts(programme=programme))
+
+
 def _fake_init_agents(self):
     agents = {
         "lead": FakeLeadAgent(),
@@ -247,15 +283,18 @@ def offline_agent(monkeypatch):
     monkeypatch.setattr(ExecutiveAgentChain, "_init_agents", _fake_init_agents)
     monkeypatch.setattr(agent_chain_module.config.chain, "EVALUATE_RESPONSE_QUALITY", False, raising=False)
     monkeypatch.setattr(agent_chain_module.config.chain, "ENABLE_RESPONSE_CHUNKING", False, raising=False)
-    return ExecutiveAgentChain(language="en")
+    agent = ExecutiveAgentChain(language="en")
+    agent._programme_facts_provider = FakeProgrammeFactsProvider()
+    return agent
 
 
 def test_offline_smoke_emba_pricing_in_german(offline_agent):
     response = offline_agent.query("Was kostet das EMBA HSG Programm?")
 
     assert response.language == "de"
-    assert "CHF 77,500" in response.response
-    assert "Unterkunft und Reisen sind nicht enthalten" in response.response
+    assert "**Kosten**" in response.response
+    assert "CHF 77'500" in response.response
+    assert "Unterkunft und Reisen sind nicht enthalten" not in response.response
     assert response.appointment_requested is False
     assert response.show_booking_widget is False
 
@@ -264,8 +303,9 @@ def test_offline_smoke_iemba_pricing_in_english(offline_agent):
     response = offline_agent.query("What is the tuition for the IEMBA?")
 
     assert response.language == "en"
+    assert "**Cost**" in response.response
     assert "CHF 85,000" in response.response
-    assert "Accommodation and travel are not included" in response.response
+    assert "Accommodation and travel are not included" not in response.response
     assert response.appointment_requested is False
     assert response.show_booking_widget is False
 
@@ -274,6 +314,7 @@ def test_offline_smoke_embax_pricing_with_deadlines(offline_agent):
     response = offline_agent.query("How much does emba X cost?")
 
     assert response.language == "en"
+    assert "**Cost**" in response.response
     assert "CHF 99,000" in response.response
     assert "31 August 2026" in response.response
     assert "CHF 110,000" in response.response
