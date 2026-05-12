@@ -40,7 +40,10 @@ class ContentCleaner:
             if hasattr(node, 'text') and node.text:
                 stripped_text = node.text.strip().lower()
                 content_in_document.add(stripped_text)
-        
+                
+                if "Herr Frau Titel Vorname" in stripped_text:
+                    print(stripped_text)
+
         for content in content_in_document:
             self._repetitions_counter[content] += 1   
     
