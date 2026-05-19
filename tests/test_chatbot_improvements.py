@@ -203,7 +203,7 @@ class TestLanguageLocking:
         
         # Language should now be locked to German
         assert agent._stored_language == 'de'
-        assert agent._conversation_state['user_language'] == 'de'
+        assert agent.state_manager.conversation_state['user_language'] == 'de'
         
         # Subsequent English query should still get German response
         # (language is locked)

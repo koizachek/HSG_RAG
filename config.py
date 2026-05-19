@@ -34,7 +34,8 @@ MAX_CONVERSATION_TURNS = 20
 # Each configuration value is defined as a pair (PROVIDER, MODEL_NAME).
 
 # Defines the model that will be used by the lead agent. 
-MAIN_AGENT_MODEL = ('huggingface', 'swiss-ai/Apertus-8B-Instruct-2509')
+# MAIN_AGENT_MODEL = ('huggingface', 'swiss-ai/Apertus-8B-Instruct-2509')
+MAIN_AGENT_MODEL = ('openai', 'gpt-5.1')
 
 # Defines the fallback models that will be invoked 
 # if the main model fails to respond.

@@ -188,7 +188,7 @@ class ChatbotApplication:
                 # 1) wipe server-side
                 if agent is not None:
                     try:
-                        agent.wipe_session_data()
+                        agent.state_manager.wipe_session_data()
                         logger.info("wipe_session_data executed")
                     except Exception as e:
                         logger.error(f"wipe_session_data failed: {e}", exc_info=True)

@@ -2,6 +2,8 @@ import os
 import sys
 import types
 
+from src.rag.conversation_state import ConversationStateManager
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("REDIS_CLOUD_PORT", "6379")
 
@@ -22,7 +24,7 @@ from src.rag import agent_chain as agent_chain_module
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.prompts import PromptConfigurator
 from src.rag.scope_guardian import ScopeGuardian
-
+from src.rag.conversation_analysis import *
 
 def test_lead_prompt_requires_professional_complete_sentences():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
@@ -78,86 +80,62 @@ def test_lead_prompt_preserves_credibility_and_avoids_hype():
     assert "Avoid generic hype." in prompt
     assert 'Do not use claims such as "best", "perfect", "guaranteed", or "world-class"' in prompt
     assert "Keep the structure consultative" in prompt
-def test_booking_intent_detector_requires_user_initiative():
-    agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
-    agent._conversation_history = []
 
-    assert not agent._is_explicit_booking_intent("What does the EMBA cost?")
-    assert not agent._is_explicit_booking_intent("Which programme fits my profile better?")
-    assert agent._is_explicit_booking_intent("I would like to book a consultation.")
-    assert agent._is_explicit_booking_intent("Kann ich einen Termin vereinbaren?")
-    assert not agent._is_explicit_booking_intent("Ich möchte keinen Termin buchen.")
+def test_booking_intent_detector_requires_user_initiative():
+    assert not is_explicit_booking_intent([], "What does the EMBA cost?")
+    assert not is_explicit_booking_intent([], "Which programme fits my profile better?")
+    assert is_explicit_booking_intent([], "I would like to book a consultation.")
+    assert is_explicit_booking_intent([], "Kann ich einen Termin vereinbaren?")
+    assert not is_explicit_booking_intent([], "Ich möchte keinen Termin buchen.")
 
 
 def test_booking_intent_detector_accepts_previous_soft_offer():
-    agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
-    agent._conversation_history = [
+    conversation_history = [
         AIMessage("If you would like to discuss this personally, I can also help you with appointment booking.")
     ]
+    assert is_explicit_booking_intent(conversation_history, "Yes please")
+    assert not is_explicit_booking_intent(conversation_history, "Ich habe 5 Jahre Berufserfahrung.")
 
-    assert agent._is_explicit_booking_intent("Yes please")
-    assert not agent._is_explicit_booking_intent("Ich habe 5 Jahre Berufserfahrung.")
-
-    agent_without_offer = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
-    agent_without_offer._conversation_history = []
-
-    assert not agent_without_offer._is_explicit_booking_intent("Yes please")
+    assert not is_explicit_booking_intent([], "Yes please")
 
 
 def test_booking_preference_follow_up_is_detected_in_active_flow():
-    agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
-    agent._conversation_history = [
+    conversation_history = [
         AIMessage(
             "Vielen Dank für die Rückmeldung. Ich kann Ihnen nun passende Terminoptionen "
             "anzeigen. Eine kurze letzte Frage, damit die Slots besser passen: "
             "Haben Sie eine Tagespräferenz und bevorzugen Sie vormittags oder nachmittags?"
         )
     ]
-    agent._conversation_state = {"handover_requested": True}
 
-    assert agent._previous_response_requested_booking_preferences()
-    assert agent._is_booking_preference_follow_up("online")
-    assert agent._is_booking_preference_follow_up("vormittags, anfang der woche")
-    assert not agent._is_booking_preference_follow_up("Was kostet das Programm?")
+    assert previous_response_requested_booking_preferences(conversation_history)
+    assert is_booking_preference_follow_up("online")
+    assert is_booking_preference_follow_up("vormittags, anfang der woche")
+    assert not is_booking_preference_follow_up("Was kostet das Programm?")
 
 
 def test_response_commit_detector_requires_show_now_not_soft_offer():
-    agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
-
-    assert agent._response_commits_to_showing_booking_widget(
+    assert response_commits_to_showing_booking_widget(
         "Ich kann Ihnen nun passende Terminoptionen anzeigen. Unten werden Ihnen die verfügbaren Slots eingeblendet."
     )
-    assert not agent._response_commits_to_showing_booking_widget(
+    assert not response_commits_to_showing_booking_widget(
         "Wenn Sie möchten, kann ich Ihnen später auch bei der Terminbuchung helfen."
     )
-    assert not agent._response_commits_to_showing_booking_widget(
+    assert not response_commits_to_showing_booking_widget(
         "Bitte noch kurz: Bevorzugen Sie vormittags oder nachmittags?"
     )
+
 def test_soft_booking_offer_does_not_mark_handover_state(monkeypatch):
     monkeypatch.setattr(agent_chain_module.config.convstate, "TRACK_USER_PROFILE", True)
 
-    agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
-    agent._conversation_state = {
-        "user_language": None,
-        "user_name": None,
-        "experience_years": None,
-        "leadership_years": None,
-        "field": None,
-        "interest": None,
-        "qualification_level": None,
-        "program_interest": [],
-        "suggested_program": None,
-        "handover_requested": None,
-        "topics_discussed": [],
-        "preferences_known": False,
-    }
+    state_manager = ConversationStateManager(user_id='0')
 
-    agent._update_conversation_state(
+    state_manager.update_conversation_state(
         "Was kostet das EMBA HSG?",
         "If you would like to discuss this personally, I can also help you with appointment booking.",
     )
 
-    assert agent._conversation_state["handover_requested"] is None
+    assert state_manager.conversation_state["handover_requested"] is None
 
 
 def test_iemba_booking_widget_shows_contact_details_and_slots():

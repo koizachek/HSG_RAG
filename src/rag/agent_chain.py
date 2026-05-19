@@ -10,16 +10,11 @@ from langchain_core.messages import (
 from langchain.agents.middleware import ModelFallbackMiddleware
 from langchain.agents.structured_output import ProviderStrategy
 
-import uuid
-import json
-import os
-import re
-import random
-import glob
-from datetime import datetime
+import uuid, random
 
 from src.database.weavservice import WeaviateService
 
+from src.rag.conversation_analysis import *
 from src.rag.utilclasses import *
 from src.const.agent_response_constants import *
 from src.rag.middleware import AgentChainMiddleware as chainmdw
@@ -29,6 +24,7 @@ from src.rag.input_handler import InputHandler
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.language_detection import LanguageDetector
+from src.rag.conversation_state import ConversationStateManager
 
 from src.utils.logging import get_logger
 from src.utils.lang import get_language_name
@@ -41,44 +37,30 @@ chain_logger = get_logger('agent_chain')
 class ExecutiveAgentChain:
     def __init__(self, language: str = 'en', session_id: str | None = None) -> None:
         self._initial_language  = language
-        self._stored_language = language
-        self._dbservice = WeaviateService()
-        self._agents, self._config = self._init_agents()
-        self._conversation_history = [] 
-        self._cache = Cache.get_cache()
-
-        if config.chain.EVALUATE_RESPONSE_QUALITY:
-            from src.rag.quality_score_handler import QualityScoreHandler
-            self._quality_handler = QualityScoreHandler()
-        
-        self._language_detector = LanguageDetector()
+        self._stored_language = language 
 
         # Generate unique user ID for this session
         self._user_id = session_id or str(uuid.uuid4())
 
+        self._dbservice = WeaviateService()
+        self._agents, self._config = self._init_agents()
+        self._conversation_history = [] 
+        self._cache = Cache.get_cache()
+        self._language_detector = LanguageDetector()
+
         # Initialize conversation state with user profile tracking
-        self._conversation_state: ConversationState = {
-            'session_id': self._user_id,
-            'user_id': self._user_id,
-            'user_language': None,
-            'user_name': None,
-            'experience_years': None,
-            'leadership_years': None,
-            'field': None,
-            'interest': None,
-            'qualification_level': None,
-            'program_interest': [],
-            'suggested_program': None,
-            'handover_requested': None,
-            'topics_discussed': [],
-            'preferences_known': False
-        }
+        self.state_manager = ConversationStateManager(self._user_id)
 
         # Track scope violations for escalation
         self._scope_violation_counts: dict[str, int] = {}
         self._aggressive_violation_count = 0
 
+        if config.chain.EVALUATE_RESPONSE_QUALITY:
+            from src.rag.quality_score_handler import QualityScoreHandler
+            self._quality_handler = QualityScoreHandler()
+
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
+
 
     def _retrieve_context(self, query: str, program: str, language: str = None):
         """
@@ -157,518 +139,10 @@ class ExecutiveAgentChain:
         return agents, run_config
 
 
-    def _extract_experience_years(self, conversation: str) -> int | None:
-        """Extract years of professional experience from conversation text."""
-        # Look for patterns like "10 years", "5 years experience", etc.
-        patterns = [
-            r'(\d+)\s*years?\s*(?:of\s*)?(?:experience|work)',
-            r'(\d+)\s*years?\s*in\s*(?:the\s*)?(?:field|industry)',
-            r'working\s*for\s*(\d+)\s*years?',
-            r'(\d+)\s*Jahre\s*(?:Erfahrung|Berufserfahrung)',  # German
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, conversation, re.IGNORECASE)
-            if match:
-                return int(match.group(1))
-        return None
-
-    def _extract_leadership_years(self, conversation: str) -> int | None:
-        """Extract years of leadership experience from conversation text."""
-        patterns = [
-            r'(\d+)\s*years?\s*(?:of\s*)?(?:leadership|management|managing)',
-            r'(?:lead|led|manage|managed)\s*(?:for\s*)?(\d+)\s*years?',
-            r'(\d+)\s*Jahre\s*(?:Führungserfahrung|Führung)',  # German
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, conversation, re.IGNORECASE)
-            if match:
-                return int(match.group(1))
-        return None
-
-    def _extract_field(self, conversation: str) -> str | None:
-        """Extract professional field/industry from conversation text."""
-        # Common fields mentioned in executive education
-        fields = [
-            'finance', 'banking', 'technology', 'tech', 'IT', 'healthcare',
-            'consulting', 'manufacturing', 'retail', 'marketing', 'sales',
-            'engineering', 'pharma', 'telecommunications', 'energy',
-            'Finanzwesen', 'Technologie', 'Gesundheitswesen', 'Beratung'  # German
-        ]
-        conversation_lower = conversation.lower()
-        for field in fields:
-            if field.lower() in conversation_lower:
-                return field.capitalize()
-        return None
-
-    def _extract_interest(self, conversation: str) -> str | None:
-        """Extract content interests from conversation text."""
-        # Look for interest indicators
-        interests = [
-            'strategy', 'innovation', 'leadership', 'digital transformation',
-            'finance', 'operations', 'marketing', 'entrepreneurship',
-            'social impact', 'technology', 'management',
-            'Strategie', 'Innovation', 'Führung', 'Digitalisierung'  # German
-        ]
-        conversation_lower = conversation.lower()
-        found_interests = [interest for interest in interests
-                           if interest.lower() in conversation_lower]
-        return ', '.join(found_interests) if found_interests else None
-
-    def _extract_name(self, conversation: str) -> str | None:
-        """Extract user's name from conversation text."""
-        patterns = [
-            r"(?:my name is|i'm|i am|call me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
-            r"(?:this is|it's)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
-            r"(?:ich heiße|mein Name ist|ich bin)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",  # German
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, conversation, re.IGNORECASE)
-            if match:
-                name = match.group(1).strip()
-                # Filter out common words that might be误ly matched
-                excluded = ['interested', 'looking', 'working', 'searching', 'asking']
-                if name.lower() not in excluded:
-                    return name
-        return None
-
-    def _detect_handover_request(self, conversation: str) -> bool:
-        """Detect if user requested appointment, callback, or contact."""
-        # Keywords indicating handover request
-        handover_keywords = [
-            'appointment', 'call me', 'contact me', 'schedule', 'meeting',
-            'callback', 'reach out', 'follow up', 'get in touch', 'speak with',
-            'talk to', 'consultation', 'discuss with', 'meet with',
-            'Termin', 'Rückruf', 'kontaktieren', 'Gespräch', 'anrufen',  # German
-            'zurückrufen', 'Beratung', 'treffen'
-        ]
-        conversation_lower = conversation.lower()
-        return any(keyword.lower() in conversation_lower for keyword in handover_keywords)
-
-    def _previous_response_offered_booking(self) -> bool:
-        """Return True if the latest assistant turn offered booking as a next step."""
-        booking_offer_terms = [
-            "appointment slots",
-            "book an appointment",
-            "book a consultation",
-            "appointment booking",
-            "show you available appointments",
-            "show appointment options",
-            "terminbuchung",
-            "termin buchen",
-            "termine anzeigen",
-            "verfügbare termine",
-            "beratungstermin",
-        ]
-
-        for message in reversed(self._conversation_history):
-            if not isinstance(message, AIMessage):
-                continue
-            content = getattr(message, "content", "") or getattr(message, "text", "")
-            if isinstance(content, list):
-                content = " ".join(str(part) for part in content)
-            content_lower = str(content).lower()
-            return any(term in content_lower for term in booking_offer_terms)
-
-        return False
-
-    def _get_latest_ai_message_content(self, skip_latest: bool = False) -> str:
-        """Return the latest assistant message content from conversation history."""
-        ai_messages_seen = 0
-
-        for message in reversed(self._conversation_history):
-            if not isinstance(message, AIMessage):
-                continue
-
-            ai_messages_seen += 1
-            if skip_latest and ai_messages_seen == 1:
-                continue
-
-            content = getattr(message, "content", "") or getattr(message, "text", "")
-            if isinstance(content, list):
-                return " ".join(str(part) for part in content)
-            return str(content)
-
-        return ""
-
-    def _is_booking_preference_follow_up(self, query: str) -> bool:
-        """Detect short follow-up answers that continue an active booking flow."""
-        query_lower = query.lower().strip()
-        if not query_lower:
-            return False
-
-        preference_terms = [
-            "online",
-            "on-site",
-            "onsite",
-            "in person",
-            "in-person",
-            "st.gallen",
-            "st. gallen",
-            "morning",
-            "mornings",
-            "afternoon",
-            "afternoons",
-            "evening",
-            "beginning of the week",
-            "start of the week",
-            "end of the week",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "morgens",
-            "vormittag",
-            "vormittags",
-            "nachmittag",
-            "nachmittags",
-            "abends",
-            "wochenanfang",
-            "anfang der woche",
-            "ende der woche",
-            "montag",
-            "dienstag",
-            "mittwoch",
-            "donnerstag",
-            "freitag",
-            "vor ort",
-            "vor-ort",
-            "persönlich",
-            "persoenlich",
-            "hybrid",
-        ]
-
-        if any(term in query_lower for term in preference_terms):
-            return True
-
-        return False
-
-    def _previous_response_requested_booking_preferences(self) -> bool:
-        """Return True when the previous assistant turn asked clarifying booking questions."""
-        content_lower = self._get_latest_ai_message_content().lower()
-        if not content_lower:
-            return False
-
-        booking_context_terms = [
-            "appointment options",
-            "available appointments",
-            "available slots",
-            "appointment slots",
-            "online-terminoptionen",
-            "terminoptionen",
-            "verfügbare slots",
-            "verfügbare termine",
-            "beratungsgespräch",
-            "beratung",
-        ]
-        clarification_terms = [
-            "do you prefer",
-            "would you prefer",
-            "which programme",
-            "which program",
-            "one short question",
-            "final question",
-            "when i know this",
-            "bitte noch kurz",
-            "eine kurze rückfrage",
-            "eine kurze letzte frage",
-            "bevorzugen sie",
-            "haben sie eine tagespräferenz",
-            "sobald ich das weiss",
-            "damit die slots besser passen",
-        ]
-
-        return (
-            any(term in content_lower for term in booking_context_terms)
-            and any(term in content_lower for term in clarification_terms)
-        )
-
-    def _response_commits_to_showing_booking_widget(self, response: str) -> bool:
-        """Detect when the assistant says booking options are being shown now."""
-        response_lower = response.lower()
-
-        positive_terms = [
-            "i can show you",
-            "contact details and available appointment slots are shown below",
-            "appointment options are shown below",
-            "available slots are shown below",
-            "i can now show you",
-            "ich kann ihnen nun",
-            "ich kann ihnen jetzt",
-            "unten werden ihnen",
-            "unten finden sie",
-            "unten sehen sie",
-            "terminoptionen anzeigen",
-            "verfügbaren slots",
-            "verfügbaren termine",
-        ]
-        defer_terms = [
-            "if you would like",
-            "if you later wish",
-            "you can ask me",
-            "if that would be helpful",
-            "sobald ich das weiss",
-            "wenn ich das weiss",
-            "damit die slots besser passen",
-            "bitte noch kurz",
-            "eine kurze rückfrage",
-            "eine kurze letzte frage",
-            "bevorzugen sie",
-            "have you got a preference",
-            "do you prefer",
-            "would you prefer",
-            "which programme",
-            "which program",
-        ]
-
-        return (
-            any(term in response_lower for term in positive_terms)
-            and not any(term in response_lower for term in defer_terms)
-        )
-    def _is_explicit_booking_intent(self, query: str) -> bool:
-        """Detect whether the user is actively asking to book or accepting a booking offer."""
-        query_lower = query.lower()
-        direct_booking_terms = [
-            "book",
-            "schedule",
-            "appointment",
-            "consultation",
-            "need a consultation",
-            "personal consultation",
-            "speak with",
-            "talk to an advisor",
-            "talk to admissions",
-            "connect me",
-            "show me available",
-            "show appointment",
-            "available slots",
-            "termin",
-            "termin buchen",
-            "termin vereinbaren",
-            "beratungstermin",
-            "beratungsgespräch",
-            "ich brauche eine beratung",
-            "ich möchte eine beratung",
-            "ich will eine beratung",
-            "beratung für",
-            "persönliche beratung",
-            "persoenliche beratung",
-            "mit jemandem sprechen",
-            "mit admissions sprechen",
-            "mit der zulassung sprechen",
-            "termine anzeigen",
-            "verfügbare termine",
-        ]
-        rejection_terms = [
-            "do not want",
-            "don't want",
-            "no appointment",
-            "not book",
-            "not schedule",
-            "no thanks",
-            "no thank you",
-            "kein termin",
-            "keinen termin",
-            "keine beratung",
-            "nicht buchen",
-            "nicht vereinbaren",
-            "nein danke",
-        ]
-        acceptance_terms = [
-            "yes",
-            "yes please",
-            "please do",
-            "that would be helpful",
-            "show me",
-            "ja",
-            "ja bitte",
-            "gerne",
-            "bitte",
-            "mach das",
-            "zeige",
-        ]
-
-        def contains_term(term: str) -> bool:
-            if term in {"yes", "ja", "bitte"}:
-                return re.search(rf"\b{re.escape(term)}\b", query_lower) is not None
-            return term in query_lower
-
-        if any(contains_term(term) for term in rejection_terms):
-            return False
-
-        if any(contains_term(term) for term in direct_booking_terms):
-            return True
-
-        return (
-            self._previous_response_offered_booking()
-            and any(contains_term(term) for term in acceptance_terms)
-        )
-
-    def _determine_suggested_program(self) -> str | None:
-        """Determine recommended program based on user profile."""
-        state = self._conversation_state
-
-        # If program interest was explicitly mentioned
-        if state['program_interest']:
-            return state['program_interest'][0]
-
-        # Make recommendation based on profile
-        experience = state.get('experience_years', 0) or 0
-        leadership = state.get('leadership_years', 0) or 0
-
-        # EMBA: 5+ years experience, 2+ years leadership
-        if experience >= 5 and leadership >= 2:
-            return 'EMBA'
-        # IEMBA: International focus, 3+ years experience
-        elif experience >= 3:
-            return 'IEMBA'
-        # EMBA X: Digital/Innovation focus
-        elif state.get('interest') and any(kw in state.get('interest', '').lower()
-                                           for kw in ['digital', 'innovation', 'technology']):
-            return 'emba X'
-
-        return None
-
-    def _update_conversation_state(self, user_query: str, agent_response: str) -> None:
-        """Update conversation state by extracting information from the conversation."""
-        if not config.convstate.TRACK_USER_PROFILE:
-            return
-
-        # Combine query and response for analysis
-        conversation_text = f"{user_query} {agent_response}"
-
-        # Extract profile information
-        if not self._conversation_state.get('experience_years'):
-            exp_years = self._extract_experience_years(conversation_text)
-            if exp_years:
-                self._conversation_state['experience_years'] = exp_years
-                chain_logger.info(f"Extracted experience years: {exp_years}")
-
-        if not self._conversation_state.get('leadership_years'):
-            lead_years = self._extract_leadership_years(conversation_text)
-            if lead_years:
-                self._conversation_state['leadership_years'] = lead_years
-                chain_logger.info(f"Extracted leadership years: {lead_years}")
-
-        if not self._conversation_state.get('field'):
-            field = self._extract_field(conversation_text)
-            if field:
-                self._conversation_state['field'] = field
-                chain_logger.info(f"Extracted field: {field}")
-
-        if not self._conversation_state.get('interest'):
-            interest = self._extract_interest(conversation_text)
-            if interest:
-                self._conversation_state['interest'] = interest
-                chain_logger.info(f"Extracted interest: {interest}")
-
-        # Extract name
-        if not self._conversation_state.get('user_name'):
-            name = self._extract_name(conversation_text)
-            if name:
-                self._conversation_state['user_name'] = name
-                chain_logger.info(f"Extracted name: {name}")
-
-        # Detect handover request from the user only; assistant soft offers should not count.
-        if self._detect_handover_request(user_query):
-            self._conversation_state['handover_requested'] = True
-            chain_logger.info("Handover request detected")
-
-        # Check for program mentions
-        programs = ['EMBA', 'IEMBA', 'EMBA X']
-        for program in programs:
-            if program.lower() in conversation_text.lower():
-                if program not in self._conversation_state['program_interest']:
-                    self._conversation_state['program_interest'].append(program)
-
-        # Update suggested program
-        suggested = self._determine_suggested_program()
-        if suggested and not self._conversation_state.get('suggested_program'):
-            self._conversation_state['suggested_program'] = suggested
-            chain_logger.info(f"Suggested program: {suggested}")
-
-    def _log_user_profile(self) -> None:
-        """Log user profile to JSON file."""
-        if not config.convstate.TRACK_USER_PROFILE:
-            return
-
-        try:
-            # Create logs directory if it doesn't exist
-            log_dir = os.path.join('logs', 'user_profiles')
-            os.makedirs(log_dir, exist_ok=True)
-
-            # Create profile data
-            profile_data = {
-                'session_id': self._conversation_state['session_id'],
-                'user_id': self._conversation_state['user_id'],
-                'name': self._conversation_state.get('user_name'),
-                'timestamp': datetime.now().isoformat(),
-                'experience_years': self._conversation_state.get('experience_years'),
-                'leadership_years': self._conversation_state.get('leadership_years'),
-                'field': self._conversation_state.get('field'),
-                'interest': self._conversation_state.get('interest'),
-                'suggested_program': self._conversation_state.get('suggested_program'),
-                'handover': self._conversation_state.get('handover_requested'),
-                'user_language': self._conversation_state.get('user_language'),
-                'program_interest': self._conversation_state.get('program_interest', []),
-            }
-
-            # Log file path with timestamp
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            log_file = os.path.join(log_dir, f'profile_{self._user_id}_{timestamp}.json')
-
-            # Write to file
-            with open(log_file, 'w', encoding='utf-8') as f:
-                json.dump(profile_data, f, indent=2, ensure_ascii=False)
-
-            chain_logger.info(f"User profile logged to {log_file}")
-
-        except Exception as e:
-            chain_logger.error(f"Failed to log user profile: {e}")
-    
-    def wipe_session_data(self) -> None:
-        """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
-
-        # --- 1) In-memory wipe ---
-        self._conversation_history = []
-        self._conversation_state.update({
-            'user_language': None,
-            'user_name': None,
-            'experience_years': None,
-            'leadership_years': None,
-            'field': None,
-            'interest': None,
-            'qualification_level': None,
-            'program_interest': [],
-            'suggested_program': None,
-            'handover_requested': None,
-            'topics_discussed': [],
-            'preferences_known': False
-        })
-        self._scope_violation_counts = {}
-        self._aggressive_violation_count = 0
-
-        # --- 2) On-disk wipe (delete profile_<user_id>_*.json) ---
-        if not self._user_id:
-            chain_logger.warning("wipe_session_data called without user_id – skipping file deletion")
-            return
-
-        pattern = os.path.join(
-            "logs",
-            "user_profiles",
-            f"profile_{self._user_id}_*.json"
-        )
-
-        for path in glob.glob(pattern):
-            try:
-                os.remove(path)
-                chain_logger.info(f"Deleted profile file: {path}")
-            except OSError as e:
-                chain_logger.error(f"Failed to delete {path}: {e}")
-
     def generate_greeting(self) -> str:
         greeting_message = random.choice(GREETING_MESSAGES[self._stored_language])
         return greeting_message
+
 
     @traceable
     def query(self, query: str) -> LeadAgentQueryResponse:
@@ -712,7 +186,7 @@ class ExecutiveAgentChain:
         if explicit_switch:
             self._stored_language = explicit_switch
             current_language = explicit_switch
-            self._conversation_state['user_language'] = explicit_switch
+            self.state_manager.conversation_state['user_language'] = explicit_switch
         elif self._language_detector.is_language_neutral_program_reference(processed_query):
             chain_logger.info(
                 f"Skipping language re-detection for language-neutral programme reference: '{processed_query}'"
@@ -729,7 +203,7 @@ class ExecutiveAgentChain:
                 current_language = self._stored_language
             else:
                 detected_language = self._language_detector.detect_language(processed_query)
-                self._conversation_state['user_language'] = detected_language
+                self.state_manager.conversation_state['user_language'] = detected_language
 
                 # Language validation
                 if detected_language in ['de', 'en']:
@@ -787,7 +261,6 @@ class ExecutiveAgentChain:
                     relevant_programs=cached_data.get("relevant_programs", []),
                 )
             
-
         # 6. Preprocessing is finished - the agent has to answer the query 
         response = self._query_lead(query) 
         
@@ -797,7 +270,7 @@ class ExecutiveAgentChain:
                 value={
                     "response":              response.response,
                     "appointment_requested": response.appointment_requested,
-                    "show_booking_widget":    response.show_booking_widget,
+                    "show_booking_widget":   response.show_booking_widget,
                     "relevant_programs":     response.relevant_programs,
                 },
                 language   = current_language,
@@ -816,11 +289,11 @@ class ExecutiveAgentChain:
         self._scope_violation_counts = {}
         
         response_language = self._stored_language
-        explicit_booking_intent = self._is_explicit_booking_intent(preprocessed_query)
+        explicit_booking_intent = is_explicit_booking_intent(self._conversation_history, preprocessed_query)
         booking_preference_follow_up = (
-            self._conversation_state.get('handover_requested') is True
-            and self._previous_response_requested_booking_preferences()
-            and self._is_booking_preference_follow_up(preprocessed_query)
+            self.state_manager.conversation_state.get('handover_requested') is True
+            and previous_response_requested_booking_preferences(self._conversation_history)
+            and is_booking_preference_follow_up(preprocessed_query)
         )
        
         # 1. History Update 
@@ -866,11 +339,11 @@ class ExecutiveAgentChain:
 
         # 6. Profiling
         if config.convstate.TRACK_USER_PROFILE:
-            self._update_conversation_state(preprocessed_query, formatted_response)
+            self.state_manager.update_conversation_state(preprocessed_query, formatted_response)
             
             message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
-            if message_count % 5 == 0 or self._conversation_state.get('suggested_program'):
-                self._log_user_profile()
+            if message_count % 5 == 0 or self.state_manager.conversation_state.get('suggested_program'):
+                self.state_manager.log_user_profile()
 
         formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
         booking_flow_requested = explicit_booking_intent or booking_preference_follow_up
@@ -878,7 +351,7 @@ class ExecutiveAgentChain:
         show_booking_widget = bool(
             booking_flow_requested and (
                 structured_response.show_booking_widget
-                or self._response_commits_to_showing_booking_widget(formatted_response)
+                or response_commits_to_showing_booking_widget(formatted_response)
             )
         )
 
@@ -897,6 +370,7 @@ class ExecutiveAgentChain:
             show_booking_widget = show_booking_widget,
             relevant_programs = structured_response.relevant_programs
         )
+
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
         try:
