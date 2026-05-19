@@ -5,6 +5,7 @@ langchain-deepseek>=1.0.0
 langchain-groq>=1.0.0
 langchain-ollama>=0.3.10
 langchain-openai>=1.0.1
+langchain-huggingface
 langsmith>=0.4.0
 
 requests>=2.31.0
