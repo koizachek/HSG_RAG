@@ -138,7 +138,7 @@ SCRAPING_BACKOFF_RATE = 1.25
 
 # A list of string URLs. Defines the starting points for the website scraping.
 SCRAPING_TARGET_URLS = [
-    # 'https://emba.unisg.ch/',       # EMBA HSG root
+    'https://emba.unisg.ch/',       # EMBA HSG root
     'https://embax.ch/',            # emba X root
 ]
 
@@ -153,7 +153,10 @@ SCRAPING_PRIO_INTERVAL = {
 
 # A boolean; either True or False. Activates the response quality evaluation procedure
 # for agentic responses. Defaults to True.
-ENABLE_EVALUATE_RESPONSE_QUALITY = True
+ENABLE_EVALUATE_RESPONSE_QUALITY = False 
+
+# A boolean: either True or False. Activates the usage of the program-specific subagents. 
+ENABLE_SUBAGENTS = False 
 
 # A float in range from 0 to 1. Sets the treshold value for the quality evaluation.
 # The fallback mechanism will be activated if the quality of the agentic response 
