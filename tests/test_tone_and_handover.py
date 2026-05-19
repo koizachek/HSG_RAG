@@ -15,8 +15,8 @@ if "colorama" not in sys.modules:
 from src.const.agent_response_constants import (
     GREETING_MESSAGES,
     get_admissions_contact_text,
-    get_booking_widget,
 )
+from src.const.data_consent_constants import BOOKING_WIDGET_HTML, IEMBA
 from langchain_core.messages import AIMessage
 from src.rag import agent_chain as agent_chain_module
 from src.rag.agent_chain import ExecutiveAgentChain
@@ -33,16 +33,13 @@ def test_lead_prompt_requires_professional_complete_sentences():
     assert 'Avoid informal phrasing such as "Great to meet you"' in prompt
 
 
-def test_lead_prompt_keeps_booking_user_led():
+def test_lead_prompt_directs_booking_to_page_section():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "Primary recommendation: **IEMBA HSG**" in prompt
-    assert "Alternative to consider: **emba X**" in prompt
-    assert "Routine informational turns must keep both flags `False`" in prompt
-    assert "show_booking_widget=True" in prompt
-    assert "unless the user explicitly asks for booking or accepts that offer" in prompt
-    assert "**Kristin Fuchs**" in prompt
-    assert "If you would like to discuss this personally, I can also help you with appointment booking." in prompt
+    assert "Users can book consultations through the booking section at the bottom of the page." in prompt
+    assert "Then direct them to the booking section." in prompt
+    assert "Never generate booking links yourself." in prompt
+    assert "Kristin Fuchs" in prompt
 
 
 def test_lead_prompt_uses_stage_sensitive_programme_positioning():
@@ -121,18 +118,6 @@ def test_booking_preference_follow_up_is_detected_in_active_flow():
     assert not agent._is_booking_preference_follow_up("Was kostet das Programm?")
 
 
-def test_response_commit_detector_requires_show_now_not_soft_offer():
-    agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
-
-    assert agent._response_commits_to_showing_booking_widget(
-        "Ich kann Ihnen nun passende Terminoptionen anzeigen. Unten werden Ihnen die verfügbaren Slots eingeblendet."
-    )
-    assert not agent._response_commits_to_showing_booking_widget(
-        "Wenn Sie möchten, kann ich Ihnen später auch bei der Terminbuchung helfen."
-    )
-    assert not agent._response_commits_to_showing_booking_widget(
-        "Bitte noch kurz: Bevorzugen Sie vormittags oder nachmittags?"
-    )
 def test_soft_booking_offer_does_not_mark_handover_state(monkeypatch):
     monkeypatch.setattr(agent_chain_module.config.convstate, "TRACK_USER_PROFILE", True)
 
@@ -161,14 +146,13 @@ def test_soft_booking_offer_does_not_mark_handover_state(monkeypatch):
 
 
 def test_iemba_booking_widget_shows_contact_details_and_slots():
-    widget = get_booking_widget(language="en", programs=["iemba"])
+    widget = BOOKING_WIDGET_HTML["en"]
 
-    assert "Kristin Fuchs (IEMBA)" in widget
-    assert "kristin.fuchs@unisg.ch" in widget
-    assert "+41 71 224 75 46" in widget
-    assert "available appointment slots and contact details" in widget
+    assert IEMBA["name"] in widget
+    assert IEMBA["url"] in widget
+    assert "Book an appointment" in widget
+    assert "booking-frame-en" in widget
     assert "calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation" in widget
-    assert "Cyra von Müller (EMBA)" not in widget
 
 
 def test_scope_guardian_escalation_uses_real_contact_details():

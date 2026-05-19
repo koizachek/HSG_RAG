@@ -77,8 +77,6 @@ def test_generic_programme_comparison_stays_balanced(real_agent_positioning):
 
     assert "emba hsg" in response_text
     assert "iemba" in response_text
-    assert response.appointment_requested is False
-    assert response.show_booking_widget is False
     assert "best" not in response_text
     assert "perfect" not in response_text
     assert "guaranteed" not in response_text
@@ -106,8 +104,6 @@ def test_emba_interest_triggers_positive_value_framing(real_agent_positioning):
     assert _count_keyword_hits(response_text, emba_keywords) >= 2, response_text
     assert "best" not in _normalize(response_text)
     assert "perfect" not in _normalize(response_text)
-    assert response.appointment_requested is False
-    assert response.show_booking_widget is False
 
 
 @pytest.mark.skipif(not _READY, reason=_SKIP_REASON)
@@ -131,5 +127,3 @@ def test_iemba_interest_triggers_positive_value_framing(real_agent_positioning):
     assert _count_keyword_hits(response_text, iemba_keywords) >= 2, response_text
     assert "best" not in _normalize(response_text)
     assert "perfect" not in _normalize(response_text)
-    assert response.appointment_requested is False
-    assert response.show_booking_widget is False

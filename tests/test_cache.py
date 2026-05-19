@@ -64,9 +64,6 @@ class FakeLeadAgent:
         response = StructuredAgentResponse(
             response=response_text,
             is_context_dependent=is_context_dependent,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=[],
         )
 
         return {
