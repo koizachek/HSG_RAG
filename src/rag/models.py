@@ -18,27 +18,29 @@ class ModelConfigurator:
     def get_language_detector_model(cls) -> BaseChatModel:
         if cls._language_detector_model_instance:
             return cls._language_detector_model_instance
-
+        
+        provider, model = config.llm.LANGUAGE_DETECTION_MODEL 
         try:
-            cls._language_detector_model_instance = cls._initialize_model(model=config.llm.LANGUAGE_DETECTION_MODEL)
-            logger.info(f"Initialized language detection model: '{config.llm.PROVIDER}:{config.llm.LANGUAGE_DETECTION_MODEL}'")
+            cls._language_detector_model_instance = cls._initialize_model(provider, model)
+            logger.info(f"Initialized language detection model: '{provider}:{model}'")
             return cls._language_detector_model_instance
         except Exception as e:
-            logger.error(f"Failed to initialize the language detection model '{config.llm.PROVIDER}:{config.llm.LANGUAGE_DETECTION_MODEL}': {e}")
+            logger.error(f"Failed to initialize the language detection model '{provider}:{model}': {e}")
             raise e
 
 
     @classmethod
     def get_confidence_scoring_model(cls) -> BaseChatModel:
         if cls._confidence_scoring_model_instance:
-            return cls._confidence_scoring_model_instance  
+            return cls._confidence_scoring_model_instance
 
+        provider, model = config.llm.CONFIDENCE_SCORING_MODEL
         try:
-            cls._confidence_scoring_model_instance = cls._initialize_model(model=config.llm.CONFIDENCE_SCORING_MODEL)
-            logger.info(f"Initialized confidence scoring model: '{config.llm.PROVIDER}:{config.llm.CONFIDENCE_SCORING_MODEL}'")
+            cls._confidence_scoring_model_instance = cls._initialize_model(provider, model)
+            logger.info(f"Initialized confidence scoring model: '{provider}:{model}'")
             return cls._confidence_scoring_model_instance
         except Exception as e:
-            logger.error(f"Failed to initialize the confidence scoring model '{config.llm.PROVIDER}:{config.llm.CONFIDENCE_SCORING_MODEL}': {e}")
+            logger.error(f"Failed to initialize the confidence scoring model '{provider}:{model}': {e}")
             raise e
 
 
@@ -47,12 +49,13 @@ class ModelConfigurator:
         if cls._summarization_model_instance:
             return cls._summarization_model_instance   
 
+        provider, model = config.llm.SUMMARIZATION_MODEL
         try:
-            cls._summarization_model_instance = cls._initialize_model(model=config.llm.SUMMARIZATION_MODEL)
-            logger.info(f"Initialized summarization model: '{config.llm.PROVIDER}:{config.llm.SUMMARIZATION_MODEL}'")
+            cls._summarization_model_instance = cls._initialize_model(provider, model)
+            logger.info(f"Initialized summarization model: '{provider}:{model}'")
             return cls._summarization_model_instance
         except Exception as e:
-            logger.error(f"Failed to initialize the summarization model '{config.llm.PROVIDER}:{config.llm.SUMMARIZATION_MODEL}': {e}")
+            logger.error(f"Failed to initialize the summarization model '{provider}:{model}': {e}")
             raise e
 
     @classmethod
@@ -60,12 +63,13 @@ class ModelConfigurator:
         if cls._subagent_model_instance:
             return cls._subagent_model_instance
         
+        provider, model = config.llm.SUBAGENT_MODEL
         try:
-            cls._subagent_model_instance = cls._initialize_model(model=config.llm.SUBAGENT_MODEL)
-            logger.info(f"Initialized subagent model: '{config.llm.PROVIDER}:{config.llm.SUBAGENT_MODEL}'")
+            cls._subagent_model_instance = cls._initialize_model(provider, model)
+            logger.info(f"Initialized subagent model: '{provider}:{model}'")
             return cls._subagent_model_instance
         except Exception as e: 
-            logger.error(f"Failed to initialize the subagent_model '{config.llm.PROVIDER}:{config.llm.SUBAGENT_MODEL}': {e}")
+            logger.error(f"Failed to initialize the subagent_model '{provider}:{model}': {e}")
 
 
     @classmethod
@@ -73,13 +77,14 @@ class ModelConfigurator:
         """Initialize the language model based on config."""
         if cls._main_model_instance:
             return cls._main_model_instance
-
+        
+        provider, model = config.llm.MAIN_AGENT_MODEL
         try:
-            cls._main_model_instance = cls._initialize_model(model=config.llm.MAIN_AGENT_MODEL)
-            logger.info(f"Initialized main agent model: '{config.llm.PROVIDER}:{config.llm.MAIN_AGENT_MODEL}'")
+            cls._main_model_instance = cls._initialize_model(provider, model)
+            logger.info(f"Initialized main agent model: '{provider}:{model}'")
             return cls._main_model_instance
         except Exception as e: 
-            logger.error(f"Failed to initialize the main agent model '{config.llm.PROVIDER}:{config.llm.MAIN_AGENT_MODEL}': {e}")
+            logger.error(f"Failed to initialize the main agent model '{provider}:{model}': {e}")
             raise e
 
 
@@ -98,34 +103,36 @@ class ModelConfigurator:
     def _initialize_fallback_models(cls) -> list[BaseChatModel]:
         fallback_models_instances = []
         for fallback_model in config.llm.FALLBACK_MODELS:
+            provider, model = fallback_model
             try:
-                fallback_model_instance = cls._initialize_model(fallback_model)
-                logger.info(f"Initialized fallback model: '{config.llm.PROVIDER}:{fallback_model}'")
+                fallback_model_instance = cls._initialize_model(provider, model)
+                logger.info(f"Initialized fallback model: '{provider}:{model}'")
                 fallback_models_instances.append(fallback_model_instance)
             except Exception as e:
-                logger.error(f"Failed to initialize the fallback model {config.llm.PROVIDER}:{fallback_model}: {e}; skipping...")
+                logger.error(f"Failed to initialize the fallback model {provider}:{model}: {e}; skipping...")
         return fallback_models_instances
 
 
     @classmethod
-    def _initialize_model(cls, model: str) -> BaseChatModel:
+    def _initialize_model(cls, provider: str, model: str) -> BaseChatModel:
         try:
-            match config.llm.PROVIDER: 
+            match provider: 
                 case 'huggingface':
                     from langchain_huggingface import (
                         ChatHuggingFace,
                         HuggingFaceEndpoint,
                     )
                     llm = HuggingFaceEndpoint(
-                        provider='auto',
                         repo_id=model,
+                        provider='featherless-ai',
                         task='text-generation',
                         max_new_tokens=3072,
                         temperature=0.1,
                         timeout=60,
                         huggingfacehub_api_token=config.llm.HUGGING_FACE_API_KEY,
                     )
-                    return ChatHuggingFace(llm=llm)
+                    chat_model = ChatHuggingFace(llm=llm)
+                    return chat_model
                 case 'groq':
                     from langchain_groq import ChatGroq
                     return ChatGroq(
@@ -172,6 +179,6 @@ class ModelConfigurator:
                         num_predict=2048,
                     )
                 case _:
-                    raise ValueError(f"Unsupported LLM provider: {config.llm.PROVIDER}")
+                    raise ValueError(f"Unsupported LLM provider: {provider}")
         except Exception as e:
             raise e

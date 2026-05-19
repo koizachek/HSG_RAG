@@ -122,13 +122,12 @@ class WeaviateConfig(ConfigBase):
 
 
 class LLMConfig(ConfigBase):
-    PROVIDER: Literal['openai', 'groq', 'openrouter', 'ollama', 'huggingface'] = _get('LLM_PROVIDER', type_=str)
-    MAIN_AGENT_MODEL: str = _get('MAIN_AGENT_MODEL', type_=str)
-    SUBAGENT_MODEL:   str = _get('SUBAGENT_MODEL', type_=str, default='')
-    LANGUAGE_DETECTION_MODEL: str = _get('LANGUAGE_DETECTION_MODEL', type_=str)
-    CONFIDENCE_SCORING_MODEL: str = _get('CONFIDENCE_SCORING_MODEL', type_=str, default='')
-    SUMMARIZATION_MODEL: str = _get('SUMMARIZATION_MODEL', type_=str)
-    FALLBACK_MODELS: list[str] = _get('FALLBACK_MODELS', type_=list[str], default=[])
+    MAIN_AGENT_MODEL: set[str] = _get('MAIN_AGENT_MODEL')
+    SUBAGENT_MODEL: set[str] = _get('SUBAGENT_MODEL')
+    LANGUAGE_DETECTION_MODEL: set[str] = _get('LANGUAGE_DETECTION_MODEL')
+    CONFIDENCE_SCORING_MODEL: set[str] = _get('CONFIDENCE_SCORING_MODEL')
+    SUMMARIZATION_MODEL: set[str] = _get('SUMMARIZATION_MODEL')
+    FALLBACK_MODELS: list[set[str]] = _get('FALLBACK_MODELS')
     
     GROQ_API_KEY:   str = _get('GROQ_API_KEY', default=None)
     OPENAI_API_KEY: str = _get('OPENAI_API_KEY', default=None)

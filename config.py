@@ -31,31 +31,28 @@ LOCK_LANGUAGE_AFTER_N_MESSAGES = 3
 MAX_CONVERSATION_TURNS = 20
 
 # ============================================ LLM Configuration ============================================
+# Each configuration value is defined as a pair (PROVIDER, MODEL_NAME).
 
-# A string, either 'openai', 'huggingface', 'groq', 'openrouter' or 'ollama' (local).
-# Defines the main model provider for the application.
-LLM_PROVIDER = 'openai' 
+# Defines the model that will be used by the lead agent. 
+MAIN_AGENT_MODEL = ('huggingface', 'swiss-ai/Apertus-8B-Instruct-2509')
 
-# A string. Defines the model that will be used by the lead agent. 
-MAIN_AGENT_MODEL = 'gpt-5.1'
-
-# A list of strings. Defines the fallback models that will be invoked 
+# Defines the fallback models that will be invoked 
 # if the main model fails to respond.
-FALLBACK_MODELS = ['gpt-5.1-nano', 'gpt-4o-mini']
+FALLBACK_MODELS = [('openai', 'gpt-5-nano'), ('openai', 'gpt-4o-mini')]
 
-# A string. Defines the model that will be used by subagents. 
+# Defines the model that will be used by subagents. 
 # Only applicable if the subagents are enabled.
-SUBAGENT_MODEL = 'gpt-5.1-nano'
+SUBAGENT_MODEL = ('openai', 'gpt-5.1-nano')
 
-# A string. Defines the model that will be used by the language detector. 
-LANGUAGE_DETECTION_MODEL = 'gpt-4o-mini'
+# Defines the model that will be used by the language detector. 
+LANGUAGE_DETECTION_MODEL = ('openai', 'gpt-4o-mini')
 
-# A string. Defines the model that will be used by the confidence scoring system.
+# Defines the model that will be used by the confidence scoring system.
 # Only applicable if the confidence scoring setting is turned on.
-CONFIDENCE_SCORING_MODEL = 'gpt-4o-mini'
+CONFIDENCE_SCORING_MODEL = ('openai', 'gpt-4o-mini')
 
-# A string. Defines the model that will be used by the summarization middleware.
-SUMMARIZATION_MODEL = 'gpt-5.1'
+# Defines the model that will be used by the summarization middleware.
+SUMMARIZATION_MODEL = ('openai', 'gpt-5.1')
 
 # ==================================== Weaviate Database Configuration ======================================
 
