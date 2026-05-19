@@ -13,7 +13,6 @@ from const.data_consent_constants import (
     ACCEPT,
     DECLINE,
     DECLINE_MESSAGE,
-    WITHDRAW_CONFIRMATION_MESSAGE,
     BOOK_TEXT,
     BOOKING_WIDGET_HTML,
 )
@@ -38,17 +37,15 @@ class TestConsentFlow:
             msg = DECLINE_MESSAGE[lang]
             assert "emba@unisg.ch" in msg
 
-    def test_withdraw_returns_to_consent(self):
-        """Withdrawing should show consent screen again"""
-        # Verify withdraw confirmation exists
-        for lang in ["de", "en"]:
-            msg = WITHDRAW_CONFIRMATION_MESSAGE[lang]
-            assert "widerrufen" in msg or "withdrawn" in msg.lower()
+    def test_withdrawal_is_explained_in_privacy_notice_not_as_chat_action(self):
+        """Withdrawal remains a privacy right, not the post-consent booking action"""
+        assert "widerrufen" in PRIVACY_NOTICE["de"]
+        assert "withdraw" in PRIVACY_NOTICE["en"].lower()
 
     def test_language_switch_updates_all_texts(self):
         """All UI elements must have both languages"""
         constants = [PRIVACY_NOTICE, ACCEPT, DECLINE, DECLINE_MESSAGE, 
-                     WITHDRAW_CONFIRMATION_MESSAGE, BOOK_TEXT, BOOKING_WIDGET_HTML]
+                     BOOK_TEXT, BOOKING_WIDGET_HTML]
         
         for const in constants:
             assert "de" in const, f"Missing German: {const}"

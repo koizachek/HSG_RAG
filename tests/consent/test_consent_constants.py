@@ -14,7 +14,6 @@ from const.data_consent_constants import (
     ACCEPT,
     DECLINE,
     DECLINE_MESSAGE,
-    WITHDRAW_CONFIRMATION_MESSAGE,
     BOOK_TEXT,
     BOOKING_WIDGET_HTML,
     ADVISOR_CONTACTS,
@@ -31,7 +30,6 @@ class TestConsentConstants:
             ACCEPT,
             DECLINE,
             DECLINE_MESSAGE,
-            WITHDRAW_CONFIRMATION_MESSAGE,
             BOOK_TEXT,
             BOOKING_WIDGET_HTML,
         ]
@@ -83,13 +81,6 @@ class TestConsentConstants:
         for lang in ["de", "en"]:
             msg = DECLINE_MESSAGE[lang]
             assert "emba@unisg.ch" in msg, f"Missing contact email in {lang} decline message"
-
-    def test_withdraw_confirmation_mentions_deletion(self):
-        """Withdraw confirmation must mention data deletion"""
-        for lang in ["de", "en"]:
-            msg = WITHDRAW_CONFIRMATION_MESSAGE[lang]
-            assert "gelöscht" in msg or "deleted" in msg.lower(), \
-                f"Withdraw confirmation in {lang} should mention data deletion"
 
     def test_booking_button_texts_present(self):
         """Booking button text must be localized"""

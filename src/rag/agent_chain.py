@@ -453,48 +453,6 @@ class ExecutiveAgentChain:
             and any(term in content_lower for term in clarification_terms)
         )
 
-    def _response_commits_to_showing_booking_widget(self, response: str) -> bool:
-        """Detect when the assistant says booking options are being shown now."""
-        response_lower = response.lower()
-
-        positive_terms = [
-            "i can show you",
-            "contact details and available appointment slots are shown below",
-            "appointment options are shown below",
-            "available slots are shown below",
-            "i can now show you",
-            "ich kann ihnen nun",
-            "ich kann ihnen jetzt",
-            "unten werden ihnen",
-            "unten finden sie",
-            "unten sehen sie",
-            "terminoptionen anzeigen",
-            "verfügbaren slots",
-            "verfügbaren termine",
-        ]
-        defer_terms = [
-            "if you would like",
-            "if you later wish",
-            "you can ask me",
-            "if that would be helpful",
-            "sobald ich das weiss",
-            "wenn ich das weiss",
-            "damit die slots besser passen",
-            "bitte noch kurz",
-            "eine kurze rückfrage",
-            "eine kurze letzte frage",
-            "bevorzugen sie",
-            "have you got a preference",
-            "do you prefer",
-            "would you prefer",
-            "which programme",
-            "which program",
-        ]
-
-        return (
-            any(term in response_lower for term in positive_terms)
-            and not any(term in response_lower for term in defer_terms)
-        )
     def _is_explicit_booking_intent(self, query: str) -> bool:
         """Detect whether the user is actively asking to book or accepting a booking offer."""
         query_lower = query.lower()

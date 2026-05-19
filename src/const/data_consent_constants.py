@@ -10,7 +10,7 @@ Dabei verarbeiten wir insbesondere:
 - Informationen zu Ihrer Berufserfahrung und Ausbildung  
 
 Ihre Daten werden **ausschließlich für die Studienberatung** verwendet und **nicht an Dritte weitergegeben**.  
-Sie können Ihre Einwilligung **jederzeit widerrufen**.
+Sie können Ihre Einwilligung **jederzeit widerrufen**, indem Sie uns unter kontaktieren.
 
 [Weitere Informationen zur Datenschutzerklärung](https://www.unisg.ch/en/data-protection-declaration/)
 """,
@@ -26,7 +26,7 @@ We process in particular:
 - Information about your professional experience and education  
 
 Your data is used **solely for study advisory purposes** and **is not shared with third parties**.  
-You may **withdraw your consent at any time**.
+You may **withdraw your consent at any time** by contacting us.
 
 [More information in the Privacy Policy](https://www.unisg.ch/en/data-protection-declaration/)
 """
@@ -45,11 +45,6 @@ DECLINE = {
 DECLINE_MESSAGE = {
     "de": "Ohne Ihre Einwilligung können wir Sie leider nicht beraten. Bitte kontaktieren Sie uns direkt unter emba@unisg.ch.",
     "en": "Without your consent, we cannot provide advice. Please contact us directly at emba@unisg.ch.",
-}
-
-WITHDRAW_CONFIRMATION_MESSAGE = {
-    "de": "Ihre Einwilligung wurde widerrufen. Ihre Session-Daten wurden gelöscht. Ohne Einwilligung können wir Sie leider nicht beraten.",
-    "en": "Your consent has been withdrawn. Your session data has been deleted. Without consent, we cannot continue advising you."
 }
 
 BOOK_TEXT = {
@@ -97,7 +92,7 @@ BOOKING_WIDGET_HTML = {
 
     <details>
         <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#f9fafb;">
-            Book an appointment
+            {BOOK_TEXT["en"]}
         </summary>
 
         <p style="color:#d1d5db; margin:12px 0 16px 0;">
@@ -149,7 +144,7 @@ BOOKING_WIDGET_HTML = {
 
     <details>
         <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#f9fafb;">
-            Termin buchen
+            {BOOK_TEXT["de"]}
         </summary>
 
         <p style="color:#d1d5db; margin:12px 0 16px 0;">
