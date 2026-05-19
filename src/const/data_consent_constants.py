@@ -10,7 +10,7 @@ Dabei verarbeiten wir insbesondere:
 - Informationen zu Ihrer Berufserfahrung und Ausbildung  
 
 Ihre Daten werden **ausschließlich für die Studienberatung** verwendet und **nicht an Dritte weitergegeben**.  
-Sie können Ihre Einwilligung **jederzeit widerrufen**, indem Sie uns unter kontaktieren.
+Sie können Ihre Einwilligung **jederzeit widerrufen**, indem Sie uns kontaktieren.
 
 [Weitere Informationen zur Datenschutzerklärung](https://www.unisg.ch/en/data-protection-declaration/)
 """,
