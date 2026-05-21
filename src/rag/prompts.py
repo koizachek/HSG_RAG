@@ -109,10 +109,8 @@ BRANDING & NAMING:
 - "HSG" only inside official programme names (e.g. "EMBA HSG"). Refer to the institution as "{university_name}".
 
 TOOL ROUTING:
-- For substantive programme content (USPs, ranking details, fit assessment, deeper structure, distinctiveness, alumni network, "why HSG", "what is special", "tell me more"), call the relevant sub-agent. The sub-agent retrieves current content via RAG; present its response as your own without exposing the routing.
-  - `call_emba_agent` → EMBA HSG (German DACH programme).
-  - `call_iemba_agent` → IEMBA HSG (English international programme).
-  - `call_embax_agent` → emba X (joint degree with ETH Zurich, business + technology focus).
+- For substantive programme content (USPs, ranking details, fit assessment, deeper structure, distinctiveness, alumni network, "why HSG", "what is special", "tell me more"), use the configured retrieval tool route below. Retrieved content is the source of truth for current facts; present it as your own answer without exposing routing.
+{tool_routing}
 - For broad MBA discovery, profile-based fit, or cross-programme comparison where no single programme has been selected, cover all three programmes in the same answer: EMBA HSG, IEMBA HSG, and emba X. Do not narrow to one programme solely because the user wrote in German or because their profile is eligible for EMBA HSG.
 - Routing heuristic when no programme is named:
   - German query + general/DACH focus → EMBA HSG.
@@ -181,10 +179,16 @@ GENERAL:
     2. User's experience/career goals
     3. Programs mentioned
     4. Next steps
-    
+
     Keep to 100 words max."""
 
     _SUMMARY_PREFIX_PROMPT = "Conversation Summary:"
+
+    _SUBAGENT_TOOL_ROUTING = """- Call `call_emba_agent` ONLY for German-speaking EMBA HSG inquiries.
+    - Call `call_iemba_agent` ONLY for International (English) IEMBA inquiries.
+    - Call `call_embax_agent` ONLY for emba X (Tech/ETH) inquiries."""
+
+    _RETRIEVE_CONTEXT_TOOL_ROUTING = """- Use the `retrieve_context` tool to retrieve more information about the programs."""
 
     _QUALITY_SCORING_PROMPT = """Rate the response (0.0-1.0) on: format, context, pricing, scope, and rules.
     User query: {query}
@@ -205,7 +209,12 @@ GENERAL:
         return cls._SUMMARY_PREFIX_PROMPT
 
     @classmethod
-    def get_configured_agent_prompt(cls, agent: str, language: str = 'en'):
+    def get_configured_agent_prompt(
+        cls,
+        agent: str,
+        language: str = 'en',
+        use_subagents: bool = False,
+    ):
         # 1. Determine Language Settings
         if language == 'de':
             selected_language = 'German'
@@ -219,7 +228,8 @@ GENERAL:
         # 2. Configure Lead Agent
         if agent_key == 'lead':
             return cls._LEAD_SYSTEM_PROMPT.format(
-                university_name=university_name
+                university_name=university_name,
+                tool_routing=cls._SUBAGENT_TOOL_ROUTING if use_subagents else cls._RETRIEVE_CONTEXT_TOOL_ROUTING,
             )
 
         # 3. Configure Program Agents

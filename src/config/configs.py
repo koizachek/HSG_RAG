@@ -74,6 +74,7 @@ class ProcessingConfig(ConfigBase):
 
 
 class ChainConfig(ConfigBase):
+    ENABLE_SUBAGENTS:          bool  = _get('ENABLE_SUBAGENTS', False)
     ENABLE_RESPONSE_CHUNKING:  bool  = _get('ENABLE_RESPONSE_CHUNKING', False)
     EVALUATE_RESPONSE_QUALITY: bool  = _get('ENABLE_EVALUATE_RESPONSE_QUALITY', True)
     CONFIDENCE_THRESHOLD:      float = _get('CONFIDENCE_THRESHOLD')

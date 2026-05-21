@@ -32,7 +32,6 @@ from src.rag.input_handler import InputHandler
 from src.rag.programme_facts import ProgrammeFacts, ProgrammeFactsProvider
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
-# from src.rag.quality_score_handler import QualityEvaluationResult, QualityScoreHandler
 from src.rag.language_detection import LanguageDetector
 
 from src.utils.logging import get_logger
@@ -42,7 +41,6 @@ from src.config import config
 from ..cache.cache import Cache
 
 chain_logger = get_logger('agent_chain')
-
 
 class ExecutiveAgentChain:
     def __init__(self, language: str = 'en', session_id: str | None = None) -> None:
@@ -57,10 +55,10 @@ class ExecutiveAgentChain:
         self._cache = Cache.get_cache()
         self._programme_facts_provider = ProgrammeFactsProvider(self._retrieve_context_via_tool)
 
-        # Confidence scoring is intentionally disabled here because the extra
-        # model call adds latency and has not been reliable enough to justify it.
-        # if config.chain.EVALUATE_RESPONSE_QUALITY:
-        #     self._quality_handler = QualityScoreHandler()
+        if config.chain.EVALUATE_RESPONSE_QUALITY:
+            from src.rag.quality_score_handler import QualityScoreHandler
+            self._quality_handler = QualityScoreHandler()
+
         self._language_detector = LanguageDetector()
 
         # Generate unique user ID for this session
@@ -213,7 +211,13 @@ class ExecutiveAgentChain:
             raise RuntimeError("Unable to retrieve emba X information at this time.")
 
     def _init_agents(self):
-        config: RunnableConfig = {
+        from .subagents import SubagentProvider
+        if config.chain.ENABLE_SUBAGENTS:
+            chain_logger.warning("Subagents activated! This might lead to high response times!")
+
+        sub_provider = SubagentProvider(self._initial_language, self._query, self._retrieve_context)
+
+        run_config: RunnableConfig = {
             'configurable': {'thread_id': 0}
         }
         fallback_middleware = ModelFallbackMiddleware(
@@ -226,33 +230,23 @@ class ExecutiveAgentChain:
             parse_docstring=True,
         )
         self._retrieve_context_tool = tool_retrieve_context
-        tools_agent_calling = [
-            tool(
-                name_or_callable='call_emba_agent',
-                runnable=self._call_emba_agent,
-                return_direct=False,
-                parse_docstring=True,
-            ),
-            tool(
-                name_or_callable='call_iemba_agent',
-                runnable=self._call_iemba_agent,
-                return_direct=False,
-                parse_docstring=True,
-            ),
-            tool(
-                name_or_callable='call_embax_agent',
-                runnable=self._call_embax_agent,
-                return_direct=False,
-                parse_docstring=True,
-            ),
-        ]
+
+        if config.chain.ENABLE_SUBAGENTS:
+            lead_agent_tools = sub_provider.get_subagent_tools()
+        else:
+            lead_agent_tools = [tool_retrieve_context]
+
         agents = {
             'lead': create_agent(
                 name="lead_agent",
                 model=modelconf.get_main_agent_model(),
-                tools=tools_agent_calling,
+                tools=lead_agent_tools,
                 state_schema=LeadInformationState,
-                system_prompt=promptconf.get_configured_agent_prompt('lead', language=self._initial_language),
+                system_prompt=promptconf.get_configured_agent_prompt(
+                    'lead',
+                    language=self._initial_language,
+                    use_subagents=config.chain.ENABLE_SUBAGENTS
+                ),
                 middleware=[
                     chainmdw.get_tool_wrapper(),
                     chainmdw.get_model_wrapper(),
@@ -264,21 +258,11 @@ class ExecutiveAgentChain:
                 ),
             ),
         }
-        for agent in ['emba', 'iemba', 'embax']:
-            agents[agent] = create_agent(
-                name=f"{agent}_agent",
-                model=modelconf.get_subagent_model(),
-                tools=[tool_retrieve_context],
-                state_schema=LeadInformationState,
-                system_prompt=promptconf.get_configured_agent_prompt(agent, language=self._initial_language),
-                middleware=[
-                    fallback_middleware,
-                    chainmdw.get_tool_wrapper(),
-                    chainmdw.get_model_wrapper(),
-                ],
-                context_schema=AgentContext,
-            )
-        return agents, config
+        if config.chain.ENABLE_SUBAGENTS:
+            agents |= sub_provider.get_subagents(fallback_middleware)
+
+        return agents, run_config
+
 
     def _extract_experience_years(self, conversation: str) -> int | None:
         """Extract years of professional experience from conversation text."""
@@ -1067,16 +1051,15 @@ class ExecutiveAgentChain:
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
         confidence_fallback = False
-        # if config.chain.EVALUATE_RESPONSE_QUALITY:
-        #     quality_evaluation: QualityEvaluationResult = self._quality_handler. \
-        #         evaluate_response_quality(preprocessed_query, formatted_response)
-        #
-        #     chain_logger.info(f"Quality Score: {quality_evaluation.overall_score:1.2f}")
-        #
-        #     if quality_evaluation.overall_score < config.chain.CONFIDENCE_THRESHOLD:
-        #         confidence_fallback = True
-        #         formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
-        #         chain_logger.info("Fallback Mechanism activated!")
+        if config.chain.EVALUATE_RESPONSE_QUALITY:
+            quality_evaluation = self._quality_handler.evaluate_response_quality(preprocessed_query, formatted_response)
+
+            chain_logger.info(f"Quality Score: {quality_evaluation.overall_score:1.2f}")
+
+            if quality_evaluation.overall_score < config.chain.CONFIDENCE_THRESHOLD:
+                confidence_fallback = True
+                formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
+                chain_logger.info("Fallback Mechanism activated!")
 
         history_response = ResponseFormatter.format_name_of_university(
             full_response,
