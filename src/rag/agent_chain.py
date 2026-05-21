@@ -967,6 +967,7 @@ class ExecutiveAgentChain:
             if cached_data and isinstance(cached_data, dict):
                 return LeadAgentQueryResponse(
                     response=cached_data["response"],
+                    additional_details=cached_data.get("additional_details", ""),
                     language=current_language,
                     appointment_requested=cached_data.get("appointment_requested", False),
                     show_booking_widget=cached_data.get("show_booking_widget", False),
@@ -982,6 +983,7 @@ class ExecutiveAgentChain:
                 key=query,
                 value={
                     "response":              response.response,
+                    "additional_details":    response.additional_details,
                     "appointment_requested": response.appointment_requested,
                     "show_booking_widget":    response.show_booking_widget,
                     "relevant_programs":     response.relevant_programs,
@@ -1021,7 +1023,11 @@ class ExecutiveAgentChain:
             messages=self._conversation_history + [language_instruction], 
         )
         agent_response = structured_response.response
+        additional_details = ResponseFormatter.clean_response(
+            ResponseFormatter.remove_tables(structured_response.additional_details or "")
+        )
         chain_logger.info(f"Is answer context dependent: {structured_response.is_context_dependent}")
+        chain_logger.info(f"Additional details returned: {bool(additional_details)}")
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
         chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
@@ -1125,6 +1131,7 @@ class ExecutiveAgentChain:
         
         return LeadAgentQueryResponse(
             response = formatted_response,
+            additional_details = additional_details,
             language = response_language,
             confidence_fallback = confidence_fallback,
             should_cache = False if (confidence_fallback or appointment_requested or structured_response.is_context_dependent) else True,
@@ -1872,6 +1879,7 @@ class ExecutiveAgentChain:
                 sentences,
                 category,
                 language,
+                programme,
             )
         return extracted
 
@@ -2039,6 +2047,7 @@ class ExecutiveAgentChain:
         sentences: list[str],
         category: str,
         language: str,
+        programme: str | None = None,
     ) -> list[str]:
         terms_by_category = {
             "cost": (
@@ -2140,6 +2149,22 @@ class ExecutiveAgentChain:
             )
 
         if category == "cost":
+            current_flat_tuition_by_language = {
+                "de": {
+                    "emba": "CHF 77'500",
+                    "iemba": "CHF 85'000",
+                },
+                "en": {
+                    "emba": "CHF 77,500",
+                    "iemba": "CHF 85,000",
+                },
+            }
+            current_flat_tuition = current_flat_tuition_by_language.get(
+                language,
+                current_flat_tuition_by_language["en"],
+            ).get(programme or "")
+            if current_flat_tuition:
+                return [current_flat_tuition]
             values = self._unique_texts(
                 value
                 for sentence in candidates

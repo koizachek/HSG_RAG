@@ -14,8 +14,9 @@ from const.data_consent_constants import (
     ACCEPT,
     DECLINE,
     DECLINE_MESSAGE,
-    WITHDRAW_CONFIRMATION_MESSAGE,
-    WITHDRAW_TEXT
+    BOOK_TEXT,
+    BOOKING_WIDGET_HTML,
+    ADVISOR_CONTACTS,
 )
 
 
@@ -29,8 +30,8 @@ class TestConsentConstants:
             ACCEPT,
             DECLINE,
             DECLINE_MESSAGE,
-            WITHDRAW_CONFIRMATION_MESSAGE,
-            WITHDRAW_TEXT
+            BOOK_TEXT,
+            BOOKING_WIDGET_HTML,
         ]
         
         for const in constants:
@@ -81,12 +82,24 @@ class TestConsentConstants:
             msg = DECLINE_MESSAGE[lang]
             assert "emba@unisg.ch" in msg, f"Missing contact email in {lang} decline message"
 
-    def test_withdraw_confirmation_mentions_deletion(self):
-        """Withdraw confirmation must mention data deletion"""
-        for lang in ["de", "en"]:
-            msg = WITHDRAW_CONFIRMATION_MESSAGE[lang]
-            assert "gelöscht" in msg or "deleted" in msg.lower(), \
-                f"Withdraw confirmation in {lang} should mention data deletion"
+    def test_booking_button_texts_present(self):
+        """Booking button text must be localized"""
+        assert BOOK_TEXT["de"] == "Termin buchen"
+        assert BOOK_TEXT["en"] == "Book an appointment"
+
+    def test_booking_widget_contains_advisors_and_slots(self):
+        """Booking widget must expose advisor buttons and embedded slot frames"""
+        assert BOOK_TEXT["en"] in BOOKING_WIDGET_HTML["en"]
+        assert BOOK_TEXT["de"] in BOOKING_WIDGET_HTML["de"]
+
+        for lang in ["en", "de"]:
+            widget = BOOKING_WIDGET_HTML[lang]
+            assert f'booking-frame-{lang}' in widget
+            assert "calendly.com" in widget
+
+            for advisor in ADVISOR_CONTACTS:
+                assert advisor["name"] in widget
+                assert advisor["url"] in widget
 
 
 if __name__ == "__main__":

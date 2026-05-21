@@ -69,7 +69,7 @@ def test_embax_prompt_uses_social_responsibility_positioning():
 
 
 def test_lead_prompt_uses_updated_embax_positioning():
-    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en", use_subagents=True)
 
     assert "call_embax_agent" in prompt
     assert "Tech / innovation / transformation focus or tech background" in prompt
