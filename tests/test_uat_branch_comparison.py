@@ -42,6 +42,17 @@ DEFAULT_BRANCHES = [
 ]
 
 SKIPPED_SHEETS = {"About", "TestProtocol", "Reporting"}
+PROGRAMME_COST_TRUTHS = {
+    "emba_hsg": {"label": "EMBA HSG", "amount": "77500"},
+    "iemba": {"label": "IEMBA", "amount": "85000"},
+    "emba_x": {"label": "emba X", "amount": "110000"},
+}
+STALE_OR_DISCOUNT_COSTS = {
+    "72500",  # old EMBA deadline-linked fee
+    "80000",  # old IEMBA early registration fee
+    "84000",  # old IEMBA final fee in UAT sheet
+    "99000",  # old / early emba X fee
+}
 
 
 @dataclass
@@ -229,6 +240,44 @@ def _contains_any(text: str, terms: list[str]) -> bool:
     return any(_normalize_text(term) in normalized for term in terms)
 
 
+def _case_mentions_cost(case: UATCase) -> bool:
+    text = "\n".join(case.user_turns + case.expected_bot_behaviour + case.success_criteria)
+    return bool(
+        re.search(
+            r"\b(CHF|cost|costs|fee|fees|tuition|kosten|kostet|geb[uü]hr|studiengeb[uü]hr)\b",
+            text,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _expected_cost_programmes(case: UATCase) -> list[str]:
+    """Return the programme costs that should be considered hard truths for this UAT card."""
+    sheet = case.sheet.upper()
+    if sheet in {"EMBA_DE", "EMBA_DE_EDGE"}:
+        return ["emba_hsg"]
+    if sheet == "EMBA_DE_CROSS":
+        return ["emba_x"]
+    if sheet == "IEMBA":
+        return ["iemba"]
+    if sheet == "IEMBA_EDGE":
+        # The card starts as IEMBA but explicitly explores EMBA X as an alternative.
+        # Either final cost is acceptable if the answer makes the programme context clear.
+        return ["iemba", "emba_x"]
+    if sheet == "EMBAX":
+        return ["emba_x"]
+
+    rubric = _normalize_text("\n".join(case.expected_bot_behaviour + case.success_criteria + case.user_turns))
+    programmes = []
+    if "emba x" in rubric or "embax" in rubric:
+        programmes.append("emba_x")
+    if "iemba" in rubric or "international emba" in rubric:
+        programmes.append("iemba")
+    if "emba hsg" in rubric or "executive mba hsg" in rubric:
+        programmes.append("emba_hsg")
+    return programmes
+
+
 def evaluate_heuristics(case: UATCase, branch_result: dict[str, Any]) -> dict[str, Any]:
     responses = branch_result.get("responses", [])
     joined_response = "\n".join(str(item.get("response", "")) for item in responses)
@@ -263,15 +312,26 @@ def evaluate_heuristics(case: UATCase, branch_result: dict[str, Any]) -> dict[st
                 }
             )
 
-    expected_costs = _extract_chf_amounts(joined_rubric)
-    if expected_costs:
+    if _case_mentions_cost(case):
+        expected_programmes = _expected_cost_programmes(case)
+        expected_costs = {
+            PROGRAMME_COST_TRUTHS[programme]["amount"]
+            for programme in expected_programmes
+            if programme in PROGRAMME_COST_TRUTHS
+        }
         observed_costs = _extract_chf_amounts(joined_response)
+        stale_costs = observed_costs & STALE_OR_DISCOUNT_COSTS
         checks.append(
             {
-                "name": "cost_amounts",
-                "expected": sorted(expected_costs),
+                "name": "hard_cost_amounts",
+                "expected": {
+                    programme: PROGRAMME_COST_TRUTHS[programme]
+                    for programme in expected_programmes
+                    if programme in PROGRAMME_COST_TRUTHS
+                },
                 "observed": sorted(observed_costs),
-                "passed": bool(expected_costs & observed_costs),
+                "stale_or_discount_amounts_observed": sorted(stale_costs),
+                "passed": bool(expected_costs & observed_costs) and not stale_costs,
             }
         )
 
