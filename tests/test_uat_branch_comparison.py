@@ -39,7 +39,7 @@ except Exception:
     LangSmithRunTree = None
 
 
-DEFAULT_EXCEL = Path("/Users/dianakozachek/Desktop/UAT.xlsx")
+DEFAULT_EXCEL = Path(__file__).resolve().parent / "fixtures" / "UAT.xlsx"
 DEFAULT_BRANCHES = [
     ("main_legacy_multi", "origin/main"),
     ("overhaul_single", "origin/fix/chatbot-overhaul"),
