@@ -34,9 +34,9 @@ from typing import Any
 import pytest
 
 try:
-    from langsmith import traceable as langsmith_traceable
+    from langsmith.run_trees import RunTree as LangSmithRunTree
 except Exception:
-    langsmith_traceable = None
+    LangSmithRunTree = None
 
 
 DEFAULT_EXCEL = Path("/Users/dianakozachek/Desktop/UAT.xlsx")
@@ -550,50 +550,6 @@ def judge_result_with_llm(
         }
 
 
-if langsmith_traceable is not None:
-    def _judge_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
-        item = inputs.get("item", {})
-        case = item.get("case", {})
-        branch_result = item.get("branch_result", {})
-        return {
-            "branch_id": item.get("branch_id"),
-            "branch_ref": item.get("branch_ref"),
-            "case_id": case.get("case_id"),
-            "sheet": case.get("sheet"),
-            "title": case.get("title"),
-            "model": inputs.get("model"),
-            "timeout_s": inputs.get("timeout_s"),
-            "branch_elapsed_s": branch_result.get("elapsed_s"),
-            "turn_count": len(branch_result.get("responses", [])),
-            "metrics": branch_result.get("metrics", {}),
-        }
-
-    def _judge_outputs(outputs: dict[str, Any]) -> dict[str, Any]:
-        if not isinstance(outputs, dict):
-            return outputs
-        return {
-            "overall_score": outputs.get("overall_score"),
-            "correctness_score": outputs.get("correctness_score"),
-            "rag_grounding_score": outputs.get("rag_grounding_score"),
-            "conversation_quality_score": outputs.get("conversation_quality_score"),
-            "conversion_fit_score": outputs.get("conversion_fit_score"),
-            "red_flag_safety_score": outputs.get("red_flag_safety_score"),
-            "cost_accuracy": outputs.get("cost_accuracy"),
-            "passed": outputs.get("passed"),
-            "verdict": outputs.get("verdict"),
-            "issues": outputs.get("issues"),
-            "judge_elapsed_s": outputs.get("judge_elapsed_s"),
-            "judge_error": outputs.get("judge_error"),
-        }
-
-    judge_result_with_llm = langsmith_traceable(
-        name="uat_llm_judge",
-        run_type="chain",
-        process_inputs=_judge_inputs,
-        process_outputs=_judge_outputs,
-    )(judge_result_with_llm)
-
-
 def add_llm_judgements(
     results: list[dict[str, Any]],
     repo_root: Path,
@@ -601,35 +557,95 @@ def add_llm_judgements(
     timeout_s: int,
 ) -> list[dict[str, Any]]:
     env_overrides = load_env_file(repo_root / ".env")
+    for key in ("LANGSMITH_API_KEY", "LANGSMITH_TRACING", "LANGSMITH_TRACING_V2", "LANGSMITH_PROJECT", "LANGSMITH_ENDPOINT"):
+        if env_overrides.get(key):
+            os.environ.setdefault(key, env_overrides[key])
+    if os.environ.get("LANGSMITH_TRACING") and not os.environ.get("LANGSMITH_TRACING_V2"):
+        os.environ["LANGSMITH_TRACING_V2"] = os.environ["LANGSMITH_TRACING"]
     client = _openai_client(env_overrides)
     for index, item in enumerate(results, start=1):
         print(
             f"LLM judge {index}/{len(results)}: {item['branch_id']} {item['case']['case_id']}",
             flush=True,
         )
-        item["llm_judge"] = judge_result_with_llm(
+        metadata = {
+            "branch_id": item["branch_id"],
+            "branch_ref": item["branch_ref"],
+            "case_id": item["case"]["case_id"],
+            "sheet": item["case"].get("sheet"),
+            "title": item["case"].get("title"),
+            "judge_model": model,
+            "test_kind": "uat_llm_judge",
+        }
+        tags = [
+            "uat",
+            "llm-judge",
+            f"branch:{item['branch_id']}",
+            f"case:{item['case']['case_id']}",
+        ]
+        run = None
+        if LangSmithRunTree is not None:
+            try:
+                run = LangSmithRunTree(
+                    name="uat_llm_judge",
+                    run_type="chain",
+                    project_name=os.getenv("LANGSMITH_PROJECT") or "rag2",
+                    tags=tags,
+                    extra={"metadata": metadata},
+                    inputs={
+                        **metadata,
+                        "model": model,
+                        "timeout_s": timeout_s,
+                        "branch_elapsed_s": item["branch_result"].get("elapsed_s"),
+                        "turn_count": len(item["branch_result"].get("responses", [])),
+                        "metrics": item["branch_result"].get("metrics", {}),
+                        "transcript": [
+                            {
+                                "turn_index": response.get("turn_index"),
+                                "query": response.get("query"),
+                                "response": response.get("response"),
+                                "error": response.get("error"),
+                            }
+                            for response in item["branch_result"].get("responses", [])
+                        ],
+                    },
+                )
+                run.post()
+            except Exception:
+                run = None
+
+        judge_result = judge_result_with_llm(
             client=client,
             model=model,
             item=item,
             timeout_s=timeout_s,
-            langsmith_extra={
-                "metadata": {
-                    "branch_id": item["branch_id"],
-                    "branch_ref": item["branch_ref"],
-                    "case_id": item["case"]["case_id"],
-                    "sheet": item["case"].get("sheet"),
-                    "title": item["case"].get("title"),
-                    "judge_model": model,
-                    "test_kind": "uat_llm_judge",
-                },
-                "tags": [
-                    "uat",
-                    "llm-judge",
-                    f"branch:{item['branch_id']}",
-                    f"case:{item['case']['case_id']}",
-                ],
-            },
         )
+        item["llm_judge"] = judge_result
+
+        if run is not None:
+            try:
+                run.end(
+                    outputs={
+                        "overall_score": judge_result.get("overall_score"),
+                        "correctness_score": judge_result.get("correctness_score"),
+                        "rag_grounding_score": judge_result.get("rag_grounding_score"),
+                        "conversation_quality_score": judge_result.get("conversation_quality_score"),
+                        "conversion_fit_score": judge_result.get("conversion_fit_score"),
+                        "red_flag_safety_score": judge_result.get("red_flag_safety_score"),
+                        "cost_accuracy": judge_result.get("cost_accuracy"),
+                        "passed": judge_result.get("passed"),
+                        "verdict": judge_result.get("verdict"),
+                        "strengths": judge_result.get("strengths"),
+                        "issues": judge_result.get("issues"),
+                        "recommended_followup": judge_result.get("recommended_followup"),
+                        "judge_elapsed_s": judge_result.get("judge_elapsed_s"),
+                        "judge_error": judge_result.get("judge_error"),
+                    },
+                    error=judge_result.get("judge_error"),
+                )
+                run.patch(exclude_inputs=False)
+            except Exception:
+                pass
     return results
 
 
@@ -819,10 +835,11 @@ except Exception:
 from src.rag.agent_chain import ExecutiveAgentChain
 
 try:
-    from langsmith import traceable, tracing_context
+    from langsmith import tracing_context
+    from langsmith.run_trees import RunTree
 except Exception:
-    traceable = None
     tracing_context = None
+    RunTree = None
 
 original_retrieve = getattr(ExecutiveAgentChain, "_retrieve_context", None)
 if original_retrieve is not None:
@@ -964,36 +981,6 @@ def _run_turn(agent, turn_index, user_turn):
     finally:
         current_turn_index = None
 
-if traceable is not None:
-    def _turn_inputs(inputs):
-        return {
-            "branch_id": branch_id,
-            "branch_ref": branch_ref,
-            "case_id": case["case_id"],
-            "turn_index": inputs.get("turn_index"),
-            "query": inputs.get("user_turn"),
-        }
-
-    def _turn_outputs(outputs):
-        if not isinstance(outputs, dict):
-            return outputs
-        return {
-            "elapsed_s": outputs.get("elapsed_s"),
-            "language": outputs.get("language"),
-            "appointment_requested": outputs.get("appointment_requested"),
-            "show_booking_widget": outputs.get("show_booking_widget"),
-            "confidence_fallback": outputs.get("confidence_fallback"),
-            "error": outputs.get("error"),
-            "response_preview": str(outputs.get("response", ""))[:1200],
-        }
-
-    _run_turn = traceable(
-        name="uat_branch_turn",
-        run_type="chain",
-        process_inputs=_turn_inputs,
-        process_outputs=_turn_outputs,
-    )(_run_turn)
-
 case_metadata = {
     "branch_id": branch_id,
     "branch_ref": branch_ref,
@@ -1010,26 +997,138 @@ case_tags = [
     f"case:{case['case_id']}",
 ]
 
+def _run_tree(name, run_type, inputs, parent=None, tags=None, metadata=None):
+    if RunTree is None:
+        return None
+    try:
+        if parent is not None:
+            run = parent.create_child(
+                name=name,
+                run_type=run_type,
+                inputs=inputs,
+                tags=tags,
+                extra={"metadata": metadata or {}},
+            )
+        else:
+            run = RunTree(
+                name=name,
+                run_type=run_type,
+                inputs=inputs,
+                project_name=os.getenv("LANGSMITH_PROJECT") or "rag2",
+                tags=tags,
+                extra={"metadata": metadata or {}},
+            )
+        run.post()
+        return run
+    except Exception as exc:
+        emit_event("langsmith_run_create_error", run_name=name, error_type=type(exc).__name__, error=str(exc))
+        return None
+
+def _finish_run_tree(run, outputs=None, error=None):
+    if run is None:
+        return
+    try:
+        run.end(outputs=outputs, error=error)
+        run.patch(exclude_inputs=False)
+    except Exception as exc:
+        emit_event(
+            "langsmith_run_finish_error",
+            run_name=getattr(run, "name", None),
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+
 def _run_case(agent):
     responses = []
     case_start = time.perf_counter()
     emit_event("case_start")
-    for turn_index, user_turn in enumerate(case["user_turns"], start=1):
-        response_item = _run_turn(
-            agent,
-            turn_index,
-            user_turn,
-            langsmith_extra={
-                "metadata": {
-                    **case_metadata,
+    case_run = _run_tree(
+        "uat_branch_case",
+        "chain",
+        inputs={
+            "branch_id": branch_id,
+            "branch_ref": branch_ref,
+            "case_id": case["case_id"],
+            "sheet": case.get("sheet"),
+            "title": case.get("title"),
+            "expected_language": case.get("expected_language"),
+            "persona": case.get("persona", []),
+            "user_turns": case.get("user_turns", []),
+            "success_criteria": case.get("success_criteria", []),
+            "red_flags": case.get("red_flags", []),
+        },
+        tags=case_tags,
+        metadata=case_metadata,
+    )
+    try:
+        for turn_index, user_turn in enumerate(case["user_turns"], start=1):
+            turn_run = _run_tree(
+                "uat_branch_turn",
+                "chain",
+                inputs={
+                    "branch_id": branch_id,
+                    "branch_ref": branch_ref,
+                    "case_id": case["case_id"],
                     "turn_index": turn_index,
+                    "query": user_turn,
                 },
-                "tags": [*case_tags, f"turn:{turn_index}"],
+                parent=case_run,
+                tags=[*case_tags, f"turn:{turn_index}"],
+                metadata={**case_metadata, "turn_index": turn_index},
+            )
+            try:
+                if tracing_context is not None and turn_run is not None:
+                    with tracing_context(parent=turn_run, metadata={**case_metadata, "turn_index": turn_index}, tags=[*case_tags, f"turn:{turn_index}"]):
+                        response_item = _run_turn(agent, turn_index, user_turn)
+                else:
+                    response_item = _run_turn(agent, turn_index, user_turn)
+                _finish_run_tree(
+                    turn_run,
+                    outputs={
+                        "elapsed_s": response_item.get("elapsed_s"),
+                        "language": response_item.get("language"),
+                        "appointment_requested": response_item.get("appointment_requested"),
+                        "show_booking_widget": response_item.get("show_booking_widget"),
+                        "confidence_fallback": response_item.get("confidence_fallback"),
+                        "error": response_item.get("error"),
+                        "response": response_item.get("response"),
+                    },
+                    error=response_item.get("error"),
+                )
+            except Exception as exc:
+                response_item = {
+                    "turn_index": turn_index,
+                    "query": user_turn,
+                    "elapsed_s": time.perf_counter() - case_start,
+                    "error": repr(exc),
+                }
+                _finish_run_tree(turn_run, outputs=response_item, error=repr(exc))
+            responses.append(response_item)
+            if response_item.get("error"):
+                break
+    finally:
+        elapsed = time.perf_counter() - case_start
+        _finish_run_tree(
+            case_run,
+            outputs={
+                "elapsed_s": elapsed,
+                "turn_count": len(responses),
+                "metrics": {**metrics, "tool_calls": dict(metrics["tool_calls"])},
+                "slowest_turns": sorted(
+                    [
+                        {
+                            "turn_index": item.get("turn_index"),
+                            "elapsed_s": item.get("elapsed_s"),
+                            "query": str(item.get("query", ""))[:180],
+                            "error": item.get("error"),
+                        }
+                        for item in responses
+                    ],
+                    key=lambda item: float(item.get("elapsed_s") or 0),
+                    reverse=True,
+                )[:5],
             },
         )
-        responses.append(response_item)
-        if response_item.get("error"):
-            break
     elapsed = time.perf_counter() - case_start
     emit_event(
         "case_end",
@@ -1039,61 +1138,7 @@ def _run_case(agent):
     )
     return responses, elapsed
 
-if traceable is not None:
-    def _case_inputs(inputs):
-        return {
-            "branch_id": branch_id,
-            "branch_ref": branch_ref,
-            "case_id": case["case_id"],
-            "sheet": case.get("sheet"),
-            "title": case.get("title"),
-            "turn_count": len(case.get("user_turns", [])),
-        }
-
-    def _case_outputs(outputs):
-        responses, elapsed = outputs
-        return {
-            "elapsed_s": elapsed,
-            "turn_count": len(responses),
-            "slowest_turns": sorted(
-                [
-                    {
-                        "turn_index": item.get("turn_index"),
-                        "elapsed_s": item.get("elapsed_s"),
-                        "query": str(item.get("query", ""))[:180],
-                        "error": item.get("error"),
-                    }
-                    for item in responses
-                ],
-                key=lambda item: float(item.get("elapsed_s") or 0),
-                reverse=True,
-            )[:5],
-        }
-
-    _run_case = traceable(
-        name="uat_branch_case",
-        run_type="chain",
-        process_inputs=_case_inputs,
-        process_outputs=_case_outputs,
-    )(_run_case)
-
-if tracing_context is None:
-    responses, total_elapsed = _run_case(
-        agent,
-        langsmith_extra={
-            "metadata": case_metadata,
-            "tags": case_tags,
-        },
-    )
-else:
-    with tracing_context(metadata=case_metadata, tags=case_tags):
-        responses, total_elapsed = _run_case(
-            agent,
-            langsmith_extra={
-                "metadata": case_metadata,
-                "tags": case_tags,
-            },
-        )
+responses, total_elapsed = _run_case(agent)
 
 print(
     json.dumps(
