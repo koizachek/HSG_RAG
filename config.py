@@ -156,7 +156,7 @@ SCRAPING_PRIO_INTERVAL = {
 ENABLE_EVALUATE_RESPONSE_QUALITY = False 
 
 # A boolean: either True or False. Activates the usage of the program-specific subagents. 
-ENABLE_SUBAGENTS = False 
+ENABLE_SUBAGENTS = True
 
 # A float in range from 0 to 1. Sets the treshold value for the quality evaluation.
 # The fallback mechanism will be activated if the quality of the agentic response 
