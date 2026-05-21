@@ -3201,7 +3201,7 @@ class ExecutiveAgentChain:
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
         try:
             config = self._config.copy()
-            config['configurable']['thread_id'] = thread_id or 0
+            config['configurable']['thread_id'] = thread_id or self._user_id
 
             result: AIMessage = agent.invoke(
                 {"messages": messages},
