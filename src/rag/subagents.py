@@ -20,11 +20,21 @@ class SubagentProvider():
 
     def get_subagents(self, fallback_middleware):
         agents = dict()
+        tool_retrieve_context = tool(
+            name_or_callable='retrieve_context',
+            runnable=self._tool_retrieve_context,
+            description=(
+                "Retrieve current programme context from the vector database. "
+                "Arguments: query, program, optional language."
+            ),
+            return_direct=False,
+            parse_docstring=False,
+        )
         for agent in ['emba', 'iemba', 'embax']:
             agents[agent] = create_agent(
                 name=f"{agent}_agent",
                 model=modelconf.get_subagent_model(),
-                tools=[self._tool_retrieve_context],
+                tools=[tool_retrieve_context],
                 state_schema=LeadInformationState,
                 system_prompt=promptconf.get_configured_agent_prompt(
                     agent, 
@@ -46,20 +56,23 @@ class SubagentProvider():
             tool(
                 name_or_callable='call_emba_agent',
                 runnable=self._call_emba_agent,
+                description="Call the EMBA HSG programme support agent.",
                 return_direct=False,
-                parse_docstring=True,
+                parse_docstring=False,
             ),
             tool(
                 name_or_callable='call_iemba_agent',
                 runnable=self._call_iemba_agent,
+                description="Call the IEMBA HSG programme support agent.",
                 return_direct=False,
-                parse_docstring=True,
+                parse_docstring=False,
             ),
             tool(
                 name_or_callable='call_embax_agent',
                 runnable=self._call_embax_agent,
+                description="Call the emba X programme support agent.",
                 return_direct=False,
-                parse_docstring=True,
+                parse_docstring=False,
             ),
         ]
 
