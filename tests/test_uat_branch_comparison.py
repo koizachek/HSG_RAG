@@ -54,6 +54,8 @@ STALE_OR_DISCOUNT_COSTS = {
     "99000",  # old / early emba X fee
 }
 
+DEFAULT_JUDGE_MODEL = os.getenv("UAT_JUDGE_MODEL", "gpt-4o-mini")
+
 
 @dataclass
 class UATCase:
@@ -384,6 +386,186 @@ def evaluate_heuristics(case: UATCase, branch_result: dict[str, Any]) -> dict[st
     }
 
 
+def _json_from_model_text(text: str) -> dict[str, Any]:
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", text, flags=re.DOTALL)
+        if not match:
+            raise
+        return json.loads(match.group(0))
+
+
+def _mask_stale_cost_expectations(value: Any) -> Any:
+    """Remove outdated fee values from UAT expectations before sending them to the judge."""
+    if isinstance(value, str):
+        stale_pattern = r"(?:CHF\s*)?(72[\s'.,]*500|80[\s'.,]*000|84[\s'.,]*000|99[\s'.,]*000)"
+        return re.sub(
+            stale_pattern,
+            "[STALE_UAT_COST_REMOVED_DO_NOT_USE_AS_EXPECTATION]",
+            value,
+            flags=re.IGNORECASE,
+        )
+    if isinstance(value, list):
+        return [_mask_stale_cost_expectations(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _mask_stale_cost_expectations(item) for key, item in value.items()}
+    return value
+
+
+def _openai_client(env_overrides: dict[str, str]):
+    try:
+        from openai import OpenAI
+    except ImportError as exc:
+        raise RuntimeError("openai is required for --llm-judge.") from exc
+
+    api_key = (
+        env_overrides.get("OPENAI_API_KEY")
+        or os.getenv("OPENAI_API_KEY")
+        or env_overrides.get("OPENAI_COMPAT_API_KEY")
+        or os.getenv("OPENAI_COMPAT_API_KEY")
+        or env_overrides.get("OPEN_ROUTER_API_KEY")
+        or os.getenv("OPEN_ROUTER_API_KEY")
+    )
+    base_url = (
+        env_overrides.get("OPENAI_COMPAT_BASE_URL")
+        or os.getenv("OPENAI_COMPAT_BASE_URL")
+        or env_overrides.get("OPEN_ROUTER_BASE_URL")
+        or os.getenv("OPEN_ROUTER_BASE_URL")
+    )
+    if not api_key:
+        raise RuntimeError(
+            "No judge API key configured. Set OPENAI_API_KEY, OPENAI_COMPAT_API_KEY, or OPEN_ROUTER_API_KEY."
+        )
+    kwargs = {"api_key": api_key}
+    if base_url:
+        kwargs["base_url"] = base_url
+    return OpenAI(**kwargs)
+
+
+def _judge_prompt(case: dict[str, Any], branch_id: str, branch_result: dict[str, Any]) -> list[dict[str, str]]:
+    responses = branch_result.get("responses", [])
+    transcript = []
+    for item in responses:
+        transcript.append(
+            {
+                "turn": item.get("turn_index"),
+                "user": item.get("query"),
+                "assistant": item.get("response"),
+                "language": item.get("language"),
+                "appointment_requested": item.get("appointment_requested"),
+                "show_booking_widget": item.get("show_booking_widget"),
+                "error": item.get("error"),
+            }
+        )
+
+    hard_facts = {
+        "programme_costs": {
+            truth["label"]: f"CHF {int(truth['amount']):,}".replace(",", "'")
+            for truth in PROGRAMME_COST_TRUTHS.values()
+        },
+        "stale_or_discount_costs_that_should_not_be_present": sorted(STALE_OR_DISCOUNT_COSTS),
+    }
+    payload = {
+        "branch_id": branch_id,
+        "scenario": _mask_stale_cost_expectations(case),
+        "hard_facts": hard_facts,
+        "transcript": transcript,
+        "metrics": branch_result.get("metrics", {}),
+        "elapsed_s": branch_result.get("elapsed_s"),
+        "runner_error": branch_result.get("runner_error", ""),
+    }
+    system = (
+        "You are a strict UAT evaluator for the HSG Executive MBA chatbot. "
+        "Evaluate only the observed transcript against the provided scenario, success criteria, red flags, and hard facts. "
+        "Hard facts override any conflicting expected behaviour or success criteria from the scenario. "
+        "Do not reward verbosity. Penalize incorrect programme fit, stale cost data, missing handover behaviour, language errors, "
+        "unsupported claims, and unhelpful or defensive tone. Return valid JSON only."
+    )
+    user = (
+        "Score this branch conversation from 0 to 100. Use the full scenario context. "
+        "For fees, treat these as the only correct current values: EMBA HSG CHF 77'500, IEMBA CHF 85'000, emba X CHF 110'000. "
+        "If the scenario expects CHF 84'000, CHF 80'000, CHF 72'500, or CHF 99'000, that scenario value is stale and must not be treated as correct. "
+        "The branch id is just an identifier; do not prefer any architecture by name. "
+        "Return this exact JSON shape:\n"
+        "{\n"
+        '  "overall_score": number,\n'
+        '  "correctness_score": number,\n'
+        '  "rag_grounding_score": number,\n'
+        '  "conversation_quality_score": number,\n'
+        '  "conversion_fit_score": number,\n'
+        '  "red_flag_safety_score": number,\n'
+        '  "cost_accuracy": "correct|incorrect|not_applicable|unclear",\n'
+        '  "passed": boolean,\n'
+        '  "verdict": "one concise sentence",\n'
+        '  "strengths": ["short bullets"],\n'
+        '  "issues": ["short bullets"],\n'
+        '  "recommended_followup": "one concise sentence"\n'
+        "}\n\n"
+        f"UAT payload:\n{json.dumps(payload, ensure_ascii=False, indent=2)}"
+    )
+    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
+
+def judge_result_with_llm(
+    client: Any,
+    model: str,
+    item: dict[str, Any],
+    timeout_s: int,
+) -> dict[str, Any]:
+    messages = _judge_prompt(item["case"], item["branch_id"], item["branch_result"])
+    started = time.perf_counter()
+    try:
+        try:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0,
+                timeout=timeout_s,
+                response_format={"type": "json_object"},
+            )
+        except Exception:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0,
+                timeout=timeout_s,
+            )
+        content = completion.choices[0].message.content or "{}"
+        parsed = _json_from_model_text(content)
+        parsed["judge_model"] = model
+        parsed["judge_elapsed_s"] = time.perf_counter() - started
+        return parsed
+    except Exception as exc:
+        return {
+            "judge_model": model,
+            "judge_elapsed_s": time.perf_counter() - started,
+            "judge_error": repr(exc),
+        }
+
+
+def add_llm_judgements(
+    results: list[dict[str, Any]],
+    repo_root: Path,
+    model: str,
+    timeout_s: int,
+) -> list[dict[str, Any]]:
+    env_overrides = load_env_file(repo_root / ".env")
+    client = _openai_client(env_overrides)
+    for index, item in enumerate(results, start=1):
+        print(
+            f"LLM judge {index}/{len(results)}: {item['branch_id']} {item['case']['case_id']}",
+            flush=True,
+        )
+        item["llm_judge"] = judge_result_with_llm(
+            client=client,
+            model=model,
+            item=item,
+            timeout_s=timeout_s,
+        )
+    return results
+
+
 HELPER_CODE = r"""
 import json
 import os
@@ -607,6 +789,11 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
         "other_tool_calls",
         "model_calls",
         "runner_error",
+        "llm_score",
+        "llm_passed",
+        "llm_cost_accuracy",
+        "llm_verdict",
+        "llm_issues",
         "last_response_preview",
     ]
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
@@ -636,11 +823,96 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
                     "other_tool_calls": json.dumps(other_tool_calls, ensure_ascii=False),
                     "model_calls": metrics.get("model_calls", 0),
                     "runner_error": branch_result.get("runner_error", ""),
+                    "llm_score": item.get("llm_judge", {}).get("overall_score"),
+                    "llm_passed": item.get("llm_judge", {}).get("passed"),
+                    "llm_cost_accuracy": item.get("llm_judge", {}).get("cost_accuracy"),
+                    "llm_verdict": item.get("llm_judge", {}).get("verdict", ""),
+                    "llm_issues": json.dumps(item.get("llm_judge", {}).get("issues", []), ensure_ascii=False),
                     "last_response_preview": last_response[:240].replace("\n", " "),
                 }
             )
 
     return json_path, csv_path
+
+
+def write_llm_summary(results: list[dict[str, Any]], output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    path = output_dir / f"uat_llm_judge_summary_{stamp}.md"
+
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for item in results:
+        grouped.setdefault(item["branch_id"], []).append(item)
+
+    lines = [
+        "# UAT LLM Judge Summary",
+        "",
+        "## Branch Ranking",
+        "",
+        "| Branch | Avg LLM Score | Avg Heuristic | Avg Time | RAG Calls | Tool Calls | Judge Errors |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    branch_rows = []
+    for branch_id, branch_results in grouped.items():
+        llm_scores = [
+            float(item.get("llm_judge", {}).get("overall_score"))
+            for item in branch_results
+            if isinstance(item.get("llm_judge", {}).get("overall_score"), (int, float))
+        ]
+        heuristic_scores = [
+            float(item["heuristic"].get("score"))
+            for item in branch_results
+            if isinstance(item["heuristic"].get("score"), (int, float))
+        ]
+        elapsed = [float(item["branch_result"].get("elapsed_s") or 0) for item in branch_results]
+        rag_calls = sum(
+            int(item["branch_result"].get("metrics", {}).get("retrieve_context_calls", 0))
+            for item in branch_results
+        )
+        tool_calls = sum(
+            sum((item["branch_result"].get("metrics", {}).get("tool_calls", {}) or {}).values())
+            for item in branch_results
+        )
+        judge_errors = sum(1 for item in branch_results if item.get("llm_judge", {}).get("judge_error"))
+        avg_llm = sum(llm_scores) / len(llm_scores) if llm_scores else 0
+        avg_heuristic = sum(heuristic_scores) / len(heuristic_scores) if heuristic_scores else 0
+        avg_elapsed = sum(elapsed) / len(elapsed) if elapsed else 0
+        branch_rows.append((avg_llm, branch_id, avg_heuristic, avg_elapsed, rag_calls, tool_calls, judge_errors))
+
+    for avg_llm, branch_id, avg_heuristic, avg_elapsed, rag_calls, tool_calls, judge_errors in sorted(branch_rows, reverse=True):
+        lines.append(
+            f"| {branch_id} | {avg_llm:.1f} | {avg_heuristic:.3f} | {avg_elapsed:.2f}s | "
+            f"{rag_calls} | {tool_calls} | {judge_errors} |"
+        )
+
+    lines.extend(["", "## Case Winners", ""])
+    cases: dict[str, list[dict[str, Any]]] = {}
+    for item in results:
+        cases.setdefault(item["case"]["case_id"], []).append(item)
+
+    for case_id, case_results in cases.items():
+        title = case_results[0]["case"].get("title", case_id)
+        ranked = sorted(
+            case_results,
+            key=lambda item: float(item.get("llm_judge", {}).get("overall_score") or -1),
+            reverse=True,
+        )
+        winner = ranked[0]
+        winner_score = winner.get("llm_judge", {}).get("overall_score", "n/a")
+        lines.append(f"### {case_id}: {title}")
+        lines.append(f"Winner: `{winner['branch_id']}` ({winner_score})")
+        for item in ranked:
+            judge = item.get("llm_judge", {})
+            score = judge.get("overall_score", "n/a")
+            verdict = judge.get("verdict") or judge.get("judge_error") or ""
+            issues = judge.get("issues") or []
+            issue_text = "; ".join(str(issue) for issue in issues[:3])
+            suffix = f" Issues: {issue_text}" if issue_text else ""
+            lines.append(f"- `{item['branch_id']}`: {score} - {verdict}{suffix}")
+        lines.append("")
+
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return path
 
 
 def run_uat_comparison(
@@ -695,6 +967,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=Path(os.getenv("UAT_OUTPUT_DIR", "/tmp/hsg_rag_uat_results")))
     parser.add_argument("--limit", type=int, default=int(os.getenv("UAT_LIMIT", "0")) or None)
     parser.add_argument("--timeout-s", type=int, default=int(os.getenv("UAT_TIMEOUT_S", "180")))
+    parser.add_argument("--llm-judge", action="store_true", default=os.getenv("UAT_LLM_JUDGE") == "1")
+    parser.add_argument("--judge-model", default=DEFAULT_JUDGE_MODEL)
+    parser.add_argument("--judge-timeout-s", type=int, default=int(os.getenv("UAT_JUDGE_TIMEOUT_S", "120")))
+    parser.add_argument(
+        "--judge-existing-report",
+        type=Path,
+        default=None,
+        help="Evaluate an existing uat_branch_comparison_*.json report without rerunning branch conversations.",
+    )
     parser.add_argument(
         "--branch",
         action="append",
@@ -744,19 +1025,43 @@ def print_summary(results: list[dict[str, Any]], output_dir: Path) -> None:
             f"rag_calls={sum(rag_calls)} "
             f"errors={len(errors)}"
         )
+        llm_scores = [
+            float(item.get("llm_judge", {}).get("overall_score"))
+            for item in branch_results
+            if isinstance(item.get("llm_judge", {}).get("overall_score"), (int, float))
+        ]
+        if llm_scores:
+            print(f"  llm_avg_score={sum(llm_scores) / len(llm_scores):.1f}")
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     branches = branch_args_to_pairs(args.branch)
-    results = run_uat_comparison(
-        excel_path=args.excel,
-        repo_root=args.repo_root,
-        output_dir=args.output_dir,
-        branches=branches,
-        limit=args.limit,
-        timeout_s=args.timeout_s,
-    )
+    if args.judge_existing_report:
+        results = json.loads(args.judge_existing_report.read_text(encoding="utf-8"))
+    else:
+        results = run_uat_comparison(
+            excel_path=args.excel,
+            repo_root=args.repo_root,
+            output_dir=args.output_dir,
+            branches=branches,
+            limit=args.limit,
+            timeout_s=args.timeout_s,
+        )
+
+    if args.llm_judge:
+        results = add_llm_judgements(
+            results=results,
+            repo_root=args.repo_root,
+            model=args.judge_model,
+            timeout_s=args.judge_timeout_s,
+        )
+        json_path, csv_path = write_reports(results, args.output_dir)
+        summary_path = write_llm_summary(results, args.output_dir)
+        print(f"\nLLM judge JSON report: {json_path}")
+        print(f"LLM judge CSV report: {csv_path}")
+        print(f"LLM judge summary: {summary_path}")
+
     print_summary(results, args.output_dir)
     return 0
 
