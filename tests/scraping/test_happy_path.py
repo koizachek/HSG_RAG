@@ -14,7 +14,7 @@ class TestHappyPath:
     def test_happy_path(self):
         init_logging()
 
-        target_url = 'https://embax.ch/'
+        target_url = 'https://emba.unisg.ch/'
         url_filename = UrlNormalizer().url_to_filename(target_url)
         scraper = Scraper(scrape_all=True)
         

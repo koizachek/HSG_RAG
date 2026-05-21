@@ -23,6 +23,17 @@ class EnhancedTableSerializer(BaseTableSerializer):
                     clean_row.append((cell.text or "").strip())
             if any(c for c in clean_row): 
                 row_cells.append(clean_row)
+        
+        if not row_cells:
+            return create_ser_result(text='', span_source=item)
+
+        # table with only one row and no actual data
+        if len(row_cells) == 1:
+            single_row = " | ".join(c for c in row_cells[0] if c)
+            return create_ser_result(
+                text=single_row,
+                span_source=item
+            )
 
         headers = row_cells[0]
         data_rows = row_cells[1:]
