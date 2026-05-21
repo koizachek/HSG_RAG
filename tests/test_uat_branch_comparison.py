@@ -639,17 +639,55 @@ import os
 import sys
 import time
 import uuid
+from datetime import datetime, timezone
 from collections import Counter
 
 case = json.loads(sys.stdin.read())
 branch_id = case.get("_uat_branch_id", "unknown_branch")
 branch_ref = case.get("_uat_branch_ref", "unknown_ref")
+event_log_path = case.get("_uat_event_log_path")
 metrics = {
     "retrieve_context_calls": 0,
     "retrieve_context_via_tool_calls": 0,
     "tool_calls": Counter(),
     "model_calls": 0,
 }
+current_turn_index = None
+
+def _preview(value, limit=1200):
+    try:
+        text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, default=str)
+    except Exception:
+        text = repr(value)
+    text = text.replace("\n", "\\n")
+    return text[:limit]
+
+def emit_event(event_type, **payload):
+    if not event_log_path:
+        return
+    event = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event": event_type,
+        "branch_id": branch_id,
+        "branch_ref": branch_ref,
+        "case_id": case.get("case_id"),
+        "sheet": case.get("sheet"),
+        "title": case.get("title"),
+        "turn_index": current_turn_index,
+        **payload,
+    }
+    try:
+        os.makedirs(os.path.dirname(event_log_path), exist_ok=True)
+        with open(event_log_path, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(event, ensure_ascii=False, default=str) + "\n")
+    except Exception:
+        pass
+
+emit_event(
+    "helper_start",
+    user_turn_count=len(case.get("user_turns", [])),
+    expected_language=case.get("expected_language"),
+)
 
 try:
     from langchain.agents.middleware import wrap_model_call, wrap_tool_call
@@ -663,12 +701,101 @@ try:
             name = request.tool_call.get("name", "unknown")
             metrics["tool_calls"][name] += 1
         except Exception:
+            name = "unknown"
             metrics["tool_calls"]["unknown"] += 1
-        return original_tool_wrapper(request, handler)
+
+        tool_call = getattr(request, "tool_call", {}) or {}
+        context = getattr(getattr(request, "runtime", None), "context", None)
+        agent_name = getattr(context, "agent_name", None)
+        call_id = str(uuid.uuid4())
+        started = time.perf_counter()
+        emit_event(
+            "tool_call_start",
+            call_id=call_id,
+            agent_name=agent_name,
+            tool_name=name,
+            tool_call_id=tool_call.get("id"),
+            tool_args=tool_call.get("args"),
+        )
+        try:
+            response = original_tool_wrapper(request, handler)
+            elapsed = time.perf_counter() - started
+            emit_event(
+                "tool_call_end",
+                call_id=call_id,
+                agent_name=agent_name,
+                tool_name=name,
+                tool_call_id=tool_call.get("id"),
+                elapsed_s=elapsed,
+                output_preview=_preview(getattr(response, "content", response)),
+                output_chars=len(str(getattr(response, "content", ""))),
+            )
+            return response
+        except Exception as exc:
+            elapsed = time.perf_counter() - started
+            emit_event(
+                "tool_call_error",
+                call_id=call_id,
+                agent_name=agent_name,
+                tool_name=name,
+                tool_call_id=tool_call.get("id"),
+                elapsed_s=elapsed,
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
+            raise
 
     def counting_model_wrapper(request, handler):
         metrics["model_calls"] += 1
-        return original_model_wrapper(request, handler)
+        context = getattr(getattr(request, "runtime", None), "context", None)
+        agent_name = getattr(context, "agent_name", None)
+        model = getattr(request, "model", None)
+        model_name = getattr(model, "model_name", None) or getattr(model, "model", None) or repr(model)
+        call_id = str(uuid.uuid4())
+        started = time.perf_counter()
+        emit_event(
+            "model_call_start",
+            call_id=call_id,
+            agent_name=agent_name,
+            model_name=model_name,
+        )
+        try:
+            response = original_model_wrapper(request, handler)
+            elapsed = time.perf_counter() - started
+            result = None
+            finish_reason = None
+            content_preview = None
+            tool_calls = None
+            try:
+                result = response.result[0]
+                finish_reason = result.response_metadata.get("finish_reason")
+                content_preview = _preview(getattr(result, "content", ""))
+                tool_calls = getattr(result, "tool_calls", None)
+            except Exception:
+                pass
+            emit_event(
+                "model_call_end",
+                call_id=call_id,
+                agent_name=agent_name,
+                model_name=model_name,
+                elapsed_s=elapsed,
+                finish_reason=finish_reason,
+                content_preview=content_preview,
+                tool_calls=tool_calls,
+            )
+            return response
+        except Exception as exc:
+            elapsed = time.perf_counter() - started
+            emit_event(
+                "model_call_error",
+                call_id=call_id,
+                agent_name=agent_name,
+                model_name=model_name,
+                elapsed_s=elapsed,
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
+            raise
 
     AgentChainMiddleware._tool_wrapper_middleware = wrap_tool_call(counting_tool_wrapper)
     AgentChainMiddleware._model_wrapper_middleware = wrap_model_call(counting_model_wrapper)
@@ -701,25 +828,102 @@ original_retrieve = getattr(ExecutiveAgentChain, "_retrieve_context", None)
 if original_retrieve is not None:
     def counted_retrieve(self, *args, **kwargs):
         metrics["retrieve_context_calls"] += 1
-        return original_retrieve(self, *args, **kwargs)
+        started = time.perf_counter()
+        query = kwargs.get("query") if kwargs else None
+        program = kwargs.get("program") if kwargs else None
+        language_arg = kwargs.get("language") if kwargs else None
+        if args:
+            query = query if query is not None else (args[0] if len(args) > 0 else None)
+            program = program if program is not None else (args[1] if len(args) > 1 else None)
+            language_arg = language_arg if language_arg is not None else (args[2] if len(args) > 2 else None)
+        call_id = str(uuid.uuid4())
+        emit_event(
+            "retrieve_context_start",
+            call_id=call_id,
+            query=_preview(query, 500),
+            program=program,
+            language=language_arg,
+        )
+        try:
+            result = original_retrieve(self, *args, **kwargs)
+            elapsed = time.perf_counter() - started
+            emit_event(
+                "retrieve_context_end",
+                call_id=call_id,
+                query=_preview(query, 500),
+                program=program,
+                language=language_arg,
+                elapsed_s=elapsed,
+                output_chars=len(result or ""),
+                output_preview=_preview(result),
+            )
+            return result
+        except Exception as exc:
+            elapsed = time.perf_counter() - started
+            emit_event(
+                "retrieve_context_error",
+                call_id=call_id,
+                query=_preview(query, 500),
+                program=program,
+                language=language_arg,
+                elapsed_s=elapsed,
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
+            raise
     ExecutiveAgentChain._retrieve_context = counted_retrieve
 
 original_retrieve_via_tool = getattr(ExecutiveAgentChain, "_retrieve_context_via_tool", None)
 if original_retrieve_via_tool is not None:
     def counted_retrieve_via_tool(self, *args, **kwargs):
         metrics["retrieve_context_via_tool_calls"] += 1
-        return original_retrieve_via_tool(self, *args, **kwargs)
+        started = time.perf_counter()
+        call_id = str(uuid.uuid4())
+        emit_event(
+            "retrieve_context_via_tool_start",
+            call_id=call_id,
+            query=_preview(kwargs.get("query") if kwargs else (args[0] if args else None), 500),
+            program=kwargs.get("program") if kwargs else (args[1] if len(args) > 1 else None),
+            language=kwargs.get("language") if kwargs else (args[2] if len(args) > 2 else None),
+        )
+        try:
+            result = original_retrieve_via_tool(self, *args, **kwargs)
+            elapsed = time.perf_counter() - started
+            emit_event(
+                "retrieve_context_via_tool_end",
+                call_id=call_id,
+                elapsed_s=elapsed,
+                output_chars=len(result or ""),
+                output_preview=_preview(result),
+            )
+            return result
+        except Exception as exc:
+            elapsed = time.perf_counter() - started
+            emit_event(
+                "retrieve_context_via_tool_error",
+                call_id=call_id,
+                elapsed_s=elapsed,
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
+            raise
     ExecutiveAgentChain._retrieve_context_via_tool = counted_retrieve_via_tool
 
 language = case.get("expected_language") or "de"
 agent = ExecutiveAgentChain(language=language, session_id=f"uat-{uuid.uuid4()}")
 
 def _run_turn(agent, turn_index, user_turn):
+    global current_turn_index
+    current_turn_index = turn_index
     turn_start = time.perf_counter()
+    emit_event(
+        "turn_start",
+        query=_preview(user_turn, 1000),
+    )
     try:
         response = agent.query(user_turn)
         elapsed = time.perf_counter() - turn_start
-        return {
+        item = {
             "turn_index": turn_index,
             "query": user_turn,
             "elapsed_s": elapsed,
@@ -729,14 +933,36 @@ def _run_turn(agent, turn_index, user_turn):
             "show_booking_widget": bool(getattr(response, "show_booking_widget", False)),
             "confidence_fallback": bool(getattr(response, "confidence_fallback", False)),
         }
+        emit_event(
+            "turn_end",
+            elapsed_s=elapsed,
+            language=item.get("language"),
+            appointment_requested=item.get("appointment_requested"),
+            show_booking_widget=item.get("show_booking_widget"),
+            confidence_fallback=item.get("confidence_fallback"),
+            response_chars=len(item.get("response") or ""),
+            response_preview=_preview(item.get("response")),
+            metrics_snapshot={**metrics, "tool_calls": dict(metrics["tool_calls"])},
+        )
+        return item
     except Exception as exc:
         elapsed = time.perf_counter() - turn_start
-        return {
+        item = {
             "turn_index": turn_index,
             "query": user_turn,
             "elapsed_s": elapsed,
             "error": repr(exc),
         }
+        emit_event(
+            "turn_error",
+            elapsed_s=elapsed,
+            error_type=type(exc).__name__,
+            error=str(exc),
+            metrics_snapshot={**metrics, "tool_calls": dict(metrics["tool_calls"])},
+        )
+        return item
+    finally:
+        current_turn_index = None
 
 if traceable is not None:
     def _turn_inputs(inputs):
@@ -787,6 +1013,7 @@ case_tags = [
 def _run_case(agent):
     responses = []
     case_start = time.perf_counter()
+    emit_event("case_start")
     for turn_index, user_turn in enumerate(case["user_turns"], start=1):
         response_item = _run_turn(
             agent,
@@ -803,7 +1030,14 @@ def _run_case(agent):
         responses.append(response_item)
         if response_item.get("error"):
             break
-    return responses, time.perf_counter() - case_start
+    elapsed = time.perf_counter() - case_start
+    emit_event(
+        "case_end",
+        elapsed_s=elapsed,
+        turn_count=len(responses),
+        metrics={**metrics, "tool_calls": dict(metrics["tool_calls"])},
+    )
+    return responses, elapsed
 
 if traceable is not None:
     def _case_inputs(inputs):
@@ -925,6 +1159,7 @@ def run_case_in_branch(
     env_overrides: dict[str, str] | None = None,
     branch_id: str = "unknown_branch",
     branch_ref: str = "unknown_ref",
+    event_log_path: Path | None = None,
 ) -> dict[str, Any]:
     return run_case_in_branch_with_metadata(
         worktree=worktree,
@@ -933,6 +1168,7 @@ def run_case_in_branch(
         env_overrides=env_overrides,
         branch_id=branch_id,
         branch_ref=branch_ref,
+        event_log_path=event_log_path,
     )
 
 
@@ -943,6 +1179,7 @@ def run_case_in_branch_with_metadata(
     env_overrides: dict[str, str] | None = None,
     branch_id: str = "unknown_branch",
     branch_ref: str = "unknown_ref",
+    event_log_path: Path | None = None,
 ) -> dict[str, Any]:
     env = os.environ.copy()
     if env_overrides:
@@ -954,6 +1191,7 @@ def run_case_in_branch_with_metadata(
         **case.to_payload(),
         "_uat_branch_id": branch_id,
         "_uat_branch_ref": branch_ref,
+        "_uat_event_log_path": str(event_log_path) if event_log_path else None,
     }
     started = time.perf_counter()
     proc = subprocess.run(
@@ -974,16 +1212,20 @@ def run_case_in_branch_with_metadata(
             "elapsed_s": elapsed,
             "responses": [],
             "metrics": {},
+            "event_log_path": str(event_log_path) if event_log_path else None,
             "runner_error": proc.stderr.strip() or proc.stdout.strip(),
         }
     try:
-        return json.loads(proc.stdout.strip().splitlines()[-1])
+        result = json.loads(proc.stdout.strip().splitlines()[-1])
+        result["event_log_path"] = str(event_log_path) if event_log_path else None
+        return result
     except Exception as exc:
         return {
             "case_id": case.case_id,
             "elapsed_s": elapsed,
             "responses": [],
             "metrics": {},
+            "event_log_path": str(event_log_path) if event_log_path else None,
             "runner_error": f"Could not parse helper JSON: {exc}\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}",
         }
 
@@ -1193,6 +1435,10 @@ def run_uat_comparison(
         raise RuntimeError(f"No UAT cases found in {excel_path}")
 
     results: list[dict[str, Any]] = []
+    output_dir.mkdir(parents=True, exist_ok=True)
+    trace_dir = output_dir / "traces"
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    event_log_path = trace_dir / f"uat_events_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
     with tempfile.TemporaryDirectory(prefix="hsg-rag-uat-worktrees-") as tmp:
         worktree_root = Path(tmp)
         env_overrides = load_env_file(repo_root / ".env")
@@ -1209,6 +1455,7 @@ def run_uat_comparison(
                     env_overrides=env_overrides,
                     branch_id=branch_id,
                     branch_ref=branch_ref,
+                    event_log_path=event_log_path,
                 )
                 heuristic = evaluate_heuristics(case, branch_result)
                 results.append(
@@ -1222,6 +1469,7 @@ def run_uat_comparison(
                 )
 
     write_reports(results, output_dir)
+    print(f"Local event trace log: {event_log_path}")
     return results
 
 
@@ -1317,6 +1565,56 @@ def print_summary(results: list[dict[str, Any]], output_dir: Path) -> None:
                 f"- {turn['branch_id']} {turn['case_id']} turn={turn['turn_index']} "
                 f"elapsed_s={turn['elapsed_s']:.2f} query={turn['query']}"
             )
+
+    event_log_paths = sorted(
+        {
+            item["branch_result"].get("event_log_path")
+            for item in results
+            if item["branch_result"].get("event_log_path")
+        }
+    )
+    slow_events = []
+    for raw_path in event_log_paths:
+        path = Path(raw_path)
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("elapsed_s") is None:
+                continue
+            if event.get("event") not in {
+                "turn_end",
+                "model_call_end",
+                "tool_call_end",
+                "retrieve_context_end",
+                "retrieve_context_via_tool_end",
+                "case_end",
+            }:
+                continue
+            slow_events.append(event)
+
+    if slow_events:
+        print("\nSlowest internal UAT events")
+        for event in sorted(slow_events, key=lambda item: float(item.get("elapsed_s") or 0), reverse=True)[:15]:
+            subject = (
+                event.get("model_name")
+                or event.get("tool_name")
+                or event.get("program")
+                or event.get("event")
+            )
+            print(
+                f"- {event.get('branch_id')} {event.get('case_id')} turn={event.get('turn_index')} "
+                f"{event.get('event')} elapsed_s={float(event.get('elapsed_s') or 0):.2f} "
+                f"agent={event.get('agent_name')} subject={subject} "
+                f"query={str(event.get('query') or '')[:90]}"
+            )
+        if event_log_paths:
+            print(f"\nLocal event trace log: {event_log_paths[-1]}")
 
 
 def main(argv: list[str] | None = None) -> int:
