@@ -226,6 +226,10 @@ class ExecutiveAgentChain:
         tool_retrieve_context = tool(
             name_or_callable='retrieve_context',
             runnable=self._retrieve_context,
+            description=(
+                "Retrieve current programme context from the vector database. "
+                "Arguments: query, program, optional language."
+            ),
             return_direct=False,
             parse_docstring=False,
         )
