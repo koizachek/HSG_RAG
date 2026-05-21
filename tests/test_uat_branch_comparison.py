@@ -518,6 +518,23 @@ def run_cmd(args: list[str], cwd: Path, env: dict[str, str] | None = None) -> su
     )
 
 
+def load_env_file(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+
+    values: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            values[key] = value
+    return values
+
+
 def ensure_worktree(repo_root: Path, worktree_root: Path, branch_ref: str) -> Path:
     safe_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", branch_ref.replace("origin/", ""))
     path = worktree_root / safe_name
@@ -529,8 +546,10 @@ def ensure_worktree(repo_root: Path, worktree_root: Path, branch_ref: str) -> Pa
     return path
 
 
-def run_case_in_branch(worktree: Path, case: UATCase, timeout_s: int) -> dict[str, Any]:
+def run_case_in_branch(worktree: Path, case: UATCase, timeout_s: int, env_overrides: dict[str, str] | None = None) -> dict[str, Any]:
     env = os.environ.copy()
+    if env_overrides:
+        env.update(env_overrides)
     env["PYTHONPATH"] = str(worktree)
     started = time.perf_counter()
     proc = subprocess.run(
@@ -641,13 +660,19 @@ def run_uat_comparison(
     results: list[dict[str, Any]] = []
     with tempfile.TemporaryDirectory(prefix="hsg-rag-uat-worktrees-") as tmp:
         worktree_root = Path(tmp)
+        env_overrides = load_env_file(repo_root / ".env")
         worktrees = {
             branch_id: ensure_worktree(repo_root, worktree_root, branch_ref)
             for branch_id, branch_ref in branches
         }
         for case in cases:
             for branch_id, branch_ref in branches:
-                branch_result = run_case_in_branch(worktrees[branch_id], case, timeout_s=timeout_s)
+                branch_result = run_case_in_branch(
+                    worktrees[branch_id],
+                    case,
+                    timeout_s=timeout_s,
+                    env_overrides=env_overrides,
+                )
                 heuristic = evaluate_heuristics(case, branch_result)
                 results.append(
                     {

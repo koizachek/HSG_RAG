@@ -227,7 +227,7 @@ class ExecutiveAgentChain:
             name_or_callable='retrieve_context',
             runnable=self._retrieve_context,
             return_direct=False,
-            parse_docstring=True,
+            parse_docstring=False,
         )
         self._retrieve_context_tool = tool_retrieve_context
 
