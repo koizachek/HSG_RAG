@@ -122,7 +122,7 @@ class ExecutiveAgentChain:
             name_or_callable='retrieve_context',
             runnable=self._retrieve_context,
             return_direct=False,
-            parse_docstring=True,
+            parse_docstring=False,
         )
 
         lead_agent_tools = (sub_provider.get_subagent_tools() 
