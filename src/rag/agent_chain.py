@@ -29,6 +29,7 @@ from src.rag.input_handler import InputHandler
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.language_detection import LanguageDetector
+from src.rag.tool_schemas import RetrieveContextInput
 
 from src.utils.logging import get_logger
 from src.utils.lang import get_language_name
@@ -121,6 +122,7 @@ class ExecutiveAgentChain:
         tool_retrieve_context = tool(
             name_or_callable='retrieve_context',
             runnable=self._retrieve_context,
+            args_schema=RetrieveContextInput,
             description=(
                 "Retrieve current programme context from the vector database. "
                 "Arguments: query, program, optional language."

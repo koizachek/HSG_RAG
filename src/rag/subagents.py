@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage
 from .middleware import AgentChainMiddleware as chainmdw
 from .prompts import PromptConfigurator as promptconf
 from .models import ModelConfigurator as modelconf
+from .tool_schemas import ProgrammeAgentInput, RetrieveContextInput
 from .utilclasses import AgentContext, LeadInformationState
 
 from ..utils.logging import get_logger 
@@ -23,6 +24,7 @@ class SubagentProvider():
         tool_retrieve_context = tool(
             name_or_callable='retrieve_context',
             runnable=self._tool_retrieve_context,
+            args_schema=RetrieveContextInput,
             description=(
                 "Retrieve current programme context from the vector database. "
                 "Arguments: query, program, optional language."
@@ -56,6 +58,7 @@ class SubagentProvider():
             tool(
                 name_or_callable='call_emba_agent',
                 runnable=self._call_emba_agent,
+                args_schema=ProgrammeAgentInput,
                 description="Call the EMBA HSG programme support agent.",
                 return_direct=False,
                 parse_docstring=False,
@@ -63,6 +66,7 @@ class SubagentProvider():
             tool(
                 name_or_callable='call_iemba_agent',
                 runnable=self._call_iemba_agent,
+                args_schema=ProgrammeAgentInput,
                 description="Call the IEMBA HSG programme support agent.",
                 return_direct=False,
                 parse_docstring=False,
@@ -70,6 +74,7 @@ class SubagentProvider():
             tool(
                 name_or_callable='call_embax_agent',
                 runnable=self._call_embax_agent,
+                args_schema=ProgrammeAgentInput,
                 description="Call the emba X programme support agent.",
                 return_direct=False,
                 parse_docstring=False,
