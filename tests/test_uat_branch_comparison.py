@@ -33,6 +33,11 @@ from typing import Any
 
 import pytest
 
+try:
+    from langsmith import traceable as langsmith_traceable
+except Exception:
+    langsmith_traceable = None
+
 
 DEFAULT_EXCEL = Path("/Users/dianakozachek/Desktop/UAT.xlsx")
 DEFAULT_BRANCHES = [
@@ -512,6 +517,7 @@ def judge_result_with_llm(
     model: str,
     item: dict[str, Any],
     timeout_s: int,
+    **_: Any,
 ) -> dict[str, Any]:
     messages = _judge_prompt(item["case"], item["branch_id"], item["branch_result"])
     started = time.perf_counter()
@@ -544,6 +550,50 @@ def judge_result_with_llm(
         }
 
 
+if langsmith_traceable is not None:
+    def _judge_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+        item = inputs.get("item", {})
+        case = item.get("case", {})
+        branch_result = item.get("branch_result", {})
+        return {
+            "branch_id": item.get("branch_id"),
+            "branch_ref": item.get("branch_ref"),
+            "case_id": case.get("case_id"),
+            "sheet": case.get("sheet"),
+            "title": case.get("title"),
+            "model": inputs.get("model"),
+            "timeout_s": inputs.get("timeout_s"),
+            "branch_elapsed_s": branch_result.get("elapsed_s"),
+            "turn_count": len(branch_result.get("responses", [])),
+            "metrics": branch_result.get("metrics", {}),
+        }
+
+    def _judge_outputs(outputs: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(outputs, dict):
+            return outputs
+        return {
+            "overall_score": outputs.get("overall_score"),
+            "correctness_score": outputs.get("correctness_score"),
+            "rag_grounding_score": outputs.get("rag_grounding_score"),
+            "conversation_quality_score": outputs.get("conversation_quality_score"),
+            "conversion_fit_score": outputs.get("conversion_fit_score"),
+            "red_flag_safety_score": outputs.get("red_flag_safety_score"),
+            "cost_accuracy": outputs.get("cost_accuracy"),
+            "passed": outputs.get("passed"),
+            "verdict": outputs.get("verdict"),
+            "issues": outputs.get("issues"),
+            "judge_elapsed_s": outputs.get("judge_elapsed_s"),
+            "judge_error": outputs.get("judge_error"),
+        }
+
+    judge_result_with_llm = langsmith_traceable(
+        name="uat_llm_judge",
+        run_type="chain",
+        process_inputs=_judge_inputs,
+        process_outputs=_judge_outputs,
+    )(judge_result_with_llm)
+
+
 def add_llm_judgements(
     results: list[dict[str, Any]],
     repo_root: Path,
@@ -562,6 +612,23 @@ def add_llm_judgements(
             model=model,
             item=item,
             timeout_s=timeout_s,
+            langsmith_extra={
+                "metadata": {
+                    "branch_id": item["branch_id"],
+                    "branch_ref": item["branch_ref"],
+                    "case_id": item["case"]["case_id"],
+                    "sheet": item["case"].get("sheet"),
+                    "title": item["case"].get("title"),
+                    "judge_model": model,
+                    "test_kind": "uat_llm_judge",
+                },
+                "tags": [
+                    "uat",
+                    "llm-judge",
+                    f"branch:{item['branch_id']}",
+                    f"case:{item['case']['case_id']}",
+                ],
+            },
         )
     return results
 
@@ -575,6 +642,8 @@ import uuid
 from collections import Counter
 
 case = json.loads(sys.stdin.read())
+branch_id = case.get("_uat_branch_id", "unknown_branch")
+branch_ref = case.get("_uat_branch_ref", "unknown_ref")
 metrics = {
     "retrieve_context_calls": 0,
     "retrieve_context_via_tool_calls": 0,
@@ -622,6 +691,12 @@ except Exception:
 
 from src.rag.agent_chain import ExecutiveAgentChain
 
+try:
+    from langsmith import traceable, tracing_context
+except Exception:
+    traceable = None
+    tracing_context = None
+
 original_retrieve = getattr(ExecutiveAgentChain, "_retrieve_context", None)
 if original_retrieve is not None:
     def counted_retrieve(self, *args, **kwargs):
@@ -639,38 +714,153 @@ if original_retrieve_via_tool is not None:
 language = case.get("expected_language") or "de"
 agent = ExecutiveAgentChain(language=language, session_id=f"uat-{uuid.uuid4()}")
 
-responses = []
-case_start = time.perf_counter()
-for turn_index, user_turn in enumerate(case["user_turns"], start=1):
+def _run_turn(agent, turn_index, user_turn):
     turn_start = time.perf_counter()
     try:
         response = agent.query(user_turn)
         elapsed = time.perf_counter() - turn_start
-        responses.append(
-            {
-                "turn_index": turn_index,
-                "query": user_turn,
-                "elapsed_s": elapsed,
-                "response": getattr(response, "response", ""),
-                "language": getattr(response, "language", None),
-                "appointment_requested": bool(getattr(response, "appointment_requested", False)),
-                "show_booking_widget": bool(getattr(response, "show_booking_widget", False)),
-                "confidence_fallback": bool(getattr(response, "confidence_fallback", False)),
-            }
-        )
+        return {
+            "turn_index": turn_index,
+            "query": user_turn,
+            "elapsed_s": elapsed,
+            "response": getattr(response, "response", ""),
+            "language": getattr(response, "language", None),
+            "appointment_requested": bool(getattr(response, "appointment_requested", False)),
+            "show_booking_widget": bool(getattr(response, "show_booking_widget", False)),
+            "confidence_fallback": bool(getattr(response, "confidence_fallback", False)),
+        }
     except Exception as exc:
         elapsed = time.perf_counter() - turn_start
-        responses.append(
-            {
-                "turn_index": turn_index,
-                "query": user_turn,
-                "elapsed_s": elapsed,
-                "error": repr(exc),
-            }
-        )
-        break
+        return {
+            "turn_index": turn_index,
+            "query": user_turn,
+            "elapsed_s": elapsed,
+            "error": repr(exc),
+        }
 
-total_elapsed = time.perf_counter() - case_start
+if traceable is not None:
+    def _turn_inputs(inputs):
+        return {
+            "branch_id": branch_id,
+            "branch_ref": branch_ref,
+            "case_id": case["case_id"],
+            "turn_index": inputs.get("turn_index"),
+            "query": inputs.get("user_turn"),
+        }
+
+    def _turn_outputs(outputs):
+        if not isinstance(outputs, dict):
+            return outputs
+        return {
+            "elapsed_s": outputs.get("elapsed_s"),
+            "language": outputs.get("language"),
+            "appointment_requested": outputs.get("appointment_requested"),
+            "show_booking_widget": outputs.get("show_booking_widget"),
+            "confidence_fallback": outputs.get("confidence_fallback"),
+            "error": outputs.get("error"),
+            "response_preview": str(outputs.get("response", ""))[:1200],
+        }
+
+    _run_turn = traceable(
+        name="uat_branch_turn",
+        run_type="chain",
+        process_inputs=_turn_inputs,
+        process_outputs=_turn_outputs,
+    )(_run_turn)
+
+case_metadata = {
+    "branch_id": branch_id,
+    "branch_ref": branch_ref,
+    "case_id": case["case_id"],
+    "sheet": case.get("sheet"),
+    "title": case.get("title"),
+    "expected_language": case.get("expected_language"),
+    "test_kind": "uat_branch_comparison",
+}
+case_tags = [
+    "uat",
+    "branch-comparison",
+    f"branch:{branch_id}",
+    f"case:{case['case_id']}",
+]
+
+def _run_case(agent):
+    responses = []
+    case_start = time.perf_counter()
+    for turn_index, user_turn in enumerate(case["user_turns"], start=1):
+        response_item = _run_turn(
+            agent,
+            turn_index,
+            user_turn,
+            langsmith_extra={
+                "metadata": {
+                    **case_metadata,
+                    "turn_index": turn_index,
+                },
+                "tags": [*case_tags, f"turn:{turn_index}"],
+            },
+        )
+        responses.append(response_item)
+        if response_item.get("error"):
+            break
+    return responses, time.perf_counter() - case_start
+
+if traceable is not None:
+    def _case_inputs(inputs):
+        return {
+            "branch_id": branch_id,
+            "branch_ref": branch_ref,
+            "case_id": case["case_id"],
+            "sheet": case.get("sheet"),
+            "title": case.get("title"),
+            "turn_count": len(case.get("user_turns", [])),
+        }
+
+    def _case_outputs(outputs):
+        responses, elapsed = outputs
+        return {
+            "elapsed_s": elapsed,
+            "turn_count": len(responses),
+            "slowest_turns": sorted(
+                [
+                    {
+                        "turn_index": item.get("turn_index"),
+                        "elapsed_s": item.get("elapsed_s"),
+                        "query": str(item.get("query", ""))[:180],
+                        "error": item.get("error"),
+                    }
+                    for item in responses
+                ],
+                key=lambda item: float(item.get("elapsed_s") or 0),
+                reverse=True,
+            )[:5],
+        }
+
+    _run_case = traceable(
+        name="uat_branch_case",
+        run_type="chain",
+        process_inputs=_case_inputs,
+        process_outputs=_case_outputs,
+    )(_run_case)
+
+if tracing_context is None:
+    responses, total_elapsed = _run_case(
+        agent,
+        langsmith_extra={
+            "metadata": case_metadata,
+            "tags": case_tags,
+        },
+    )
+else:
+    with tracing_context(metadata=case_metadata, tags=case_tags):
+        responses, total_elapsed = _run_case(
+            agent,
+            langsmith_extra={
+                "metadata": case_metadata,
+                "tags": case_tags,
+            },
+        )
+
 print(
     json.dumps(
         {
@@ -728,15 +918,47 @@ def ensure_worktree(repo_root: Path, worktree_root: Path, branch_ref: str) -> Pa
     return path
 
 
-def run_case_in_branch(worktree: Path, case: UATCase, timeout_s: int, env_overrides: dict[str, str] | None = None) -> dict[str, Any]:
+def run_case_in_branch(
+    worktree: Path,
+    case: UATCase,
+    timeout_s: int,
+    env_overrides: dict[str, str] | None = None,
+    branch_id: str = "unknown_branch",
+    branch_ref: str = "unknown_ref",
+) -> dict[str, Any]:
+    return run_case_in_branch_with_metadata(
+        worktree=worktree,
+        case=case,
+        timeout_s=timeout_s,
+        env_overrides=env_overrides,
+        branch_id=branch_id,
+        branch_ref=branch_ref,
+    )
+
+
+def run_case_in_branch_with_metadata(
+    worktree: Path,
+    case: UATCase,
+    timeout_s: int,
+    env_overrides: dict[str, str] | None = None,
+    branch_id: str = "unknown_branch",
+    branch_ref: str = "unknown_ref",
+) -> dict[str, Any]:
     env = os.environ.copy()
     if env_overrides:
         env.update(env_overrides)
+    if env.get("LANGSMITH_TRACING") and not env.get("LANGSMITH_TRACING_V2"):
+        env["LANGSMITH_TRACING_V2"] = env["LANGSMITH_TRACING"]
     env["PYTHONPATH"] = str(worktree)
+    payload = {
+        **case.to_payload(),
+        "_uat_branch_id": branch_id,
+        "_uat_branch_ref": branch_ref,
+    }
     started = time.perf_counter()
     proc = subprocess.run(
         [sys.executable, "-c", HELPER_CODE],
-        input=json.dumps(case.to_payload(), ensure_ascii=False),
+        input=json.dumps(payload, ensure_ascii=False),
         cwd=str(worktree),
         env=env,
         text=True,
@@ -766,11 +988,12 @@ def run_case_in_branch(worktree: Path, case: UATCase, timeout_s: int, env_overri
         }
 
 
-def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path, Path]:
+def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path, Path, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d_%H%M%S")
     json_path = output_dir / f"uat_branch_comparison_{stamp}.json"
     csv_path = output_dir / f"uat_branch_comparison_{stamp}.csv"
+    turns_csv_path = output_dir / f"uat_branch_turns_{stamp}.csv"
 
     json_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -832,7 +1055,47 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
                 }
             )
 
-    return json_path, csv_path
+    turn_fieldnames = [
+        "branch_id",
+        "branch_ref",
+        "case_id",
+        "sheet",
+        "title",
+        "turn_index",
+        "elapsed_s",
+        "language",
+        "appointment_requested",
+        "show_booking_widget",
+        "confidence_fallback",
+        "query",
+        "error",
+        "response_preview",
+    ]
+    with turns_csv_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=turn_fieldnames)
+        writer.writeheader()
+        for item in results:
+            for response in item["branch_result"].get("responses", []):
+                writer.writerow(
+                    {
+                        "branch_id": item["branch_id"],
+                        "branch_ref": item["branch_ref"],
+                        "case_id": item["case"]["case_id"],
+                        "sheet": item["case"]["sheet"],
+                        "title": item["case"]["title"],
+                        "turn_index": response.get("turn_index"),
+                        "elapsed_s": response.get("elapsed_s"),
+                        "language": response.get("language"),
+                        "appointment_requested": response.get("appointment_requested"),
+                        "show_booking_widget": response.get("show_booking_widget"),
+                        "confidence_fallback": response.get("confidence_fallback"),
+                        "query": str(response.get("query", "")).replace("\n", " "),
+                        "error": response.get("error", ""),
+                        "response_preview": str(response.get("response", ""))[:240].replace("\n", " "),
+                    }
+                )
+
+    return json_path, csv_path, turns_csv_path
 
 
 def write_llm_summary(results: list[dict[str, Any]], output_dir: Path) -> Path:
@@ -944,6 +1207,8 @@ def run_uat_comparison(
                     case,
                     timeout_s=timeout_s,
                     env_overrides=env_overrides,
+                    branch_id=branch_id,
+                    branch_ref=branch_ref,
                 )
                 heuristic = evaluate_heuristics(case, branch_result)
                 results.append(
@@ -1033,6 +1298,26 @@ def print_summary(results: list[dict[str, Any]], output_dir: Path) -> None:
         if llm_scores:
             print(f"  llm_avg_score={sum(llm_scores) / len(llm_scores):.1f}")
 
+    slow_turns = []
+    for item in results:
+        for response in item["branch_result"].get("responses", []):
+            slow_turns.append(
+                {
+                    "branch_id": item["branch_id"],
+                    "case_id": item["case"]["case_id"],
+                    "turn_index": response.get("turn_index"),
+                    "elapsed_s": float(response.get("elapsed_s") or 0),
+                    "query": str(response.get("query", ""))[:90].replace("\n", " "),
+                }
+            )
+    if slow_turns:
+        print("\nSlowest UAT turns")
+        for turn in sorted(slow_turns, key=lambda item: item["elapsed_s"], reverse=True)[:10]:
+            print(
+                f"- {turn['branch_id']} {turn['case_id']} turn={turn['turn_index']} "
+                f"elapsed_s={turn['elapsed_s']:.2f} query={turn['query']}"
+            )
+
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
@@ -1056,10 +1341,11 @@ def main(argv: list[str] | None = None) -> int:
             model=args.judge_model,
             timeout_s=args.judge_timeout_s,
         )
-        json_path, csv_path = write_reports(results, args.output_dir)
+        json_path, csv_path, turns_csv_path = write_reports(results, args.output_dir)
         summary_path = write_llm_summary(results, args.output_dir)
         print(f"\nLLM judge JSON report: {json_path}")
         print(f"LLM judge CSV report: {csv_path}")
+        print(f"Turn timing CSV report: {turns_csv_path}")
         print(f"LLM judge summary: {summary_path}")
 
     print_summary(results, args.output_dir)
