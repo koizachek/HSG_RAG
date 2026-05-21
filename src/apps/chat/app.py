@@ -91,6 +91,7 @@ class ChatbotApplication:
                     additional_inputs=[agent_state],
                     additional_outputs=[agent_state],
                     title="Executive Education Adviser",
+                    type="messages",
                 )
 
             booking_widget = gr.HTML(
