@@ -56,9 +56,10 @@ class ContentCleaner:
         else:
             self._repetitive_content = []
             for text, count in self._repetitions_counter.items():
-                for allowed_item in REPETITION_WHITELIST:
-                    if allowed_item not in text and count > 2:
-                        self._repetitions_content.append({'content': text, 'amount': count})
+                if count < 3 or len([item for item in REPETITION_WHITELIST if item in text]) > 0:
+                    continue
+            
+                self._repetitive_content.append({'content': text, 'amount': count})
             logger.info(f"Content analysis for target URL '{target_url}' " +
                         f"yielded {len(self._repetitive_content)} repetitive text lines")
 
