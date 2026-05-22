@@ -117,18 +117,11 @@ class ExecutiveAgentChain:
         Args:
             query: Keywords depicting information you want to retrieve in the primary language.
             program: Name of the program (either 'emba', 'iemba' or 'emba x') for which the information is requested.
-            language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
+            language: Set to 'en' for IEMBA and emba x. set to 'de' for EMBA HSG. This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language.         
         """
         lang = language if language in ['en', 'de'] else self._initial_language
         try:
-            response, _ = self._dbservice.query(
-                query=query,
-                lang=lang,
-                limit=config.get('TOP_K_RETRIEVAL'),
-                property_filters={
-                    'programs': [program],
-                },
-            )
+            response, _ = self._dbservice.query(query, lang, limit=config.get('TOP_K_RETRIEVAL'))
             serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
             return serialized
         except Exception as e:
@@ -148,68 +141,6 @@ class ExecutiveAgentChain:
             }
         )
 
-    def _call_emba_agent(self, query: str) -> str:
-        """
-        Invokes the EMBA support agent to retrieve more detailed information about the EMBA program.
-        
-        Args:
-            query: Query to the EMBA support agent. Provide collected user data in the query if possible.
-        """
-        try:
-            structured_response = self._query(
-                agent=self._agents['emba'],
-                messages=[HumanMessage(query)],
-                thread_id=f"emba_{hash(query)}",
-            )
-            return structured_response.response
-        except ContextRetrievalError as e:
-            chain_logger.error(f"EMBA retrieval error: {e}")
-            return self._subagent_retrieval_fallback('emba')
-        except Exception as e:
-            chain_logger.error(f"EMBA Agent error: {e}")
-            raise RuntimeError("Unable to retrieve EMBA information at this time.")
-
-    def _call_iemba_agent(self, query: str) -> str:
-        """
-        Invokes the IEMBA support agent to retrieve more detailed information about the IEMBA program.
-        
-        Args:
-            query: Query to the IEMBA support agent. Provide collected user data in the query if possible.
-        """
-        try:
-            structured_response = self._query(
-                agent=self._agents['iemba'],
-                messages=[HumanMessage(query)],
-                thread_id=f"emba_{hash(query)}",
-            )
-            return structured_response.response
-        except ContextRetrievalError as e:
-            chain_logger.error(f"IEMBA retrieval error: {e}")
-            return self._subagent_retrieval_fallback('iemba')
-        except Exception as e:
-            chain_logger.error(f"IEMBA Agent error: {e}")
-            raise RuntimeError("Unable to retrieve IEMBA information at this time.")
-
-    def _call_embax_agent(self, query: str) -> str:
-        """
-        Invokes the emba X support agent to retrieve more detailed information about the emba X program.
-        
-        Args:
-            query: Query to the emba X support agent. Provide collected user data in the query if possible.
-        """
-        try:
-            structured_response = self._query(
-                agent=self._agents['embax'],
-                messages=[HumanMessage(query)],
-                thread_id=f"emba_{hash(query)}",
-            )
-            return structured_response.response
-        except ContextRetrievalError as e:
-            chain_logger.error(f"emba X retrieval error: {e}")
-            return self._subagent_retrieval_fallback('embax')
-        except Exception as e:
-            chain_logger.error(f"emba X Agent error: {e}")
-            raise RuntimeError("Unable to retrieve emba X information at this time.")
 
     def _init_agents(self):
         from .subagents import SubagentProvider
