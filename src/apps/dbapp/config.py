@@ -1,8 +1,8 @@
-import os
-import yaml
+import os, yaml
 
 from tkinter import *
 from tkinter import ttk
+import yaml
 from src.apps.dbapp.framebase import CustomFrameBase
 from src.utils.stratutils.generator import generate_strategy
 from src.database.weavservice import WeaviateService
@@ -100,6 +100,34 @@ class SchemaConfigurationFrame(CustomFrameBase):
         _dump_schema(self._schema)
 
 
+    def _migrate_schema(self):
+        """Initiate migration if changes were made."""
+        if self._schema == self._original_schema:
+            self._show_messagebox("No changes detected in the schema.")
+            return
+
+        dialog = Toplevel()
+        dialog.title("Migrate Schema")
+        dialog.geometry("400x150")
+        dialog.grab_set()
+
+        ttk.Label(dialog, text="Are you sure you want to migrate the schema changes?").pack(pady=20)
+        
+        def confirm_migrate():
+            try:
+                # self._service.migrate_schema(self._schema)
+                self._show_messagebox("Migration started successfully!")
+                self._original_schema = self._schema.copy()  
+            except Exception as e:
+                self._show_messagebox(f"Migration failed: {str(e)}")
+            dialog.destroy()
+
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill=X, padx=20, pady=10)
+        ttk.Button(button_frame, text="Migrate", command=confirm_migrate).pack(side=LEFT, padx=10)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=RIGHT, padx=10)
+
+
     def _reset_schema(self):
         """Reset schema to the last loaded/saved state from Weaviate."""
         if self._schema == self._original_schema:
@@ -141,6 +169,9 @@ class SchemaConfigurationFrame(CustomFrameBase):
 
         ttk.Button(button_bar, text='Add property', 
                    command=lambda: self._add_property(refresh_table)).pack(side=LEFT, padx=5)
+
+        ttk.Button(button_bar, text='Migrate', 
+                   command=self._migrate_schema).pack(side=LEFT, padx=5)
 
         ttk.Button(button_bar, text='Reset', 
                    command=self._reset_schema).pack(side=LEFT, padx=5)

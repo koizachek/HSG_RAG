@@ -7,12 +7,12 @@ class UrlNormalizer:
     def is_url_blacklisted(url: str) -> bool:
         url_lower = url.lower()
         path = url_lower.split('://', 1)[-1].split('/', 1)[-1] 
-        
+
         for forbidden in PAGE_BLACKLIST:
             if forbidden in path:
                 return True
                 
-        return False
+        return len(path) > 35
     
 
     @staticmethod
