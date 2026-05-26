@@ -1854,7 +1854,7 @@ class ExecutiveAgentChain:
         ]
 
         if section_sentences:
-            return self._unique_texts(section_sentences + programme_sentences + raw_neutral_sentences + neutral_sentences)
+            return self._unique_texts(section_sentences + programme_sentences)
 
         return self._unique_texts(programme_sentences + raw_neutral_sentences + neutral_sentences + fallback_sentences)
 
@@ -1975,7 +1975,6 @@ class ExecutiveAgentChain:
             return True
         return False
     
-    @traceable
     def _extract_values_for_fact_category(
         self,
         sentences: list[str],
@@ -2155,7 +2154,6 @@ class ExecutiveAgentChain:
             )
         return []
     
-    @traceable
     @staticmethod
     def _extract_chf_amounts(sentence: str, language: str) -> list[str]:
         amounts = re.findall(
@@ -2197,7 +2195,6 @@ class ExecutiveAgentChain:
 
         return amounts
     
-    @traceable
     @staticmethod
     def _extract_future_dates(sentence: str) -> list[str]:
         month_names = (
@@ -2359,18 +2356,22 @@ class ExecutiveAgentChain:
         if not values:
             return []
 
-        limits = {
-            "cost": 2,
-            "start": 1,
-            "deadline": 2,
-            "duration": 1,
-            "admission": 3,
-            "application_process": 1,
-            "documents": 3,
-        }
+        if category == "cost":
+            selected_values = [values[-1]]
+        else:
+            limits = {
+                "start": 1,
+                "deadline": 2,
+                "duration": 1,
+                "admission": 3,
+                "application_process": 1,
+                "documents": 3,
+            }
+            selected_values = values[:limits.get(category, 3)]
+
         return [
             " ".join(str(value).split())
-            for value in values[:limits.get(category, 3)]
+            for value in selected_values
             if str(value).strip()
         ]
 
@@ -2421,7 +2422,6 @@ class ExecutiveAgentChain:
         bullets = "\n".join(f"- {value}" for value in selected_values)
         return f"**{programme_name} {topic}**:\n{bullets}"
     
-    @traceable
     def _serve_programme_fact_request(
         self,
         processed_query: str,
@@ -2981,18 +2981,19 @@ class ExecutiveAgentChain:
                         "3. **emba X**: English-speaking joint-degree option with **ETH Zurich** and **University of St.Gallen** "
                         "for leadership at the intersection of business, technology, innovation, and transformation.\n\n"
                         "Would you like details on costs, start dates, deadlines, duration, or admissions requirements, "
-                        "or should I recommend the most suitable programme based on your profile?"
+                        "or should I recommend the most suitable programme based on the information you share?"
                     )
 
                 return (
-                    "Your profile mainly clarifies the admissions level: with substantial medical leadership experience, "
-                    "the Executive MBA options are broadly plausible. The programme choice should now be based on goals, "
-                    "not on an automatic classification.\n\n"
-                    "1. **EMBA HSG**: strongest if your goal is DACH-focused hospital or organisational management.\n"
+                    "The information you shared helps clarify the admissions level; the Executive MBA options should be "
+                    "checked against the current requirements. The programme choice should now be based on your "
+                    "development goals, not on an automatic classification.\n\n"
+                    "1. **EMBA HSG**: strongest if your goal is DACH-focused general management, organisational leadership, "
+                    "strategy, finance, and governance.\n"
                     "2. **IEMBA HSG**: strongest if your goal is international exposure, global peer learning, or cross-border work.\n"
-                    "3. **emba X**: strongest if your goal is digital transformation, MedTech, Health-IT, innovation, or technology-led change.\n\n"
+                    "3. **emba X**: strongest if your goal is digital transformation, technology, innovation, or large-scale change.\n\n"
                     "Would you like details on costs, start dates, deadlines, duration, or admissions requirements, "
-                    "or should I recommend the most suitable programme based on your profile?"
+                    "or should I recommend the most suitable programme based on the information you share?"
                 )
 
             if self._programme_overview_detail_level <= 1:
@@ -3014,17 +3015,17 @@ class ExecutiveAgentChain:
                 return (
                     "More detail across all three programmes:\n\n"
                     "**EMBA HSG** aims to strengthen broad general-management judgement for leaders in the DACH context. "
-                    "For a hospital leader, the practical value is strategy, finance, governance, organisation design, "
-                    "negotiation, and change leadership in German-speaking healthcare organisations. The capstone project "
-                    "can be tied to a real clinic or hospital transformation topic.\n\n"
+                    "For a professional or leader comparing options, the practical value is strategy, finance, governance, "
+                    "organisation design, negotiation, and change leadership in German-speaking organisations. The capstone "
+                    "project can be tied to a real organisational or transformation topic.\n\n"
                     "**IEMBA HSG** aims to build international management perspective. The value is not only the English "
-                    "language; it is the global cohort and modules across different regions. For healthcare leadership, "
-                    "that is useful when you work with international partners, global health organisations, industry, "
-                    "research networks, or cross-border clinical initiatives.\n\n"
+                    "language; it is the global cohort and modules across different regions. That is useful when your work "
+                    "involves international partners, cross-border teams, global markets, or comparison across business "
+                    "environments.\n\n"
                     "**emba X** aims at leadership where business and technology meet. It is the most relevant option if "
-                    "your goals include digital transformation, MedTech, Health-IT, AI-enabled processes, innovation, or "
-                    "large organisational change. Its distinctive feature is the integrated **ETH Zurich** plus "
-                    "**University of St.Gallen** joint-degree setting and access to both alumni networks."
+                    "your goals include digital transformation, technology-led business models, AI/data initiatives, "
+                    "innovation, or large organisational change. Its distinctive feature is the integrated **ETH Zurich** "
+                    "plus **University of St.Gallen** joint-degree setting and access to both alumni networks."
                 )
 
             if not profile_context:
@@ -3042,14 +3043,15 @@ class ExecutiveAgentChain:
 
             return (
                 "The next useful distinction is by goals and working context:\n\n"
-                "- Choose **EMBA HSG** if your main goal is stronger economic and organisational steering of a hospital "
-                "in the DACH environment: budgeting, governance, leadership, negotiation, and operational change.\n"
+                "- Choose **EMBA HSG** if your main goal is stronger economic and organisational steering in the DACH "
+                "environment: strategy, budgeting, governance, leadership, negotiation, and operational change.\n"
                 "- Choose **IEMBA HSG** if your main goal is international exposure: learning with a global cohort, "
-                "working across health systems, and building confidence for international partnerships or organisations.\n"
-                "- Choose **emba X** if your main goal is transformation through technology: digital care pathways, "
-                "MedTech collaboration, innovation portfolios, data/AI initiatives, or culture change around new tools.\n\n"
-                "For a senior medical leadership role, all three can be plausible. The deciding factor is whether your next "
-                "development goal is DACH management depth, international management breadth, or technology-led transformation."
+                "working across markets or organisations, and building confidence for international partnerships.\n"
+                "- Choose **emba X** if your main goal is transformation through technology: digitalisation, innovation "
+                "portfolios, data/AI initiatives, new business models, or culture change around new tools.\n\n"
+                "Based on the information shared so far, all three can remain worth comparing. The deciding factor is "
+                "whether your next development goal is DACH management depth, international management breadth, or "
+                "technology-led transformation."
             )
 
         if not detailed:
@@ -3064,18 +3066,18 @@ class ExecutiveAgentChain:
                     "3. **emba X**: englischsprachiges Joint Degree mit **ETH Zürich** und **Universität St.Gallen**, mit "
                     "Fokus auf Business, Technologie, Innovation und Transformation.\n\n"
                     "Interessieren Sie sich für Kosten, Startdatum, Fristen, Dauer oder Zulassungsdetails, oder möchten "
-                    "Sie, dass ich ein passendes Programm auf Basis Ihres Profils empfehle?"
+                    "Sie, dass ich ein passendes Programm anhand Ihrer Angaben empfehle?"
                 )
 
             return (
-                "Das Profil klärt vor allem die Zulassungsebene: Mit langjähriger ärztlicher Führungsverantwortung sind "
-                "die Executive-MBA-Optionen grundsätzlich plausibel. Die Programmwahl sollte jetzt über Ihre Ziele laufen, "
-                "nicht über eine automatische Einordnung.\n\n"
-                "1. **EMBA HSG**: naheliegend, wenn Sie DACH-orientierte Klinik-/Spitalführung, Strategie, Finanzen und Organisation vertiefen wollen.\n"
+                "Ihre Angaben helfen vor allem, die Zulassungsebene einzuordnen; die Executive-MBA-Optionen sollten anhand "
+                "der aktuellen Anforderungen geprüft werden. Die Programmwahl sollte jetzt über Ihre Entwicklungsziele "
+                "laufen, nicht über eine automatische Einordnung.\n\n"
+                "1. **EMBA HSG**: naheliegend, wenn Sie DACH-orientiertes General Management, Strategie, Finanzen, Organisation und Governance vertiefen wollen.\n"
                 "2. **IEMBA HSG**: naheliegend, wenn Sie internationaler arbeiten, vergleichen oder kooperieren möchten.\n"
-                "3. **emba X**: naheliegend, wenn Digitalisierung, MedTech, Health-IT, Innovation oder grosse Transformation zentral sind.\n\n"
+                "3. **emba X**: naheliegend, wenn Digitalisierung, Technologie, Innovation oder grosse Transformation zentral sind.\n\n"
                 "Interessieren Sie sich für Kosten, Startdatum, Fristen, Dauer oder Zulassungsdetails, oder möchten "
-                "Sie, dass ich ein passendes Programm auf Basis Ihres Profils empfehle?"
+                "Sie, dass ich ein passendes Programm anhand Ihrer Angaben empfehle?"
             )
 
         if self._programme_overview_detail_level <= 1:
@@ -3097,18 +3099,18 @@ class ExecutiveAgentChain:
 
             return (
                 "Weitere Details zu **allen drei Programmen**, ohne Sie vorschnell auf eines festzulegen:\n\n"
-                "**EMBA HSG** zielt auf breite General-Management-Kompetenz im DACH-Raum. Für eine Chefarzt-Rolle ist das "
-                "relevant, wenn Sie Strategie, Finanzen, Governance, Organisation, Verhandlung und Change Management in "
-                "einer Klinik oder einem Spital stärken wollen. Das Capstone-Projekt kann direkt auf ein reales "
-                "Klinikthema ausgerichtet werden, etwa Prozessoptimierung, Ressourcensteuerung oder Organisationsentwicklung.\n\n"
+                "**EMBA HSG** zielt auf breite General-Management-Kompetenz im DACH-Raum. Das ist relevant, wenn Sie "
+                "Strategie, Finanzen, Governance, Organisation, Verhandlung und Change Management stärken wollen. Das "
+                "Capstone-Projekt kann direkt auf ein reales Organisations- oder Transformationsvorhaben ausgerichtet "
+                "werden.\n\n"
                 "**IEMBA HSG** zielt auf internationale Managementkompetenz. Der Mehrwert liegt in der englischsprachigen "
-                "globalen Kohorte und den internationalen Modulen. Für das Gesundheitswesen ist das besonders sinnvoll, "
-                "wenn Sie mit internationalen Partnern, globalen Gesundheitsorganisationen, Industrie, Forschung oder "
-                "grenzüberschreitenden Versorgungsfragen arbeiten.\n\n"
+                "globalen Kohorte und den internationalen Modulen. Das ist besonders sinnvoll, wenn Sie mit internationalen "
+                "Partnern, Märkten, Teams oder Organisationen arbeiten oder Führungsfragen über Ländergrenzen hinweg "
+                "vergleichen möchten.\n\n"
                 "**emba X** zielt auf Führung an der Schnittstelle von Business und Technologie. Das ist besonders relevant, "
-                "wenn Ihre Ziele Digitalisierung, MedTech, Health-IT, datengetriebene Prozesse, Innovation oder grosse "
-                "Transformationsprojekte im Spital betreffen. Der besondere Punkt ist die Kombination aus **ETH Zürich** "
-                "und **Universität St.Gallen** sowie der Zugang zu beiden Netzwerken."
+                "wenn Ihre Ziele Digitalisierung, technologiegetriebene Geschäftsmodelle, datenbasierte Prozesse, "
+                "Innovation oder grosse Transformationsprojekte betreffen. Der besondere Punkt ist die Kombination aus "
+                "**ETH Zürich** und **Universität St.Gallen** sowie der Zugang zu beiden Netzwerken."
             )
 
         if not profile_context:
@@ -3127,13 +3129,14 @@ class ExecutiveAgentChain:
         return (
             "Die nächste sinnvolle Unterscheidung läuft über Ziele und Arbeitskontext:\n\n"
             "- **EMBA HSG** passt am besten, wenn Sie Ihre ökonomische, organisatorische und strategische Steuerung im "
-            "deutschsprachigen Spitalumfeld vertiefen wollen: Budget, Governance, Personalführung, Verhandlung, Change.\n"
+            "DACH-Umfeld vertiefen wollen: Budget, Governance, Personalführung, Verhandlung und Change.\n"
             "- **IEMBA HSG** passt am besten, wenn Sie internationaler arbeiten möchten: Vergleich von Märkten und "
-            "Organisationen, globale Peer Group, internationale Kooperationen, Industrie- oder Forschungspartner.\n"
-            "- **emba X** passt am besten, wenn Technologie und Transformation im Zentrum stehen: digitale Patientenpfade, "
-            "MedTech, Health-IT, Daten-/AI-Projekte, Innovationsportfolios oder kultureller Wandel im Spital.\n\n"
-            "Für eine Chefarzt-Rolle sind alle drei plausibel. Ausschlaggebend ist, ob Ihr nächster Entwicklungsschwerpunkt "
-            "DACH-Management, Internationalität oder technologiegetriebene Transformation ist."
+            "Organisationen, globale Peer Group, internationale Kooperationen oder länderübergreifende Verantwortung.\n"
+            "- **emba X** passt am besten, wenn Technologie und Transformation im Zentrum stehen: Digitalisierung, "
+            "datenbasierte Prozesse, neue Geschäftsmodelle, Innovationsportfolios oder kultureller Wandel.\n\n"
+            "Anhand der bisherigen Angaben können alle drei Programme weiterhin vergleichbar bleiben. Ausschlaggebend "
+            "ist, ob Ihr nächster Entwicklungsschwerpunkt DACH-Management, Internationalität oder technologiegetriebene "
+            "Transformation ist."
         )
 
     def _serve_programme_overview(

@@ -257,10 +257,38 @@ Here are the programs:
             profile_context=True,
         )
 
-        assert "Das Profil klärt vor allem die Zulassungsebene" in response.response
+        assert "Ihre Angaben helfen vor allem, die Zulassungsebene einzuordnen" in response.response
         assert "EMBA HSG" in response.response
         assert "IEMBA HSG" in response.response
         assert "emba X" in response.response
+
+    def test_generic_leadership_profile_overview_does_not_invent_medical_context(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._pending_continuation = None
+        agent._programme_overview_detail_level = 0
+
+        response = agent._serve_programme_overview(
+            processed_query="Ich arbeite seit 15 Jahren, davon 7 Jahre als Abteilungsleiter.",
+            response_language="de",
+            detailed=False,
+            profile_context=True,
+        )
+
+        assert "Ihre Angaben helfen vor allem" in response.response
+        assert "EMBA HSG" in response.response
+        assert "IEMBA HSG" in response.response
+        assert "emba X" in response.response
+        forbidden_terms = [
+            "ärzt",
+            "chefarzt",
+            "klinik",
+            "spital",
+            "medtech",
+            "health-it",
+            "gesundheits",
+        ]
+        assert not any(term in response.response.lower() for term in forbidden_terms)
 
     def test_profile_context_update_after_overview_is_not_single_programme_diagnosis(self):
         agent = object.__new__(ExecutiveAgentChain)
@@ -388,8 +416,8 @@ Here are the programs:
             programmes=["emba"],
         )
 
-        assert "**Kosten**" in response.response
-        assert "**Start**" in response.response
+        assert "Kosten" in response.response
+        assert "Start" in response.response
         assert "RAG" not in response.response
         assert "Formaler Fit" not in response.response
         assert "Programmunterlagen" not in response.response
@@ -452,13 +480,29 @@ Here are the programs:
         assert "emba X" in response.response
         assert "CHF 77'500" in response.response
         assert "CHF 85'000" in response.response
-        assert "CHF 99'000" in response.response
+        assert "CHF 99'000" not in response.response
         assert "CHF 110'000" in response.response
         assert "Formaler Fit" not in response.response
         assert "aus derselben Quelle" not in response.response
         assert "Programmunterlagen" not in response.response
         assert "Bewerbungsfristen im Überblick" not in response.response
         assert "Start with you" not in response.response
+
+    def test_cost_fact_formatting_uses_only_final_deadline_price(self):
+        agent = object.__new__(ExecutiveAgentChain)
+
+        response = agent._format_requested_fact_block(
+            "EMBA HSG",
+            "cost",
+            [
+                "29. Juni 2026: CHF 72'500",
+                "10. August 2026: CHF 77'500",
+            ],
+            "de",
+        )
+
+        assert "CHF 72'500" not in response
+        assert "CHF 77'500" in response
 
     def test_single_programme_deadline_info_uses_rag_not_booking(self):
         class FakeRetrieveTool:
@@ -499,9 +543,9 @@ Here are the programs:
         )
 
         assert len(agent._retrieve_context_tool.payloads) == 1
-        assert "**Bewerbungsfrist**" in response.response
-        assert "29. Juni 2026" in response.response
-        assert "10. August 2026" in response.response
+        assert "Bewerbungsfrist" in response.response
+        assert "29\\. Juni 2026" in response.response
+        assert "10\\. August 2026" in response.response
         assert response.appointment_requested is False
         assert response.show_booking_widget is False
         assert "Terminoptionen" not in response.response
@@ -530,8 +574,10 @@ Here are the programs:
 
         assert "Bewerbung zum **emba X**" in response.response
         assert "Teyuna Giger" in response.response
-        assert "31.08.2026" in response.response
-        assert "CHF 99'000" in response.response
+        assert "31.08.2026" not in response.response
+        assert "CHF 99'000" not in response.response
+        assert "31.10.2026" in response.response
+        assert "CHF 110'000" in response.response
         assert response.appointment_requested is True
         assert response.show_booking_widget is True
         assert response.relevant_programs == ["emba_x"]

@@ -82,6 +82,18 @@ WEAVIATE_QUERY_TIMEOUT = 60
 # Defaults to 600
 WEAVIATE_INSERT_TIMEOUT = 600
 
+# A boolean. Starts a lightweight background query loop that keeps the Weaviate
+# client/vectorizer warm while users are typing between chat turns.
+WEAVIATE_KEEP_WARM_ENABLED = True
+
+# An integer. Defines how often the keep-warm loop may query Weaviate while idle (in seconds). 
+# Last observable cooling value was 30 seconds.
+WEAVIATE_KEEP_WARM_INTERVAL = 30
+
+# An integer. Defines when an idle Weaviate client is considered stale enough to
+# reconnect proactively (in seconds).
+WEAVIATE_CLIENT_IDLE_TIMEOUT = 25 * 60
+
 # ========================================== Cache Configuration ============================================
 
 # A string; either 'local', 'cloud' (Redis) or 'dict'. Defaults to 'cloud'.

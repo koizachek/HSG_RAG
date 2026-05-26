@@ -22,6 +22,15 @@ def _get(param: str, default=None, type_=None):
         raise ValueError(f"Failed to cast '{param}' value '{value}' to {type_.__name__}")
 
 
+def _get_bool(param: str, default: bool = False) -> bool:
+    value = _get(param, default)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
 class ConfigBase:
     PARAMS: dict = dict()
 
@@ -119,6 +128,9 @@ class WeaviateConfig(ConfigBase):
     INIT_TIMEOUT:   int  = _get('WEAVIATE_INIT_TIMEOUT', 90) 
     QUERY_TIMEOUT:  int  = _get('WEAVIATE_QUERY_TIMEOUT', 60) 
     INSERT_TIMEOUT: int  = _get('WEAVIATE_INSERT_TIMEOUT', 600)
+    KEEP_WARM_ENABLED: bool = _get_bool('WEAVIATE_KEEP_WARM_ENABLED', True)
+    KEEP_WARM_INTERVAL: int = _get('WEAVIATE_KEEP_WARM_INTERVAL', 45, type_=int)
+    CLIENT_IDLE_TIMEOUT: int = _get('WEAVIATE_CLIENT_IDLE_TIMEOUT', 25 * 60, type_=int)
 
 
 #TODO: Clean this configuration (outdated)
