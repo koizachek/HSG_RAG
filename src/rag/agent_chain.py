@@ -1518,20 +1518,16 @@ class ExecutiveAgentChain:
                     language=language,
                 )
 
-        if language == "en":
-            lines = [
-                f"- **{self._fact_category_label(category, language)}**: "
-                f"{self._format_requested_fact_values(facts_by_category.get(category), category, language)}"
-                for category in categories
-            ]
-            return f"**{programme_name}**\n" + "\n".join(lines)
-
-        lines = [
-            f"- **{self._fact_category_label(category, language)}**: "
-            f"{self._format_requested_fact_values(facts_by_category.get(category), category, language)}"
+        blocks = [
+            self._format_requested_fact_block(
+                programme_name,
+                category,
+                facts_by_category.get(category),
+                language,
+            )
             for category in categories
         ]
-        return f"**{programme_name}**\n" + "\n".join(lines)
+        return "\n\n".join(blocks)
 
     def _requested_fact_categories(self, query: str, language: str) -> list[str]:
         query_lower = query.lower()
@@ -1978,7 +1974,8 @@ class ExecutiveAgentChain:
         if programme != "emba" and re.search(r"(?<!i)\bemba hsg\b", sentence_lower):
             return True
         return False
-
+    
+    @traceable
     def _extract_values_for_fact_category(
         self,
         sentences: list[str],
@@ -2096,10 +2093,11 @@ class ExecutiveAgentChain:
                     "iemba": "CHF 85,000",
                 },
             }
-            current_flat_tuition = current_flat_tuition_by_language.get(
-                language,
-                current_flat_tuition_by_language["en"],
-            ).get(programme or "")
+            # current_flat_tuition = current_flat_tuition_by_language.get(
+            #     language,
+            #     current_flat_tuition_by_language["en"],
+            # ).get(programme or "")
+            current_flat_tuition = ""
             if current_flat_tuition:
                 return [current_flat_tuition]
             values = self._unique_texts(
@@ -2156,7 +2154,8 @@ class ExecutiveAgentChain:
                 for sentence in candidates[:3]
             )
         return []
-
+    
+    @traceable
     @staticmethod
     def _extract_chf_amounts(sentence: str, language: str) -> list[str]:
         amounts = re.findall(
@@ -2197,7 +2196,8 @@ class ExecutiveAgentChain:
             return [f"{date}: {amount}" for date, amount in zip(dates, amounts)]
 
         return amounts
-
+    
+    @traceable
     @staticmethod
     def _extract_future_dates(sentence: str) -> list[str]:
         month_names = (
@@ -2343,17 +2343,43 @@ class ExecutiveAgentChain:
 
     @staticmethod
     def _format_requested_fact_values(values: list[str] | None, category: str, language: str) -> str:
-        if values:
-            limits = {
-                "cost": 2,
-                "start": 1,
-                "deadline": 2,
-                "duration": 1,
-                "admission": 3,
-                "application_process": 1,
-                "documents": 3,
-            }
-            return "; ".join(values[:limits.get(category, 3)])
+        selected_values = ExecutiveAgentChain._selected_requested_fact_values(values, category)
+        if selected_values:
+            selected_values = [
+                ExecutiveAgentChain._escape_markdown_ordered_list_marker(value)
+                for value in selected_values
+            ]
+            if category == "cost":
+                return "\n  - " + "\n  - ".join(selected_values)
+            return "; ".join(selected_values)
+        return ExecutiveAgentChain._empty_requested_fact_value(category, language)
+
+    @staticmethod
+    def _selected_requested_fact_values(values: list[str] | None, category: str) -> list[str]:
+        if not values:
+            return []
+
+        limits = {
+            "cost": 2,
+            "start": 1,
+            "deadline": 2,
+            "duration": 1,
+            "admission": 3,
+            "application_process": 1,
+            "documents": 3,
+        }
+        return [
+            " ".join(str(value).split())
+            for value in values[:limits.get(category, 3)]
+            if str(value).strip()
+        ]
+
+    @staticmethod
+    def _escape_markdown_ordered_list_marker(value: str) -> str:
+        return re.sub(r"^(\s*\d{1,9})\.(?=\s)", r"\1\\.", value)
+
+    @staticmethod
+    def _empty_requested_fact_value(category: str, language: str) -> str:
         if language == "en":
             empty = {
                 "cost": "no reliable current tuition amount found",
@@ -2377,6 +2403,25 @@ class ExecutiveAgentChain:
         }
         return empty.get(category, "keine verlässliche aktuelle Angabe gefunden")
 
+    def _format_requested_fact_block(
+        self,
+        programme_name: str,
+        category: str,
+        values: list[str] | None,
+        language: str,
+    ) -> str:
+        topic = self._fact_category_label(category, language)
+        selected_values = self._selected_requested_fact_values(values, category)
+        if not selected_values:
+            selected_values = [self._empty_requested_fact_value(category, language)]
+        selected_values = [
+            self._escape_markdown_ordered_list_marker(value)
+            for value in selected_values
+        ]
+        bullets = "\n".join(f"- {value}" for value in selected_values)
+        return f"**{programme_name} {topic}**:\n{bullets}"
+    
+    @traceable
     def _serve_programme_fact_request(
         self,
         processed_query: str,
@@ -2443,6 +2488,23 @@ class ExecutiveAgentChain:
             return ProgrammeFacts(programme=programme)
         return provider.get_facts(programme, language)
 
+    def _get_programmes_facts(self, programmes: list[str], language: str) -> dict[str, ProgrammeFacts]:
+        provider = getattr(self, "_programme_facts_provider", None)
+        if provider is None:
+            return {
+                programme: ProgrammeFacts(programme=programme)
+                for programme in programmes
+            }
+
+        get_facts_many = getattr(provider, "get_facts_many", None)
+        if callable(get_facts_many):
+            return get_facts_many(programmes, language)
+
+        return {
+            programme: provider.get_facts(programme, language)
+            for programme in programmes
+        }
+
     @staticmethod
     def _format_fact_points(points: list[str], fallback: str) -> str:
         if not points:
@@ -2450,9 +2512,16 @@ class ExecutiveAgentChain:
         return "; ".join(points)
 
     def _build_programme_fact_summary(self, programme: str, language: str) -> str:
-        programme_name, _ = self._programme_label_and_advisor(programme)
         facts = self._get_programme_facts(programme, language)
+        return self._build_programme_fact_summary_from_facts(programme, language, facts)
 
+    def _build_programme_fact_summary_from_facts(
+        self,
+        programme: str,
+        language: str,
+        facts: ProgrammeFacts,
+    ) -> str:
+        programme_name, _ = self._programme_label_and_advisor(programme)
         if language == "en":
             focus = self._format_fact_points(
                 facts.focus_points,
@@ -2800,8 +2869,13 @@ class ExecutiveAgentChain:
                 "fehlende Unterlagen, Entscheidungsprozess, Einschreibung und Zahlungs-/Gebührenthemen."
             )
 
+        facts_by_programme = self._get_programmes_facts(normalized_programmes, language)
         summaries = [
-            self._build_programme_fact_summary(programme, language)
+            self._build_programme_fact_summary_from_facts(
+                programme,
+                language,
+                facts_by_programme.get(programme, ProgrammeFacts(programme=programme)),
+            )
             for programme in normalized_programmes
         ]
         joined_summaries = "\n".join(f"- {summary}" for summary in summaries)

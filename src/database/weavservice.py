@@ -129,14 +129,7 @@ class WeaviateService:
                         },
                     ) 
 
-                    # Warm-up query 
-                    logger.info("Running warm-up query to initialize server...")
-                    try:
-                        collection = _get_collection_name(config.get('AVAILABLE_LANGUAGES')[0])
-                        self._client.collections.exists(collection)
-                        logger.info("Warm-up finished - server is ready!")
-                    except Exception as warmup_err:
-                        logger.warning(f"Warm-up query failed (non-critical): {warmup_err}")
+                    self._warm_up_client(self._client)
                     
                     break
                 except Exception as e:
@@ -152,6 +145,28 @@ class WeaviateService:
             logger.info(f"Successully connected to the {self._connection_type} weaviate database")
             self._last_query_time = perf_counter()
             return self._client
+
+
+    def _warm_up_client(self, client: wvt.WeaviateClient) -> None:
+        """
+        Quickly queries the client to decrease the response latency of future calls.
+        """
+        logger.info("Running warm-up query to initialize server and vectorizer...")
+        try:
+            collection_name = _get_collection_name(config.get('AVAILABLE_LANGUAGES')[0])
+            if not client.collections.exists(collection_name):
+                logger.warning("Warm-up skipped because collection %s does not exist", collection_name)
+                return
+
+            collection = client.collections.get(collection_name)
+            collection.query.hybrid(
+                query="HSG",
+                limit=1,
+                return_metadata=MetadataQuery.full(),
+            )
+            logger.info("Warm-up finished - server and vectorizer are ready!")
+        except Exception as warmup_err:
+            logger.warning(f"Warm-up query failed (non-critical): {warmup_err}")
 
 
     def _select_collection(self, lang: str) -> tuple[Collection, str]:
@@ -335,32 +350,40 @@ class WeaviateService:
                 
                 logger.info(f"Querying collection {collection_name}")
                 query_start_time = perf_counter()
-
-                with self._client_lock:
-                    try:
-                        resp = collection.query.hybrid(
-                            query=query,
-                            filters=filters,
-                            limit=limit,
-                            return_metadata=MetadataQuery.full()
-                        )
-                    except Exception as hybrid_err:
-                        if not self._should_fallback_to_bm25(hybrid_err):
-                            raise hybrid_err
-                        logger.warning(
-                            "Hybrid query failed during remote vectorization. "
-                            "Falling back to BM25 keyword retrieval: %s",
-                            hybrid_err,
-                        )
-                        resp = collection.query.bm25(
-                            query=query,
-                            filters=filters,
-                            limit=limit,
-                            return_metadata=MetadataQuery.full()
-                        )
+                lock_wait = 0.0
+                rpc_start_time = perf_counter()
+                try:
+                    resp = collection.query.hybrid(
+                        query=query,
+                        filters=filters,
+                        limit=limit,
+                        return_metadata=MetadataQuery.full()
+                    )
+                except Exception as hybrid_err:
+                    if not self._should_fallback_to_bm25(hybrid_err):
+                        raise hybrid_err
+                    logger.warning(
+                        "Hybrid query failed during remote vectorization. "
+                        "Falling back to BM25 keyword retrieval: %s",
+                        hybrid_err,
+                    )
+                    resp = collection.query.bm25(
+                        query=query,
+                        filters=filters,
+                        limit=limit,
+                        return_metadata=MetadataQuery.full()
+                    )
+                rpc_elapsed = perf_counter() - rpc_start_time
                 elapsed = perf_counter() - query_start_time
                 self._last_query_time = perf_counter()
-                logger.info(f"Querying retrieved {len(resp.objects)} objects in {elapsed:3.2f} seconds")
+                logger.info(
+                    "Querying retrieved %s objects in %3.2f seconds "
+                    "(lock_wait=%3.2f, weaviate_rpc=%3.2f)",
+                    len(resp.objects),
+                    elapsed,
+                    lock_wait,
+                    rpc_elapsed,
+                )
 
                 return (resp, elapsed)
             except Exception as e:
