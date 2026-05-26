@@ -61,7 +61,7 @@ PROGRAMME_FACT_FIXTURES = {
             "Anerkannter Hochschulabschluss, 10+ Jahre Berufserfahrung, 5+ Jahre Führungserfahrung und sehr gutes Englisch.",
         ],
         timing_points=[
-            "Erste Bewerbungsfrist 31.08.2026 mit CHF 99'000 Studiengebühr; finale Bewerbungsfrist 31.10.2026 mit CHF 110'000.",
+            "Finale Bewerbungsfrist 31.10.2026 mit CHF 110'000 Studiengebühr.",
         ],
         document_points=[
             "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation, Englisch-Niveau und ein Transformationsvorhaben vorbereiten.",
@@ -343,7 +343,8 @@ Here are the programs:
         )
 
         assert "Fit- und Zulassungsabklärung" in response.response
-        assert "31.08.2026" in response.response
+        assert "31.08.2026" not in response.response
+        assert "CHF 99'000" not in response.response
         assert "31.10.2026" in response.response
         assert "Teyuna Giger" in response.response
         assert response.appointment_requested is True
@@ -441,7 +442,6 @@ Here are the programs:
                         "#### EMBA 71 Programm-Start: 14. September 2026:\n"
                         "- Studiengebühr: CHF 77'500\n"
                         "#### emba X Programm-Start: 2. Februar 2027:\n"
-                        "- 1. Bewerbungsfrist Studiengebühr: 31. August 2026 CHF 99'000\n"
                         "- Finale Bewerbungsfrist Studiengebühr: 31. Oktober 2026 CHF 110'000"
                     )
                 contexts = {
@@ -453,8 +453,7 @@ Here are the programs:
                         "St.Gallen, Schweiz 5 Tage Start with you: Find your Leadership Identity Wahlkurs 5 Tage."
                     ),
                     "emba x": (
-                        "emba X Studiengebühr: CHF 99'000 bis zur ersten Bewerbungsfrist "
-                        "31.08.2026 und CHF 110'000 bis zur finalen Bewerbungsfrist 31.10.2026."
+                        "emba X Studiengebühr: CHF 110'000 bis zur finalen Bewerbungsfrist 31.10.2026."
                     ),
                 }
                 return contexts[program]
@@ -503,6 +502,30 @@ Here are the programs:
 
         assert "CHF 72'500" not in response
         assert "CHF 77'500" in response
+
+    def test_cost_fact_extraction_prefers_database_price_over_fallback(self):
+        agent = object.__new__(ExecutiveAgentChain)
+
+        values = agent._extract_values_for_fact_category(
+            ["EMBA HSG Studiengebühr CHF 76'000."],
+            "cost",
+            "de",
+            "emba",
+        )
+
+        assert values == ["CHF 76'000"]
+
+    def test_cost_fact_extraction_uses_fallback_only_without_database_price(self):
+        agent = object.__new__(ExecutiveAgentChain)
+
+        values = agent._extract_values_for_fact_category(
+            ["EMBA HSG Studiengebühr wird im Beratungsgespräch bestätigt."],
+            "cost",
+            "de",
+            "emba",
+        )
+
+        assert values == ["CHF 77'500"]
 
     def test_single_programme_deadline_info_uses_rag_not_booking(self):
         class FakeRetrieveTool:
@@ -677,7 +700,8 @@ Here are the programs:
 
         assert second_response.response != first_response.response
         assert "Unterlagen vorbereiten" in second_response.response
-        assert "31.08.2026" in second_response.response
+        assert "31.08.2026" not in second_response.response
+        assert "CHF 99'000" not in second_response.response
         assert "31.10.2026" in second_response.response
         assert second_response.appointment_requested is False
         assert second_response.show_booking_widget is False
@@ -1001,7 +1025,8 @@ Here are the programs:
         assert "24.08.2026" in response.response
         assert "CHF 85'000" in response.response
         assert "emba X" in response.response
-        assert "31.08.2026" in response.response
+        assert "31.08.2026" not in response.response
+        assert "CHF 99'000" not in response.response
         assert "31.10.2026" in response.response
         assert response.show_booking_widget is False
 

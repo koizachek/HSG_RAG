@@ -2082,23 +2082,6 @@ class ExecutiveAgentChain:
             )
 
         if category == "cost":
-            current_flat_tuition_by_language = {
-                "de": {
-                    "emba": "CHF 77'500",
-                    "iemba": "CHF 85'000",
-                },
-                "en": {
-                    "emba": "CHF 77,500",
-                    "iemba": "CHF 85,000",
-                },
-            }
-            # current_flat_tuition = current_flat_tuition_by_language.get(
-            #     language,
-            #     current_flat_tuition_by_language["en"],
-            # ).get(programme or "")
-            current_flat_tuition = ""
-            if current_flat_tuition:
-                return [current_flat_tuition]
             values = self._unique_texts(
                 value
                 for sentence in candidates
@@ -2108,7 +2091,28 @@ class ExecutiveAgentChain:
             deadline_linked_values = [value for value in values if ":" in value]
             if deadline_linked_values:
                 return deadline_linked_values
-            return values
+            if values:
+                return values
+
+            fallback_flat_tuition_by_language = {
+                "de": {
+                    "emba": "CHF 77'500",
+                    "iemba": "CHF 85'000",
+                    "emba_x": "CHF 110'000",
+                },
+                "en": {
+                    "emba": "CHF 77,500",
+                    "iemba": "CHF 85,000",
+                    "emba_x": "CHF 110,000",
+                },
+            }
+            fallback_flat_tuition = fallback_flat_tuition_by_language.get(
+                language,
+                fallback_flat_tuition_by_language["en"],
+            ).get(programme or "")
+            if fallback_flat_tuition:
+                return [fallback_flat_tuition]
+            return []
         if category in {"start", "deadline"}:
             values = self._unique_texts(
                 value

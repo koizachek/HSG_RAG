@@ -154,14 +154,12 @@ class FakeLeadAgent:
         elif query_lower.strip() in {"emba x", "embax"}:
             response = StructuredAgentResponse(
                 response=(
-                    "Die Studiengebühr für **emba X** beträgt bis zur ersten Bewerbungsfrist "
-                    "**31 August 2026** **CHF 99,000** und bis zur finalen Bewerbungsfrist "
-                    "**31 October 2026** **CHF 110,000**. Unterkunft und Reisen sind nicht enthalten."
+                    "Die Studiengebühr für **emba X** beträgt **CHF 110,000**. "
+                    "Unterkunft und Reisen sind nicht enthalten."
                     if response_language == "de"
                     else
-                    "The tuition for **emba X** is **CHF 99,000** by the first application deadline "
-                    "of **31 August 2026** and **CHF 110,000** by the final application deadline of "
-                    "**31 October 2026**. Accommodation and travel are not included."
+                    "The tuition for **emba X** is **CHF 110,000**. "
+                    "Accommodation and travel are not included."
                 ),
                 appointment_requested=False,
                 show_booking_widget=False,
@@ -201,9 +199,8 @@ class FakeLeadAgent:
         elif "emba x" in query_lower or "embax" in query_lower:
             response = StructuredAgentResponse(
                 response=(
-                    "The tuition for **emba X** is **CHF 99,000** by the first application deadline "
-                    "of **31 August 2026** and **CHF 110,000** by the final application deadline of "
-                    "**31 October 2026**. Accommodation and travel are not included."
+                    "The tuition for **emba X** is **CHF 110,000**. "
+                    "Accommodation and travel are not included."
                 ),
                 appointment_requested=False,
                 show_booking_widget=False,
@@ -254,7 +251,7 @@ class FakeProgrammeFactsProvider:
         "emba_x": ProgrammeFacts(
             programme="emba_x",
             timing_points=[
-                "The tuition for **emba X** is **CHF 99,000** by the first application deadline of **31 August 2026** and **CHF 110,000** by the final application deadline of **31 October 2026**. Accommodation and travel are not included.",
+                "The tuition for **emba X** is **CHF 110,000**. Accommodation and travel are not included.",
             ],
             fit_points=[
                 "Degree, professional experience, leadership experience and English readiness are checked in admissions.",
@@ -292,7 +289,7 @@ def test_offline_smoke_emba_pricing_in_german(offline_agent):
     response = offline_agent.query("Was kostet das EMBA HSG Programm?")
 
     assert response.language == "de"
-    assert "**Kosten**" in response.response
+    assert "Kosten" in response.response
     assert "CHF 77'500" in response.response
     assert "Unterkunft und Reisen sind nicht enthalten" not in response.response
     assert response.appointment_requested is False
@@ -303,7 +300,7 @@ def test_offline_smoke_iemba_pricing_in_english(offline_agent):
     response = offline_agent.query("What is the tuition for the IEMBA?")
 
     assert response.language == "en"
-    assert "**Cost**" in response.response
+    assert "Cost" in response.response
     assert "CHF 85,000" in response.response
     assert "Accommodation and travel are not included" not in response.response
     assert response.appointment_requested is False
@@ -314,11 +311,10 @@ def test_offline_smoke_embax_pricing_with_deadlines(offline_agent):
     response = offline_agent.query("How much does emba X cost?")
 
     assert response.language == "en"
-    assert "**Cost**" in response.response
-    assert "CHF 99,000" in response.response
-    assert "31 August 2026" in response.response
+    assert "Cost" in response.response
+    assert "CHF 99,000" not in response.response
+    assert "31 August 2026" not in response.response
     assert "CHF 110,000" in response.response
-    assert "31 October 2026" in response.response
     assert response.appointment_requested is False
     assert response.show_booking_widget is False
 
@@ -357,7 +353,7 @@ def test_offline_smoke_program_name_follow_up_keeps_previous_language(offline_ag
         ("IEMBA", "Die Studiengebühr für den **IEMBA HSG** beträgt **CHF 85,000**."),
         (
             "emba X",
-            "Die Studiengebühr für **emba X** beträgt bis zur ersten Bewerbungsfrist **31 August 2026** **CHF 99,000**",
+            "Die Studiengebühr für **emba X** beträgt **CHF 110,000**.",
         ),
     ],
 )
