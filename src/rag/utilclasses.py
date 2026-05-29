@@ -49,15 +49,30 @@ class StructuredAgentResponse(BaseModel):
     )
     appointment_requested: bool = Field(
         default=False,
-        description="Set to True ONLY if the user explicitly asks to book, schedule, speak with admissions/an advisor, see appointment slots, or accepts a previous consultation offer. Routine pricing, comparisons, recommendations, and exploratory fit questions must be False."
+        description=(
+            "Set to True when the user explicitly asks to book, schedule, speak with "
+            "admissions/an advisor, see appointment slots, or accepts a consultation "
+            "offer. Also set to True when a clear programme match exists and the user "
+            "asks for personal fit or admissions guidance. Routine pricing and purely "
+            "informational answers must be False."
+        )
     )
     show_booking_widget: bool = Field(
         default=False,
-        description="Set to True ONLY when appointment_requested is True and the booking widget should be shown now. Never use this for soft contact mentions or routine informational answers."
+        description=(
+            "Set to True when appointment_requested is True and appointment options "
+            "should be shown now. Never use this for soft contact mentions or routine "
+            "informational answers."
+        )
     )
     relevant_programs: Optional[List[Literal["emba", "iemba", "emba_x"]]] = Field(
         default=None,
-        description="If appointment_requested is True, list the programs relevant to the user. Options: 'emba', 'iemba', 'emba_x'. If the user is undecided or general, leave this list empty."
+        description=(
+            "If appointment_requested is True or the answer has a clear programme "
+            "match, list the programmes relevant to the user. Options: 'emba', "
+            "'iemba', 'emba_x'. If the user is undecided or general, leave this list "
+            "empty."
+        )
     )
 
 
