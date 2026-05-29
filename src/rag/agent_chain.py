@@ -83,9 +83,12 @@ class ExecutiveAgentChain:
             'preferences_known': False
         }
 
-        # Track scope violations for escalation
-        self._scope_violation_counts: dict[str, int] = {}
-        self._aggressive_violation_count = 0
+        # Track repeated fallback/redirect uses for escalation.
+        self._fallback_counters = {
+            "invalid_input": 0,
+            "aggressive": 0,
+            "scope_violations": {},
+        }
 
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
 
@@ -120,8 +123,19 @@ class ExecutiveAgentChain:
             language: Set to 'en' for IEMBA and emba x. set to 'de' for EMBA HSG. This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language.         
         """
         lang = language if language in ['en', 'de'] else self._initial_language
+        normalized_program = self._normalise_programme_id(program)
+        property_filters = (
+            {'programs': [normalized_program]}
+            if normalized_program
+            else None
+        )
         try:
-            response, _ = self._dbservice.query(query, lang, limit=config.get('TOP_K_RETRIEVAL'))
+            response, _ = self._dbservice.query(
+                query,
+                lang,
+                property_filters=property_filters,
+                limit=config.get('TOP_K_RETRIEVAL'),
+            )
             serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
             return serialized
         except Exception as e:
@@ -685,8 +699,11 @@ class ExecutiveAgentChain:
             'topics_discussed': [],
             'preferences_known': False
         })
-        self._scope_violation_counts = {}
-        self._aggressive_violation_count = 0
+        self._fallback_counters = {
+            "invalid_input": 0,
+            "aggressive": 0,
+            "scope_violations": {},
+        }
 
     def wipe_session_data(self) -> None:
         """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
@@ -742,11 +759,19 @@ class ExecutiveAgentChain:
 
         if not is_valid or not processed_query:
             chain_logger.warning(f"Invalid input received: '{query}'")
+            self._fallback_counters["invalid_input"] += 1
+            invalid_response = (
+                get_repeated_not_valid_query_message(self._stored_language)
+                if self._fallback_counters["invalid_input"] >= 2
+                else NOT_VALID_QUERY_MESSAGE[self._stored_language]
+            )
             return LeadAgentQueryResponse(
-                response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
+                response=invalid_response,
                 language=current_language,
                 processed_query=query
             )
+
+        self._fallback_counters["invalid_input"] = 0
 
         # Log check
         if processed_query != query:
@@ -864,11 +889,12 @@ class ExecutiveAgentChain:
         if scope_type != 'on_topic':
             chain_logger.info(f"Out-of-scope query detected: {scope_type}")
             if scope_type == 'aggressive':
-                self._aggressive_violation_count += 1
-                attempt_count = self._aggressive_violation_count
+                self._fallback_counters["aggressive"] += 1
+                attempt_count = self._fallback_counters["aggressive"]
             else:
-                self._scope_violation_counts[scope_type] = self._scope_violation_counts.get(scope_type, 0) + 1
-                attempt_count = self._scope_violation_counts[scope_type]
+                scope_violations = self._fallback_counters["scope_violations"]
+                scope_violations[scope_type] = scope_violations.get(scope_type, 0) + 1
+                attempt_count = scope_violations[scope_type]
 
             should_escalate, escalation_type = ScopeGuardian.should_escalate(
                 processed_query, scope_type, attempt_count
@@ -937,8 +963,8 @@ class ExecutiveAgentChain:
         Phase 2: Execute agent.
         Takes the ALREADY validated query from the preprocessing phase.
         """
-        # Reset scope-violation tracking
-        self._scope_violation_counts = {}
+        # Reset redirect counters after a valid on-topic query reaches the agent.
+        self._fallback_counters["scope_violations"] = {}
         
         response_language = self._stored_language
         explicit_booking_intent = self._is_explicit_booking_intent(preprocessed_query)
