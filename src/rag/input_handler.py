@@ -26,7 +26,7 @@ class InputHandler:
     )
     SUSPICIOUS_LETTER_SEQUENCES = (
         "klw", "lwj", "wjk", "jke", "nmj", "mjk", "kjh", "lkj",
-        "qwe", "wer", "zxc", "xcv", "dfg", "fgh", "ghj", "hjk",
+        "qwe", "zxc", "xcv", "dfg", "fgh", "ghj", "hjk",
         "ksm", "smd", "skl", "kld", "lso", "sop", "opw", "pwo",
         "kfl", "qok", "mjd", "jdk",
     )
@@ -106,7 +106,7 @@ class InputHandler:
         if suspicious_sequence_count >= 2:
             score += 2
         elif suspicious_sequence_count == 1:
-            score += 2
+            score += 1
         if InputHandler._has_long_consonant_run(word_lower, min_run_length=5):
             score += 1
         if re.search(r"([a-zäöü])\1{2,}", word_lower):
