@@ -282,18 +282,40 @@ class WeaviateService:
         import_errors = []
         logger.info(f"Batch importing {len(data_rows)} rows into {collection_name}")
 
+        batch_size = 10
+        max_attempts = 2
+
+        def _import_batch(batch_rows: list[tuple[int, dict]]) -> None:
+            with collection.batch.fixed_size(batch_size=batch_size, concurrent_requests=1) as batch:
+                for idx, data_row in batch_rows:
+                    try:
+                        batch.add_object(properties=data_row)
+                    except Exception as e:
+                        import_errors.append({'index': idx, 'chunk_id': data_row['chunk_id'], 'error': str(e)})
+
+                    if idx % 20 == 0 and idx > 0:
+                        if batch.number_errors > 0:
+                            logger.info(f"Failed imports at index {idx}: {batch.number_errors}")
+
         try:
             with self._client_lock:
-                with collection.batch.fixed_size(batch_size=100, concurrent_requests=2) as batch:
-                    for idx, data_row in enumerate(data_rows):
+                for start_idx in range(0, len(data_rows), batch_size):
+                    batch_rows = list(enumerate(data_rows[start_idx:start_idx + batch_size], start=start_idx))
+                    for attempt in range(1, max_attempts + 1):
                         try:
-                            batch.add_object(properties=data_row)
+                            _import_batch(batch_rows)
+                            break
                         except Exception as e:
-                            import_errors.append({'index': idx, 'chunk_id': data_row['chunk_id'], 'error': str(e)})
-                            
-                        if idx % 20 == 0 and idx > 0:
-                            if batch.number_errors > 0:
-                                logger.info(f"Failed imports at index {idx}: {batch.number_errors}")
+                            if attempt == max_attempts:
+                                raise e
+
+                            logger.warning(
+                                "Batch import failed for rows %s-%s; retrying once: %s",
+                                start_idx,
+                                start_idx + len(batch_rows) - 1,
+                                e,
+                            )
+                            sleep(1)
 
             self._last_query_time = perf_counter()
             logger.info(f"Batch import finished. Total errors: {len(import_errors)}")

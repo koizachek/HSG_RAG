@@ -644,6 +644,42 @@ Here are the programs:
             "language": "de",
         }
 
+    def test_retrieve_context_applies_program_filter(self):
+        class FakeDoc:
+            properties = {"body": "filtered context"}
+
+        class FakeResponse:
+            objects = [FakeDoc()]
+
+        class FakeDbService:
+            def __init__(self):
+                self.calls = []
+
+            def query(self, query, lang, property_filters=None, limit=None):
+                self.calls.append(
+                    {
+                        "query": query,
+                        "lang": lang,
+                        "property_filters": property_filters,
+                        "limit": limit,
+                    }
+                )
+                return FakeResponse(), 0.0
+
+        agent = object.__new__(ExecutiveAgentChain)
+        fake_db = FakeDbService()
+        agent._dbservice = fake_db
+        agent._initial_language = "en"
+
+        result = agent._retrieve_context(
+            query="tuition admissions",
+            program="emba x",
+            language="en",
+        )
+
+        assert result == "filtered context"
+        assert fake_db.calls[0]["property_filters"] == {"programs": ["emba_x"]}
+
     def test_application_question_after_programme_choice_shows_booking_widget(self):
         agent = object.__new__(ExecutiveAgentChain)
         agent._conversation_history = [
@@ -1035,8 +1071,11 @@ Here are the programs:
         agent._conversation_history = [HumanMessage("ich bin chefarzt")]
         agent._pending_continuation = "more"
         agent._programme_overview_detail_level = 2
-        agent._scope_violation_counts = {"weather": 1}
-        agent._aggressive_violation_count = 1
+        agent._fallback_counters = {
+            "invalid_input": 1,
+            "aggressive": 1,
+            "scope_violations": {"weather": 1},
+        }
         agent._conversation_state = {
             "session_id": "session-1",
             "user_id": "session-1",
@@ -1059,8 +1098,11 @@ Here are the programs:
         assert agent._conversation_history == []
         assert agent._pending_continuation is None
         assert agent._programme_overview_detail_level == 0
-        assert agent._scope_violation_counts == {}
-        assert agent._aggressive_violation_count == 0
+        assert agent._fallback_counters == {
+            "invalid_input": 0,
+            "aggressive": 0,
+            "scope_violations": {},
+        }
         assert agent._conversation_state["experience_years"] is None
         assert agent._conversation_state["field"] is None
         assert agent._conversation_state["suggested_program"] is None
