@@ -33,43 +33,36 @@ def test_lead_prompt_requires_professional_complete_sentences():
     assert 'Avoid informal phrasing such as "Great to meet you"' in prompt
 
 
-def test_lead_prompt_keeps_booking_user_led():
+def test_lead_prompt_allows_proactive_booking_after_clear_fit():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "Primary recommendation: **IEMBA HSG**" in prompt
-    assert "Alternative to consider: **emba X**" in prompt
-    assert "Routine informational turns must keep both flags `False`" in prompt
+    assert "clear programme match exists" in prompt
+    assert "asks for personal fit/admissions guidance" in prompt
+    assert "Routine informational turns keep both flags `False`" in prompt
     assert "show_booking_widget=True" in prompt
-    assert "unless the user explicitly asks for booking or accepts that offer" in prompt
-    assert "**Kristin Fuchs**" in prompt
-    assert "If you would like to discuss this personally, I can also help you with appointment booking." in prompt
+    assert "Kristin Fuchs" in prompt
+    assert "Teyuna Giger" in prompt
 
 
 def test_lead_prompt_uses_stage_sensitive_programme_positioning():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "CRITICAL - STAGE-SENSITIVE PROGRAMME POSITIONING" in prompt
-    assert "**Early discovery / generic comparison:** Keep the answer balanced, factual, and advisory." in prompt
-    assert "**Expressed programme interest:**" in prompt
-    assert "answer the concrete question first, then add positive value framing" in prompt
-    assert "**Late-stage / high-intent:**" in prompt
-    assert "Do not push booking; booking flags still require explicit user intent." in prompt
-    assert "Clear interest signals include" in prompt
+    assert "POSITIONING:" in prompt
+    assert "Early discovery: balanced and factual." in prompt
+    assert "Clear programme intent: primary fit first" in prompt
+    assert "answer the concrete question" in prompt
+    assert "concise positive value framing" in prompt
+    assert "For price frustration" in prompt
 
 
 def test_lead_prompt_contains_programme_specific_positive_value_framing():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "PROGRAMME-SPECIFIC VALUE FRAMING" in prompt
-    assert "German-speaking leaders in the DACH context" in prompt
-    assert "strong general-management depth" in prompt
-    assert "practical leadership development" in prompt
-    assert "global exposure" in prompt
-    assert "international cohort" in prompt
-    assert "cross-cultural management perspective" in prompt
-    assert "intersection of business, technology, innovation, and transformation" in prompt
-    assert "access to both alumni networks" in prompt
-    assert "strong Personal Development Programme" in prompt
+    assert "German/DACH general management -> EMBA HSG" in prompt
+    assert "English/international focus -> IEMBA HSG" in prompt
+    assert "digitalisation, sustainability/responsible leadership, or ETH -> emba X" in prompt
+    assert "tech professionals moving into business leadership" in prompt
+    assert "international management or global exposure" in prompt
 
 
 def test_lead_prompt_preserves_credibility_and_avoids_hype():
@@ -77,7 +70,7 @@ def test_lead_prompt_preserves_credibility_and_avoids_hype():
 
     assert "Avoid generic hype." in prompt
     assert 'Do not use claims such as "best", "perfect", "guaranteed", or "world-class"' in prompt
-    assert "Keep the structure consultative" in prompt
+    assert "Do not argue, shame, hype, or oversell" in prompt
 def test_booking_intent_detector_requires_user_initiative():
     agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
     agent._conversation_history = []

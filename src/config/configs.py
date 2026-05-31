@@ -22,6 +22,15 @@ def _get(param: str, default=None, type_=None):
         raise ValueError(f"Failed to cast '{param}' value '{value}' to {type_.__name__}")
 
 
+def _get_bool(param: str, default: bool = False) -> bool:
+    value = _get(param, default)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
 class ConfigBase:
     PARAMS: dict = dict()
 
@@ -52,7 +61,7 @@ class PathsConfig(ConfigBase):
 
 
 class ScrapingConfig(ConfigBase):
-    TIMEOUT: int      = _get('SCRAPING_SCRAPING_TIMEOUT', 30)
+    TIMEOUT: int      = _get('SCRAPING_TIMEOUT', 30)
     MAX_RETRIES: int  = _get('SCRAPING_MAX_RETRIES', 3)
     CRAWL_DELAY: int  = _get('SCRAPING_CRAWL_DELAY', 1)
     BACKOFF_RATE: int = _get('SCRAPING_BACKOFF_RATE', 2)
@@ -119,117 +128,26 @@ class WeaviateConfig(ConfigBase):
     INIT_TIMEOUT:   int  = _get('WEAVIATE_INIT_TIMEOUT', 90) 
     QUERY_TIMEOUT:  int  = _get('WEAVIATE_QUERY_TIMEOUT', 60) 
     INSERT_TIMEOUT: int  = _get('WEAVIATE_INSERT_TIMEOUT', 600)
+    KEEP_WARM_ENABLED: bool = _get_bool('WEAVIATE_KEEP_WARM_ENABLED', True)
+    KEEP_WARM_INTERVAL: int = _get('WEAVIATE_KEEP_WARM_INTERVAL', 45, type_=int)
+    CLIENT_IDLE_TIMEOUT: int = _get('WEAVIATE_CLIENT_IDLE_TIMEOUT', 25 * 60, type_=int)
 
 
-#TODO: Clean this configuration (outdated)
-class LLMProvider:
-    def __init__(self, base: str, sub: str | None = None) -> None:
-        self.base = base
-        self.sub  = sub
-        self.name = f"{base}:{sub}" if sub else base 
+class LLMConfig(ConfigBase):
+    MAIN_AGENT_MODEL: tuple[str, str] = _get('MAIN_AGENT_MODEL')
+    SUBAGENT_MODEL: tuple[str, str] = _get('SUBAGENT_MODEL')
+    LANGUAGE_DETECTION_MODEL: tuple[str, str] = _get('LANGUAGE_DETECTION_MODEL')
+    CONFIDENCE_SCORING_MODEL: tuple[str, str] = _get('CONFIDENCE_SCORING_MODEL')
+    SUMMARIZATION_MODEL: tuple[str, str] = _get('SUMMARIZATION_MODEL')
+    FALLBACK_MODELS: list[tuple[str, str]] = _get('FALLBACK_MODELS')
     
+    GROQ_API_KEY:   str = _get('GROQ_API_KEY', default=None)
+    OPENAI_API_KEY: str = _get('OPENAI_API_KEY', default=None)
+    OPENROUTER_API_KEY:  str = _get('OPENROUTER_API_KEY', default=None)
+    HUGGING_FACE_API_KEY: str = _get('HUGGING_FACE_API_KEY', default=None)
 
-    def with_sub(self, sub: str | None = None) -> str:
-        return LLMProvider(self.base, sub)
-
-
-class LLMProviderConfig:
-    AVAIABLE_PROVIDERS: list[str] = [
-        'groq', 
-        'ollama',  
-        'openai',
-        'open_router',
-    ]
-    AVAILABLE_SUBPROVIDERS: dict = {
-        'groq': [],
-        'open_router': [
-            'openai', 
-            'deepseek',
-            'meituan'
-            'alibaba'   # For tongyi models 
-            'nvidia',
-        ],
-    }
-    
-    LLM_PROVIDER: LLMProvider = LLMProvider('openai')
-    
-    # -------------------- Some predefined models for available providers ----------------------
-
-    # Groq settings
-    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY")
-    GROQ_MODEL:   str = "mixtral-8x7b-32768"
-    
-    # Open Router settings
-    OPEN_ROUTER_API_KEY:  str = os.getenv("OPEN_ROUTER_API_KEY")
-    OPEN_ROUTER_MODEL:    str = "meituan/longcat-flash-chat:free"
-    OPEN_ROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-
-    # OpenAI settings
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
-    OPENAI_MODEL:   str = "gpt-5.1"
-    
-    # The gpt-oss:20b model is preferable but takes much more space
-    # Set to False if you only have the llama3.2 installed
-    GPT_OSS_ENABLED: bool = False
-    # Local/Ollama settings
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL:    str = "gpt-oss:20b" if GPT_OSS_ENABLED else "llama3.2"
-    
-    # ----------------------------------------------------------------------------------------
-
-    @classmethod
-    def get_fallback_models(
-        cls,
-        provider: LLMProvider | None = None,
-    ) -> list[tuple[LLMProvider, str]]:
-        provider = provider or cls.LLM_PROVIDER
-        match provider.base:
-            case 'openai':
-                return [
-                    (provider, 'gpt-5-mini'),
-                    (provider, 'gpt-5-nano'),
-                ]
-            case 'open_router':
-                return [
-                    (provider.with_sub('openai'), "gpt-oss-20b"),
-                    (provider.with_sub('openai'), "gpt-oss-120b"),
-                    (provider.with_sub('alibaba'), "alibaba/tongyi-deepresearch-30b-a3b:free"),
-                    (provider, "openrouter/polaris-alpha"),
-                    # Currently unusable because has no tool support
-                    #(provider.with_sub('deepseek'), "deepseek/deepseek-chat-v3.1:free"),
-                ]
-            case _:
-                return []
-
-    @classmethod
-    def get_reasoning_support(cls, provider: LLMProvider | None = None) -> bool:
-        provider = provider or cls.LLM_PROVIDER
-        return {
-            "groq":   True,
-            "openai": True, 
-            "open_router": True,
-        }.get(provider.base, False)
-
-
-    @classmethod
-    def get_default_model(cls, provider: LLMProvider | None = None) -> str:
-        provider = provider or cls.LLM_PROVIDER
-        return {
-            "groq":   cls.GROQ_MODEL,
-            "openai": cls.OPENAI_MODEL, 
-            "ollama": cls.OLLAMA_MODEL,
-            "open_router":   cls.OPEN_ROUTER_MODEL,
-        }.get(provider.base)
-   
-
-    @classmethod
-    def get_api_key(cls, provider: LLMProvider | None = None) -> str:
-        provider = provider or cls.LLM_PROVIDER
-        return {
-            "groq": cls.GROQ_API_KEY,
-            "openai": cls.OPENAI_API_KEY,
-            "open_router": cls.OPEN_ROUTER_API_KEY,
-        }.get(provider.base)
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1" 
+    OLLAMA_BASE_URL: str = "http://localhost:11434" 
 
 
 class NotificationCenterConfig(ConfigBase):

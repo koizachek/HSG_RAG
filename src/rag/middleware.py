@@ -9,6 +9,7 @@ from langchain.agents.middleware import (
         wrap_tool_call,
 )
 from langchain_core.messages import ToolMessage
+from langchain_huggingface import ChatHuggingFace
 from openai import (
     BadRequestError,
     OpenAIError, 
@@ -56,7 +57,8 @@ class AgentChainMiddleware:
     def _model_call_wrapper(request: ModelRequest, handler):
         context: AgentContext  = request.runtime.context
         model:   BaseChatModel = request.model
-        model_logger.info(f"{context.agent_name} is attempting to call model '{model.model_name}'...")
+        model_name = model.model_id if isinstance(model, ChatHuggingFace) else model.model_name
+        model_logger.info(f"{context.agent_name} is attempting to call model '{model_name}'...")
         for attempt in range(1, config.chain.MAX_RETRIES+1):
             try:
                 response: ModelResponse = handler(request)
@@ -96,9 +98,11 @@ class AgentChainMiddleware:
                     case BadRequestError():
                         model_logger.error(f"[400] Bad request: {e.body['message']}")
                         raise e
+                    case _: 
+                        model_logger.error(f"Unexpected OpenAIError: {e.body['message']}")
 
                 if attempt == config.chain.MAX_RETRIES:
-                    model_logger.warning(f"Failed to recieve response from model '{model.model_name}' after {config.chain.MAX_RETRIES} attempt{'s' if attempt > 1 else ''}, reason: {e.body['message']}")
+                    model_logger.warning(f"Failed to recieve response from model '{model_name}' after {config.chain.MAX_RETRIES} attempt{'s' if attempt > 1 else ''}, reason: {e.body['message']}")
                     model_logger.info(f"Switching to the fallback model...")
                     raise e
             except Exception as e:

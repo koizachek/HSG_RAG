@@ -30,7 +30,9 @@ def scraping_task(full_scrape: bool):
             logger.error(f"Scraping task was interrupted: {e}")
             raise e
 
-    result = call_with_exponential_backoff(scrape)
+    # result = call_with_exponential_backoff(scrape)
+    scrape()
+    exit()
 
     if result['status'] != 'OK':
         center = NotificationCenter()

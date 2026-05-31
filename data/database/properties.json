@@ -1,0 +1,44 @@
+{
+  "body": {
+    "description": "",
+    "data_type": "text",
+    "filterable": true,
+    "searchable": true,
+    "skip_vectorization": false
+  },
+  "chunk_id": {
+    "description": "",
+    "data_type": "text",
+    "filterable": true,
+    "searchable": true,
+    "skip_vectorization": false
+  },
+  "date": {
+    "description": "",
+    "data_type": "date",
+    "filterable": true,
+    "searchable": false,
+    "skip_vectorization": false
+  },
+  "document_id": {
+    "description": "",
+    "data_type": "text",
+    "filterable": true,
+    "searchable": true,
+    "skip_vectorization": false
+  },
+  "programs": {
+    "description": "",
+    "data_type": "text[]",
+    "filterable": true,
+    "searchable": true,
+    "skip_vectorization": false
+  },
+  "source": {
+    "description": "",
+    "data_type": "text",
+    "filterable": true,
+    "searchable": true,
+    "skip_vectorization": false
+  },
+}
