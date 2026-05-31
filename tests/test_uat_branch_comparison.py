@@ -1163,6 +1163,7 @@ def run_cmd(args: list[str], cwd: Path, env: dict[str, str] | None = None) -> su
         cwd=str(cwd),
         env=env,
         text=True,
+        encoding="utf-8",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
@@ -1232,6 +1233,8 @@ def run_case_in_branch_with_metadata(
     if env.get("LANGSMITH_TRACING") and not env.get("LANGSMITH_TRACING_V2"):
         env["LANGSMITH_TRACING_V2"] = env["LANGSMITH_TRACING"]
     env["PYTHONPATH"] = str(worktree)
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
     payload = {
         **case.to_payload(),
         "_uat_branch_id": branch_id,
@@ -1241,10 +1244,12 @@ def run_case_in_branch_with_metadata(
     started = time.perf_counter()
     proc = subprocess.run(
         [sys.executable, "-c", HELPER_CODE],
-        input=json.dumps(payload, ensure_ascii=False),
+        input=json.dumps(payload),
         cwd=str(worktree),
         env=env,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         timeout=timeout_s,
@@ -1479,20 +1484,43 @@ def run_uat_comparison(
     if not cases:
         raise RuntimeError(f"No UAT cases found in {excel_path}")
 
+    total_runs = len(cases) * len(branches)
+    print(
+        f"Starting UAT comparison: cases={len(cases)} branches={len(branches)} total_runs={total_runs}",
+        flush=True,
+    )
+    print(f"Excel: {excel_path}", flush=True)
+    print(f"Output directory: {output_dir}", flush=True)
+
     results: list[dict[str, Any]] = []
     output_dir.mkdir(parents=True, exist_ok=True)
     trace_dir = output_dir / "traces"
     trace_dir.mkdir(parents=True, exist_ok=True)
     event_log_path = trace_dir / f"uat_events_{time.strftime('%Y%m%d_%H%M%S')}.jsonl"
+    print(f"Event trace log: {event_log_path}", flush=True)
     with tempfile.TemporaryDirectory(prefix="hsg-rag-uat-worktrees-") as tmp:
         worktree_root = Path(tmp)
         env_overrides = load_env_file(repo_root / ".env")
-        worktrees = {
-            branch_id: ensure_worktree(repo_root, worktree_root, branch_ref)
-            for branch_id, branch_ref in branches
-        }
-        for case in cases:
+        print(f"Creating temporary worktrees under: {worktree_root}", flush=True)
+        worktrees = {}
+        for branch_id, branch_ref in branches:
+            print(f"Creating worktree for {branch_id}: {branch_ref}", flush=True)
+            worktrees[branch_id] = ensure_worktree(repo_root, worktree_root, branch_ref)
+            print(f"Ready worktree for {branch_id}: {worktrees[branch_id]}", flush=True)
+
+        completed_runs = 0
+        for case_index, case in enumerate(cases, start=1):
+            print(
+                f"Case {case_index}/{len(cases)} {case.case_id}: {case.title}",
+                flush=True,
+            )
             for branch_id, branch_ref in branches:
+                completed_runs += 1
+                started = time.perf_counter()
+                print(
+                    f"[{completed_runs}/{total_runs}] START {branch_id} {case.case_id}",
+                    flush=True,
+                )
                 branch_result = run_case_in_branch(
                     worktrees[branch_id],
                     case,
@@ -1503,6 +1531,17 @@ def run_uat_comparison(
                     event_log_path=event_log_path,
                 )
                 heuristic = evaluate_heuristics(case, branch_result)
+                elapsed = time.perf_counter() - started
+                status = "ERROR" if branch_result.get("runner_error") else "OK"
+                score = heuristic.get("score")
+                rag_calls = branch_result.get("metrics", {}).get("retrieve_context_calls", 0)
+                model_calls = branch_result.get("metrics", {}).get("model_calls", 0)
+                print(
+                    f"[{completed_runs}/{total_runs}] END {branch_id} {case.case_id} "
+                    f"status={status} elapsed_s={elapsed:.1f} score={score} "
+                    f"rag_calls={rag_calls} model_calls={model_calls}",
+                    flush=True,
+                )
                 results.append(
                     {
                         "branch_id": branch_id,
