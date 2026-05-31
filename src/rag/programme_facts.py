@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass, field
+from threading import Lock, Thread
 from typing import Callable
 
 
@@ -143,18 +144,78 @@ class ProgrammeFactsProvider:
         "tools, dem netzwerk",
         "hsg mitnehmen",
     )
+    _MAX_PARALLEL_RETRIEVALS = 3
 
     def __init__(self, retrieve_context: Callable[[str, str, str], str]) -> None:
         self._retrieve_context = retrieve_context
         self._cache: dict[tuple[str, str], ProgrammeFacts] = {}
+        self._cache_lock = Lock()
 
     def get_facts(self, programme: str, language: str) -> ProgrammeFacts:
         normalized_programme = self._normalize_programme(programme)
         normalized_language = language if language in {"de", "en"} else "en"
         cache_key = (normalized_programme, normalized_language)
-        if cache_key in self._cache:
-            return self._cache[cache_key]
+        with self._cache_lock:
+            if cache_key in self._cache:
+                return self._cache[cache_key]
 
+        facts = self._retrieve_facts(normalized_programme, normalized_language)
+        if facts.source_available:
+            with self._cache_lock:
+                self._cache[cache_key] = facts
+        return facts
+
+    def get_facts_many(self, programmes: list[str], language: str) -> dict[str, ProgrammeFacts]:
+        normalized_language = language if language in {"de", "en"} else "en"
+        normalized_programmes = list(dict.fromkeys(
+            self._normalize_programme(programme)
+            for programme in programmes
+        ))
+        facts_by_programme: dict[str, ProgrammeFacts] = {}
+        missing_programmes: list[str] = []
+
+        with self._cache_lock:
+            for programme in normalized_programmes:
+                cache_key = (programme, normalized_language)
+                if cache_key in self._cache:
+                    facts_by_programme[programme] = self._cache[cache_key]
+                else:
+                    missing_programmes.append(programme)
+
+        if not missing_programmes:
+            return facts_by_programme
+
+        result_lock = Lock()
+
+        def retrieve_missing(programme: str) -> None:
+            try:
+                facts = self._retrieve_facts(programme, normalized_language)
+            except Exception:
+                facts = ProgrammeFacts(programme=programme)
+
+            with result_lock:
+                facts_by_programme[programme] = facts
+            if facts.source_available:
+                with self._cache_lock:
+                    self._cache[(programme, normalized_language)] = facts
+
+        max_workers = min(self._MAX_PARALLEL_RETRIEVALS, len(missing_programmes))
+        for batch_start in range(0, len(missing_programmes), max_workers):
+            threads = [
+                Thread(target=retrieve_missing, args=(programme,))
+                for programme in missing_programmes[batch_start:batch_start + max_workers]
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        return {
+            programme: facts_by_programme.get(programme, ProgrammeFacts(programme=programme))
+            for programme in normalized_programmes
+        }
+
+    def _retrieve_facts(self, normalized_programme: str, normalized_language: str) -> ProgrammeFacts:
         query = self._QUERY_BY_LANGUAGE[normalized_language]
         program_filter = self._PROGRAM_FILTERS.get(normalized_programme, normalized_programme)
 
@@ -163,10 +224,7 @@ class ProgrammeFactsProvider:
         except Exception:
             context = ""
 
-        facts = self._extract_facts(normalized_programme, context)
-        if facts.source_available:
-            self._cache[cache_key] = facts
-        return facts
+        return self._extract_facts(normalized_programme, context)
 
     def _extract_facts(self, programme: str, context: str) -> ProgrammeFacts:
         sentences = self._split_sentences(context)

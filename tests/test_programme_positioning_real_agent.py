@@ -15,8 +15,12 @@ pytestmark = [pytest.mark.network, pytest.mark.integration]
 
 
 def _has_real_agent_prerequisites() -> tuple[bool, str]:
-    llm_api_key = config.llm.get_api_key()
-    if not llm_api_key:
+    if not any([
+        config.llm.OPENAI_API_KEY, 
+        config.llm.OPENROUTER_API_KEY, 
+        config.llm.HUGGING_FACE_API_KEY,
+        config.llm.GROQ_API_KEY,
+    ]):
         return False, "No LLM API key configured for the real agent positioning test."
 
     if config.weaviate.LOCAL_DATABASE:

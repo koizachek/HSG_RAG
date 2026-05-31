@@ -31,16 +31,29 @@ LOCK_LANGUAGE_AFTER_N_MESSAGES = 3
 MAX_CONVERSATION_TURNS = 20
 
 # ============================================ LLM Configuration ============================================
+# Each configuration value is defined as a pair (PROVIDER, MODEL_NAME).
 
-# A string, either 'openai', 'groq', 'open_router' or 'ollama' (local).
-# Defines the main model provider for the application.
-LLM_PROVIDER = 'openai' 
+# Defines the model that will be used by the lead agent. 
+# MAIN_AGENT_MODEL = ('huggingface', 'swiss-ai/Apertus-8B-Instruct-2509')
+MAIN_AGENT_MODEL = ('openai', 'gpt-5.1')
 
-# A string. Defines the model that will be used by the application agents. 
-OPENAI_MODEL = 'gpt-5.1'
-# GROQ_MODEL = 
-# OLLAMA_MODEL = 
-# OPEN_ROUTER_MODEL = 
+# Defines the fallback models that will be invoked 
+# if the main model fails to respond.
+FALLBACK_MODELS = [('openai', 'gpt-5-nano'), ('openai', 'gpt-4o-mini')]
+
+# Defines the model that will be used by subagents. 
+# Only applicable if the subagents are enabled.
+SUBAGENT_MODEL = ('openai', 'gpt-5.1-nano')
+
+# Defines the model that will be used by the language detector. 
+LANGUAGE_DETECTION_MODEL = ('openai', 'gpt-4o-mini')
+
+# Defines the model that will be used by the confidence scoring system.
+# Only applicable if the confidence scoring setting is turned on.
+CONFIDENCE_SCORING_MODEL = ('openai', 'gpt-4o-mini')
+
+# Defines the model that will be used by the summarization middleware.
+SUMMARIZATION_MODEL = ('openai', 'gpt-5.1')
 
 # ==================================== Weaviate Database Configuration ======================================
 
@@ -81,6 +94,18 @@ WEAVIATE_QUERY_TIMEOUT = 60
 # An integer. Defines the chunk insertion time limit when importing new chunks to database (in seconds).
 # Defaults to 600
 WEAVIATE_INSERT_TIMEOUT = 600
+
+# A boolean. Starts a lightweight background query loop that keeps the Weaviate
+# client/vectorizer warm while users are typing between chat turns.
+WEAVIATE_KEEP_WARM_ENABLED = True
+
+# An integer. Defines how often the keep-warm loop may query Weaviate while idle (in seconds). 
+# Last observable cooling value was 30 seconds.
+WEAVIATE_KEEP_WARM_INTERVAL = 30
+
+# An integer. Defines when an idle Weaviate client is considered stale enough to
+# reconnect proactively (in seconds).
+WEAVIATE_CLIENT_IDLE_TIMEOUT = 25 * 60
 
 # ========================================== Cache Configuration ============================================
 
@@ -138,9 +163,8 @@ SCRAPING_BACKOFF_RATE = 1.25
 
 # A list of string URLs. Defines the starting points for the website scraping.
 SCRAPING_TARGET_URLS = [
-    'https://emba.unisg.ch/',                   # EMBA HSG root
-    'https://emba.unisg.ch/programm/iemba',     # IEMBA HSG
-    'https://embax.ch/',                        # emba X root
+    'https://emba.unisg.ch/',       # EMBA HSG root
+    'https://embax.ch/',            # emba X root
 ]
 
 # Scraping Priority Interval in days

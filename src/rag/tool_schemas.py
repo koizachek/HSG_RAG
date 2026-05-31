@@ -5,7 +5,7 @@ class RetrieveContextInput(BaseModel):
     query: str = Field(
         description=(
             "Search query for current programme context. Use the same language as "
-            "the requested language when possible."
+            "in the parameter 'language'."
         )
     )
     program: str = Field(
@@ -16,7 +16,7 @@ class RetrieveContextInput(BaseModel):
     )
     language: str | None = Field(
         default=None,
-        description="Optional language code for retrieval, either 'de' or 'en'.",
+        description="Must be set to 'en' for programs IEMBA and emba x. Must be set to 'de' for program EMBA HSG.",
     )
 
 

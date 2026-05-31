@@ -83,9 +83,12 @@ class ExecutiveAgentChain:
             'preferences_known': False
         }
 
-        # Track scope violations for escalation
-        self._scope_violation_counts: dict[str, int] = {}
-        self._aggressive_violation_count = 0
+        # Track repeated fallback/redirect uses for escalation.
+        self._fallback_counters = {
+            "invalid_input": 0,
+            "aggressive": 0,
+            "scope_violations": {},
+        }
 
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
 
@@ -117,17 +120,21 @@ class ExecutiveAgentChain:
         Args:
             query: Keywords depicting information you want to retrieve in the primary language.
             program: Name of the program (either 'emba', 'iemba' or 'emba x') for which the information is requested.
-            language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
+            language: Set to 'en' for IEMBA and emba x. set to 'de' for EMBA HSG. This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language.         
         """
         lang = language if language in ['en', 'de'] else self._initial_language
+        normalized_program = self._normalise_programme_id(program)
+        property_filters = (
+            {'programs': [normalized_program]}
+            if normalized_program
+            else None
+        )
         try:
             response, _ = self._dbservice.query(
-                query=query,
-                lang=lang,
+                query,
+                lang,
+                property_filters=property_filters,
                 limit=config.get('TOP_K_RETRIEVAL'),
-                property_filters={
-                    'programs': [program],
-                },
             )
             serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
             return serialized
@@ -148,68 +155,6 @@ class ExecutiveAgentChain:
             }
         )
 
-    def _call_emba_agent(self, query: str) -> str:
-        """
-        Invokes the EMBA support agent to retrieve more detailed information about the EMBA program.
-        
-        Args:
-            query: Query to the EMBA support agent. Provide collected user data in the query if possible.
-        """
-        try:
-            structured_response = self._query(
-                agent=self._agents['emba'],
-                messages=[HumanMessage(query)],
-                thread_id=f"emba_{hash(query)}",
-            )
-            return structured_response.response
-        except ContextRetrievalError as e:
-            chain_logger.error(f"EMBA retrieval error: {e}")
-            return self._subagent_retrieval_fallback('emba')
-        except Exception as e:
-            chain_logger.error(f"EMBA Agent error: {e}")
-            raise RuntimeError("Unable to retrieve EMBA information at this time.")
-
-    def _call_iemba_agent(self, query: str) -> str:
-        """
-        Invokes the IEMBA support agent to retrieve more detailed information about the IEMBA program.
-        
-        Args:
-            query: Query to the IEMBA support agent. Provide collected user data in the query if possible.
-        """
-        try:
-            structured_response = self._query(
-                agent=self._agents['iemba'],
-                messages=[HumanMessage(query)],
-                thread_id=f"emba_{hash(query)}",
-            )
-            return structured_response.response
-        except ContextRetrievalError as e:
-            chain_logger.error(f"IEMBA retrieval error: {e}")
-            return self._subagent_retrieval_fallback('iemba')
-        except Exception as e:
-            chain_logger.error(f"IEMBA Agent error: {e}")
-            raise RuntimeError("Unable to retrieve IEMBA information at this time.")
-
-    def _call_embax_agent(self, query: str) -> str:
-        """
-        Invokes the emba X support agent to retrieve more detailed information about the emba X program.
-        
-        Args:
-            query: Query to the emba X support agent. Provide collected user data in the query if possible.
-        """
-        try:
-            structured_response = self._query(
-                agent=self._agents['embax'],
-                messages=[HumanMessage(query)],
-                thread_id=f"emba_{hash(query)}",
-            )
-            return structured_response.response
-        except ContextRetrievalError as e:
-            chain_logger.error(f"emba X retrieval error: {e}")
-            return self._subagent_retrieval_fallback('embax')
-        except Exception as e:
-            chain_logger.error(f"emba X Agent error: {e}")
-            raise RuntimeError("Unable to retrieve emba X information at this time.")
 
     def _init_agents(self):
         from .subagents import SubagentProvider
@@ -754,8 +699,11 @@ class ExecutiveAgentChain:
             'topics_discussed': [],
             'preferences_known': False
         })
-        self._scope_violation_counts = {}
-        self._aggressive_violation_count = 0
+        self._fallback_counters = {
+            "invalid_input": 0,
+            "aggressive": 0,
+            "scope_violations": {},
+        }
 
     def wipe_session_data(self) -> None:
         """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
@@ -811,11 +759,19 @@ class ExecutiveAgentChain:
 
         if not is_valid or not processed_query:
             chain_logger.warning(f"Invalid input received: '{query}'")
+            self._fallback_counters["invalid_input"] += 1
+            invalid_response = (
+                get_repeated_not_valid_query_message(self._stored_language)
+                if self._fallback_counters["invalid_input"] >= 2
+                else NOT_VALID_QUERY_MESSAGE[self._stored_language]
+            )
             return LeadAgentQueryResponse(
-                response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
+                response=invalid_response,
                 language=current_language,
                 processed_query=query
             )
+
+        self._fallback_counters["invalid_input"] = 0
 
         # Log check
         if processed_query != query:
@@ -933,11 +889,12 @@ class ExecutiveAgentChain:
         if scope_type != 'on_topic':
             chain_logger.info(f"Out-of-scope query detected: {scope_type}")
             if scope_type == 'aggressive':
-                self._aggressive_violation_count += 1
-                attempt_count = self._aggressive_violation_count
+                self._fallback_counters["aggressive"] += 1
+                attempt_count = self._fallback_counters["aggressive"]
             else:
-                self._scope_violation_counts[scope_type] = self._scope_violation_counts.get(scope_type, 0) + 1
-                attempt_count = self._scope_violation_counts[scope_type]
+                scope_violations = self._fallback_counters["scope_violations"]
+                scope_violations[scope_type] = scope_violations.get(scope_type, 0) + 1
+                attempt_count = scope_violations[scope_type]
 
             should_escalate, escalation_type = ScopeGuardian.should_escalate(
                 processed_query, scope_type, attempt_count
@@ -1006,8 +963,8 @@ class ExecutiveAgentChain:
         Phase 2: Execute agent.
         Takes the ALREADY validated query from the preprocessing phase.
         """
-        # Reset scope-violation tracking
-        self._scope_violation_counts = {}
+        # Reset redirect counters after a valid on-topic query reaches the agent.
+        self._fallback_counters["scope_violations"] = {}
         
         response_language = self._stored_language
         explicit_booking_intent = self._is_explicit_booking_intent(preprocessed_query)
@@ -1587,20 +1544,16 @@ class ExecutiveAgentChain:
                     language=language,
                 )
 
-        if language == "en":
-            lines = [
-                f"- **{self._fact_category_label(category, language)}**: "
-                f"{self._format_requested_fact_values(facts_by_category.get(category), category, language)}"
-                for category in categories
-            ]
-            return f"**{programme_name}**\n" + "\n".join(lines)
-
-        lines = [
-            f"- **{self._fact_category_label(category, language)}**: "
-            f"{self._format_requested_fact_values(facts_by_category.get(category), category, language)}"
+        blocks = [
+            self._format_requested_fact_block(
+                programme_name,
+                category,
+                facts_by_category.get(category),
+                language,
+            )
             for category in categories
         ]
-        return f"**{programme_name}**\n" + "\n".join(lines)
+        return "\n\n".join(blocks)
 
     def _requested_fact_categories(self, query: str, language: str) -> list[str]:
         query_lower = query.lower()
@@ -1927,7 +1880,7 @@ class ExecutiveAgentChain:
         ]
 
         if section_sentences:
-            return self._unique_texts(section_sentences + programme_sentences + raw_neutral_sentences + neutral_sentences)
+            return self._unique_texts(section_sentences + programme_sentences)
 
         return self._unique_texts(programme_sentences + raw_neutral_sentences + neutral_sentences + fallback_sentences)
 
@@ -2047,7 +2000,7 @@ class ExecutiveAgentChain:
         if programme != "emba" and re.search(r"(?<!i)\bemba hsg\b", sentence_lower):
             return True
         return False
-
+    
     def _extract_values_for_fact_category(
         self,
         sentences: list[str],
@@ -2155,22 +2108,6 @@ class ExecutiveAgentChain:
             )
 
         if category == "cost":
-            current_flat_tuition_by_language = {
-                "de": {
-                    "emba": "CHF 77'500",
-                    "iemba": "CHF 85'000",
-                },
-                "en": {
-                    "emba": "CHF 77,500",
-                    "iemba": "CHF 85,000",
-                },
-            }
-            current_flat_tuition = current_flat_tuition_by_language.get(
-                language,
-                current_flat_tuition_by_language["en"],
-            ).get(programme or "")
-            if current_flat_tuition:
-                return [current_flat_tuition]
             values = self._unique_texts(
                 value
                 for sentence in candidates
@@ -2180,7 +2117,28 @@ class ExecutiveAgentChain:
             deadline_linked_values = [value for value in values if ":" in value]
             if deadline_linked_values:
                 return deadline_linked_values
-            return values
+            if values:
+                return values
+
+            fallback_flat_tuition_by_language = {
+                "de": {
+                    "emba": "CHF 77'500",
+                    "iemba": "CHF 85'000",
+                    "emba_x": "CHF 110'000",
+                },
+                "en": {
+                    "emba": "CHF 77,500",
+                    "iemba": "CHF 85,000",
+                    "emba_x": "CHF 110,000",
+                },
+            }
+            fallback_flat_tuition = fallback_flat_tuition_by_language.get(
+                language,
+                fallback_flat_tuition_by_language["en"],
+            ).get(programme or "")
+            if fallback_flat_tuition:
+                return [fallback_flat_tuition]
+            return []
         if category in {"start", "deadline"}:
             values = self._unique_texts(
                 value
@@ -2225,7 +2183,7 @@ class ExecutiveAgentChain:
                 for sentence in candidates[:3]
             )
         return []
-
+    
     @staticmethod
     def _extract_chf_amounts(sentence: str, language: str) -> list[str]:
         amounts = re.findall(
@@ -2266,7 +2224,7 @@ class ExecutiveAgentChain:
             return [f"{date}: {amount}" for date, amount in zip(dates, amounts)]
 
         return amounts
-
+    
     @staticmethod
     def _extract_future_dates(sentence: str) -> list[str]:
         month_names = (
@@ -2412,9 +2370,26 @@ class ExecutiveAgentChain:
 
     @staticmethod
     def _format_requested_fact_values(values: list[str] | None, category: str, language: str) -> str:
-        if values:
+        selected_values = ExecutiveAgentChain._selected_requested_fact_values(values, category)
+        if selected_values:
+            selected_values = [
+                ExecutiveAgentChain._escape_markdown_ordered_list_marker(value)
+                for value in selected_values
+            ]
+            if category == "cost":
+                return "\n  - " + "\n  - ".join(selected_values)
+            return "; ".join(selected_values)
+        return ExecutiveAgentChain._empty_requested_fact_value(category, language)
+
+    @staticmethod
+    def _selected_requested_fact_values(values: list[str] | None, category: str) -> list[str]:
+        if not values:
+            return []
+
+        if category == "cost":
+            selected_values = [values[-1]]
+        else:
             limits = {
-                "cost": 2,
                 "start": 1,
                 "deadline": 2,
                 "duration": 1,
@@ -2422,7 +2397,20 @@ class ExecutiveAgentChain:
                 "application_process": 1,
                 "documents": 3,
             }
-            return "; ".join(values[:limits.get(category, 3)])
+            selected_values = values[:limits.get(category, 3)]
+
+        return [
+            " ".join(str(value).split())
+            for value in selected_values
+            if str(value).strip()
+        ]
+
+    @staticmethod
+    def _escape_markdown_ordered_list_marker(value: str) -> str:
+        return re.sub(r"^(\s*\d{1,9})\.(?=\s)", r"\1\\.", value)
+
+    @staticmethod
+    def _empty_requested_fact_value(category: str, language: str) -> str:
         if language == "en":
             empty = {
                 "cost": "no reliable current tuition amount found",
@@ -2446,6 +2434,24 @@ class ExecutiveAgentChain:
         }
         return empty.get(category, "keine verlässliche aktuelle Angabe gefunden")
 
+    def _format_requested_fact_block(
+        self,
+        programme_name: str,
+        category: str,
+        values: list[str] | None,
+        language: str,
+    ) -> str:
+        topic = self._fact_category_label(category, language)
+        selected_values = self._selected_requested_fact_values(values, category)
+        if not selected_values:
+            selected_values = [self._empty_requested_fact_value(category, language)]
+        selected_values = [
+            self._escape_markdown_ordered_list_marker(value)
+            for value in selected_values
+        ]
+        bullets = "\n".join(f"- {value}" for value in selected_values)
+        return f"**{programme_name} {topic}**:\n{bullets}"
+    
     def _serve_programme_fact_request(
         self,
         processed_query: str,
@@ -2512,6 +2518,23 @@ class ExecutiveAgentChain:
             return ProgrammeFacts(programme=programme)
         return provider.get_facts(programme, language)
 
+    def _get_programmes_facts(self, programmes: list[str], language: str) -> dict[str, ProgrammeFacts]:
+        provider = getattr(self, "_programme_facts_provider", None)
+        if provider is None:
+            return {
+                programme: ProgrammeFacts(programme=programme)
+                for programme in programmes
+            }
+
+        get_facts_many = getattr(provider, "get_facts_many", None)
+        if callable(get_facts_many):
+            return get_facts_many(programmes, language)
+
+        return {
+            programme: provider.get_facts(programme, language)
+            for programme in programmes
+        }
+
     @staticmethod
     def _format_fact_points(points: list[str], fallback: str) -> str:
         if not points:
@@ -2519,9 +2542,16 @@ class ExecutiveAgentChain:
         return "; ".join(points)
 
     def _build_programme_fact_summary(self, programme: str, language: str) -> str:
-        programme_name, _ = self._programme_label_and_advisor(programme)
         facts = self._get_programme_facts(programme, language)
+        return self._build_programme_fact_summary_from_facts(programme, language, facts)
 
+    def _build_programme_fact_summary_from_facts(
+        self,
+        programme: str,
+        language: str,
+        facts: ProgrammeFacts,
+    ) -> str:
+        programme_name, _ = self._programme_label_and_advisor(programme)
         if language == "en":
             focus = self._format_fact_points(
                 facts.focus_points,
@@ -2869,8 +2899,13 @@ class ExecutiveAgentChain:
                 "fehlende Unterlagen, Entscheidungsprozess, Einschreibung und Zahlungs-/Gebührenthemen."
             )
 
+        facts_by_programme = self._get_programmes_facts(normalized_programmes, language)
         summaries = [
-            self._build_programme_fact_summary(programme, language)
+            self._build_programme_fact_summary_from_facts(
+                programme,
+                language,
+                facts_by_programme.get(programme, ProgrammeFacts(programme=programme)),
+            )
             for programme in normalized_programmes
         ]
         joined_summaries = "\n".join(f"- {summary}" for summary in summaries)
@@ -2976,18 +3011,19 @@ class ExecutiveAgentChain:
                         "3. **emba X**: English-speaking joint-degree option with **ETH Zurich** and **University of St.Gallen** "
                         "for leadership at the intersection of business, technology, innovation, and transformation.\n\n"
                         "Would you like details on costs, start dates, deadlines, duration, or admissions requirements, "
-                        "or should I recommend the most suitable programme based on your profile?"
+                        "or should I recommend the most suitable programme based on the information you share?"
                     )
 
                 return (
-                    "Your profile mainly clarifies the admissions level: with substantial medical leadership experience, "
-                    "the Executive MBA options are broadly plausible. The programme choice should now be based on goals, "
-                    "not on an automatic classification.\n\n"
-                    "1. **EMBA HSG**: strongest if your goal is DACH-focused hospital or organisational management.\n"
+                    "The information you shared helps clarify the admissions level; the Executive MBA options should be "
+                    "checked against the current requirements. The programme choice should now be based on your "
+                    "development goals, not on an automatic classification.\n\n"
+                    "1. **EMBA HSG**: strongest if your goal is DACH-focused general management, organisational leadership, "
+                    "strategy, finance, and governance.\n"
                     "2. **IEMBA HSG**: strongest if your goal is international exposure, global peer learning, or cross-border work.\n"
-                    "3. **emba X**: strongest if your goal is digital transformation, MedTech, Health-IT, innovation, or technology-led change.\n\n"
+                    "3. **emba X**: strongest if your goal is digital transformation, technology, innovation, or large-scale change.\n\n"
                     "Would you like details on costs, start dates, deadlines, duration, or admissions requirements, "
-                    "or should I recommend the most suitable programme based on your profile?"
+                    "or should I recommend the most suitable programme based on the information you share?"
                 )
 
             if self._programme_overview_detail_level <= 1:
@@ -3009,17 +3045,17 @@ class ExecutiveAgentChain:
                 return (
                     "More detail across all three programmes:\n\n"
                     "**EMBA HSG** aims to strengthen broad general-management judgement for leaders in the DACH context. "
-                    "For a hospital leader, the practical value is strategy, finance, governance, organisation design, "
-                    "negotiation, and change leadership in German-speaking healthcare organisations. The capstone project "
-                    "can be tied to a real clinic or hospital transformation topic.\n\n"
+                    "For a professional or leader comparing options, the practical value is strategy, finance, governance, "
+                    "organisation design, negotiation, and change leadership in German-speaking organisations. The capstone "
+                    "project can be tied to a real organisational or transformation topic.\n\n"
                     "**IEMBA HSG** aims to build international management perspective. The value is not only the English "
-                    "language; it is the global cohort and modules across different regions. For healthcare leadership, "
-                    "that is useful when you work with international partners, global health organisations, industry, "
-                    "research networks, or cross-border clinical initiatives.\n\n"
+                    "language; it is the global cohort and modules across different regions. That is useful when your work "
+                    "involves international partners, cross-border teams, global markets, or comparison across business "
+                    "environments.\n\n"
                     "**emba X** aims at leadership where business and technology meet. It is the most relevant option if "
-                    "your goals include digital transformation, MedTech, Health-IT, AI-enabled processes, innovation, or "
-                    "large organisational change. Its distinctive feature is the integrated **ETH Zurich** plus "
-                    "**University of St.Gallen** joint-degree setting and access to both alumni networks."
+                    "your goals include digital transformation, technology-led business models, AI/data initiatives, "
+                    "innovation, or large organisational change. Its distinctive feature is the integrated **ETH Zurich** "
+                    "plus **University of St.Gallen** joint-degree setting and access to both alumni networks."
                 )
 
             if not profile_context:
@@ -3037,14 +3073,15 @@ class ExecutiveAgentChain:
 
             return (
                 "The next useful distinction is by goals and working context:\n\n"
-                "- Choose **EMBA HSG** if your main goal is stronger economic and organisational steering of a hospital "
-                "in the DACH environment: budgeting, governance, leadership, negotiation, and operational change.\n"
+                "- Choose **EMBA HSG** if your main goal is stronger economic and organisational steering in the DACH "
+                "environment: strategy, budgeting, governance, leadership, negotiation, and operational change.\n"
                 "- Choose **IEMBA HSG** if your main goal is international exposure: learning with a global cohort, "
-                "working across health systems, and building confidence for international partnerships or organisations.\n"
-                "- Choose **emba X** if your main goal is transformation through technology: digital care pathways, "
-                "MedTech collaboration, innovation portfolios, data/AI initiatives, or culture change around new tools.\n\n"
-                "For a senior medical leadership role, all three can be plausible. The deciding factor is whether your next "
-                "development goal is DACH management depth, international management breadth, or technology-led transformation."
+                "working across markets or organisations, and building confidence for international partnerships.\n"
+                "- Choose **emba X** if your main goal is transformation through technology: digitalisation, innovation "
+                "portfolios, data/AI initiatives, new business models, or culture change around new tools.\n\n"
+                "Based on the information shared so far, all three can remain worth comparing. The deciding factor is "
+                "whether your next development goal is DACH management depth, international management breadth, or "
+                "technology-led transformation."
             )
 
         if not detailed:
@@ -3059,18 +3096,18 @@ class ExecutiveAgentChain:
                     "3. **emba X**: englischsprachiges Joint Degree mit **ETH Zürich** und **Universität St.Gallen**, mit "
                     "Fokus auf Business, Technologie, Innovation und Transformation.\n\n"
                     "Interessieren Sie sich für Kosten, Startdatum, Fristen, Dauer oder Zulassungsdetails, oder möchten "
-                    "Sie, dass ich ein passendes Programm auf Basis Ihres Profils empfehle?"
+                    "Sie, dass ich ein passendes Programm anhand Ihrer Angaben empfehle?"
                 )
 
             return (
-                "Das Profil klärt vor allem die Zulassungsebene: Mit langjähriger ärztlicher Führungsverantwortung sind "
-                "die Executive-MBA-Optionen grundsätzlich plausibel. Die Programmwahl sollte jetzt über Ihre Ziele laufen, "
-                "nicht über eine automatische Einordnung.\n\n"
-                "1. **EMBA HSG**: naheliegend, wenn Sie DACH-orientierte Klinik-/Spitalführung, Strategie, Finanzen und Organisation vertiefen wollen.\n"
+                "Ihre Angaben helfen vor allem, die Zulassungsebene einzuordnen; die Executive-MBA-Optionen sollten anhand "
+                "der aktuellen Anforderungen geprüft werden. Die Programmwahl sollte jetzt über Ihre Entwicklungsziele "
+                "laufen, nicht über eine automatische Einordnung.\n\n"
+                "1. **EMBA HSG**: naheliegend, wenn Sie DACH-orientiertes General Management, Strategie, Finanzen, Organisation und Governance vertiefen wollen.\n"
                 "2. **IEMBA HSG**: naheliegend, wenn Sie internationaler arbeiten, vergleichen oder kooperieren möchten.\n"
-                "3. **emba X**: naheliegend, wenn Digitalisierung, MedTech, Health-IT, Innovation oder grosse Transformation zentral sind.\n\n"
+                "3. **emba X**: naheliegend, wenn Digitalisierung, Technologie, Innovation oder grosse Transformation zentral sind.\n\n"
                 "Interessieren Sie sich für Kosten, Startdatum, Fristen, Dauer oder Zulassungsdetails, oder möchten "
-                "Sie, dass ich ein passendes Programm auf Basis Ihres Profils empfehle?"
+                "Sie, dass ich ein passendes Programm anhand Ihrer Angaben empfehle?"
             )
 
         if self._programme_overview_detail_level <= 1:
@@ -3092,18 +3129,18 @@ class ExecutiveAgentChain:
 
             return (
                 "Weitere Details zu **allen drei Programmen**, ohne Sie vorschnell auf eines festzulegen:\n\n"
-                "**EMBA HSG** zielt auf breite General-Management-Kompetenz im DACH-Raum. Für eine Chefarzt-Rolle ist das "
-                "relevant, wenn Sie Strategie, Finanzen, Governance, Organisation, Verhandlung und Change Management in "
-                "einer Klinik oder einem Spital stärken wollen. Das Capstone-Projekt kann direkt auf ein reales "
-                "Klinikthema ausgerichtet werden, etwa Prozessoptimierung, Ressourcensteuerung oder Organisationsentwicklung.\n\n"
+                "**EMBA HSG** zielt auf breite General-Management-Kompetenz im DACH-Raum. Das ist relevant, wenn Sie "
+                "Strategie, Finanzen, Governance, Organisation, Verhandlung und Change Management stärken wollen. Das "
+                "Capstone-Projekt kann direkt auf ein reales Organisations- oder Transformationsvorhaben ausgerichtet "
+                "werden.\n\n"
                 "**IEMBA HSG** zielt auf internationale Managementkompetenz. Der Mehrwert liegt in der englischsprachigen "
-                "globalen Kohorte und den internationalen Modulen. Für das Gesundheitswesen ist das besonders sinnvoll, "
-                "wenn Sie mit internationalen Partnern, globalen Gesundheitsorganisationen, Industrie, Forschung oder "
-                "grenzüberschreitenden Versorgungsfragen arbeiten.\n\n"
+                "globalen Kohorte und den internationalen Modulen. Das ist besonders sinnvoll, wenn Sie mit internationalen "
+                "Partnern, Märkten, Teams oder Organisationen arbeiten oder Führungsfragen über Ländergrenzen hinweg "
+                "vergleichen möchten.\n\n"
                 "**emba X** zielt auf Führung an der Schnittstelle von Business und Technologie. Das ist besonders relevant, "
-                "wenn Ihre Ziele Digitalisierung, MedTech, Health-IT, datengetriebene Prozesse, Innovation oder grosse "
-                "Transformationsprojekte im Spital betreffen. Der besondere Punkt ist die Kombination aus **ETH Zürich** "
-                "und **Universität St.Gallen** sowie der Zugang zu beiden Netzwerken."
+                "wenn Ihre Ziele Digitalisierung, technologiegetriebene Geschäftsmodelle, datenbasierte Prozesse, "
+                "Innovation oder grosse Transformationsprojekte betreffen. Der besondere Punkt ist die Kombination aus "
+                "**ETH Zürich** und **Universität St.Gallen** sowie der Zugang zu beiden Netzwerken."
             )
 
         if not profile_context:
@@ -3122,13 +3159,14 @@ class ExecutiveAgentChain:
         return (
             "Die nächste sinnvolle Unterscheidung läuft über Ziele und Arbeitskontext:\n\n"
             "- **EMBA HSG** passt am besten, wenn Sie Ihre ökonomische, organisatorische und strategische Steuerung im "
-            "deutschsprachigen Spitalumfeld vertiefen wollen: Budget, Governance, Personalführung, Verhandlung, Change.\n"
+            "DACH-Umfeld vertiefen wollen: Budget, Governance, Personalführung, Verhandlung und Change.\n"
             "- **IEMBA HSG** passt am besten, wenn Sie internationaler arbeiten möchten: Vergleich von Märkten und "
-            "Organisationen, globale Peer Group, internationale Kooperationen, Industrie- oder Forschungspartner.\n"
-            "- **emba X** passt am besten, wenn Technologie und Transformation im Zentrum stehen: digitale Patientenpfade, "
-            "MedTech, Health-IT, Daten-/AI-Projekte, Innovationsportfolios oder kultureller Wandel im Spital.\n\n"
-            "Für eine Chefarzt-Rolle sind alle drei plausibel. Ausschlaggebend ist, ob Ihr nächster Entwicklungsschwerpunkt "
-            "DACH-Management, Internationalität oder technologiegetriebene Transformation ist."
+            "Organisationen, globale Peer Group, internationale Kooperationen oder länderübergreifende Verantwortung.\n"
+            "- **emba X** passt am besten, wenn Technologie und Transformation im Zentrum stehen: Digitalisierung, "
+            "datenbasierte Prozesse, neue Geschäftsmodelle, Innovationsportfolios oder kultureller Wandel.\n\n"
+            "Anhand der bisherigen Angaben können alle drei Programme weiterhin vergleichbar bleiben. Ausschlaggebend "
+            "ist, ob Ihr nächster Entwicklungsschwerpunkt DACH-Management, Internationalität oder technologiegetriebene "
+            "Transformation ist."
         )
 
     def _serve_programme_overview(

@@ -29,7 +29,6 @@ class Scraper:
         self._path = config.paths
         self._processor:       HTMLProcessor      = HTMLProcessor()
         self._normalizer:      UrlNormalizer      = UrlNormalizer()
-        self._content_cleaner: ContentCleaner     = ContentCleaner(self._scrape_all)
         self._notif_center:    NotificationCenter = NotificationCenter()
 
         self._make_directories()
@@ -55,6 +54,8 @@ class Scraper:
 
 
     def scrape_target(self, target_url: str) -> list[ChunkMetadata]:
+        self._content_cleaner = ContentCleaner(self._scrape_all)
+
         # Step 1: Analyze the target URL for availability, robots and sitemap
         analyzed_domain = self._analyze_domain(target_url)
         if not analyzed_domain:

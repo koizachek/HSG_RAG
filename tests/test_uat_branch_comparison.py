@@ -39,6 +39,7 @@ except Exception:
     LangSmithRunTree = None
 
 
+DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EXCEL = Path(__file__).resolve().parent / "fixtures" / "UAT.xlsx"
 DEFAULT_BRANCHES = [
     ("main_legacy_multi", "origin/main"),
@@ -401,6 +402,63 @@ def _json_from_model_text(text: str) -> dict[str, Any]:
         return json.loads(match.group(0))
 
 
+def _deterministic_cost_accuracy(branch_result: dict[str, Any]) -> str | None:
+    programme_aliases = {
+        "emba_hsg": ("emba hsg", "executive mba hsg"),
+        "iemba": ("iemba", "international emba"),
+        "emba_x": ("emba x", "embax"),
+    }
+    joined_response = "\n".join(str(item.get("response", "")) for item in branch_result.get("responses", []))
+    normalized_response = _normalize_text(joined_response)
+    observed_costs = _extract_chf_amounts(joined_response)
+    if not observed_costs:
+        return None
+
+    mentioned_programmes = [
+        programme
+        for programme, aliases in programme_aliases.items()
+        if any(alias in normalized_response for alias in aliases)
+    ]
+    if not mentioned_programmes:
+        return None
+
+    expected_costs = {
+        PROGRAMME_COST_TRUTHS[programme]["amount"]
+        for programme in mentioned_programmes
+        if programme in PROGRAMME_COST_TRUTHS
+    }
+    if observed_costs & STALE_OR_DISCOUNT_COSTS:
+        return "incorrect"
+    if expected_costs and expected_costs <= observed_costs:
+        return "correct"
+    if expected_costs & observed_costs:
+        return "correct"
+    return "incorrect"
+
+
+def _apply_deterministic_cost_accuracy(parsed: dict[str, Any], branch_result: dict[str, Any]) -> None:
+    deterministic = _deterministic_cost_accuracy(branch_result)
+    if deterministic != "correct" or parsed.get("cost_accuracy") != "incorrect":
+        return
+
+    parsed["cost_accuracy"] = "correct"
+    parsed["cost_accuracy_override"] = (
+        "Corrected by deterministic CHF amount check; judge marked an amount incorrect despite matching the named programme hard fact."
+    )
+    issues = parsed.get("issues")
+    if isinstance(issues, list):
+        parsed["issues"] = [
+            issue
+            for issue in issues
+            if "incorrect cost" not in str(issue).lower()
+            and "incorrect cost information" not in str(issue).lower()
+            and "incorrect cost stated" not in str(issue).lower()
+        ]
+    verdict = str(parsed.get("verdict") or "")
+    if "incorrect cost" in verdict.lower():
+        parsed["verdict"] = "The stated cost matches the named programme hard fact, but other scenario requirements may still be incomplete."
+
+
 def _mask_stale_cost_expectations(value: Any) -> Any:
     """Remove outdated fee values from UAT expectations before sending them to the judge."""
     if isinstance(value, str):
@@ -490,7 +548,10 @@ def _judge_prompt(case: dict[str, Any], branch_id: str, branch_result: dict[str,
     user = (
         "Score this branch conversation from 0 to 100. Use the full scenario context. "
         "For fees, treat these as the only correct current values: EMBA HSG CHF 77'500, IEMBA CHF 85'000, emba X CHF 110'000. "
+        "Treat apostrophe, comma, dot, and whitespace thousands separators as equivalent, e.g. CHF 85'000 and CHF 85,000 are the same amount. "
         "If the scenario expects CHF 84'000, CHF 80'000, CHF 72'500, or CHF 99'000, that scenario value is stale and must not be treated as correct. "
+        "When scoring cost_accuracy, judge whether each stated amount matches the programme explicitly named in the assistant response. "
+        "If the assistant names the wrong programme for an ambiguous follow-up, reflect that under correctness and issues, but do not mark cost_accuracy incorrect when the named programme's price is one of the hard facts. "
         "The branch id is just an identifier; do not prefer any architecture by name. "
         "Return this exact JSON shape:\n"
         "{\n"
@@ -539,6 +600,7 @@ def judge_result_with_llm(
             )
         content = completion.choices[0].message.content or "{}"
         parsed = _json_from_model_text(content)
+        _apply_deterministic_cost_accuracy(parsed, item["branch_result"])
         parsed["judge_model"] = model
         parsed["judge_elapsed_s"] = time.perf_counter() - started
         return parsed
@@ -1187,6 +1249,19 @@ def load_env_file(path: Path) -> dict[str, str]:
     return values
 
 
+def env_default(env_values: dict[str, str], key: str, default: str) -> str:
+    return os.getenv(key) or env_values.get(key) or default
+
+
+def format_error_preview(error: Any, max_chars: int = 2000) -> str:
+    text = str(error or "").strip()
+    if not text:
+        return ""
+    if len(text) <= max_chars:
+        return text
+    return f"{text[:max_chars].rstrip()}\n... [truncated {len(text) - max_chars} chars]"
+
+
 def ensure_worktree(repo_root: Path, worktree_root: Path, branch_ref: str) -> Path:
     safe_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", branch_ref.replace("origin/", ""))
     path = worktree_root / safe_name
@@ -1542,6 +1617,12 @@ def run_uat_comparison(
                     f"rag_calls={rag_calls} model_calls={model_calls}",
                     flush=True,
                 )
+                error_preview = format_error_preview(branch_result.get("runner_error"))
+                if error_preview:
+                    print(
+                        f"[{completed_runs}/{total_runs}] ERROR {branch_id} {case.case_id}\n{error_preview}",
+                        flush=True,
+                    )
                 results.append(
                     {
                         "branch_id": branch_id,
@@ -1558,15 +1639,20 @@ def run_uat_comparison(
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    env_values = load_env_file(DEFAULT_REPO_ROOT / ".env")
     parser = argparse.ArgumentParser(description="Compare HSG RAG UAT cases across branches.")
-    parser.add_argument("--excel", type=Path, default=Path(os.getenv("UAT_EXCEL", DEFAULT_EXCEL)))
-    parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--output-dir", type=Path, default=Path(os.getenv("UAT_OUTPUT_DIR", "/tmp/hsg_rag_uat_results")))
-    parser.add_argument("--limit", type=int, default=int(os.getenv("UAT_LIMIT", "0")) or None)
-    parser.add_argument("--timeout-s", type=int, default=int(os.getenv("UAT_TIMEOUT_S", "180")))
-    parser.add_argument("--llm-judge", action="store_true", default=os.getenv("UAT_LLM_JUDGE") == "1")
-    parser.add_argument("--judge-model", default=DEFAULT_JUDGE_MODEL)
-    parser.add_argument("--judge-timeout-s", type=int, default=int(os.getenv("UAT_JUDGE_TIMEOUT_S", "120")))
+    parser.add_argument("--excel", type=Path, default=Path(env_default(env_values, "UAT_EXCEL", str(DEFAULT_EXCEL))))
+    parser.add_argument("--repo-root", type=Path, default=DEFAULT_REPO_ROOT)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path(env_default(env_values, "UAT_OUTPUT_DIR", "/tmp/hsg_rag_uat_results")),
+    )
+    parser.add_argument("--limit", type=int, default=int(env_default(env_values, "UAT_LIMIT", "0")) or None)
+    parser.add_argument("--timeout-s", type=int, default=int(env_default(env_values, "UAT_TIMEOUT_S", "180")))
+    parser.add_argument("--llm-judge", action="store_true", default=env_default(env_values, "UAT_LLM_JUDGE", "0") == "1")
+    parser.add_argument("--judge-model", default=env_default(env_values, "UAT_JUDGE_MODEL", DEFAULT_JUDGE_MODEL))
+    parser.add_argument("--judge-timeout-s", type=int, default=int(env_default(env_values, "UAT_JUDGE_TIMEOUT_S", "120")))
     parser.add_argument(
         "--judge-existing-report",
         type=Path,
@@ -1732,6 +1818,45 @@ def main(argv: list[str] | None = None) -> int:
 
     print_summary(results, args.output_dir)
     return 0
+
+
+def test_uat_pricing_expectations_match_current_hard_facts():
+    cases = {case.case_id: case for case in parse_uat_excel(DEFAULT_EXCEL)}
+    expected = {
+        "TC-EMBA-03": (["CHF 110'000"], ["CHF 77'500", "Early Bird"]),
+        "TC-IEMBA-01": (["CHF 85'000"], ["CHF 84'000", "CHF 80'000", "Early Registration"]),
+        "TC-IEMBA-02": (["CHF 85'000", "CHF 110'000"], ["CHF 84'000", "CHF 80'000", "Early Registration"]),
+        "TC-EMBAX-01": (["CHF 110'000"], ["CHF 99'000", "10% rabatt", "Early Bird"]),
+    }
+
+    for case_id, (current_prices, stale_terms) in expected.items():
+        case_text = "\n".join(cases[case_id].expected_bot_behaviour + cases[case_id].success_criteria)
+        for current_price in current_prices:
+            assert current_price in case_text
+        for term in stale_terms:
+            assert term not in case_text
+
+
+def test_deterministic_cost_accuracy_accepts_equivalent_chf_formatting():
+    parsed = {
+        "cost_accuracy": "incorrect",
+        "verdict": "The assistant provided incorrect cost information for the IEMBA programme.",
+        "issues": ["Incorrect cost stated for IEMBA", "No handover offered"],
+    }
+    branch_result = {
+        "responses": [
+            {
+                "response": "**IEMBA HSG Cost**:\n- CHF 85,000",
+            }
+        ]
+    }
+
+    _apply_deterministic_cost_accuracy(parsed, branch_result)
+
+    assert parsed["cost_accuracy"] == "correct"
+    assert parsed["cost_accuracy_override"]
+    assert "matches the named programme hard fact" in parsed["verdict"]
+    assert parsed["issues"] == ["No handover offered"]
 
 
 @pytest.mark.integration

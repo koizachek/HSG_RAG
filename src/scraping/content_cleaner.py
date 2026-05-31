@@ -40,7 +40,7 @@ class ContentCleaner:
             if hasattr(node, 'text') and node.text:
                 stripped_text = node.text.strip().lower()
                 content_in_document.add(stripped_text)
-        
+
         for content in content_in_document:
             self._repetitions_counter[content] += 1   
     
@@ -54,9 +54,12 @@ class ContentCleaner:
                 content_analysis = json.load(f)
             self._repetitive_content = content_analysis['repetitive_content']
         else:
-            self._repetitive_content = [{'content': text, 'amount': count}
-                for text, count in self._repetitions_counter.items()
-                    if text not in REPETITION_WHITELIST and count > 1]
+            self._repetitive_content = []
+            for text, count in self._repetitions_counter.items():
+                if count < 3 or len([item for item in REPETITION_WHITELIST if item in text]) > 0:
+                    continue
+            
+                self._repetitive_content.append({'content': text, 'amount': count})
             logger.info(f"Content analysis for target URL '{target_url}' " +
                         f"yielded {len(self._repetitive_content)} repetitive text lines")
 
