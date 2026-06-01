@@ -248,33 +248,60 @@ class ExecutiveAgentChain:
         return None
 
     def _extract_field(self, conversation: str) -> str | None:
-        """Extract professional field/industry from conversation text."""
-        # Common fields mentioned in executive education
-        fields = [
-            'finance', 'banking', 'technology', 'tech', 'IT', 'healthcare',
-            'consulting', 'manufacturing', 'retail', 'marketing', 'sales',
-            'engineering', 'pharma', 'telecommunications', 'energy',
-            'Finanzwesen', 'Technologie', 'Gesundheitswesen', 'Beratung'  # German
-        ]
-        conversation_lower = conversation.lower()
-        for field in fields:
-            if field.lower() in conversation_lower:
-                return field.capitalize()
-        return None
+     """Extract professional field only when user explicitly identifies themselves."""
+     patterns = [
+        # English - explicit self-identification
+        r"(?:i work in|i am in|i'm in|i've been in|i have been in)\s+([a-zA-Z][a-zA-Z\s&/]+?)(?:\s+for|\s+since|\.|,|$)",
+        r"(?:my background is in|my background in|my career is in|my career in)\s+([a-zA-Z][a-zA-Z\s&/]+?)(?:\s+for|\s+since|\.|,|$)",
+        r"(?:working in|work in|employed in|based in the)\s+([a-zA-Z][a-zA-Z\s&/]+?)\s+(?:sector|industry|field|space)(?:\s+for|\s+since|\.|,|$)",
+        r"(?:i(?:'m| am) a|i work as a|my role is|my job is|i(?:'m| am) currently)\s+(?:senior\s+|lead\s+|chief\s+|head of\s+)?(?:[a-zA-Z]+\s+)?(?:in|at|for)\s+([a-zA-Z][a-zA-Z\s&/]+?)(?:\s+for|\.|,|$)",
+        r"(?:sector|industry|field|space)(?:\s+is|\:)\s+([a-zA-Z][a-zA-Z\s&/]+?)(?:\.|,|$)",
+        # German - explicit self-identification
+        r"(?:ich arbeite in der|ich bin in der|ich bin im|tätig in der|tätig im|beschäftigt in der|beschäftigt im)\s+([a-zA-ZÄÖÜäöüß][a-zA-ZÄÖÜäöüß\s&/]+?)(?:\s+seit|\s+für|\.|,|$)",
+        r"(?:meine Branche ist|mein Bereich ist|mein Fachgebiet ist|ich komme aus der|ich komme aus dem)\s+([a-zA-ZÄÖÜäöüß][a-zA-ZÄÖÜäöüß\s&/]+?)(?:\.|,|$)",
+        r"(?:ich bin|ich arbeite als)\s+(?:Senior\s+|Lead\s+|Chef\s+|Leiter\s+)?(?:[a-zA-ZÄÖÜäöüß]+\s+)?(?:in der|im|bei der|beim)\s+([a-zA-ZÄÖÜäöüß][a-zA-ZÄÖÜäöüß\s&/]+?)(?:\s+seit|\.|,|$)",
+    ]
+     for pattern in patterns:
+        match = re.search(pattern, conversation, re.IGNORECASE)
+        if match:
+            value = match.group(1).strip().rstrip('.,').capitalize()
+            # Reject if it looks like a programme name or generic filler
+            excluded = [
+                'emba', 'iemba', 'mba', 'hsg', 'eth', 'st.gallen',
+                'the programme', 'this programme', 'a programme',
+                'das programm', 'einem programm',
+            ]
+            if not any(ex in value.lower() for ex in excluded) and len(value) > 2:
+                return value
+     return None
 
     def _extract_interest(self, conversation: str) -> str | None:
-        """Extract content interests from conversation text."""
-        # Look for interest indicators
-        interests = [
-            'strategy', 'innovation', 'leadership', 'digital transformation',
-            'finance', 'operations', 'marketing', 'entrepreneurship',
-            'social impact', 'technology', 'management',
-            'Strategie', 'Innovation', 'Führung', 'Digitalisierung'  # German
-        ]
-        conversation_lower = conversation.lower()
-        found_interests = [interest for interest in interests
-                           if interest.lower() in conversation_lower]
-        return ', '.join(found_interests) if found_interests else None
+     """Extract content interests only from explicit user statements of interest."""
+     patterns = [
+        # English
+        r"(?:i(?:'m| am) interested in|my interest is in|interested in)\s+([a-zA-Z][a-zA-Z\s,&/]+?)(?:\s+and\s+|\.|,\s+(?:as well|too|also)|$)",
+        r"(?:i focus on|my focus is on|focusing on)\s+([a-zA-Z][a-zA-Z\s,&/]+?)(?:\.|,|$)",
+        r"(?:passionate about|i care about|i want to develop)\s+([a-zA-Z][a-zA-Z\s,&/]+?)(?:\.|,|$)",
+        r"(?:i want to learn about|keen on|i(?:'d| would) like to explore)\s+([a-zA-Z][a-zA-Z\s,&/]+?)(?:\.|,|$)",
+        r"(?:my goal is to|i(?:'m| am) looking to develop|i want to strengthen)\s+(?:my\s+)?([a-zA-Z][a-zA-Z\s,&/]+?)(?:\s+skills?|\s+capabilities?|\.|,|$)",
+        # German
+        r"(?:interessiere mich für|mein Interesse gilt|interessiert mich)\s+([a-zA-ZÄÖÜäöüß][a-zA-ZÄÖÜäöüß\s,&/]+?)(?:\.|,|$)",
+        r"(?:mein Fokus liegt auf|mein Schwerpunkt ist|ich fokussiere mich auf)\s+([a-zA-ZÄÖÜäöüß][a-zA-ZÄÖÜäöüß\s,&/]+?)(?:\.|,|$)",
+        r"(?:ich möchte|ich will|ich würde gerne)\s+(?:mehr über\s+)?([a-zA-ZÄÖÜäöüß][a-zA-ZÄÖÜäöüß\s,&/]+?)\s+(?:lernen|entwickeln|vertiefen|verstehen)(?:\.|,|$)",
+    ]
+     results = []
+     for pattern in patterns:
+        match = re.search(pattern, conversation, re.IGNORECASE)
+        if match:
+            value = match.group(1).strip().rstrip('.,')
+            excluded = [
+                'emba', 'iemba', 'mba', 'hsg', 'eth', 'the programme',
+                'this programme', 'a programme', 'more', 'something',
+                'das programm', 'einem programm',
+            ]
+            if not any(ex in value.lower() for ex in excluded) and len(value) > 3:
+                results.append(value)
+     return ', '.join(results) if results else None
 
     def _extract_name(self, conversation: str) -> str | None:
         """Extract user's name from conversation text."""
@@ -829,41 +856,7 @@ class ExecutiveAgentChain:
                 profile_context=getattr(self, "_programme_overview_profile_context", False),
             )
 
-        if self._is_iemba_embax_tech_career_change_request(processed_query):
-            return self._serve_iemba_embax_tech_career_guidance(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
 
-        if self._is_iemba_eligibility_assessment_request(processed_query):
-            return self._serve_iemba_eligibility_assessment(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
-
-        if self._is_iemba_visa_request(processed_query):
-            return self._serve_iemba_visa_response(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
-
-        if self._is_iemba_apac_alumni_request(processed_query):
-            return self._serve_iemba_apac_alumni_response(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
-
-        if self._is_mixed_language_programme_overview_request(processed_query):
-            return self._serve_mixed_language_programme_overview(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
-
-        if self._is_emba_minimal_profile_guidance_request(processed_query):
-            return self._serve_emba_minimal_profile_guidance(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
 
         if (
             self._latest_ai_mentions_multiple_programmes()
@@ -885,30 +878,6 @@ class ExecutiveAgentChain:
                 programme=preferred_programme,
             )
 
-        if self._is_embax_comparison_request(processed_query):
-            return self._serve_embax_comparison_response(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
-
-        if self._is_embax_language_request(processed_query):
-            return self._serve_embax_language_response(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
-
-        if (
-            self._previous_response_was_application_next_step()
-            and self._is_application_process_detail_request(processed_query)
-        ):
-            application_programmes = self._resolve_known_application_programmes(processed_query)
-            if application_programmes:
-                return self._serve_application_process_details(
-                    processed_query=processed_query,
-                    response_language=current_language,
-                    programmes=application_programmes,
-                )
-
         application_programmes = self._resolve_application_programmes(processed_query)
         if application_programmes:
             return self._serve_application_next_steps(
@@ -925,11 +894,6 @@ class ExecutiveAgentChain:
                 programmes=fact_programmes,
             )
 
-        if self._is_price_frustration_request(processed_query):
-            return self._serve_price_frustration_response(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
 
         if self._pending_continuation and self._is_continuation_request(processed_query):
             return self._serve_pending_continuation(
@@ -979,11 +943,6 @@ class ExecutiveAgentChain:
                 show_booking_widget=False,
             )
 
-        if self._is_likely_too_early_for_executive_mba(processed_query):
-            return self._serve_too_early_for_executive_mba(
-                processed_query=processed_query,
-                response_language=current_language,
-            )
 
         if self._is_general_mba_overview_request(processed_query):
             return self._serve_programme_overview(
@@ -1048,11 +1007,24 @@ class ExecutiveAgentChain:
 
         # 2. System instruction
         language_instruction = SystemMessage(f"Respond in {get_language_name(response_language)} language.")
+        language_instruction = SystemMessage(f"Respond in {get_language_name(response_language)} language.")
 
+        from datetime import datetime
+        current_year = datetime.now().year
+        cost_guardrail = SystemMessage(
+    f"CRITICAL PRICING RULE: The current year is {current_year}. "
+    f"Only quote CHF tuition amounts that are clearly associated with {current_year} or later in the retrieved context. "
+    "Weaviate may return chunks from previous years — any CHF figure linked to a year before "
+    f"{current_year} must be ignored completely. "
+    "Never invent or estimate a tuition amount. "
+    "If retrieved context does not contain a clearly current tuition figure, "
+    "tell the user the exact amount should be confirmed directly with admissions at emba@unisg.ch."
+)
+        
         # 3. Agent Call
         structured_response = self._query(
             agent=self._agents['lead'],
-            messages=self._conversation_history + [language_instruction], 
+            messages=self._conversation_history + [language_instruction, cost_guardrail], 
         )
         agent_response = structured_response.response
         additional_details = ResponseFormatter.clean_response(
@@ -1120,10 +1092,27 @@ class ExecutiveAgentChain:
             language=response_language,
         )
 
+        # Proactive booking only after meaningful engagement (2+ user turns)
+# AND an explicit programme match, not just on first uncertainty question
+        user_turn_count = len([
+    m for m in self._conversation_history
+    if isinstance(m, HumanMessage)
+])
+        clear_programme_match = (
+    self._conversation_state.get('suggested_program') is not None
+    and user_turn_count >= 2
+)
+        proactive_booking_offer = (
+    clear_programme_match
+    and structured_response.show_booking_widget
+)
         booking_flow_requested = (
-            explicit_booking_intent
-            or booking_preference_follow_up
-        )
+        explicit_booking_intent
+        or booking_preference_follow_up
+        or proactive_booking_offer
+)
+
+
         appointment_requested = bool(booking_flow_requested)
         show_booking_widget = bool(
             booking_flow_requested and (
@@ -2549,10 +2538,13 @@ class ExecutiveAgentChain:
 
         if can_retrieve:
             try:
+                from datetime import datetime
+                current_year = datetime.now().year
+                targeted_query = f"{targeted_query} {current_year}"
                 context = self._retrieve_context_via_tool(
-                    query=targeted_query,
-                    program=program_filter,
-                    language=language,
+                query=targeted_query,
+                program=program_filter,
+                language=language,
                 )
                 if context:
                     return context

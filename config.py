@@ -197,14 +197,14 @@ TOP_K_RETRIEVAL = 4
 MODEL_MAX_RETRIES = 3
 
 # An integer. Sets the maximum amount of words in the response from the lead agent.
-MAX_RESPONSE_WORDS_LEAD = 100 
+MAX_RESPONSE_WORDS_LEAD = 150 
 
 # An integer. Sets the maximum amount of words in the response for subagents.
 MAX_RESPONSE_WORDS_SUBAGENT = 200
 
 # A boolean; either True or False. If response chunking is enabled, long responses 
 # from the lead agent will be split and retuned through multiple conversation turns.
-ENABLE_RESPONSE_CHUNKING = True
+ENABLE_RESPONSE_CHUNKING = False
 
 # ========================================== Notification Configuration =====================================
 
