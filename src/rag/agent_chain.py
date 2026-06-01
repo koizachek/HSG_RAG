@@ -932,6 +932,18 @@ class ExecutiveAgentChain:
                         current_language,
                     )
 
+
+            if scope_type == 'aggressive':
+                advisor_contact = (
+        "Bei weiteren Fragen erreichen Sie unser Team direkt unter emba@unisg.ch."
+        if current_language == 'de'
+        else "You can reach our admissions team directly at emba@unisg.ch."
+    )
+                redirect_msg = f"{redirect_msg}\n\n{advisor_contact}"
+                redirect_msg = self._append_cost_orientation_to_redirect(
+        redirect_msg, current_language
+    )
+
             self._conversation_history.append(HumanMessage(processed_query))
             self._conversation_history.append(AIMessage(redirect_msg))
 
@@ -1099,7 +1111,10 @@ class ExecutiveAgentChain:
     if isinstance(m, HumanMessage)
 ])
         clear_programme_match = (
-    self._conversation_state.get('suggested_program') is not None
+    (
+        self._conversation_state.get('suggested_program') is not None
+        or len(self._conversation_state.get('program_interest', [])) > 0
+    )
     and user_turn_count >= 2
 )
         proactive_booking_offer = (
