@@ -17,6 +17,7 @@ import re
 import random
 import glob
 from datetime import datetime
+from time import perf_counter
 
 from src.database.weavservice import WeaviateService
 
@@ -37,6 +38,7 @@ from src.rag.tool_schemas import RetrieveContextInput
 
 from src.utils.logging import get_logger
 from src.utils.lang import get_language_name
+from src.utils.conversation_tracker import ConversationTurnTracker
 from src.config import config
 
 from ..cache.cache import Cache
@@ -64,6 +66,7 @@ class ExecutiveAgentChain:
 
         # Generate unique user ID for this session
         self._user_id = session_id or str(uuid.uuid4())
+        self._conversation_tracker = ConversationTurnTracker(session_id=self._user_id)
 
         # Initialize conversation state with user profile tracking
         self._conversation_state: ConversationState = {
@@ -129,16 +132,34 @@ class ExecutiveAgentChain:
             if normalized_program
             else None
         )
+        retrieval_started = perf_counter()
+        weaviate_response_time = None
         try:
-            response, _ = self._dbservice.query(
+            response, weaviate_response_time = self._dbservice.query(
                 query,
                 lang,
                 property_filters=property_filters,
                 limit=config.get('TOP_K_RETRIEVAL'),
             )
             serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
+            self._conversation_tracker.record_retrieve_context_call(
+                query=query,
+                program=normalized_program or program,
+                language=lang,
+                response_time_seconds=perf_counter() - retrieval_started,
+                weaviate_response_time_seconds=weaviate_response_time,
+            )
             return serialized
         except Exception as e:
+            self._conversation_tracker.record_retrieve_context_call(
+                query=query,
+                program=normalized_program or program,
+                language=lang,
+                response_time_seconds=perf_counter() - retrieval_started,
+                weaviate_response_time_seconds=weaviate_response_time,
+                success=False,
+                error=str(e),
+            )
             raise e
 
     @traceable(name="retrieve_context")
@@ -739,6 +760,12 @@ class ExecutiveAgentChain:
 
     @traceable
     def query(self, query: str) -> LeadAgentQueryResponse:
+        return self._conversation_tracker.track_turn(
+            user_query=query,
+            callback=lambda: self._query_impl(query),
+        )
+
+    def _query_impl(self, query: str) -> LeadAgentQueryResponse:
         """
         Phase 1: Validation, Scope-Check and language detection.
         Does not call the agent directly.
@@ -756,9 +783,16 @@ class ExecutiveAgentChain:
             ) 
 
         # 2. Input Processing
-        processed_query, is_valid = InputHandler.process_input(
+        input_result = InputHandler.process_input_with_metadata(
             query,
             [msg for msg in self._conversation_history if isinstance(msg, (HumanMessage, AIMessage))]
+        )
+        processed_query, is_valid = input_result.processed_message, input_result.is_valid
+        self._conversation_tracker.record_input_handler(
+            processed_query=processed_query,
+            is_valid=is_valid,
+            fallback_triggered=input_result.fallback_triggered,
+            fallback_category=input_result.fallback_category,
         )
 
         if not is_valid or not processed_query:
@@ -783,16 +817,23 @@ class ExecutiveAgentChain:
 
         # 3. Language Detection
         # First: Check for explicit language switch request (overrides lock)
+        language_detection_started = perf_counter()
+        language_detection_response = current_language
+        language_detection_method = None
         explicit_switch = self._language_detector.detect_explicit_switch_request(processed_query)
         if explicit_switch:
             self._stored_language = explicit_switch
             current_language = explicit_switch
             self._conversation_state['user_language'] = explicit_switch
+            language_detection_response = explicit_switch
+            language_detection_method = "explicit_switch"
         elif self._language_detector.is_language_neutral_program_reference(processed_query):
             chain_logger.info(
                 f"Skipping language re-detection for language-neutral programme reference: '{processed_query}'"
             )
             current_language = self._stored_language
+            language_detection_response = current_language
+            language_detection_method = "skipped_language_neutral_programme_reference"
         else:
             # Count user messages in conversation history
             user_message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
@@ -802,9 +843,13 @@ class ExecutiveAgentChain:
             if lang_lock_n > 0 and user_message_count >= lang_lock_n:
                 chain_logger.info(f"Language locked to '{self._stored_language}' (after {user_message_count} messages)")
                 current_language = self._stored_language
+                language_detection_response = current_language
+                language_detection_method = "locked"
             else:
                 detected_language = self._language_detector.detect_language(processed_query)
                 self._conversation_state['user_language'] = detected_language
+                language_detection_response = detected_language
+                language_detection_method = "detected"
 
                 # Language validation
                 if detected_language in ['de', 'en']:
@@ -812,11 +857,22 @@ class ExecutiveAgentChain:
                     current_language = detected_language
                 else:
                     chain_logger.info("Invalid language detected.")
+                    self._conversation_tracker.record_language_detection(
+                        response=language_detection_response,
+                        duration_seconds=perf_counter() - language_detection_started,
+                        method=language_detection_method,
+                    )
                     return LeadAgentQueryResponse(
                         response=LANGUAGE_FALLBACK_MESSAGE[current_language],
                         language=current_language,
                         processed_query=processed_query
                     )
+
+        self._conversation_tracker.record_language_detection(
+            response=language_detection_response,
+            duration_seconds=perf_counter() - language_detection_started,
+            method=language_detection_method,
+        )
 
         if (
             self._is_continuation_request(processed_query)
@@ -1063,6 +1119,10 @@ class ExecutiveAgentChain:
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
         chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
+        self._conversation_tracker.record_structured_agent_output(
+            structured_response,
+            additional_details=additional_details,
+        )
 
         # Keep the complete answer in internal memory even when the UI only
         # shows the first chunk. Otherwise follow-up turns only "remember" the

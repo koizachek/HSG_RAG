@@ -3,10 +3,19 @@ Input handler for processing and validating user messages.
 Handles numeric inputs, validation, and interpretation.
 """
 import re
+from dataclasses import dataclass
 from src.rag.utilclasses import ConversationState
 from src.utils.logging import get_logger
 
 logger = get_logger("rag.input_handler")
+
+
+@dataclass
+class InputProcessingResult:
+    processed_message: str
+    is_valid: bool
+    fallback_triggered: bool = False
+    fallback_category: str | None = None
 
 
 class InputHandler:
@@ -250,6 +259,17 @@ class InputHandler:
         Returns:
             Interpreted message (e.g., "I have 5 years of experience")
         """
+        interpreted, _ = InputHandler.interpret_numeric_input_with_category(
+            message,
+            conversation_history,
+        )
+        return interpreted
+
+    @staticmethod
+    def interpret_numeric_input_with_category(
+        message: str,
+        conversation_history: list
+    ) -> tuple[str, str]:
         number = message.strip()
         
         # Look at recent messages for context
@@ -274,13 +294,13 @@ class InputHandler:
             "experience", "years", "worked", "arbeits", "erfahrung", "jahre"
         ]):
             logger.info(f"Interpreting numeric input '{number}' as years of experience")
-            return f"I have {number} years of work experience"
+            return f"I have {number} years of work experience", "numeric_experience"
         
         elif any(keyword in recent_context for keyword in [
             "age", "old", "alter", "jahre alt"
         ]):
             logger.info(f"Interpreting numeric input '{number}' as age")
-            return f"I am {number} years old"
+            return f"I am {number} years old", "numeric_age"
         
         elif any(keyword in recent_context for keyword in [
             "qualification", "degree", "bachelor", "master", "qualifikation"
@@ -293,11 +313,52 @@ class InputHandler:
                 "3": "I have an MBA",
                 "4": "I have a doctorate/PhD"
             }
-            return level_map.get(number, f"My qualification level is {number}")
+            return level_map.get(number, f"My qualification level is {number}"), "numeric_qualification"
         
         # Default: assume years of experience (most common)
         logger.info(f"Interpreting numeric input '{number}' as years of experience (default)")
-        return f"I have {number} years of work experience"
+        return f"I have {number} years of work experience", "numeric_default"
+
+    @staticmethod
+    def process_input_with_metadata(
+        message: str,
+        conversation_history: list
+    ) -> InputProcessingResult:
+        normalized = InputHandler.validate_and_normalize(message)
+        
+        if not normalized:
+            return InputProcessingResult(
+                processed_message="",
+                is_valid=False,
+                fallback_triggered=True,
+                fallback_category="empty_input",
+            )
+        
+        if InputHandler.is_probably_gibberish(normalized):
+            logger.warning(f"Rejected probable gibberish input: '{message}'")
+            return InputProcessingResult(
+                processed_message=normalized,
+                is_valid=False,
+                fallback_triggered=True,
+                fallback_category="gibberish",
+            )
+
+        if InputHandler.is_numeric_input(normalized):
+            interpreted, category = InputHandler.interpret_numeric_input_with_category(
+                normalized, 
+                conversation_history
+            )
+            return InputProcessingResult(
+                processed_message=interpreted,
+                is_valid=True,
+                fallback_triggered=True,
+                fallback_category=category,
+            )
+        
+        return InputProcessingResult(
+            processed_message=normalized,
+            is_valid=True,
+        )
     
     @staticmethod
     def process_input(
@@ -314,23 +375,6 @@ class InputHandler:
         Returns:
             Tuple of (processed_message, is_valid)
         """
-        # Normalize
-        normalized = InputHandler.validate_and_normalize(message)
-        
-        if not normalized:
-            return "", False
-        
-        if InputHandler.is_probably_gibberish(normalized):
-            logger.warning(f"Rejected probable gibberish input: '{message}'")
-            return normalized, False
-
-        # Check if numeric
-        if InputHandler.is_numeric_input(normalized):
-            interpreted = InputHandler.interpret_numeric_input(
-                normalized, 
-                conversation_history
-            )
-            return interpreted, True
-        
-        return normalized, True
+        result = InputHandler.process_input_with_metadata(message, conversation_history)
+        return result.processed_message, result.is_valid
     
