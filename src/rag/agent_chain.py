@@ -926,7 +926,7 @@ class ExecutiveAgentChain:
                 redirect_msg = ScopeGuardian.get_escalation_message(escalation_type, current_language)
             else:
                 redirect_msg = ScopeGuardian.get_redirect_message(scope_type, current_language)
-                if scope_type == "off_topic":
+                if scope_type in ("off_topic", "financial_planning"):
                     redirect_msg = self._append_cost_orientation_to_redirect(
                         redirect_msg,
                         current_language,
