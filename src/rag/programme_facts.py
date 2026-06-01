@@ -1,7 +1,9 @@
+import json
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from threading import Lock, Thread
-from typing import Callable
+from typing import Any, Callable
 
 
 @dataclass
@@ -13,6 +15,12 @@ class ProgrammeFacts:
     timing_points: list[str] = field(default_factory=list)
     document_points: list[str] = field(default_factory=list)
     raw_context: str = ""
+    structured: dict[str, Any] = field(default_factory=dict)
+
+
+DEFAULT_PROGRAMME_FACTS_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "programme_facts" / "programme_facts.json"
+)
 
 
 class ProgrammeFactsProvider:
@@ -143,6 +151,21 @@ class ProgrammeFactsProvider:
         "beruflichen fortschritt",
         "tools, dem netzwerk",
         "hsg mitnehmen",
+    )
+    _RAW_DUMP_TERMS = (
+        "with this programme, two top swiss institutions join forces",
+        "innovative executive education curriculum",
+        "get in touch - share your cv with us",
+        "share your cv with us and see if your profile",
+        "incentive award",
+        "tuition incentive",
+        "tuition incentives",
+        "merit-based tuition",
+        "these are not guaranteed",
+        "download brochure",
+        "request brochure",
+        "first application deadline",
+        "final application deadline",
     )
     _MAX_PARALLEL_RETRIEVALS = 3
 
@@ -278,9 +301,124 @@ class ProgrammeFactsProvider:
             sentence_lower = sentence.lower()
             if sentence_lower in seen:
                 continue
+            if any(term in sentence_lower for term in ProgrammeFactsProvider._RAW_DUMP_TERMS):
+                continue
             if any(term in sentence_lower for term in terms):
                 selected.append(sentence)
                 seen.add(sentence_lower)
             if len(selected) >= limit:
                 break
         return selected
+
+
+class JsonProgrammeFactsProvider(ProgrammeFactsProvider):
+    """Serve structured facts generated from the database, with RAG fallback.
+
+    Diana's guidance is that volatile central facts such as tuition, start
+    dates, deadlines, duration, language, format, and locations should be
+    persisted after scraping and read deterministically by the agent. This
+    provider uses that JSON first and only falls back to retrieval when the JSON
+    is missing or incomplete.
+    """
+
+    def __init__(
+        self,
+        retrieve_context: Callable[[str, str, str], str],
+        facts_path: Path | str = DEFAULT_PROGRAMME_FACTS_PATH,
+    ) -> None:
+        super().__init__(retrieve_context)
+        self._facts_path = Path(facts_path)
+        self._json_payload: dict[str, Any] | None = None
+
+    def get_facts(self, programme: str, language: str) -> ProgrammeFacts:
+        normalized_programme = self._normalize_programme(programme)
+        normalized_language = language if language in {"de", "en"} else "en"
+        record = self._json_record(normalized_programme, normalized_language)
+        if record:
+            return self._facts_from_json_record(normalized_programme, record)
+        return super().get_facts(normalized_programme, normalized_language)
+
+    def get_facts_many(self, programmes: list[str], language: str) -> dict[str, ProgrammeFacts]:
+        normalized_language = language if language in {"de", "en"} else "en"
+        return {
+            self._normalize_programme(programme): self.get_facts(programme, normalized_language)
+            for programme in programmes
+        }
+
+    def _load_json_payload(self) -> dict[str, Any]:
+        if self._json_payload is not None:
+            return self._json_payload
+        if not self._facts_path.exists():
+            self._try_generate_json_payload()
+        if not self._facts_path.exists():
+            self._json_payload = {}
+            return self._json_payload
+        try:
+            self._json_payload = json.loads(self._facts_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            self._json_payload = {}
+        return self._json_payload
+
+    def _try_generate_json_payload(self) -> None:
+        try:
+            from src.rag.programme_facts_generator import generate_programme_facts_json
+
+            generate_programme_facts_json(self._facts_path)
+        except Exception as exc:
+            chain_logger = None
+            try:
+                from src.utils.logging import get_logger
+
+                chain_logger = get_logger("programme_facts")
+            except Exception:
+                chain_logger = None
+            if chain_logger is not None:
+                chain_logger.warning(
+                    "Could not generate structured programme facts JSON at %s: %s",
+                    self._facts_path,
+                    exc,
+                )
+
+    def _json_record(self, programme: str, language: str) -> dict[str, Any]:
+        payload = self._load_json_payload()
+        programmes = payload.get("programmes", {}) if isinstance(payload, dict) else {}
+        programme_record = programmes.get(programme, {}) if isinstance(programmes, dict) else {}
+        language_record = programme_record.get(language) or programme_record.get("en") or {}
+        return language_record if isinstance(language_record, dict) else {}
+
+    @staticmethod
+    def _facts_from_json_record(programme: str, record: dict[str, Any]) -> ProgrammeFacts:
+        def list_value(*keys: str) -> list[str]:
+            values: list[str] = []
+            for key in keys:
+                value = record.get(key)
+                if isinstance(value, str) and value.strip():
+                    values.append(value.strip())
+                elif isinstance(value, list):
+                    values.extend(str(item).strip() for item in value if str(item).strip())
+            return values
+
+        timing_points = list_value(
+            "tuition",
+            "deadlines",
+            "start_dates",
+            "duration",
+            "format",
+            "locations",
+            "language",
+        )
+        fit_points = list_value("admissions", "requirements", "target_group")
+        focus_points = list_value("focus", "value_proposition")
+        document_points = list_value("documents")
+
+        raw_context = "\n".join(focus_points + fit_points + timing_points + document_points)
+        return ProgrammeFacts(
+            programme=programme,
+            source_available=bool(raw_context),
+            focus_points=focus_points,
+            fit_points=fit_points,
+            timing_points=timing_points,
+            document_points=document_points,
+            raw_context=raw_context,
+            structured=record,
+        )

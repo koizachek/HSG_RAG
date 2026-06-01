@@ -34,6 +34,7 @@ PROGRAMME_FACT_FIXTURES = {
         document_points=[
             "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation und eine erste Capstone-Idee vorbereiten.",
         ],
+        structured={"tuition": "CHF 77'500"},
     ),
     "iemba": ProgrammeFacts(
         programme="iemba",
@@ -50,6 +51,7 @@ PROGRAMME_FACT_FIXTURES = {
         document_points=[
             "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, internationale Zielsetzung und Englisch-Niveau vorbereiten.",
         ],
+        structured={"tuition": "CHF 85'000"},
     ),
     "emba_x": ProgrammeFacts(
         programme="emba_x",
@@ -66,6 +68,7 @@ PROGRAMME_FACT_FIXTURES = {
         document_points=[
             "CV, Studienabschluss/Zeugnisse, Führungsverantwortung, Motivation, Englisch-Niveau und ein Transformationsvorhaben vorbereiten.",
         ],
+        structured={"tuition": "CHF 110'000"},
     ),
 }
 
@@ -152,6 +155,26 @@ class TestProgrammeFactsProvider:
         assert "beruflichen Fortschritt" not in joined_documents
         assert "CV" in joined_documents
         assert "Online-Bewerbung" in joined_documents
+
+    def test_programme_facts_filter_raw_brochure_and_award_fragments(self):
+        raw_context = """
+        With this programme, two top Swiss institutions join forces to design an innovative Executive Education curriculum.
+        They in the form of merit-based tuition incentives are available to candidates.
+        The emba X Admissions Committee decides upon the attribution and amount of the incentive award.
+        First application deadline: 31 August 2026.
+        Final application deadline: 31 October 2026.
+        Focus: emba X focuses on business, technology, innovation and transformation.
+        Documents: CV, certificates/transcripts and motivation.
+        """
+
+        facts = ProgrammeFactsProvider(lambda *_args: raw_context).get_facts("emba_x", "en")
+        joined = " ".join(facts.focus_points + facts.timing_points + facts.document_points)
+
+        assert "two top Swiss institutions join forces" not in joined
+        assert "incentive award" not in joined
+        assert "First application deadline" not in joined
+        assert "Final application deadline" not in joined
+        assert "business, technology, innovation and transformation" in joined
 
 
 class TestResponseFormatting:
@@ -265,7 +288,14 @@ Here are the programs:
     def test_generic_leadership_profile_overview_does_not_invent_medical_context(self):
         agent = object.__new__(ExecutiveAgentChain)
         agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
         agent._pending_continuation = None
+        attach_fake_programme_facts(agent)
+        attach_fake_programme_facts(agent)
         agent._programme_overview_detail_level = 0
 
         response = agent._serve_programme_overview(
@@ -275,7 +305,12 @@ Here are the programs:
             profile_context=True,
         )
 
-        assert "Ihre Angaben helfen vor allem" in response.response
+        assert "Auf Basis Ihrer deutschsprachigen Präferenz und Ihrer Führungserfahrung" in response.response
+        assert "**EMBA HSG**" in response.response
+        assert "stärkste Fit" in response.response
+        assert response.relevant_programs == ["emba"]
+        assert agent._conversation_state["suggested_program"] == "emba"
+        assert agent._resolve_programmes_for_fact_request("Was kostet das Programm?") == ["emba"]
         assert "EMBA HSG" in response.response
         assert "IEMBA HSG" in response.response
         assert "emba X" in response.response
@@ -289,6 +324,259 @@ Here are the programs:
             "gesundheits",
         ]
         assert not any(term in response.response.lower() for term in forbidden_terms)
+
+    def test_german_leadership_profile_extractors_support_emba_hsg_recommendation(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+
+        query = "Ich arbeite seit 15 Jahren, davon 7 Jahre als Abteilungsleiter."
+
+        assert agent._extract_experience_years(query) == 15
+        assert agent._extract_leadership_years(query) == 7
+        assert agent._profile_has_emba_hsg_signal(query, "de")
+
+    def test_international_profile_context_does_not_over_recommend_iemba(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            HumanMessage("I'm looking for an MBA program in Switzerland with international focus."),
+            AIMessage("At HSG, there are three relevant Executive MBA options."),
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+        agent._programme_overview_detail_level = 0
+
+        response = agent._serve_programme_overview(
+            processed_query="I have 12 years of experience and 5 years of leadership.",
+            response_language="en",
+            detailed=False,
+            profile_context=True,
+        )
+
+        assert "Based on your international focus" not in response.response
+        assert "**IEMBA HSG** is the strongest fit" not in response.response
+        assert response.relevant_programs == ["emba", "iemba", "emba_x"]
+        assert agent._conversation_state["suggested_program"] is None
+
+    def test_technology_profile_context_does_not_over_recommend_emba_x(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            HumanMessage("Ich suche ein MBA-Programm mit Fokus auf Nachhaltigkeit und Digitalisierung."),
+            AIMessage("Bei HSG gibt es drei relevante Executive-MBA-Optionen."),
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+        agent._programme_overview_detail_level = 0
+
+        response = agent._serve_programme_overview(
+            processed_query="Ich habe 12 Jahre Erfahrung und 6 Jahre Führung.",
+            response_language="de",
+            detailed=False,
+            profile_context=True,
+        )
+
+        assert "Auf Basis Ihres Fokus auf Technologie, Innovation, Transformation oder Nachhaltigkeit" not in response.response
+        assert "**emba X**" in response.response
+        assert "der stärkste Fit" not in response.response
+        assert response.relevant_programs == ["emba", "iemba", "emba_x"]
+        assert agent._conversation_state["suggested_program"] is None
+
+    def test_iemba_embax_tech_career_change_guidance_keeps_paths_clear(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            HumanMessage(
+                "I'm a software engineer with 9 years of experience. "
+                "I want to move into business leadership. Do I qualify for the IEMBA?"
+            ),
+            AIMessage("IEMBA HSG and emba X can both be relevant."),
+            HumanMessage("Would EMBA X be a better fit for my tech background?"),
+            AIMessage("Both programmes can be compared."),
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+
+        query = "How can I strengthen my application without management experience?"
+
+        assert agent._is_iemba_embax_tech_career_change_request(query)
+
+        response = agent._serve_iemba_embax_tech_career_guidance(
+            processed_query=query,
+            response_language="en",
+        )
+
+        assert "**IEMBA HSG** is the international/general management path" in response.response
+        assert "**emba X** is the stronger tech/business/transformation path" in response.response
+        assert "admissions should decide" in response.response
+        assert "non-standard" in response.response
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
+        assert response.relevant_programs == ["iemba", "emba_x"]
+        assert agent._conversation_state["program_interest"] == ["iemba", "emba_x"]
+        assert agent._resolve_programmes_for_fact_request("How much does it cost?") == ["iemba", "emba_x"]
+        raw_fragments = [
+            "Get in touch",
+            "Complete the online",
+            "application deadline",
+            "incentive award",
+            "two top Swiss institutions join forces",
+        ]
+        assert not any(fragment.lower() in response.response.lower() for fragment in raw_fragments)
+
+    def test_iemba_embax_eligibility_guidance_is_direct_and_handover_ready(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            HumanMessage(
+                "I'm a software engineer with 9 years of experience. "
+                "I want to move into business leadership. Do I qualify for the IEMBA?"
+            ),
+            AIMessage("IEMBA HSG and emba X can both be relevant."),
+            HumanMessage("How can I strengthen my application without management experience?"),
+            AIMessage("Admissions should review your CV."),
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+
+        response = agent._serve_iemba_embax_tech_career_guidance(
+            processed_query="So am I eligible?",
+            response_language="en",
+        )
+
+        assert "eligible for an admissions profile review" in response.response
+        assert "**emba X** is the stronger thematic fit" in response.response
+        assert "handover to admissions now" in response.response
+        assert "admissions profile review" in response.response
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
+
+    def test_initial_iemba_embax_eligibility_guidance_avoids_premature_handover(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+
+        response = agent._serve_iemba_embax_tech_career_guidance(
+            processed_query=(
+                "I'm a software engineer with 9 years of experience. "
+                "I want to move into business leadership. Do I qualify for the IEMBA?"
+            ),
+            response_language="en",
+        )
+
+        assert "experience-length" in response.response
+        assert "leadership criterion" in response.response
+        assert "**emba X** is also highly relevant" in response.response
+        assert "formal handover" not in response.response
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
+
+    def test_iemba_eligibility_assessment_includes_contact_without_widget(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            HumanMessage("Hi, I'm looking for an MBA program in Switzerland with international focus."),
+            AIMessage("IEMBA HSG is the international option."),
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+
+        query = "Can you assess whether I am eligible?"
+
+        assert agent._is_iemba_eligibility_assessment_request(query)
+
+        response = agent._serve_iemba_eligibility_assessment(
+            processed_query=query,
+            response_language="en",
+        )
+
+        assert "IEMBA HSG" in response.response
+        assert "contact Kristin Fuchs / admissions" in response.response
+        assert "Final eligibility is decided by admissions" in response.response
+        assert response.relevant_programs == ["iemba"]
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
+
+    def test_price_frustration_response_names_current_fees_without_widget(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+        attach_fake_programme_facts(agent)
+
+        query = "Warum ist das so teuer?! Das ist doch Wucher!"
+
+        assert agent._is_price_frustration_request(query)
+
+        response = agent._serve_price_frustration_response(
+            processed_query=query,
+            response_language="de",
+        )
+
+        assert "CHF 77'500" in response.response
+        assert "CHF 85'000" in response.response
+        assert "CHF 110'000" in response.response
+        assert "CHF 72'500" not in response.response
+        assert "CHF 99'000" not in response.response
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
+
+    def test_bachelor_two_years_is_too_early_for_executive_mba(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+        agent._pending_continuation = None
+
+        query = "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?"
+
+        assert agent._is_likely_too_early_for_executive_mba(query)
+
+        response = agent._serve_too_early_for_executive_mba(
+            processed_query=query,
+            response_language="de",
+        )
+
+        assert "Executive MBA" in response.response
+        assert "zu früh" in response.response
+        assert "5 Jahren Berufserfahrung" in response.response
+        assert "3 Jahren Führungserfahrung" in response.response
+        assert "reguläre **MBA**" in response.response
+        assert "Kontakt zu Admissions" in response.response
+        assert "https://www.mba.unisg.ch/" in response.response
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
 
     def test_profile_context_update_after_overview_is_not_single_programme_diagnosis(self):
         agent = object.__new__(ExecutiveAgentChain)
@@ -347,10 +635,10 @@ Here are the programs:
         assert "CHF 99'000" not in response.response
         assert "31.10.2026" in response.response
         assert "Teyuna Giger" in response.response
-        assert response.appointment_requested is True
-        assert response.show_booking_widget is True
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
         assert response.relevant_programs == ["emba_x"]
-        assert agent._conversation_state["handover_requested"] is True
+        assert agent._conversation_state["handover_requested"] is None
         assert agent._conversation_state["suggested_program"] == "emba_x"
 
     def test_emba_next_steps_include_programme_specific_details(self):
@@ -466,6 +754,7 @@ Here are the programs:
             "program_interest": [],
         }
         agent._retrieve_context_tool = FakeRetrieveTool()
+        attach_fake_programme_facts(agent)
 
         response = agent._serve_programme_fact_request(
             processed_query="was kosten die programme?",
@@ -473,7 +762,7 @@ Here are the programs:
             programmes=["emba", "iemba", "emba_x"],
         )
 
-        assert len(agent._retrieve_context_tool.payloads) >= 4
+        assert len(agent._retrieve_context_tool.payloads) == 0
         assert "EMBA HSG" in response.response
         assert "IEMBA HSG" in response.response
         assert "emba X" in response.response
@@ -503,17 +792,22 @@ Here are the programs:
         assert "CHF 72'500" not in response
         assert "CHF 77'500" in response
 
-    def test_cost_fact_extraction_prefers_database_price_over_fallback(self):
+    def test_cost_fact_extraction_uses_current_uat_price_over_retrieved_stale_price(self):
         agent = object.__new__(ExecutiveAgentChain)
+        attach_fake_programme_facts(agent)
 
         values = agent._extract_values_for_fact_category(
-            ["EMBA HSG Studiengebühr CHF 76'000."],
+            [
+                "EMBA HSG Studiengebühr CHF 72'500.",
+                "Zusätzliche Gebühr CHF 3'000.",
+                "Aktuelle Studiengebühr CHF 77'500.",
+            ],
             "cost",
             "de",
             "emba",
         )
 
-        assert values == ["CHF 76'000"]
+        assert values == ["CHF 77'500"]
 
     def test_cost_fact_extraction_uses_fallback_only_without_database_price(self):
         agent = object.__new__(ExecutiveAgentChain)
@@ -525,7 +819,7 @@ Here are the programs:
             "emba",
         )
 
-        assert values == ["CHF 77'500"]
+        assert values == []
 
     def test_single_programme_deadline_info_uses_rag_not_booking(self):
         class FakeRetrieveTool:
@@ -573,7 +867,7 @@ Here are the programs:
         assert response.show_booking_widget is False
         assert "Terminoptionen" not in response.response
 
-    def test_specific_how_to_apply_routes_to_application_next_steps_with_widget(self):
+    def test_specific_how_to_apply_routes_to_application_next_steps_without_widget(self):
         agent = object.__new__(ExecutiveAgentChain)
         agent._conversation_history = []
         agent._conversation_state = {
@@ -601,8 +895,8 @@ Here are the programs:
         assert "CHF 99'000" not in response.response
         assert "31.10.2026" in response.response
         assert "CHF 110'000" in response.response
-        assert response.appointment_requested is True
-        assert response.show_booking_widget is True
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
         assert response.relevant_programs == ["emba_x"]
 
     def test_explicit_booking_request_stays_out_of_fact_routing(self):
@@ -680,7 +974,7 @@ Here are the programs:
         assert result == "filtered context"
         assert fake_db.calls[0]["property_filters"] == {"programs": ["emba_x"]}
 
-    def test_application_question_after_programme_choice_shows_booking_widget(self):
+    def test_application_question_after_programme_choice_keeps_booking_off(self):
         agent = object.__new__(ExecutiveAgentChain)
         agent._conversation_history = [
             AIMessage("Für emba X sind die nächsten Schritte ein Fit- und Zulassungsgespräch.")
@@ -703,8 +997,8 @@ Here are the programs:
 
         assert "Bewerbung zum **emba X**" in response.response
         assert "Teyuna Giger" in response.response
-        assert response.appointment_requested is True
-        assert response.show_booking_widget is True
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
         assert response.relevant_programs == ["emba_x"]
 
     def test_application_process_follow_up_adds_details_without_repeating_widget(self):
@@ -1007,10 +1301,11 @@ Here are the programs:
 
         assert "IEMBA HSG" in response.response
         assert "Kristin Fuchs" in response.response
-        assert response.show_booking_widget is True
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
         assert response.relevant_programs == ["iemba"]
 
-    def test_general_application_question_after_multi_programme_overview_shows_all_advisors(self):
+    def test_general_application_question_after_multi_programme_overview_keeps_booking_off(self):
         agent = object.__new__(ExecutiveAgentChain)
         agent._conversation_history = [
             AIMessage("EMBA HSG, IEMBA HSG und emba X sind relevant.")
@@ -1031,10 +1326,51 @@ Here are the programs:
             programmes=programmes,
         )
 
-        assert "alle drei Studienberatungen" in response.response
-        assert response.appointment_requested is True
-        assert response.show_booking_widget is True
+        assert "Zielprogramm" in response.response
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
         assert response.relevant_programs == ["emba", "iemba", "emba_x"]
+
+    def test_next_application_steps_question_does_not_request_booking(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = [
+            AIMessage("EMBA HSG, IEMBA HSG und emba X sind relevante Optionen.")
+        ]
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+
+        programmes = agent._resolve_application_programmes(
+            "Was sind die nächsten Schritte im Bewerbungsprozess?"
+        )
+
+        assert programmes == ["emba", "iemba", "emba_x"]
+
+        response = agent._serve_application_next_steps(
+            processed_query="Was sind die nächsten Schritte im Bewerbungsprozess?",
+            response_language="de",
+            programmes=programmes,
+        )
+
+        assert response.appointment_requested is False
+        assert response.show_booking_widget is False
+        assert "Terminoptionen" not in response.response
+        assert "Kontaktdaten" not in response.response
+
+    def test_explicit_booking_request_stays_out_of_application_route(self):
+        agent = object.__new__(ExecutiveAgentChain)
+        agent._conversation_history = []
+        agent._conversation_state = {
+            "handover_requested": None,
+            "suggested_program": None,
+            "program_interest": [],
+        }
+
+        assert agent._resolve_application_programmes(
+            "Ich möchte einen Termin zum Bewerbungsprozess für den EMBA HSG buchen."
+        ) == []
 
     def test_multi_programme_application_process_details_include_all_programmes(self):
         agent = object.__new__(ExecutiveAgentChain)
@@ -1167,6 +1503,15 @@ class TestScopeGuardian:
             query = ''.join(e for e in query if e.isalnum() or e == " ")
             scope = ScopeGuardian.check_scope(query, 'en')
             assert scope == 'off_topic'
+
+    def test_off_topic_redirect_names_programme_paths(self):
+        response = ScopeGuardian.get_redirect_message("off_topic", "de")
+
+        assert "Restaurants" in response
+        assert "EMBA HSG" in response
+        assert "IEMBA HSG" in response
+        assert "emba X" in response
+        assert "Programme vergleichen" in response
     
     def test_financial_planning_detection(self):
         """Test that detailed financial requests are flagged"""

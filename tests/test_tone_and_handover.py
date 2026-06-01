@@ -33,12 +33,13 @@ def test_lead_prompt_requires_professional_complete_sentences():
     assert 'Avoid informal phrasing such as "Great to meet you"' in prompt
 
 
-def test_lead_prompt_allows_proactive_booking_after_clear_fit():
+def test_lead_prompt_requires_explicit_booking_intent():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "clear programme match exists" in prompt
-    assert "asks for personal fit/admissions guidance" in prompt
+    assert "only when the user explicitly asks" in prompt
+    assert "appointment/contact/callback/advisor handover" in prompt
     assert "Routine informational turns keep both flags `False`" in prompt
+    assert "application steps" in prompt
     assert "show_booking_widget=True" in prompt
     assert "Kristin Fuchs" in prompt
     assert "Teyuna Giger" in prompt
@@ -59,10 +60,14 @@ def test_lead_prompt_contains_programme_specific_positive_value_framing():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
     assert "German/DACH general management -> EMBA HSG" in prompt
+    assert "substantial professional and leadership experience" in prompt
+    assert "**EMBA HSG** is the strongest fit" in prompt
     assert "English/international focus -> IEMBA HSG" in prompt
     assert "digitalisation, sustainability/responsible leadership, or ETH -> emba X" in prompt
+    assert "Do not declare IEMBA or emba X as the strongest fit from one broad keyword alone" in prompt
     assert "tech professionals moving into business leadership" in prompt
-    assert "international management or global exposure" in prompt
+    assert "IEMBA is the international/general management path" in prompt
+    assert "emba X is the stronger tech/business/transformation fit" in prompt
 
 
 def test_lead_prompt_preserves_credibility_and_avoids_hype():

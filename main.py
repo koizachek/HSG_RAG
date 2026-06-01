@@ -67,6 +67,16 @@ def run_weaviate_command(command: str, backup_id: str = None):
         service._checkhealth()
 
 
+def run_programme_facts_generation() -> None:
+    """Regenerate structured programme facts from the current database."""
+    from src.rag.programme_facts_generator import generate_programme_facts_json
+    logger = logging_startup()
+
+    logger.info("Generating structured programme facts JSON...")
+    generate_programme_facts_json()
+    logger.info("Programme facts generation completed.")
+
+
 def clear_cache():
     cache = Cache.get_cache()
     if cache:
@@ -115,6 +125,9 @@ def parse_args():
     parser.add_argument("--clear-cache", action="store_true",
                         help="Clears the cache")
 
+    parser.add_argument("--generate-programme-facts", action="store_true",
+                        help="Regenerates structured programme facts JSON from the current database")
+
     parser.add_argument("--cli", action="store_true", help="Run the chatbot CLI")
     parser.add_argument("--app", type=str, choices=AVAILABLE_LANGUAGES, help="Run the chatbot web application")
     parser.add_argument("--dbapp", action="store_true", help="Run the database management application")
@@ -130,7 +143,7 @@ def main():
     must_clear_cache = False
 
     # Check if any argument is provided
-    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.cache, args.app, args.dbapp]):
+    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.cache, args.app, args.dbapp, args.generate_programme_facts]):
         # If no argument is provided, run the chatbot by default
         run_application(cache_mode=args.cache_mode, cache=args.cache)
         return
@@ -148,6 +161,10 @@ def main():
         if args.weaviate in ["init", "redo", "restore"]:
             must_clear_cache = True
         run_weaviate_command(command=args.weaviate, backup_id=args.backup_id)
+
+    if args.generate_programme_facts:
+        must_clear_cache = True
+        run_programme_facts_generation()
     
     if args.clear_cache or must_clear_cache:
         clear_cache()

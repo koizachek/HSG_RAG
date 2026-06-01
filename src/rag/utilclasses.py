@@ -50,11 +50,11 @@ class StructuredAgentResponse(BaseModel):
     appointment_requested: bool = Field(
         default=False,
         description=(
-            "Set to True when the user explicitly asks to book, schedule, speak with "
-            "admissions/an advisor, see appointment slots, or accepts a consultation "
-            "offer. Also set to True when a clear programme match exists and the user "
-            "asks for personal fit or admissions guidance. Routine pricing and purely "
-            "informational answers must be False."
+            "Set to True only when the user explicitly asks to book or schedule an "
+            "appointment, speak with admissions/an advisor, see appointment slots, "
+            "be contacted or called back, or clearly accepts a consultation offer. "
+            "Routine application steps, admissions-process, pricing, fit, and other "
+            "purely informational answers must be False."
         )
     )
     show_booking_widget: bool = Field(

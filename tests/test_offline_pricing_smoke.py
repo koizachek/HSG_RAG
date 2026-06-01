@@ -119,6 +119,16 @@ class FakeLeadAgent:
                 show_booking_widget=False,
                 relevant_programs=[],
             )
+        elif "führungserfahrung ausreicht" in query_lower:
+            response = StructuredAgentResponse(
+                response=(
+                    "Das sollte individuell im Zulassungsprozess geprüft werden. "
+                    "Ich kann Ihnen dazu einen Beratungstermin anzeigen."
+                ),
+                appointment_requested=True,
+                show_booking_widget=True,
+                relevant_programs=["emba"],
+            )
         elif query_lower.strip() in {"emba", "emba hsg"}:
             response = StructuredAgentResponse(
                 response=(
@@ -388,6 +398,13 @@ def test_basic_recommendation_does_not_show_widget(offline_agent):
 
     assert "IEMBA HSG" in response.response
     assert "Terminbuchung" in response.response
+    assert response.appointment_requested is False
+    assert response.show_booking_widget is False
+
+
+def test_admissions_uncertainty_does_not_show_widget_without_explicit_booking(offline_agent):
+    response = offline_agent.query("Ich bin mir unsicher, ob meine Führungserfahrung ausreicht.")
+
     assert response.appointment_requested is False
     assert response.show_booking_widget is False
 

@@ -3,6 +3,7 @@ from .processors import *
 from ..scraping.scraper import Scraper
 
 from ..database.weavservice  import WeaviateService
+from ..rag.programme_facts_generator import generate_programme_facts_json
 from ..utils.logging import get_logger
 from ..config import config
 
@@ -69,6 +70,9 @@ class ImportPipeline:
             self.import_from_scraper(scraped_chunks)
             self._logging_callback(f"Finished scraping import for {target_url}.", 100)
 
+        self._logging_callback("Generating structured programme facts...", 100)
+        generate_programme_facts_json(service=self._service)
+
 
     def import_many_documents(self, sources: list[str]) -> None:
         self.import_all(paths=sources)
@@ -90,6 +94,9 @@ class ImportPipeline:
             self._logging_callback(f"Importing scraped chunks from {url}...", 90)
             self.import_from_scraper(scraped_chunks)
             self._logging_callback(f"Stored scraped chunks for {url}.", 100)
+
+        self._logging_callback("Generating structured programme facts...", 100)
+        generate_programme_facts_json(service=self._service)
                  
         
     def import_all(

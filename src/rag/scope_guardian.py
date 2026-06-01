@@ -107,6 +107,22 @@ class ScopeGuardian:
         Returns:
             Redirect message
         """
+        if scope_type == 'off_topic':
+            if language == 'de':
+                return (
+                    "Ich kann keine Restaurantempfehlungen geben und zu Restaurants oder Stadtempfehlungen hier nicht "
+                    "beraten. Ich kann Sie aber zu den "
+                    "HSG Executive MBA-Programmen führen: **EMBA HSG** für deutschsprachiges General Management im "
+                    "DACH-Kontext, **IEMBA HSG** für internationale General-Management-Ziele oder **emba X** für "
+                    "Technologie, Innovation, Transformation und Nachhaltigkeit. Möchten Sie Programme vergleichen, "
+                    "Ihre Zulassungschancen prüfen oder Kosten und nächste Schritte anschauen?"
+                )
+            return (
+                "I cannot help with restaurant or city recommendations here. I can help with the HSG Executive MBA "
+                "programmes instead: **EMBA HSG** for German-speaking/DACH general management, **IEMBA HSG** for "
+                "international general management, or **emba X** for technology, innovation, transformation, and "
+                "sustainability. Would you like to compare programmes, check admissions fit, or review costs and next steps?"
+            )
         messages = {
             'off_topic': {
                 'en': "I am here to help with questions about HSG Executive MBA programmes (EMBA, IEMBA, and emba X). I would be happy to discuss programme details, admissions requirements, or help you identify the most suitable option for your goals. What would you like to know about our programmes?",
