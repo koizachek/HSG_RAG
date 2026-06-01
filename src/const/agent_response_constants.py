@@ -95,21 +95,21 @@ ADMISSIONS_TEAM_CONTACT = {
 
 ADVISOR_CONTACTS = [
     {
-        "name": "Cyra von Müller (EMBA)",
+        "name": "EMBA HSG consultation",
         "program": "emba",
         "email": "cyra.vonmueller@unisg.ch",
         "phone": "+41 71 224 27 12",
         "url": "https://calendly.com/cyra-vonmueller/beratungsgespraech-emba-hsg",
     },
     {
-        "name": "Kristin Fuchs (IEMBA)",
+        "name": "IEMBA HSG consultation",
         "program": "iemba",
         "email": "kristin.fuchs@unisg.ch",
         "phone": "+41 71 224 75 46",
         "url": "https://calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation",
     },
     {
-        "name": "Teyuna Giger (emba X)",
+        "name": "emba X consultation",
         "program": "emba_x",
         "email": "teyuna.giger@unisg.ch",
         "phone": "+41 71 224 77 65",

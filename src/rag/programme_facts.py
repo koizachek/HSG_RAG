@@ -132,9 +132,7 @@ class ProgrammeFactsProvider:
         "admissions manager",
         "bei allgemeinen anfragen",
         "allgemeinen anfragen",
-        "kontakt cyra",
-        "kontakt kristin",
-        "kontakt teyuna",
+        "kontakt admissions",
         "impact story",
         "alumnus",
         "alumni",
@@ -314,11 +312,9 @@ class ProgrammeFactsProvider:
 class JsonProgrammeFactsProvider(ProgrammeFactsProvider):
     """Serve structured facts generated from the database, with RAG fallback.
 
-    Diana's guidance is that volatile central facts such as tuition, start
-    dates, deadlines, duration, language, format, and locations should be
-    persisted after scraping and read deterministically by the agent. This
-    provider uses that JSON first and only falls back to retrieval when the JSON
-    is missing or incomplete.
+    This is an optional cache/index layer derived from the scraped Weaviate
+    corpus. It must not be maintained as an independent source of programme
+    truth or contain hand-written business rules.
     """
 
     def __init__(

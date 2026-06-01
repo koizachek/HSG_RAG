@@ -183,6 +183,16 @@ ENABLE_EVALUATE_RESPONSE_QUALITY = False
 # A boolean: either True or False. Activates the usage of the program-specific subagents.
 ENABLE_SUBAGENTS = False
 
+# A boolean; either True or False. Enables the optional programme_facts cache/index
+# layer. When False, programme facts are retrieved only from Weaviate during the
+# answer path.
+USE_PROGRAMME_FACTS = False
+
+# A boolean; either True or False. Enables deterministic control responses such
+# as invalid-input handling, off-topic redirects, booking-state guards, and
+# continuation chunking. Programme-content shortcuts remain disabled by default.
+USE_DETERMINISTIC_RESPONSES = False
+
 # A float in range from 0 to 1. Sets the treshold value for the quality evaluation.
 # The fallback mechanism will be activated if the quality of the agentic response 
 # is lower than the confidence threshold.

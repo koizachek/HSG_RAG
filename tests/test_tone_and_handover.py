@@ -41,8 +41,8 @@ def test_lead_prompt_requires_explicit_booking_intent():
     assert "Routine informational turns keep both flags `False`" in prompt
     assert "application steps" in prompt
     assert "show_booking_widget=True" in prompt
-    assert "Kristin Fuchs" in prompt
-    assert "Teyuna Giger" in prompt
+    assert "Kristin Fuchs" not in prompt
+    assert "Teyuna Giger" not in prompt
 
 
 def test_lead_prompt_uses_stage_sensitive_programme_positioning():
@@ -161,12 +161,12 @@ def test_soft_booking_offer_does_not_mark_handover_state(monkeypatch):
 def test_iemba_booking_widget_shows_contact_details_and_slots():
     widget = get_booking_widget(language="en", programs=["iemba"])
 
-    assert "Kristin Fuchs (IEMBA)" in widget
+    assert "IEMBA HSG consultation" in widget
     assert "kristin.fuchs@unisg.ch" in widget
     assert "+41 71 224 75 46" in widget
     assert "available appointment slots and contact details" in widget
     assert "calendly.com/kristin-fuchs-unisg/iemba-online-personal-consultation" in widget
-    assert "Cyra von Müller (EMBA)" not in widget
+    assert "calendly.com/cyra-vonmueller" not in widget
 
 
 def test_scope_guardian_escalation_uses_real_contact_details():

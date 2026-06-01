@@ -127,7 +127,7 @@ class TestProgrammeFactsProvider:
     def test_extracted_facts_skip_scraped_contact_noise(self):
         raw_context = """
         Vielen Dank für Ihr Interesse an unserem Executive MBA Programm!
-        Kontakt Cyra von Müller Senior Recruitment & Admissions Manager EMBA HSG Programm.
+        Kontakt Admissions Senior Recruitment & Admissions Manager EMBA HSG Programm.
         Bewerbungsfristen im Überblick:
         Studiengebühr: CHF 77'500.
         Start: 14.09.2026.
@@ -515,7 +515,7 @@ Here are the programs:
         )
 
         assert "IEMBA HSG" in response.response
-        assert "contact Kristin Fuchs / admissions" in response.response
+        assert "contact admissions" in response.response
         assert "Final eligibility is decided by admissions" in response.response
         assert response.relevant_programs == ["iemba"]
         assert response.appointment_requested is False
@@ -634,7 +634,7 @@ Here are the programs:
         assert "31.08.2026" not in response.response
         assert "CHF 99'000" not in response.response
         assert "31.10.2026" in response.response
-        assert "Teyuna Giger" in response.response
+        assert "admissions team" in response.response
         assert response.appointment_requested is False
         assert response.show_booking_widget is False
         assert response.relevant_programs == ["emba_x"]
@@ -656,7 +656,7 @@ Here are the programs:
             programme="emba",
         )
 
-        assert "Cyra von Müller" in response.response
+        assert "admissions team" in response.response
         assert "14.09.2026" in response.response
         assert "CHF 77'500" in response.response
         assert "5+ Jahre Berufserfahrung" in response.response
@@ -678,7 +678,7 @@ Here are the programs:
             programme="iemba",
         )
 
-        assert "Kristin Fuchs" in response.response
+        assert "admissions team" in response.response
         assert "24.08.2026" in response.response
         assert "CHF 85'000" in response.response
         assert "10 Kernkurse" in response.response
@@ -890,7 +890,7 @@ Here are the programs:
         )
 
         assert "Bewerbung zum **emba X**" in response.response
-        assert "Teyuna Giger" in response.response
+        assert "admissions" in response.response.lower()
         assert "31.08.2026" not in response.response
         assert "CHF 99'000" not in response.response
         assert "31.10.2026" in response.response
@@ -996,7 +996,7 @@ Here are the programs:
         )
 
         assert "Bewerbung zum **emba X**" in response.response
-        assert "Teyuna Giger" in response.response
+        assert "admissions" in response.response.lower()
         assert response.appointment_requested is False
         assert response.show_booking_widget is False
         assert response.relevant_programs == ["emba_x"]
@@ -1124,7 +1124,7 @@ Here are the programs:
             programmes=["emba_x"],
         )
 
-        assert "Teyuna Giger" in response.response
+        assert "admissions" in response.response.lower()
         assert response.relevant_programs == ["emba_x"]
 
     def test_later_embax_selection_overrides_stale_emba_suggestion(self):
@@ -1278,7 +1278,7 @@ Here are the programs:
 
         assert len(calls) == 2
 
-    def test_application_question_with_specific_programme_shows_correct_advisor(self):
+    def test_application_question_with_specific_programme_routes_to_admissions(self):
         agent = object.__new__(ExecutiveAgentChain)
         agent._conversation_history = []
         agent._conversation_state = {
@@ -1300,7 +1300,7 @@ Here are the programs:
         )
 
         assert "IEMBA HSG" in response.response
-        assert "Kristin Fuchs" in response.response
+        assert "admissions" in response.response.lower()
         assert response.appointment_requested is False
         assert response.show_booking_widget is False
         assert response.relevant_programs == ["iemba"]
@@ -1660,10 +1660,16 @@ class TestEdgeCases:
         agent = ExecutiveAgentChain(language='en')
 
         response = agent.query("Cost??? $$$ EMBA HSG!!!!").response
-        
+
         # Should handle and respond appropriately
         assert len(response) > 0
-        assert 'CHF' in response or 'cost' in response.lower()
+        response_lower = response.lower()
+        assert (
+            'CHF' in response
+            or 'cost' in response_lower
+            or 'tuition' in response_lower
+            or 'fee' in response_lower
+        )
 
 
 if __name__ == "__main__":

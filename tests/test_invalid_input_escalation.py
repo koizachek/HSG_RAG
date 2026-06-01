@@ -1,5 +1,6 @@
 from src.const.agent_response_constants import NOT_VALID_QUERY_MESSAGE
 from src.rag.agent_chain import ExecutiveAgentChain
+from src.rag.deterministic_responses import DeterministicResponsePolicy
 
 
 def _agent_for_invalid_input(language: str = "en") -> ExecutiveAgentChain:
@@ -11,6 +12,10 @@ def _agent_for_invalid_input(language: str = "en") -> ExecutiveAgentChain:
         "aggressive": 0,
         "scope_violations": {},
     }
+    agent._deterministic_policy = DeterministicResponsePolicy(
+        control_enabled=True,
+        programme_content_enabled=False,
+    )
     return agent
 
 
