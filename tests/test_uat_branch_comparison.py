@@ -727,8 +727,17 @@ event_log_path = case.get("_uat_event_log_path")
 metrics = {
     "retrieve_context_calls": 0,
     "retrieve_context_via_tool_calls": 0,
+    "weaviate_query_calls": 0,
+    "retrieved_document_count": 0,
+    "retrieved_document_counts": [],
     "tool_calls": Counter(),
     "model_calls": 0,
+    "lead_agent_model_calls": 0,
+    "programme_facts_lookup_calls": 0,
+    "programme_facts_many_lookup_calls": 0,
+    "programme_facts_final_answer_calls": 0,
+    "deterministic_answer_calls": 0,
+    "final_answer_without_llm_calls": 0,
 }
 current_turn_index = None
 
@@ -827,6 +836,8 @@ try:
         metrics["model_calls"] += 1
         context = getattr(getattr(request, "runtime", None), "context", None)
         agent_name = getattr(context, "agent_name", None)
+        if agent_name == "lead_agent":
+            metrics["lead_agent_model_calls"] += 1
         model = getattr(request, "model", None)
         model_name = getattr(model, "model_name", None) or getattr(model, "model", None) or repr(model)
         call_id = str(uuid.uuid4())
@@ -895,6 +906,151 @@ except Exception:
     pass
 
 from src.rag.agent_chain import ExecutiveAgentChain
+try:
+    from src.database.weavservice import WeaviateService
+
+    original_weaviate_query = getattr(WeaviateService, "query", None)
+    if original_weaviate_query is not None:
+        def counted_weaviate_query(self, *args, **kwargs):
+            metrics["weaviate_query_calls"] += 1
+            started = time.perf_counter()
+            call_id = str(uuid.uuid4())
+            query = args[0] if args else kwargs.get("query")
+            language_arg = args[1] if len(args) > 1 else kwargs.get("language")
+            filters = kwargs.get("property_filters")
+            limit = kwargs.get("limit")
+            emit_event(
+                "weaviate_query_start",
+                call_id=call_id,
+                query=_preview(query, 500),
+                language=language_arg,
+                filters=filters,
+                limit=limit,
+            )
+            try:
+                response = original_weaviate_query(self, *args, **kwargs)
+                elapsed = time.perf_counter() - started
+                object_count = 0
+                try:
+                    objects = getattr(response[0], "objects", [])
+                    object_count = len(objects or [])
+                except Exception:
+                    object_count = 0
+                metrics["retrieved_document_count"] += object_count
+                metrics["retrieved_document_counts"].append(object_count)
+                emit_event(
+                    "weaviate_query_end",
+                    call_id=call_id,
+                    elapsed_s=elapsed,
+                    retrieved_document_count=object_count,
+                )
+                return response
+            except Exception as exc:
+                elapsed = time.perf_counter() - started
+                emit_event(
+                    "weaviate_query_error",
+                    call_id=call_id,
+                    elapsed_s=elapsed,
+                    error_type=type(exc).__name__,
+                    error=str(exc),
+                )
+                raise
+        WeaviateService.query = counted_weaviate_query
+except Exception as exc:
+    metrics["weaviate_patch_error"] = repr(exc)
+
+try:
+    from src.rag.programme_fact_responses import ProgrammeFactResponses
+    from src.rag.deterministic_routes import DeterministicRoutes
+
+    original_get_programme_facts = getattr(ProgrammeFactResponses, "_get_programme_facts", None)
+    if original_get_programme_facts is not None:
+        def counted_get_programme_facts(self, *args, **kwargs):
+            metrics["programme_facts_lookup_calls"] += 1
+            started = time.perf_counter()
+            try:
+                result = original_get_programme_facts(self, *args, **kwargs)
+                emit_event(
+                    "programme_facts_lookup_end",
+                    elapsed_s=time.perf_counter() - started,
+                    programme=args[0] if args else kwargs.get("programme"),
+                    language=args[1] if len(args) > 1 else kwargs.get("language"),
+                    source_available=getattr(result, "source_available", None),
+                )
+                return result
+            except Exception as exc:
+                emit_event(
+                    "programme_facts_lookup_error",
+                    elapsed_s=time.perf_counter() - started,
+                    error_type=type(exc).__name__,
+                    error=str(exc),
+                )
+                raise
+        ProgrammeFactResponses._get_programme_facts = counted_get_programme_facts
+
+    original_get_programmes_facts = getattr(ProgrammeFactResponses, "_get_programmes_facts", None)
+    if original_get_programmes_facts is not None:
+        def counted_get_programmes_facts(self, *args, **kwargs):
+            metrics["programme_facts_many_lookup_calls"] += 1
+            started = time.perf_counter()
+            try:
+                result = original_get_programmes_facts(self, *args, **kwargs)
+                emit_event(
+                    "programme_facts_many_lookup_end",
+                    elapsed_s=time.perf_counter() - started,
+                    programmes=args[0] if args else kwargs.get("programmes"),
+                    language=args[1] if len(args) > 1 else kwargs.get("language"),
+                    result_count=len(result or {}),
+                )
+                return result
+            except Exception as exc:
+                emit_event(
+                    "programme_facts_many_lookup_error",
+                    elapsed_s=time.perf_counter() - started,
+                    error_type=type(exc).__name__,
+                    error=str(exc),
+                )
+                raise
+        ProgrammeFactResponses._get_programmes_facts = counted_get_programmes_facts
+
+    for method_name in [
+        "_serve_programme_fact_request",
+        "_serve_programme_next_steps",
+        "_serve_application_next_steps",
+        "_serve_application_process_details",
+    ]:
+        original = getattr(ProgrammeFactResponses, method_name, None)
+        if original is None:
+            continue
+        def make_programme_fact_wrapper(original_method, name):
+            def wrapper(self, *args, **kwargs):
+                metrics["programme_facts_final_answer_calls"] += 1
+                emit_event("programme_facts_final_answer", handler=name)
+                return original_method(self, *args, **kwargs)
+            return wrapper
+        setattr(ProgrammeFactResponses, method_name, make_programme_fact_wrapper(original, method_name))
+
+    for method_name in [
+        "_append_deterministic_response",
+        "_serve_too_early_for_executive_mba",
+        "_serve_price_frustration_response",
+        "_serve_iemba_eligibility_assessment",
+        "_serve_iemba_embax_tech_career_guidance",
+        "_serve_programme_overview",
+        "_serve_pending_continuation",
+    ]:
+        original = getattr(DeterministicRoutes, method_name, None)
+        if original is None:
+            continue
+        def make_deterministic_wrapper(original_method, name):
+            def wrapper(self, *args, **kwargs):
+                metrics["deterministic_answer_calls"] += 1
+                emit_event("deterministic_final_answer", handler=name)
+                return original_method(self, *args, **kwargs)
+            return wrapper
+        setattr(DeterministicRoutes, method_name, make_deterministic_wrapper(original, method_name))
+except Exception as exc:
+    metrics["path_metrics_patch_error"] = repr(exc)
 
 try:
     from langsmith import tracing_context
@@ -995,6 +1151,8 @@ def _run_turn(agent, turn_index, user_turn):
     global current_turn_index
     current_turn_index = turn_index
     turn_start = time.perf_counter()
+    lead_agent_calls_before = metrics.get("lead_agent_model_calls", 0)
+    deterministic_answers_before = metrics.get("deterministic_answer_calls", 0)
     emit_event(
         "turn_start",
         query=_preview(user_turn, 1000),
@@ -1002,6 +1160,15 @@ def _run_turn(agent, turn_index, user_turn):
     try:
         response = agent.query(user_turn)
         elapsed = time.perf_counter() - turn_start
+        lead_agent_calls_delta = metrics.get("lead_agent_model_calls", 0) - lead_agent_calls_before
+        if lead_agent_calls_delta == 0:
+            metrics["final_answer_without_llm_calls"] += 1
+            if (
+                getattr(config.chain, "USE_DETERMINISTIC_RESPONSES", False)
+                and metrics.get("deterministic_answer_calls", 0) == deterministic_answers_before
+            ):
+                metrics["deterministic_answer_calls"] += 1
+                emit_event("deterministic_final_answer", handler="chatbot_control_flow")
         item = {
             "turn_index": turn_index,
             "query": user_turn,
@@ -1011,6 +1178,7 @@ def _run_turn(agent, turn_index, user_turn):
             "appointment_requested": bool(getattr(response, "appointment_requested", False)),
             "show_booking_widget": bool(getattr(response, "show_booking_widget", False)),
             "confidence_fallback": bool(getattr(response, "confidence_fallback", False)),
+            "lead_agent_model_calls": lead_agent_calls_delta,
         }
         emit_event(
             "turn_end",
@@ -1022,6 +1190,7 @@ def _run_turn(agent, turn_index, user_turn):
             response_chars=len(item.get("response") or ""),
             response_preview=_preview(item.get("response")),
             metrics_snapshot={**metrics, "tool_calls": dict(metrics["tool_calls"])},
+            lead_agent_model_calls=lead_agent_calls_delta,
         )
         return item
     except Exception as exc:
@@ -1375,6 +1544,15 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
         "turn_count",
         "rag_calls",
         "retrieve_context_via_tool_calls",
+        "lead_agent_model_calls",
+        "programme_facts_lookup_calls",
+        "programme_facts_many_lookup_calls",
+        "programme_facts_final_answer_calls",
+        "deterministic_answer_calls",
+        "final_answer_without_llm_calls",
+        "weaviate_query_calls",
+        "retrieved_document_count",
+        "avg_retrieved_documents",
         "tool_calls_total",
         "other_tool_calls",
         "model_calls",
@@ -1395,6 +1573,12 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
             tool_calls = metrics.get("tool_calls", {}) or {}
             total_tool_calls = sum(tool_calls.values())
             other_tool_calls = {k: v for k, v in tool_calls.items() if k != "retrieve_context"}
+            retrieved_counts = metrics.get("retrieved_document_counts") or []
+            avg_retrieved_documents = (
+                sum(float(value) for value in retrieved_counts) / len(retrieved_counts)
+                if retrieved_counts
+                else 0
+            )
             responses = branch_result.get("responses", [])
             last_response = responses[-1].get("response", "") if responses else ""
             writer.writerow(
@@ -1409,6 +1593,15 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
                     "turn_count": len(responses),
                     "rag_calls": metrics.get("retrieve_context_calls", 0),
                     "retrieve_context_via_tool_calls": metrics.get("retrieve_context_via_tool_calls", 0),
+                    "lead_agent_model_calls": metrics.get("lead_agent_model_calls", 0),
+                    "programme_facts_lookup_calls": metrics.get("programme_facts_lookup_calls", 0),
+                    "programme_facts_many_lookup_calls": metrics.get("programme_facts_many_lookup_calls", 0),
+                    "programme_facts_final_answer_calls": metrics.get("programme_facts_final_answer_calls", 0),
+                    "deterministic_answer_calls": metrics.get("deterministic_answer_calls", 0),
+                    "final_answer_without_llm_calls": metrics.get("final_answer_without_llm_calls", 0),
+                    "weaviate_query_calls": metrics.get("weaviate_query_calls", 0),
+                    "retrieved_document_count": metrics.get("retrieved_document_count", 0),
+                    "avg_retrieved_documents": f"{avg_retrieved_documents:.2f}",
                     "tool_calls_total": total_tool_calls,
                     "other_tool_calls": json.dumps(other_tool_calls, ensure_ascii=False),
                     "model_calls": metrics.get("model_calls", 0),
@@ -1434,6 +1627,7 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
         "appointment_requested",
         "show_booking_widget",
         "confidence_fallback",
+        "lead_agent_model_calls",
         "query",
         "error",
         "response_preview",
@@ -1456,6 +1650,7 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
                         "appointment_requested": response.get("appointment_requested"),
                         "show_booking_widget": response.get("show_booking_widget"),
                         "confidence_fallback": response.get("confidence_fallback"),
+                        "lead_agent_model_calls": response.get("lead_agent_model_calls"),
                         "query": str(response.get("query", "")).replace("\n", " "),
                         "error": response.get("error", ""),
                         "response_preview": str(response.get("response", ""))[:240].replace("\n", " "),
@@ -1479,8 +1674,8 @@ def write_llm_summary(results: list[dict[str, Any]], output_dir: Path) -> Path:
         "",
         "## Branch Ranking",
         "",
-        "| Branch | Avg LLM Score | Avg Heuristic | Avg Time | RAG Calls | Tool Calls | Judge Errors |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| Branch / Mode | Avg LLM Score | Avg Heuristic | Avg Time | Lead-Agent Calls | retrieve_context | programme_facts | Deterministic Answers | Weaviate Queries | Avg Retrieved Docs | Tool Calls | Judge Errors |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     branch_rows = []
     for branch_id, branch_results in grouped.items():
@@ -1499,6 +1694,29 @@ def write_llm_summary(results: list[dict[str, Any]], output_dir: Path) -> Path:
             int(item["branch_result"].get("metrics", {}).get("retrieve_context_calls", 0))
             for item in branch_results
         )
+        lead_agent_calls = sum(
+            int(item["branch_result"].get("metrics", {}).get("lead_agent_model_calls", 0))
+            for item in branch_results
+        )
+        programme_facts_calls = sum(
+            int(item["branch_result"].get("metrics", {}).get("programme_facts_lookup_calls", 0))
+            + int(item["branch_result"].get("metrics", {}).get("programme_facts_many_lookup_calls", 0))
+            for item in branch_results
+        )
+        deterministic_answers = sum(
+            int(item["branch_result"].get("metrics", {}).get("deterministic_answer_calls", 0))
+            for item in branch_results
+        )
+        weaviate_queries = sum(
+            int(item["branch_result"].get("metrics", {}).get("weaviate_query_calls", 0))
+            for item in branch_results
+        )
+        retrieved_counts = [
+            float(count)
+            for item in branch_results
+            for count in (item["branch_result"].get("metrics", {}).get("retrieved_document_counts") or [])
+        ]
+        avg_retrieved_docs = sum(retrieved_counts) / len(retrieved_counts) if retrieved_counts else 0
         tool_calls = sum(
             sum((item["branch_result"].get("metrics", {}).get("tool_calls", {}) or {}).values())
             for item in branch_results
@@ -1507,12 +1725,39 @@ def write_llm_summary(results: list[dict[str, Any]], output_dir: Path) -> Path:
         avg_llm = sum(llm_scores) / len(llm_scores) if llm_scores else 0
         avg_heuristic = sum(heuristic_scores) / len(heuristic_scores) if heuristic_scores else 0
         avg_elapsed = sum(elapsed) / len(elapsed) if elapsed else 0
-        branch_rows.append((avg_llm, branch_id, avg_heuristic, avg_elapsed, rag_calls, tool_calls, judge_errors))
+        branch_rows.append((
+            avg_llm,
+            branch_id,
+            avg_heuristic,
+            avg_elapsed,
+            lead_agent_calls,
+            rag_calls,
+            programme_facts_calls,
+            deterministic_answers,
+            weaviate_queries,
+            avg_retrieved_docs,
+            tool_calls,
+            judge_errors,
+        ))
 
-    for avg_llm, branch_id, avg_heuristic, avg_elapsed, rag_calls, tool_calls, judge_errors in sorted(branch_rows, reverse=True):
+    for (
+        avg_llm,
+        branch_id,
+        avg_heuristic,
+        avg_elapsed,
+        lead_agent_calls,
+        rag_calls,
+        programme_facts_calls,
+        deterministic_answers,
+        weaviate_queries,
+        avg_retrieved_docs,
+        tool_calls,
+        judge_errors,
+    ) in sorted(branch_rows, reverse=True):
         lines.append(
             f"| {branch_id} | {avg_llm:.1f} | {avg_heuristic:.3f} | {avg_elapsed:.2f}s | "
-            f"{rag_calls} | {tool_calls} | {judge_errors} |"
+            f"{lead_agent_calls} | {rag_calls} | {programme_facts_calls} | {deterministic_answers} | "
+            f"{weaviate_queries} | {avg_retrieved_docs:.2f} | {tool_calls} | {judge_errors} |"
         )
 
     lines.extend(["", "## Case Winners", ""])
@@ -1698,6 +1943,23 @@ def print_summary(results: list[dict[str, Any]], output_dir: Path) -> None:
             int(item["branch_result"].get("metrics", {}).get("retrieve_context_calls", 0))
             for item in branch_results
         ]
+        lead_agent_calls = [
+            int(item["branch_result"].get("metrics", {}).get("lead_agent_model_calls", 0))
+            for item in branch_results
+        ]
+        programme_facts_calls = [
+            int(item["branch_result"].get("metrics", {}).get("programme_facts_lookup_calls", 0))
+            + int(item["branch_result"].get("metrics", {}).get("programme_facts_many_lookup_calls", 0))
+            for item in branch_results
+        ]
+        deterministic_answers = [
+            int(item["branch_result"].get("metrics", {}).get("deterministic_answer_calls", 0))
+            for item in branch_results
+        ]
+        weaviate_queries = [
+            int(item["branch_result"].get("metrics", {}).get("weaviate_query_calls", 0))
+            for item in branch_results
+        ]
         errors = [item for item in branch_results if item["branch_result"].get("runner_error")]
         avg_score = sum(scores) / len(scores) if scores else None
         avg_elapsed = sum(elapsed) / len(elapsed) if elapsed else 0
@@ -1705,7 +1967,11 @@ def print_summary(results: list[dict[str, Any]], output_dir: Path) -> None:
             f"- {branch_id}: cases={len(branch_results)} "
             f"avg_score={avg_score if avg_score is not None else 'n/a'} "
             f"avg_elapsed_s={avg_elapsed:.2f} "
+            f"lead_agent_calls={sum(lead_agent_calls)} "
             f"rag_calls={sum(rag_calls)} "
+            f"programme_facts={sum(programme_facts_calls)} "
+            f"deterministic_answers={sum(deterministic_answers)} "
+            f"weaviate_queries={sum(weaviate_queries)} "
             f"errors={len(errors)}"
         )
         llm_scores = [
