@@ -22,8 +22,8 @@ from src.config import config
 from src.rag.utilclasses import AgentContext
 from src.utils.logging import get_logger
 
-model_logger = get_logger('chain_model_call')
-tool_logger  = get_logger('chain_tool_call')
+model_logger = get_logger('rag.middleware.model_call')
+tool_logger  = get_logger('rag.middleware.tool_call')
 
 class ContextRetrievalError(RuntimeError):
     pass

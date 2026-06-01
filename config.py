@@ -16,6 +16,18 @@ DATA_PATH = 'data'
 # where the loging files will be stored.
 LOGS_PATH = 'logs'
 
+# An integer. Defines how many run log files each logging category keeps.
+# The current run is always written to latest.log; older runs are archived and pruned.
+LOG_MAX_RUNS = 10
+
+# A mapping from logging category directory names to logger roots.
+# Use ["*"] to include all loggers in a category.
+LOG_CATEGORIES = {
+    "all": ["*"],
+    "scraping": ["scraper", "pipeline", "weaviate"],
+    "weaviate": ["weaviate"],
+}
+
 # =================================== Conversation State Configuration ======================================
 
 # A boolean; either True or False. Enables the collection of user preferences 

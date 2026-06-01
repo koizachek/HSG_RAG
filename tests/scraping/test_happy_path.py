@@ -20,7 +20,7 @@ class TestHappyPath:
         
         results = scraper.scrape_target(target_url)
         
-        logs_file_path = os.path.join(config.paths.LOGS, 'scraping.log')
+        logs_file_path = os.path.join(config.paths.LOGS, 'scraping', 'latest.log')
         raw_html_file_path = os.path.join(config.paths.RAW_HTML_OUTPUT, url_filename + '.html')
         extracted_text_file_path = os.path.join(config.paths.EXTRACTED_TEXT_OUTPUT, url_filename + '.txt')
         

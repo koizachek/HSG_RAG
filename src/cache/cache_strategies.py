@@ -8,7 +8,7 @@ from src.database.redisservice import RedisService
 from src.utils.logging import get_logger
 from src.config import config
 
-logger = get_logger('cache_strat')
+logger = get_logger('cache.strategies')
 
 class RedisCache(CacheStrategy):
     def __init__(self, host, port, password, mode, metrics):

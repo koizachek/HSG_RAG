@@ -6,7 +6,7 @@ import re
 
 from src.utils.logging import get_logger
 
-logger = get_logger('lang_detector')
+logger = get_logger('rag.language_detector')
 
 # Common short words for quick language detection (no LLM needed)
 SHORT_WORDS_DE = {

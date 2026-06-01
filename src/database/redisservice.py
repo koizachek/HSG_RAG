@@ -2,7 +2,7 @@ import redis
 from threading import Lock
 from src.utils.logging import get_logger
 
-logger = get_logger("redis_service")
+logger = get_logger("redis.service")
 
 class RedisService:
     _instance = None

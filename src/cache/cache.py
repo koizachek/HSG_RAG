@@ -5,7 +5,7 @@ from src.cache.cache_strategies import RedisCache, LocalCache
 from src.utils.logging import get_logger
 from src.config import config
 
-logger = get_logger("cache       ")
+logger = get_logger("cache")
 
 class Cache:
     _instance = None

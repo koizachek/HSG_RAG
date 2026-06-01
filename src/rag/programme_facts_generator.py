@@ -8,7 +8,7 @@ from src.database.weavservice import WeaviateService
 from src.rag.programme_facts import DEFAULT_PROGRAMME_FACTS_PATH, ProgrammeFactsProvider
 from src.utils.logging import get_logger
 
-logger = get_logger("programme_facts_generator")
+logger = get_logger("rag.programme_facts_generator")
 
 
 PROGRAMMES = ("emba", "iemba", "emba_x")

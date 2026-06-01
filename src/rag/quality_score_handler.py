@@ -8,7 +8,7 @@ from src.utils.logging import get_logger
 
 from time import perf_counter
 
-logger = get_logger('quality_score_handler')
+logger = get_logger('rag.quality_score_handler')
 
 class QualityEvaluationResult(BaseModel):
     """Result of response quality evaluation."""

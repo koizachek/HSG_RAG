@@ -5,7 +5,7 @@ Ensures the chatbot stays within its defined boundaries.
 from src.const.agent_response_constants import get_admissions_contact_text
 from src.utils.logging import get_logger
 
-logger = get_logger("scope_guardian")
+logger = get_logger("rag.scope_guardian")
 
 
 class ScopeGuardian:

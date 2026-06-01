@@ -13,7 +13,7 @@ from src.config import config
 # Initialize logging
 def logging_startup():
     init_logging()
-    return get_logger('main_module')
+    return get_logger('main.module')
 
 
 def run_scraper() -> None:

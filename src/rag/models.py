@@ -3,7 +3,7 @@ from ..config import config
 
 from src.utils.logging import get_logger
 
-logger = get_logger("model_config")
+logger = get_logger("rag.model_config")
 
 class ModelConfigurator:
     _main_model_instance: BaseChatModel = None

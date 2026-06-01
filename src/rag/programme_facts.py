@@ -369,7 +369,7 @@ class JsonProgrammeFactsProvider(ProgrammeFactsProvider):
             try:
                 from src.utils.logging import get_logger
 
-                chain_logger = get_logger("programme_facts")
+                chain_logger = get_logger("rag.programme_facts")
             except Exception:
                 chain_logger = None
             if chain_logger is not None:

@@ -11,7 +11,7 @@ from src.apps.dbapp.config import SchemaConfigurationFrame
 
 from src.utils.logging import get_logger
 
-logger = get_logger("db_inter    ")
+logger = get_logger("dbapp.interface")
 
 class DatabaseApplication:
     def __init__(self) -> None:

@@ -41,7 +41,7 @@ from src.config import config
 
 from ..cache.cache import Cache
 
-chain_logger = get_logger('agent_chain')
+chain_logger = get_logger('rag.agent_chain')
 
 class ExecutiveAgentChain:
     def __init__(self, language: str = 'en', session_id: str | None = None) -> None:

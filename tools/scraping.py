@@ -41,7 +41,7 @@ def scraping_task(full_scrape: bool):
             f"Scraping procedure failed after {config.scraping.MAX_RETRIES} attempts with message: {result['last_error']}",     
             "all",
             [
-                os.path.join(config.paths.LOGS, 'scraping.log')
+                os.path.join(config.paths.LOGS, 'scraping', 'latest.log')
             ]
         )
         raise result['last_error']

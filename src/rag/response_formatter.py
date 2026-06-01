@@ -6,7 +6,7 @@ import re
 from src.config import config
 from src.utils.logging import get_logger
 
-logger = get_logger("response_formatter")
+logger = get_logger("rag.response_formatter")
 
 
 CONTINUATION_PROMPT = {

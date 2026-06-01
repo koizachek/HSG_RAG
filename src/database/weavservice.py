@@ -14,7 +14,7 @@ from weaviate.config import AdditionalConfig
 from ..utils.logging import get_logger
 from ..config import config
 
-logger = get_logger("weaviate_service")
+logger = get_logger("weaviate.service")
 
 _get_collection_name = lambda lang: f'{config.weaviate.WEAVIATE_COLLECTION_BASENAME}_{lang}'
 _collection_names = [_get_collection_name(lang) for lang in config.get('AVAILABLE_LANGUAGES')]

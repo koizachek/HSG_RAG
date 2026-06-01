@@ -13,6 +13,7 @@ class AppConfig:
     chain:      ChainConfig             = ChainConfig()
     cache:      CacheConfig             = CacheConfig()
     paths:      PathsConfig             = PathsConfig()
+    logging:    LoggingConfig           = LoggingConfig()
     dbapp:      DatabaseAppConfig       = DatabaseAppConfig()
     llm:        LLMConfig               = LLMConfig()
     

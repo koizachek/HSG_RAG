@@ -6,7 +6,7 @@ import re
 from src.rag.utilclasses import ConversationState
 from src.utils.logging import get_logger
 
-logger = get_logger("input_handler")
+logger = get_logger("rag.input_handler")
 
 
 class InputHandler:

@@ -7,8 +7,8 @@ from ..rag.programme_facts_generator import generate_programme_facts_json
 from ..utils.logging import get_logger
 from ..config import config
 
-pipelogger = get_logger("pipeline_module")
-implogger  = get_logger("import_pipeline")
+pipelogger = get_logger("pipeline.module")
+implogger  = get_logger("pipeline.import")
 
 
 class ImportPipeline:

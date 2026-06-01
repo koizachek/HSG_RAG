@@ -10,7 +10,7 @@ from .utilclasses import AgentContext, LeadInformationState
 
 from ..utils.logging import get_logger 
 
-logger = get_logger('chain.subagents')
+logger = get_logger('rag.subagents')
 
 class SubagentProvider():
     def __init__(self, language, query_method, context_retrieval_method) -> None:

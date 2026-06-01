@@ -3,7 +3,7 @@ from src.utils.logging import get_logger
 
 from src.config import config
 
-logger = get_logger('lang_utils')
+logger = get_logger('utils.lang')
 DetectorFactory.seed = 0
 
 def detect_language(text: str):

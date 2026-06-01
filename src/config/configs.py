@@ -60,6 +60,18 @@ class PathsConfig(ConfigBase):
     EXTRACTED_TEXT_OUTPUT: str = os.path.join(_get('DATA_PATH'), 'extracted_text')
 
 
+class LoggingConfig(ConfigBase):
+    MAX_RUNS: int = _get('LOG_MAX_RUNS', 10, type_=int)
+    CATEGORIES: dict[str, list[str]] = _get(
+        'LOG_CATEGORIES',
+        {
+            "all": ["*"],
+            "scraping": ["scraper", "pipeline", "weaviate"],
+            "weaviate": ["weaviate"],
+        },
+    )
+
+
 class ScrapingConfig(ConfigBase):
     TIMEOUT: int      = _get('SCRAPING_TIMEOUT', 30)
     MAX_RETRIES: int  = _get('SCRAPING_MAX_RETRIES', 3)

@@ -9,7 +9,7 @@ from src.const.data_consent_constants import *
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.utils.logging import get_logger, ConsentLogger
 
-logger = get_logger("chatbot_app")
+logger = get_logger("chatbot.app")
 
 def init_fastapi_app(language):
     fastapi_app = FastAPI()

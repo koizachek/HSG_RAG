@@ -17,8 +17,8 @@ from ..utils.lang import detect_language
 from ..utils.logging import get_logger
 from ..config import config
 
-weblogger  = get_logger("website_processor")
-datalogger = get_logger("data_processor")
+weblogger  = get_logger("pipeline.website_processor")
+datalogger = get_logger("pipeline.data_processor")
 
 class ProcessorBase:
     def __init__(self) -> None:
