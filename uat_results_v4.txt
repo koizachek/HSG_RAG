@@ -1,0 +1,80 @@
+### TC-IEMBA-02: TC-IEMBA-02: Career Change Scenario
+Winner: `overhaul_single` (75)
+- `overhaul_single`: 75 - The conversation mostly meets the criteria but lacks clarity in program fit and handover behavior. Issues: Lacks clear handover to admissions team; Ambiguous response on program fit; No proactive offer for further assistance
+
+### TC-EMBAX-01: TC-EMBAX-01: Sustainability Leader
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The conversation effectively addressed the user's needs and provided accurate information. Issues: Could improve on differentiating EMBA HSG more clearly; Initial response could be more concise
+
+### TC-EDGE-01: TC-EDGE-01: Insufficient Qualification
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant provided accurate information and appropriate alternatives. Issues: Did not mention specific costs for the alternative MBA program; Could have offered to connect with admissions directly
+
+### TC-EDGE-02: TC-EDGE-02: Off-Topic Questions
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant effectively redirected the conversation while providing accurate program costs. Issues: Could have been more concise in the response
+
+### TC-EDGE-03: TC-EDGE-03: Aggressive/Frustrated User
+Winner: `overhaul_single` (70)
+- `overhaul_single`: 70 - The assistant provided a professional response but failed to specify the programme costs directly. Issues: Did not provide specific cost information; Failed to directly address the user's concern about pricing
+
+### TC-EDGE-04: TC-EDGE-04: Gibberish / Unverständliche Eingabe
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant effectively handled the user's gibberish input. Issues: No follow-up suggestion for human assistance
+
+### TC-EDGE-05: TC-EDGE-05: Multiple Languages
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant provided a comprehensive overview but did not address the user's language mix appropriately. Issues: Did not ask for language preference directly; User's mixed language not addressed
+# UAT LLM Judge Summary
+
+## Branch Ranking
+
+| Branch | Avg LLM Score | Avg Heuristic | Avg Time | RAG Calls | Tool Calls | Judge Errors |
+|---|---:|---:|---:|---:|---:|---:|
+| overhaul_single | 84.5 | 0.891 | 17.58s | 16 | 15 | 0 |
+
+## Case Winners
+
+### TC-EMBA-01: TC-EMBA-01: Standard Qualification - Perfect Fit
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The conversation effectively addressed the user's needs and provided accurate information. Issues: Minor language errors in the last turn; Unclear transition to handover process
+
+### TC-EMBA-02: TC-EMBA-02: Edge Case - Minimal Qualification
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The conversation effectively addressed the user's qualifications and provided accurate cost information. Issues: Minor language error in the last turn (English phrase included)
+
+### TC-EMBA-03: TC-EMBA-03: Cross-Selling Opportunity
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The conversation effectively addresses the user's needs and provides accurate information. Issues: Minor language errors in phrasing; Could improve on proactive handover details
+
+### TC-IEMBA-01: TC-IEMBA-01: International Professional - Perfect Fit
+Winner: `overhaul_single` (90)
+- `overhaul_single`: 90 - The conversation effectively addressed the user's needs with accurate information and a supportive tone. Issues: Minor ambiguity in the alumni network response could be clearer
+
+### TC-IEMBA-02: TC-IEMBA-02: Career Change Scenario
+Winner: `overhaul_single` (75)
+- `overhaul_single`: 75 - The conversation mostly meets the scenario requirements but lacks proactive handover behavior. Issues: No proactive handover offered; Lacks clarity in some responses; Could improve on cross-selling EMBA X earlier
+
+### TC-EMBAX-01: TC-EMBAX-01: Sustainability Leader
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The conversation effectively identifies the EMBA X program and provides accurate cost information. Issues: Minor language error in the last turn with English phrase; Could improve on the clarity of program differentiation
+
+### TC-EDGE-01: TC-EDGE-01: Insufficient Qualification
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant correctly identified the user's ineligibility for the Executive MBA and suggested an alternative program. Issues: Did not mention specific costs for alternative programs; Could have offered to connect with Admissions directly
+
+### TC-EDGE-02: TC-EDGE-02: Off-Topic Questions
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant effectively redirected the conversation while providing accurate program information. Issues: Lack of explicit greeting; Could improve on conversational flow
+
+### TC-EDGE-03: TC-EDGE-03: Aggressive/Frustrated User
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant effectively addressed the user's concerns while maintaining professionalism. Issues: Did not provide specific cost information; Could have offered human contact sooner
+
+### TC-EDGE-04: TC-EDGE-04: Gibberish / Unverständliche Eingabe
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant effectively handled an unrecognizable input in German.
+
+### TC-EDGE-05: TC-EDGE-05: Multiple Languages
+Winner: `overhaul_single` (85)
+- `overhaul_single`: 85 - The assistant provided accurate information and engaged appropriately. Issues: User's mixed language not addressed; No direct question about language preference
