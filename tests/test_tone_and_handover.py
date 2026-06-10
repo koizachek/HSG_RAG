@@ -33,16 +33,26 @@ def test_lead_prompt_requires_professional_complete_sentences():
     assert 'Avoid informal phrasing such as "Great to meet you"' in prompt
 
 
-def test_lead_prompt_requires_explicit_booking_intent():
+def test_lead_prompt_guides_to_appointment_dropdown_without_flags():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "only when the user explicitly asks" in prompt
-    assert "appointment/contact/callback/advisor handover" in prompt
-    assert "Routine informational turns keep both flags `False`" in prompt
-    assert "application steps" in prompt
-    assert "show_booking_widget=True" in prompt
+    assert "appointment dropdown is always available under the chat window" in prompt
+    assert "choose the consultant for the programme" in prompt
+    assert "Do not generate fake booking links" in prompt
+    assert "Do not push appointments on routine factual answers" in prompt
+    assert "appointment_requested" not in prompt
+    assert "show_booking_widget" not in prompt
+    assert "relevant_programs" not in prompt
     assert "Kristin Fuchs" not in prompt
     assert "Teyuna Giger" not in prompt
+
+
+def test_prompt_explains_response_and_additional_details_fields():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "Direct answers, tuition, duration, deadlines, eligibility requirements" in prompt
+    assert "stay in `response`, not `additional_details`" in prompt
+    assert "Use `additional_details` for useful secondary dropdown content" in prompt
 
 
 def test_lead_prompt_uses_stage_sensitive_programme_positioning():

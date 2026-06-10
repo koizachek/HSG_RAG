@@ -9,6 +9,7 @@ from src.rag.deterministic_responses import (
     LegacyProgrammeContentResponder,
     ProgrammeOverviewResponder,
 )
+from src.rag.programmes import normalize_programme_id
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.logging import get_logger
@@ -171,16 +172,7 @@ class DeterministicRoutes(ChainComponent):
 
     @staticmethod
     def _normalise_programme_id(programme: str | None) -> str | None:
-        if not programme:
-            return None
-        programme_lower = str(programme).lower().replace("-", "_").replace(" ", "_")
-        if programme_lower in {"emba_x", "embax"}:
-            return "emba_x"
-        if programme_lower in {"iemba", "iemba_hsg", "international_emba"}:
-            return "iemba"
-        if programme_lower in {"emba", "emba_hsg"}:
-            return "emba"
-        return None
+        return normalize_programme_id(programme)
 
     def _is_application_next_step_request(self, query: str) -> bool:
         query_lower = query.lower()
@@ -362,7 +354,7 @@ class DeterministicRoutes(ChainComponent):
         processed_query: str,
         response: str,
         response_language: str,
-        relevant_programs: list[str] | None = None,
+        state_programmes: list[str] | None = None,
         suggested_program: str | None = None,
     ) -> LeadAgentQueryResponse:
         response = ResponseFormatter.format_name_of_university(response, language=response_language)
@@ -375,10 +367,10 @@ class DeterministicRoutes(ChainComponent):
         if hasattr(self, "_conversation_state"):
             if suggested_program is not None:
                 self._conversation_state["suggested_program"] = suggested_program
-            if relevant_programs:
+            if state_programmes:
                 program_interest = self._conversation_state.setdefault("program_interest", [])
                 if program_interest is not None:
-                    for programme in relevant_programs:
+                    for programme in state_programmes:
                         if programme not in program_interest:
                             program_interest.append(programme)
 
@@ -388,9 +380,6 @@ class DeterministicRoutes(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=relevant_programs or [],
         )
 
     def _is_emba_minimal_profile_guidance_request(self, query: str) -> bool:
@@ -462,7 +451,7 @@ class DeterministicRoutes(ChainComponent):
             processed_query,
             response,
             response_language,
-            relevant_programs=["emba"],
+            state_programmes=["emba"],
             suggested_program="emba",
         )
 
@@ -498,7 +487,7 @@ class DeterministicRoutes(ChainComponent):
             processed_query,
             response,
             "de" if response_language not in {"de", "en"} else response_language,
-            relevant_programs=["emba", "iemba", "emba_x"],
+            state_programmes=["emba", "iemba", "emba_x"],
         )
 
     def _is_iemba_visa_request(self, query: str) -> bool:
@@ -518,7 +507,7 @@ class DeterministicRoutes(ChainComponent):
             processed_query,
             response,
             "en",
-            relevant_programs=["iemba"],
+            state_programmes=["iemba"],
             suggested_program="iemba",
         )
 
@@ -539,7 +528,7 @@ class DeterministicRoutes(ChainComponent):
             processed_query,
             response,
             "en",
-            relevant_programs=["iemba"],
+            state_programmes=["iemba"],
             suggested_program="iemba",
         )
 
@@ -562,7 +551,7 @@ class DeterministicRoutes(ChainComponent):
             processed_query,
             response,
             response_language,
-            relevant_programs=["emba_x", "emba"],
+            state_programmes=["emba_x", "emba"],
         )
 
     def _is_embax_language_request(self, query: str) -> bool:
@@ -583,7 +572,7 @@ class DeterministicRoutes(ChainComponent):
             processed_query,
             response,
             response_language,
-            relevant_programs=["emba_x"],
+            state_programmes=["emba_x"],
             suggested_program="emba_x",
         )
 
@@ -616,9 +605,6 @@ class DeterministicRoutes(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=[],
         )
 
     @staticmethod
@@ -724,9 +710,6 @@ class DeterministicRoutes(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=[],
         )
 
     def _append_cost_orientation_to_redirect(self, redirect_msg: str, language: str) -> str:
@@ -869,9 +852,6 @@ class DeterministicRoutes(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=["iemba"],
         )
 
     def _serve_iemba_embax_tech_career_guidance(
@@ -1009,9 +989,6 @@ class DeterministicRoutes(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=["iemba", "emba_x"],
         )
 
     def _is_general_mba_overview_request(self, query: str) -> bool:
@@ -1211,9 +1188,6 @@ class DeterministicRoutes(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=[recommended_programme] if recommended_programme else ["emba", "iemba", "emba_x"],
         )
 
     def _serve_pending_continuation(
@@ -1223,12 +1197,8 @@ class DeterministicRoutes(ChainComponent):
     ) -> LeadAgentQueryResponse:
         chain_logger.info("Serving pending continuation without a new model call.")
 
-        formatted_response, continuation = ResponseFormatter.chunk_response(
-            self._pending_continuation or "",
-            config.chain.MAX_RESPONSE_WORDS_LEAD,
-            response_language,
-        )
-        self._pending_continuation = continuation
+        formatted_response = self._pending_continuation or ""
+        self._pending_continuation = None
         formatted_response = ResponseFormatter.clean_response(formatted_response)
         formatted_response = ResponseFormatter.format_name_of_university(
             formatted_response,
@@ -1241,7 +1211,4 @@ class DeterministicRoutes(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=[],
         )

@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import uuid
 from time import perf_counter
@@ -58,8 +58,8 @@ def test_reply_speed_sample_conversation_real_agent():
 
     conversation = [
         "Was kostet das EMBA HSG Programm?",
-        "Ich möchte einen Termin für das EMBA HSG buchen.",
-        "Bitte zeigen Sie mir verfügbare Online-Termine am Wochenanfang vormittags.",
+        "Ich mÃ¶chte einen Termin fÃ¼r das EMBA HSG buchen.",
+        "Bitte zeigen Sie mir verfÃ¼gbare Online-Termine am Wochenanfang vormittags.",
     ]
 
     timings = []
@@ -82,8 +82,6 @@ def test_reply_speed_sample_conversation_real_agent():
                     "query": turn,
                     "elapsed_s": elapsed,
                     "language": response.language,
-                    "show_booking_widget": response.show_booking_widget,
-                    "appointment_requested": response.appointment_requested,
                     "response_preview": response.response[:140].replace("\n", " "),
                 }
             )
@@ -99,8 +97,6 @@ def test_reply_speed_sample_conversation_real_agent():
         summary_lines.append(
             f"turn {idx}: {timing['elapsed_s']:.3f}s | "
             f"lang={timing['language']} | "
-            f"widget={timing['show_booking_widget']} | "
-            f"appointment={timing['appointment_requested']} | "
             f"query={timing['query']} | "
             f"preview={timing['response_preview']}"
         )
@@ -112,7 +108,5 @@ def test_reply_speed_sample_conversation_real_agent():
         assert response.response.strip(), summary
 
     assert responses[0].language == "de", summary
-    assert any(response.appointment_requested for response in responses[1:]), summary
-    assert responses[-1].show_booking_widget is True, summary
     assert max(item["elapsed_s"] for item in timings) < max_turn_seconds, summary
     assert total_elapsed < max_total_seconds, summary

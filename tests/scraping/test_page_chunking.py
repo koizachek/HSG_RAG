@@ -23,7 +23,7 @@ class TestPageChunking:
             os.path.join(html_path, 'embax-ch_admissions_deadlines-fees.html'), 
             os.path.join(html_path, 'embax-ch_events.html')
         ]:
-            raw_html = open(raw_html_file_path, 'r').read()
+            raw_html = open(raw_html_file_path, 'r', encoding='utf-8').read()
             cleaned_html = cleaner.clean_mobile_content(raw_html)
             document = processor.process(url='https://embax.ch', html_content=cleaned_html)
             

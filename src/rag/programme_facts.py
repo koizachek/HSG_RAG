@@ -5,6 +5,8 @@ from pathlib import Path
 from threading import Lock, Thread
 from typing import Any, Callable
 
+from src.rag.programmes import normalize_programme_id
+
 
 @dataclass
 class ProgrammeFacts:
@@ -261,12 +263,7 @@ class ProgrammeFactsProvider:
 
     @staticmethod
     def _normalize_programme(programme: str) -> str:
-        normalized = (programme or "").lower().replace("-", "_").replace(" ", "_")
-        if normalized in {"emba_x", "embax"}:
-            return "emba_x"
-        if normalized in {"iemba", "iemba_hsg", "international_emba"}:
-            return "iemba"
-        return "emba" if normalized in {"emba", "emba_hsg"} else normalized
+        return normalize_programme_id(programme) or (programme or "")
 
     @staticmethod
     def _split_sentences(text: str) -> list[str]:

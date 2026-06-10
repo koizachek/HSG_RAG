@@ -8,6 +8,18 @@ from src.scraping.scraper import Scraper
 from src.scraping.types import ChunkMetadata, UrlTimestamps
 
 
+def _saved_chunk_urls(results) -> list[str]:
+    if isinstance(results, dict):
+        chunks = [
+            chunk
+            for chunk_list in results.values()
+            for chunk in chunk_list
+        ]
+    else:
+        chunks = results
+    return [chunk.source_url for chunk in chunks]
+
+
 class DummyNormalizer:
     @staticmethod
     def url_to_filename(url: str) -> str:
@@ -167,7 +179,7 @@ class TestTempBehaviorComplete:
         }
 
         temp_snapshots = [
-            [chunk.source_url for chunk in call['results']]
+            _saved_chunk_urls(call['results'])
             for call in scraper._save_calls
             if call['path'] == scraper._path.TEMP_CHUNKS_OUTPUT and call['filename'] == temp_filename
         ]
@@ -205,7 +217,7 @@ class TestTempBehaviorComplete:
         ]
 
         temp_snapshots = [
-            [chunk.source_url for chunk in call['results']]
+            _saved_chunk_urls(call['results'])
             for call in scraper._save_calls
             if call['path'] == scraper._path.TEMP_CHUNKS_OUTPUT and call['filename'] == temp_filename
         ]

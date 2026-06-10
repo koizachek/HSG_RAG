@@ -27,3 +27,28 @@ class ProgrammeAgentInput(BaseModel):
             "agent. Include relevant profile details when available."
         )
     )
+
+
+class ProgrammeFactsInput(BaseModel):
+    programmes: list[str] = Field(
+        description=(
+            "Programme ids to look up. Expected values are 'emba', 'iemba', "
+            "or 'emba_x'. Use multiple values for comparisons."
+        )
+    )
+    fields: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Requested fact fields, for example tuition, deadlines, start_dates, "
+            "duration, language, format, locations, admissions, documents, "
+            "focus, fit, or all. Leave empty for the compact default set."
+        ),
+    )
+    language: str | None = Field(
+        default=None,
+        description="Preferred language for facts. Use 'en' or 'de'.",
+    )
+    query: str | None = Field(
+        default=None,
+        description="Optional original user query for traceability.",
+    )

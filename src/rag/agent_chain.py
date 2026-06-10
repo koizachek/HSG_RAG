@@ -1,6 +1,5 @@
 from langchain_core.runnables import RunnableConfig
 from langsmith import traceable
-from langchain.tools import tool
 from langchain.agents import create_agent
 from langchain_core.messages import (
     HumanMessage,
@@ -23,14 +22,16 @@ from src.rag.middleware import (
 from src.rag.prompts import PromptConfigurator as promptconf
 from src.rag.models import ModelConfigurator as modelconf
 from src.rag.programme_facts import JsonProgrammeFactsProvider
+from src.rag.programmes import normalize_programme_id
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.language_detection import LanguageDetector
-from src.rag.tool_schemas import RetrieveContextInput
+from src.rag.input_handler import InputHandler
 from src.rag.chatbot_control_flow import ChatbotControlFlow
 from src.rag.conversation_state import ConversationStateManager
 from src.rag.deterministic_responses import DeterministicResponsePolicy
 from src.rag.deterministic_routes import DeterministicRoutes
 from src.rag.programme_fact_responses import ProgrammeFactResponses
+from src.rag.tools.registry import AgentToolRegistry
 
 from src.utils.logging import get_logger
 from src.utils.lang import get_language_name
@@ -46,6 +47,8 @@ class ExecutiveAgentChain:
         ("_control_flow", ChatbotControlFlow),
         ("_conversation_state_manager", ConversationStateManager),
         ("_deterministic_routes", DeterministicRoutes),
+        # Legacy helper methods are kept for optional deterministic routes/tests.
+        # The default query path no longer invokes them before the lead agent.
         ("_programme_fact_responses", ProgrammeFactResponses),
     )
 
@@ -53,7 +56,6 @@ class ExecutiveAgentChain:
         self._initial_language = language
         self._stored_language = language
         self._dbservice = WeaviateService()
-        self._agents, self._config = self._init_agents()
         self._conversation_history = []
         self._pending_continuation: str | None = None
         self._programme_overview_detail_level = 0
@@ -65,6 +67,9 @@ class ExecutiveAgentChain:
             if config.chain.USE_PROGRAMME_FACTS
             else None
         )
+        self._tool_registry: AgentToolRegistry | None = None
+        self._retrieve_context_tool = None
+        self._agents, self._config = self._init_agents()
 
         if config.chain.EVALUATE_RESPONSE_QUALITY:
             from src.rag.quality_score_handler import QualityScoreHandler
@@ -102,7 +107,6 @@ class ExecutiveAgentChain:
         }
         self._conversation_state_manager = ConversationStateManager(self)
         self._deterministic_routes = DeterministicRoutes(self)
-        self._programme_fact_responses = ProgrammeFactResponses(self)
         self._control_flow = ChatbotControlFlow(self)
 
         chain_logger.info(
@@ -123,7 +127,75 @@ class ExecutiveAgentChain:
         raise AttributeError(f"{type(self).__name__!s} object has no attribute {name!r}")
 
     def query(self, query: str) -> LeadAgentQueryResponse:
-        return self._get_component("_control_flow", ChatbotControlFlow).query(query)
+        if self._deterministic_policy.control_enabled:
+            return self._get_component("_control_flow", ChatbotControlFlow).query(query)
+        return self._query_default(query)
+
+    @traceable
+    def _query_default(self, query: str) -> LeadAgentQueryResponse:
+        """Default RAG-first path: input policy -> agent -> postprocess/cache."""
+        current_language = self._stored_language
+        processed_query, is_valid = InputHandler.process_input(
+            query,
+            [
+                msg for msg in self._conversation_history
+                if isinstance(msg, (HumanMessage, AIMessage))
+            ],
+        )
+        if not is_valid or not processed_query:
+            processed_query = query
+
+        explicit_switch = self._language_detector.detect_explicit_switch_request(processed_query)
+        if explicit_switch:
+            self._stored_language = explicit_switch
+            current_language = explicit_switch
+            self._conversation_state["user_language"] = explicit_switch
+        elif self._language_detector.is_language_neutral_program_reference(processed_query):
+            current_language = self._stored_language
+        else:
+            user_message_count = len(
+                [m for m in self._conversation_history if isinstance(m, HumanMessage)]
+            )
+            lang_lock_n = config.convstate.LOCK_LANGUAGE_AFTER_N_MESSAGES
+            if lang_lock_n > 0 and user_message_count >= lang_lock_n:
+                current_language = self._stored_language
+            else:
+                detected_language = self._language_detector.detect_language(processed_query)
+                self._conversation_state["user_language"] = detected_language
+                if detected_language in ["de", "en"]:
+                    self._stored_language = detected_language
+                    current_language = detected_language
+                else:
+                    return LeadAgentQueryResponse(
+                        response=LANGUAGE_FALLBACK_MESSAGE[current_language],
+                        language=current_language,
+                        processed_query=processed_query,
+                    )
+
+        if config.cache.ENABLED:
+            cached_data = self._cache.get(query, current_language, self._user_id)
+            if cached_data and isinstance(cached_data, dict):
+                return LeadAgentQueryResponse(
+                    response=cached_data["response"],
+                    additional_details=cached_data.get("additional_details", ""),
+                    language=current_language,
+                    processed_query=processed_query,
+                )
+
+        response = self._query_lead(processed_query)
+
+        if config.cache.ENABLED and response.should_cache:
+            self._cache.set(
+                key=query,
+                value={
+                    "response": response.response,
+                    "additional_details": response.additional_details,
+                },
+                language=current_language,
+                session_id=self._user_id,
+            )
+
+        return response
 
     @staticmethod
     def _subagent_retrieval_fallback(program: str) -> str:
@@ -156,10 +228,7 @@ class ExecutiveAgentChain:
             language: Set to 'en' for IEMBA and emba x. set to 'de' for EMBA HSG. This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language.
         """
         lang = language if language in ["en", "de"] else self._initial_language
-        deterministic_routes = self._get_component(
-            "_deterministic_routes", DeterministicRoutes
-        )
-        normalized_program = deterministic_routes._normalise_programme_id(program)
+        normalized_program = normalize_programme_id(program)
         property_filters = (
             {"programs": [normalized_program]} if normalized_program else None
         )
@@ -203,29 +272,26 @@ class ExecutiveAgentChain:
                 "Subagents activated! This might lead to high response times!"
             )
 
+        self._tool_registry = AgentToolRegistry(
+            retrieve_context=self._retrieve_context,
+            programme_facts_provider=self._programme_facts_provider,
+        )
+        self._retrieve_context_tool = self._tool_registry.retrieve_context_tool
+
         sub_provider = SubagentProvider(
-            self._initial_language, self._query, self._retrieve_context
+            self._initial_language,
+            self._query,
+            self._retrieve_context,
+            tool_registry=self._tool_registry,
         )
 
         run_config: RunnableConfig = {"configurable": {"thread_id": 0}}
         fallback_middleware = ModelFallbackMiddleware(*modelconf.get_fallback_models())
-        tool_retrieve_context = tool(
-            name_or_callable="retrieve_context",
-            runnable=self._retrieve_context,
-            args_schema=RetrieveContextInput,
-            description=(
-                "Retrieve current programme context from the vector database. "
-                "Arguments: query, program, optional language."
-            ),
-            return_direct=False,
-            parse_docstring=False,
-        )
-        self._retrieve_context_tool = tool_retrieve_context
 
         if config.chain.ENABLE_SUBAGENTS:
             lead_agent_tools = sub_provider.get_subagent_tools()
         else:
-            lead_agent_tools = [tool_retrieve_context]
+            lead_agent_tools = self._tool_registry.lead_tools()
 
         agents = {
             "lead": create_agent(
@@ -265,29 +331,7 @@ class ExecutiveAgentChain:
         self._fallback_counters["scope_violations"] = {}
 
         response_language = self._stored_language
-        deterministic_routes = self._get_component(
-            "_deterministic_routes", DeterministicRoutes
-        )
-        conversation_state = self._get_component(
-            "_conversation_state_manager", ConversationStateManager
-        )
-        deterministic_policy = getattr(
-            self,
-            "_deterministic_policy",
-            DeterministicResponsePolicy.from_config(),
-        )
-        deterministic_control_enabled = deterministic_policy.control_enabled
-        explicit_booking_intent = (
-            deterministic_routes._is_explicit_booking_intent(preprocessed_query)
-            if deterministic_control_enabled
-            else False
-        )
-        booking_preference_follow_up = (
-            deterministic_control_enabled
-            and self._conversation_state.get("handover_requested") is True
-            and deterministic_routes._previous_response_requested_booking_preferences()
-            and deterministic_routes._is_booking_preference_follow_up(preprocessed_query)
-        )
+        conversation_state = self._conversation_state_manager
 
         # 1. History Update
         self._conversation_history.append(HumanMessage(preprocessed_query))
@@ -312,13 +356,6 @@ class ExecutiveAgentChain:
             f"Is answer context dependent: {structured_response.is_context_dependent}"
         )
         chain_logger.info(f"Additional details returned: {bool(additional_details)}")
-        chain_logger.info(
-            f"Appointment Requested: {structured_response.appointment_requested}"
-        )
-        chain_logger.info(
-            f"Show Booking Widget: {structured_response.show_booking_widget}"
-        )
-        chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
         # Keep the complete answer in internal memory even when the UI only
         # shows the first chunk. Otherwise follow-up turns only "remember" the
@@ -327,20 +364,10 @@ class ExecutiveAgentChain:
             ResponseFormatter.remove_tables(agent_response)
         )
 
-        # 4. Formatting
-        if (
-            config.chain.ENABLE_RESPONSE_CHUNKING
-            and not deterministic_routes._text_mentions_multiple_programmes(full_response)
-        ):
-            formatted_response, continuation = ResponseFormatter.chunk_response(
-                full_response,
-                config.chain.MAX_RESPONSE_WORDS_LEAD,
-                response_language,
-            )
-            self._pending_continuation = continuation
-        else:
-            formatted_response = full_response
-            self._pending_continuation = None
+        # 4. Formatting. Do not shorten the answer or ask for continuation;
+        # optional secondary material belongs in additional_details.
+        formatted_response = full_response
+        self._pending_continuation = None
 
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
@@ -384,33 +411,6 @@ class ExecutiveAgentChain:
             language=response_language,
         )
 
-        if deterministic_control_enabled:
-            booking_flow_requested = (
-                explicit_booking_intent or booking_preference_follow_up
-            )
-            appointment_requested = bool(booking_flow_requested)
-            show_booking_widget = bool(
-                booking_flow_requested
-                and (
-                    structured_response.show_booking_widget
-                    or deterministic_routes._response_commits_to_showing_booking_widget(
-                        formatted_response
-                    )
-                )
-            )
-
-            if structured_response.appointment_requested and not booking_flow_requested:
-                chain_logger.info(
-                    "Suppressed booking state because no explicit booking intent was detected."
-                )
-            elif booking_preference_follow_up and show_booking_widget:
-                chain_logger.info(
-                    "Continuing active booking flow and showing booking widget for a preference follow-up."
-                )
-        else:
-            appointment_requested = bool(structured_response.appointment_requested)
-            show_booking_widget = bool(structured_response.show_booking_widget)
-
         return LeadAgentQueryResponse(
             response=formatted_response,
             additional_details=additional_details,
@@ -419,14 +419,10 @@ class ExecutiveAgentChain:
             should_cache=False
             if (
                 confidence_fallback
-                or appointment_requested
                 or structured_response.is_context_dependent
             )
             else True,
             processed_query=preprocessed_query,
-            appointment_requested=appointment_requested,
-            show_booking_widget=show_booking_widget,
-            relevant_programs=structured_response.relevant_programs,
         )
 
     def _query(

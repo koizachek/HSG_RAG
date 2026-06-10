@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 import pytest
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -44,7 +44,7 @@ class FakeLeadAgent:
             for marker in (
                 "geeignet",
                 "berufserfahrung",
-                "führungserfahrung",
+                "fÃ¼hrungserfahrung",
                 "tech-bereich",
                 "passt",
             )
@@ -53,20 +53,17 @@ class FakeLeadAgent:
         if "was ist das emba hsg" in query_lower:
             response_text = "Das EMBA HSG ist ein berufsbegleitendes Executive-MBA-Programm."
         elif "wann startet das iemba" in query_lower:
-            response_text = "Das IEMBA startet einmal jährlich."
+            response_text = "Das IEMBA startet einmal jÃ¤hrlich."
         elif "welches programm passt" in query_lower:
             response_text = "Auf Basis Ihrer Angaben passt wahrscheinlich das IEMBA besser."
         elif "geeignet" in query_lower:
-            response_text = "Für eine Eignungseinschätzung sind Ihre Erfahrung und Führungsverantwortung relevant."
+            response_text = "FÃ¼r eine EignungseinschÃ¤tzung sind Ihre Erfahrung und FÃ¼hrungsverantwortung relevant."
         else:
             response_text = "Ich habe Ihre Angaben aufgenommen."
 
         response = StructuredAgentResponse(
             response=response_text,
             is_context_dependent=is_context_dependent,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=[],
         )
 
         return {
@@ -111,7 +108,7 @@ def test_chain_context_dependency_and_cacheability_offline(monkeypatch):
             },
             {
                 "name": "eligibility question should be context-dependent and not cacheable",
-                "query": "Bin ich mit 6 Jahren Berufserfahrung und 3 Jahren Führungserfahrung für das EMBA HSG geeignet?",
+                "query": "Bin ich mit 6 Jahren Berufserfahrung und 3 Jahren FÃ¼hrungserfahrung fÃ¼r das EMBA HSG geeignet?",
                 "expected_context_dependent": True,
                 "expected_should_cache": False,
             },
@@ -168,7 +165,7 @@ def test_chain_context_dependency_and_cacheability_offline(monkeypatch):
             session_id=f"history-{uuid.uuid4()}",
         )
 
-        history_agent.query("Ich habe 8 Jahre Berufserfahrung, 4 Jahre Führungserfahrung und arbeite in der Softwarebranche.")
+        history_agent.query("Ich habe 8 Jahre Berufserfahrung, 4 Jahre FÃ¼hrungserfahrung und arbeite in der Softwarebranche.")
 
         followup_query = "Welches Programm passt zu mir?"
         followup_final = history_agent.query(followup_query)

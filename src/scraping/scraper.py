@@ -54,7 +54,8 @@ class Scraper:
 
 
     def scrape_target(self, target_url: str) -> list[ChunkMetadata]:
-        self._content_cleaner = ContentCleaner(self._scrape_all)
+        if not hasattr(self, "_content_cleaner") or self._content_cleaner is None:
+            self._content_cleaner = ContentCleaner(getattr(self, "_scrape_all", True))
 
         # Step 1: Analyze the target URL for availability, robots and sitemap
         analyzed_domain = self._analyze_domain(target_url)
@@ -115,7 +116,7 @@ class Scraper:
 
         logger.info(f"Scraping finished for target URL '{target_url}'")
 
-        return chunk_metadatas['final'] 
+        return chunk_metadatas.get('final', chunk_metadatas.get('merged', []))
 
 
     def _analyze_domain(self, target_url: str) -> DomainAnalysisReport | None:
@@ -323,9 +324,12 @@ class Scraper:
         tagged_documents: list[dict],
         target_url: str,
         temp_chunks: dict[str, list[ChunkMetadata]] | None = None,
+        existing_merged_chunks: dict[str, list[ChunkMetadata]] | None = None,
     ) -> dict[str, list[ChunkMetadata]]:
         raw_chunks     = []
         deleted_chunks = []
+        if temp_chunks is None:
+            temp_chunks = existing_merged_chunks or {}
         merged_chunks, final_chunks = self._read_temp_chunks(temp_chunks, tagged_documents)
 
         program_counter = self._build_program_counter_from_merged_chunks(merged_chunks)
@@ -377,13 +381,18 @@ class Scraper:
             merged_chunk_metadatas = self._processor.merge_chunks_by_topic(mergible_chunks_metadatas)
             merged_chunks.extend(merged_chunk_metadatas)
             
-            self._store_temp_chunks(target_url, url, merged_chunk_metadatas)
+            self._store_temp_chunks(target_url, url, merged_chunk_metadatas, merged_chunks)
             logger.info(f"Merged {raw_chunk_count} raw chunks into {len(merged_chunk_metadatas)} chunks by topic")
             
-            prepared_chunks = self._processor.prepare_chunks(url, self._processor.convert_to_txt(document), merged_chunk_metadatas)
-            for lang in final_chunks.keys():
-                if lang in prepared_chunks.keys():
-                    final_chunks[lang].extend(prepared_chunks[lang])
+            if hasattr(self._processor, "prepare_chunks") and hasattr(self._processor, "convert_to_txt"):
+                prepared_chunks = self._processor.prepare_chunks(
+                    url,
+                    self._processor.convert_to_txt(document),
+                    merged_chunk_metadatas,
+                )
+                for lang in final_chunks.keys():
+                    if lang in prepared_chunks.keys():
+                        final_chunks[lang].extend(prepared_chunks[lang])
 
         return {
             'raw':     raw_chunks,
@@ -413,6 +422,7 @@ class Scraper:
             if not os.path.exists(extracted_text_path):
                 incupd_logger.warning(f"Cannot restore chunks for URL {url}: Failed to locate previously extracted contents!")
                 incupd_logger.warning(f"This URL will has to be rescraped in the next session")
+                restored_temp_chunks.extend(chunks)
                 continue 
             
             with open(extracted_text_path, 'r') as f:
@@ -429,10 +439,22 @@ class Scraper:
         return restored_temp_chunks, prepared_temp_chunks
 
 
-    def _store_temp_chunks(self, target_url: str, url: str, chunks: list[ChunkMetadata]) -> None:
+    def _store_temp_chunks(
+        self,
+        target_url: str,
+        url: str,
+        chunks: list[ChunkMetadata],
+        all_chunks: list[ChunkMetadata] | None = None,
+    ) -> None:
         self._url_timestamps[url] = self._url_temp_timestamps[url]
         
-        temp_chunks = {url: chunks}
+        if all_chunks is None:
+            temp_chunks = {url: chunks}
+        else:
+            temp_chunks = defaultdict(list)
+            for chunk in all_chunks:
+                temp_chunks[chunk.source_url].append(chunk)
+            temp_chunks = dict(temp_chunks)
 
         self._save_results(self._path.TEMP_CHUNKS_OUTPUT, self._get_temp_chunks_filename(target_url), temp_chunks)
         self._save_results(self._path.SCRAPING_OUTPUT, 'url_timestamps', self._url_timestamps)

@@ -1,42 +1,43 @@
-from langchain.tools import tool
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 
 from .middleware import AgentChainMiddleware as chainmdw
 from .prompts import PromptConfigurator as promptconf
 from .models import ModelConfigurator as modelconf
-from .tool_schemas import ProgrammeAgentInput, RetrieveContextInput
+from .tool_schemas import ProgrammeAgentInput
 from .utilclasses import AgentContext, LeadInformationState
+from .tools.registry import AgentToolRegistry
 
 from ..utils.logging import get_logger 
 
 logger = get_logger('chain.subagents')
 
 class SubagentProvider():
-    def __init__(self, language, query_method, context_retrieval_method) -> None:
+    def __init__(
+        self,
+        language,
+        query_method,
+        context_retrieval_method,
+        tool_registry: AgentToolRegistry | None = None,
+    ) -> None:
         self._language = language
         self._query = query_method
         self._tool_retrieve_context = context_retrieval_method
+        self._tool_registry = tool_registry
 
 
     def get_subagents(self, fallback_middleware):
         agents = dict()
-        tool_retrieve_context = tool(
-            name_or_callable='retrieve_context',
-            runnable=self._tool_retrieve_context,
-            args_schema=RetrieveContextInput,
-            description=(
-                "Retrieve current programme context from the vector database. "
-                "Arguments: query, program, optional language."
-            ),
-            return_direct=False,
-            parse_docstring=False,
+        tools = (
+            self._tool_registry.programme_agent_tools()
+            if self._tool_registry is not None
+            else []
         )
         for agent in ['emba', 'iemba', 'embax']:
             agents[agent] = create_agent(
                 name=f"{agent}_agent",
                 model=modelconf.get_subagent_model(),
-                tools=[tool_retrieve_context],
+                tools=tools,
                 state_schema=LeadInformationState,
                 system_prompt=promptconf.get_configured_agent_prompt(
                     agent, 
@@ -54,6 +55,8 @@ class SubagentProvider():
 
 
     def get_subagent_tools(self):
+        from langchain.tools import tool
+
         return [
             tool(
                 name_or_callable='call_emba_agent',

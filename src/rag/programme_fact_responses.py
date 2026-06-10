@@ -1168,9 +1168,6 @@ class ProgrammeFactResponses(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=programmes,
         )
 
     def _get_programme_facts(self, programme: str, language: str) -> ProgrammeFacts:
@@ -1329,17 +1326,12 @@ class ProgrammeFactResponses(ChainComponent):
         self._conversation_history.append(HumanMessage(processed_query))
         self._conversation_history.append(AIMessage(response))
         self._conversation_state['suggested_program'] = programme
-        booking_active = self._conversation_state.get('handover_requested') is True
-
         return LeadAgentQueryResponse(
             response=response,
             language=response_language,
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=booking_active,
-            show_booking_widget=booking_active,
-            relevant_programs=[programme],
         )
 
     def _get_application_timing_fact_values(
@@ -1485,9 +1477,6 @@ class ProgrammeFactResponses(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=programmes,
         )
 
     def _build_application_process_details_response(self, language: str, programmes: list[str]) -> str:
@@ -1605,7 +1594,4 @@ class ProgrammeFactResponses(ChainComponent):
             confidence_fallback=False,
             should_cache=False,
             processed_query=processed_query,
-            appointment_requested=False,
-            show_booking_widget=False,
-            relevant_programs=programmes,
         )

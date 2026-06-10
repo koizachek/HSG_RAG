@@ -345,15 +345,14 @@ def evaluate_heuristics(case: UATCase, branch_result: dict[str, Any]) -> dict[st
 
     booking_terms = ["termin", "handover", "kontaktdaten", "appointment", "slots", "beratung"]
     if any(term in rubric_lower for term in booking_terms):
-        booking_seen = any(
-            item.get("appointment_requested") or item.get("show_booking_widget")
-            for item in responses
-        )
         checks.append(
             {
                 "name": "booking_or_handover",
-                "expected": "booking/contact handover signal",
-                "passed": booking_seen or _contains_any(joined_response, ["appointment", "termin", "contact", "kontakt"]),
+                "expected": "appointment/contact guidance in answer text",
+                "passed": _contains_any(
+                    joined_response,
+                    ["appointment", "termin", "contact", "kontakt", "dropdown"],
+                ),
             }
         )
 
@@ -516,8 +515,6 @@ def _judge_prompt(case: dict[str, Any], branch_id: str, branch_result: dict[str,
                 "user": item.get("query"),
                 "assistant": item.get("response"),
                 "language": item.get("language"),
-                "appointment_requested": item.get("appointment_requested"),
-                "show_booking_widget": item.get("show_booking_widget"),
                 "error": item.get("error"),
             }
         )
@@ -1175,8 +1172,6 @@ def _run_turn(agent, turn_index, user_turn):
             "elapsed_s": elapsed,
             "response": getattr(response, "response", ""),
             "language": getattr(response, "language", None),
-            "appointment_requested": bool(getattr(response, "appointment_requested", False)),
-            "show_booking_widget": bool(getattr(response, "show_booking_widget", False)),
             "confidence_fallback": bool(getattr(response, "confidence_fallback", False)),
             "lead_agent_model_calls": lead_agent_calls_delta,
         }
@@ -1184,8 +1179,6 @@ def _run_turn(agent, turn_index, user_turn):
             "turn_end",
             elapsed_s=elapsed,
             language=item.get("language"),
-            appointment_requested=item.get("appointment_requested"),
-            show_booking_widget=item.get("show_booking_widget"),
             confidence_fallback=item.get("confidence_fallback"),
             response_chars=len(item.get("response") or ""),
             response_preview=_preview(item.get("response")),
@@ -1318,8 +1311,6 @@ def _run_case(agent):
                     outputs={
                         "elapsed_s": response_item.get("elapsed_s"),
                         "language": response_item.get("language"),
-                        "appointment_requested": response_item.get("appointment_requested"),
-                        "show_booking_widget": response_item.get("show_booking_widget"),
                         "confidence_fallback": response_item.get("confidence_fallback"),
                         "error": response_item.get("error"),
                         "response": response_item.get("response"),
@@ -1624,8 +1615,6 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
         "turn_index",
         "elapsed_s",
         "language",
-        "appointment_requested",
-        "show_booking_widget",
         "confidence_fallback",
         "lead_agent_model_calls",
         "query",
@@ -1647,8 +1636,6 @@ def write_reports(results: list[dict[str, Any]], output_dir: Path) -> tuple[Path
                         "turn_index": response.get("turn_index"),
                         "elapsed_s": response.get("elapsed_s"),
                         "language": response.get("language"),
-                        "appointment_requested": response.get("appointment_requested"),
-                        "show_booking_widget": response.get("show_booking_widget"),
                         "confidence_fallback": response.get("confidence_fallback"),
                         "lead_agent_model_calls": response.get("lead_agent_model_calls"),
                         "query": str(response.get("query", "")).replace("\n", " "),

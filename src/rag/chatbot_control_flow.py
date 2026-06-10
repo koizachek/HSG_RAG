@@ -7,7 +7,6 @@ from src.rag.chain_components import ChainComponent
 from src.rag.deterministic_responses import DeterministicResponsePolicy
 from src.rag.deterministic_routes import DeterministicRoutes
 from src.rag.input_handler import InputHandler
-from src.rag.programme_fact_responses import ProgrammeFactResponses
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.utilclasses import LeadAgentQueryResponse
 from src.utils.lang import get_language_name
@@ -27,9 +26,6 @@ class ChatbotControlFlow(ChainComponent):
         deterministic_routes = chain._get_component(
             "_deterministic_routes", DeterministicRoutes
         )
-        programme_fact_responses = chain._get_component(
-            "_programme_fact_responses", ProgrammeFactResponses
-        )
 
         # Remember fallback language
         current_language = self._stored_language 
@@ -47,7 +43,6 @@ class ChatbotControlFlow(ChainComponent):
                 response = CONVERSATION_END_MESSAGE[current_language],
                 language = current_language,
                 max_turns_reached = True,
-                relevant_programs=[],
                 processed_query = query
             ) 
 
@@ -177,14 +172,6 @@ class ChatbotControlFlow(ChainComponent):
                     profile_context=True,
                 )
 
-            preferred_programme = deterministic_routes._extract_programme_preference(processed_query)
-            if preferred_programme and deterministic_routes._latest_ai_mentions_multiple_programmes():
-                return programme_fact_responses._serve_programme_next_steps(
-                    processed_query=processed_query,
-                    response_language=current_language,
-                    programme=preferred_programme,
-                )
-
             if deterministic_routes._is_embax_comparison_request(processed_query):
                 return deterministic_routes._serve_embax_comparison_response(
                     processed_query=processed_query,
@@ -195,34 +182,6 @@ class ChatbotControlFlow(ChainComponent):
                 return deterministic_routes._serve_embax_language_response(
                     processed_query=processed_query,
                     response_language=current_language,
-                )
-
-            if (
-                deterministic_routes._previous_response_was_application_next_step()
-                and deterministic_routes._is_application_process_detail_request(processed_query)
-            ):
-                application_programmes = deterministic_routes._resolve_known_application_programmes(processed_query)
-                if application_programmes:
-                    return programme_fact_responses._serve_application_process_details(
-                        processed_query=processed_query,
-                        response_language=current_language,
-                        programmes=application_programmes,
-                    )
-
-            application_programmes = deterministic_routes._resolve_application_programmes(processed_query)
-            if application_programmes:
-                return programme_fact_responses._serve_application_next_steps(
-                    processed_query=processed_query,
-                    response_language=current_language,
-                    programmes=application_programmes,
-                )
-
-            fact_programmes = programme_fact_responses._resolve_programmes_for_fact_request(processed_query)
-            if fact_programmes:
-                return programme_fact_responses._serve_programme_fact_request(
-                    processed_query=processed_query,
-                    response_language=current_language,
-                    programmes=fact_programmes,
                 )
 
             if deterministic_routes._is_price_frustration_request(processed_query):
@@ -279,8 +238,6 @@ class ChatbotControlFlow(ChainComponent):
                 response=redirect_msg,
                 language=current_language,
                 processed_query=processed_query,
-                appointment_requested=False,
-                show_booking_widget=False,
             )
 
         if deterministic_programme_content_enabled and deterministic_routes._is_likely_too_early_for_executive_mba(processed_query):
@@ -305,9 +262,6 @@ class ChatbotControlFlow(ChainComponent):
                     response=cached_data["response"],
                     additional_details=cached_data.get("additional_details", ""),
                     language=current_language,
-                    appointment_requested=cached_data.get("appointment_requested", False),
-                    show_booking_widget=cached_data.get("show_booking_widget", False),
-                    relevant_programs=cached_data.get("relevant_programs", []),
                 )
             
 
@@ -320,9 +274,6 @@ class ChatbotControlFlow(ChainComponent):
                 value={
                     "response":              response.response,
                     "additional_details":    response.additional_details,
-                    "appointment_requested": response.appointment_requested,
-                    "show_booking_widget":    response.show_booking_widget,
-                    "relevant_programs":     response.relevant_programs,
                 },
                 language   = current_language,
                 session_id = self._user_id,
