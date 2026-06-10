@@ -160,6 +160,11 @@ ENABLE_EVALUATE_RESPONSE_QUALITY = False
 # A boolean: either True or False. Activates the usage of the program-specific subagents.
 ENABLE_SUBAGENTS = False
 
+# A boolean. Re-enables the legacy keyword/regex fact routers in the agent chain.
+# Disabled by default: volatile core facts now come from data/programme_facts.json
+# (auto-generated from official sources, injected into the system prompt).
+ENABLE_LEGACY_FACT_ROUTER = False
+
 # A float in range from 0 to 1. Sets the treshold value for the quality evaluation.
 # The fallback mechanism will be activated if the quality of the agentic response 
 # is lower than the confidence threshold.

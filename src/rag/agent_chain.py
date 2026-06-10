@@ -129,7 +129,20 @@ class ExecutiveAgentChain:
                     'programs': [program],
                 },
             )
-            serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
+            # Hallucination fix: include source metadata per chunk so the
+            # model can keep programmes apart and ground its answer, instead
+            # of receiving an anonymous wall of concatenated text.
+            serialized_chunks = []
+            for doc in response.objects:
+                props = doc.properties or {}
+                body = props.get('body', '')
+                if not body:
+                    continue
+                programs = props.get('programs') or []
+                source = props.get('source') or 'unknown'
+                header = f"[programme: {', '.join(programs) if programs else 'unspecified'} | source: {source}]"
+                serialized_chunks.append(f"{header}\n{body}")
+            serialized = '\n\n'.join(serialized_chunks)
             # Hallucination guard: an empty tool result silently invited the
             # model to answer from world knowledge. Make the gap explicit and
             # instruct the model to acknowledge it instead of inventing facts.
@@ -871,64 +884,69 @@ class ExecutiveAgentChain:
                         processed_query=processed_query
                     )
 
-        if (
-            self._is_continuation_request(processed_query)
-            and self._latest_ai_mentions_multiple_programmes()
-        ):
-            return self._serve_programme_overview(
-                processed_query=processed_query,
-                response_language=current_language,
-                detailed=True,
-                profile_context=getattr(self, "_programme_overview_profile_context", False),
-            )
+        # Legacy deterministic answer paths (keyword routers + regex fact
+        # extraction). Disabled by default: they could attribute facts to the
+        # wrong programme and answered misclassified queries with templates.
+        # The verified-facts prompt block + the LLM now handle these queries.
+        if config.chain.ENABLE_LEGACY_FACT_ROUTER:
+            if (
+                self._is_continuation_request(processed_query)
+                and self._latest_ai_mentions_multiple_programmes()
+            ):
+                return self._serve_programme_overview(
+                    processed_query=processed_query,
+                    response_language=current_language,
+                    detailed=True,
+                    profile_context=getattr(self, "_programme_overview_profile_context", False),
+                )
 
-        if (
-            self._latest_ai_mentions_multiple_programmes()
-            and self._is_profile_context_update(processed_query)
-            and not self._query_mentions_specific_programme(processed_query)
-        ):
-            return self._serve_programme_overview(
-                processed_query=processed_query,
-                response_language=current_language,
-                detailed=False,
-                profile_context=True,
-            )
+            if (
+                self._latest_ai_mentions_multiple_programmes()
+                and self._is_profile_context_update(processed_query)
+                and not self._query_mentions_specific_programme(processed_query)
+            ):
+                return self._serve_programme_overview(
+                    processed_query=processed_query,
+                    response_language=current_language,
+                    detailed=False,
+                    profile_context=True,
+                )
 
-        preferred_programme = self._extract_programme_preference(processed_query)
-        if preferred_programme and self._latest_ai_mentions_multiple_programmes():
-            return self._serve_programme_next_steps(
-                processed_query=processed_query,
-                response_language=current_language,
-                programme=preferred_programme,
-            )
+            preferred_programme = self._extract_programme_preference(processed_query)
+            if preferred_programme and self._latest_ai_mentions_multiple_programmes():
+                return self._serve_programme_next_steps(
+                    processed_query=processed_query,
+                    response_language=current_language,
+                    programme=preferred_programme,
+                )
 
-        if (
-            self._previous_response_was_application_next_step()
-            and self._is_application_process_detail_request(processed_query)
-        ):
-            application_programmes = self._resolve_known_application_programmes(processed_query)
+            if (
+                self._previous_response_was_application_next_step()
+                and self._is_application_process_detail_request(processed_query)
+            ):
+                application_programmes = self._resolve_known_application_programmes(processed_query)
+                if application_programmes:
+                    return self._serve_application_process_details(
+                        processed_query=processed_query,
+                        response_language=current_language,
+                        programmes=application_programmes,
+                    )
+
+            application_programmes = self._resolve_application_programmes(processed_query)
             if application_programmes:
-                return self._serve_application_process_details(
+                return self._serve_application_next_steps(
                     processed_query=processed_query,
                     response_language=current_language,
                     programmes=application_programmes,
                 )
 
-        application_programmes = self._resolve_application_programmes(processed_query)
-        if application_programmes:
-            return self._serve_application_next_steps(
-                processed_query=processed_query,
-                response_language=current_language,
-                programmes=application_programmes,
-            )
-
-        fact_programmes = self._resolve_programmes_for_fact_request(processed_query)
-        if fact_programmes:
-            return self._serve_programme_fact_request(
-                processed_query=processed_query,
-                response_language=current_language,
-                programmes=fact_programmes,
-            )
+            fact_programmes = self._resolve_programmes_for_fact_request(processed_query)
+            if fact_programmes:
+                return self._serve_programme_fact_request(
+                    processed_query=processed_query,
+                    response_language=current_language,
+                    programmes=fact_programmes,
+                )
 
         if self._pending_continuation and self._is_continuation_request(processed_query):
             return self._serve_pending_continuation(
@@ -972,7 +990,10 @@ class ExecutiveAgentChain:
                 show_booking_widget=False,
             )
 
-        if self._is_general_mba_overview_request(processed_query):
+        if (
+            config.chain.ENABLE_LEGACY_FACT_ROUTER
+            and self._is_general_mba_overview_request(processed_query)
+        ):
             return self._serve_programme_overview(
                 processed_query=processed_query,
                 response_language=current_language,

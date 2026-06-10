@@ -1,3 +1,6 @@
+from src.rag.verified_facts import VerifiedFacts
+
+
 class PromptConfigurator:
     # 1. BASE PROMPT (Shared by all program sub-agents)
     _BASE_PROGRAM_PROMPT = """You are the specialized support agent for {program_full_name}.
@@ -228,12 +231,17 @@ GENERAL:
 
         agent_key = agent.lower().replace(" ", "")
 
+        # Verified programme facts (auto-generated from official sources).
+        # Hallucination fix: gives the model an authoritative in-prompt source
+        # for volatile core facts instead of regex-extraction from chunks.
+        facts_block = VerifiedFacts.render_prompt_block(language=language)
+
         # 2. Configure Lead Agent
         if agent_key == 'lead':
             return cls._LEAD_SYSTEM_PROMPT.format(
                 university_name=university_name,
                 tool_routing=cls._SUBAGENT_TOOL_ROUTING if use_subagents else cls._RETRIEVE_CONTEXT_TOOL_ROUTING,
-            )
+            ) + facts_block
 
         # 3. Configure Program Agents
         prog_def = cls._PROGRAM_DEFINITIONS.get(agent_key)
@@ -245,7 +253,7 @@ GENERAL:
                 selected_language=selected_language,
                 university_name=university_name,
                 program_name=agent.upper()
-            )
+            ) + facts_block
         else:
             # Fallback
             return cls._BASE_PROGRAM_PROMPT.format(
