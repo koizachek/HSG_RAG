@@ -265,9 +265,16 @@ class ChatbotApplication:
         return self._app
 
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
+        """
+        Streaming chat handler (generator). Yields partial text while the lead
+        agent streams its answer, then a final yield with the post-processed
+        response. Latency fix: perceived latency drops to time-to-first-token
+        instead of waiting for the full pipeline.
+        """
         if agent is None:
             logger.error("Agent not initialized")
-            return ["I apologize, but the chatbot is not properly initialized."], agent
+            yield ["I apologize, but the chatbot is not properly initialized."], agent
+            return
 
         answers = []
         try:
@@ -279,8 +286,41 @@ class ChatbotApplication:
                 agent.reset_conversation_state()
 
             logger.info(f"Processing user query: {message[:100]}...")
-            response = agent.query(message)
-            answers.append(response.response) 
+
+            # Run the agent in a worker thread; consume streamed deltas here.
+            import threading
+            import queue as queue_mod
+
+            delta_queue: queue_mod.Queue = queue_mod.Queue()
+            outcome: dict = {}
+
+            def _worker():
+                try:
+                    outcome['response'] = agent.query(message, on_delta=delta_queue.put)
+                except Exception as worker_error:  # surfaced after the loop
+                    outcome['error'] = worker_error
+                finally:
+                    delta_queue.put(None)  # sentinel: stream finished
+
+            worker = threading.Thread(target=_worker, daemon=True)
+            worker.start()
+
+            partial = ""
+            while True:
+                item = delta_queue.get()
+                if item is None:
+                    break
+                partial += item
+                yield partial, agent
+
+            worker.join()
+            if 'error' in outcome:
+                raise outcome['error']
+
+            response = outcome['response']
+            # Final yield uses the post-processed text (formatting, chunking),
+            # replacing the raw streamed preview.
+            answers.append(response.response)
             self._language = response.language
 
             if response.additional_details:
@@ -321,7 +361,7 @@ class ChatbotApplication:
             )
             answers.append(error_message)
 
-        return answers, agent
+        yield answers, agent
 
     @staticmethod
     def _visible_history_is_empty(history: list[dict] | None) -> bool:

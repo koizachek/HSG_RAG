@@ -813,10 +813,16 @@ class ExecutiveAgentChain:
         return greeting_message
 
     @traceable
-    def query(self, query: str) -> LeadAgentQueryResponse:
+    def query(self, query: str, on_delta=None) -> LeadAgentQueryResponse:
         """
         Phase 1: Validation, Scope-Check and language detection.
         Does not call the agent directly.
+
+        Args:
+            on_delta: Optional callback receiving displayable text deltas while
+                the lead agent streams its answer. Early-return paths (scope
+                check, cache hits, invalid input) skip streaming and only
+                return the final response.
         """
         # Latency monitoring: per-step timings are logged so regressions
         # show up immediately instead of being guessed at later.
@@ -1024,7 +1030,7 @@ class ExecutiveAgentChain:
         preprocess_elapsed = perf_counter() - self._turn_start_time
         chain_logger.info(f"[timing] preprocessing: {preprocess_elapsed:.2f}s")
 
-        response = self._query_lead(query)
+        response = self._query_lead(query, on_delta=on_delta)
 
         total_elapsed = perf_counter() - self._turn_start_time
         chain_logger.info(f"[timing] total turn: {total_elapsed:.2f}s")
@@ -1046,7 +1052,7 @@ class ExecutiveAgentChain:
         return response 
 
 
-    def _query_lead(self, preprocessed_query: str) -> LeadAgentQueryResponse:
+    def _query_lead(self, preprocessed_query: str, on_delta=None) -> LeadAgentQueryResponse:
         """
         Phase 2: Execute agent.
         Takes the ALREADY validated query from the preprocessing phase.
@@ -1080,6 +1086,7 @@ class ExecutiveAgentChain:
         structured_response = self._query(
             agent=self._agents['lead'],
             messages=history_window + [language_instruction],
+            on_delta=on_delta,
         )
         agent_response = structured_response.response
         additional_details = ResponseFormatter.clean_response(
@@ -3228,17 +3235,69 @@ class ExecutiveAgentChain:
             relevant_programs=[],
         )
 
-    def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
+    @staticmethod
+    def _chunk_text(chunk) -> str:
+        """Best-effort extraction of text content from a streamed message chunk."""
+        content = getattr(chunk, 'content', None)
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for part in content:
+                if isinstance(part, dict):
+                    parts.append(part.get('text', ''))
+                elif isinstance(part, str):
+                    parts.append(part)
+            return ''.join(parts)
+        return ""
+
+    def _invoke_streaming(self, agent, messages: list, config, on_delta):
+        """
+        Stream the agent loop, pushing displayable text deltas to `on_delta`.
+        Returns the final graph state (same shape as agent.invoke), or None
+        when streaming is unavailable so the caller can fall back to invoke().
+        """
+        from src.rag.stream_parser import ResponseFieldStreamParser
+        parser = ResponseFieldStreamParser()
+        last_values = None
+        try:
+            for mode, payload in agent.stream(
+                {"messages": messages},
+                config=config,
+                context=AgentContext(agent_name=agent.name),
+                stream_mode=["messages", "values"],
+            ):
+                if mode == "values":
+                    last_values = payload
+                elif mode == "messages":
+                    chunk = payload[0] if isinstance(payload, tuple) else payload
+                    text = self._chunk_text(chunk)
+                    if text:
+                        delta = parser.feed(text)
+                        if delta:
+                            on_delta(delta)
+        except Exception as e:
+            chain_logger.warning(
+                f"Streaming failed for {agent.name} ({e}); falling back to blocking invoke."
+            )
+            return None
+        return last_values
+
+    def _query(self, agent, messages: list, thread_id: str = None, on_delta=None) -> StructuredAgentResponse:
         try:
             config = self._config.copy()
             config['configurable']['thread_id'] = thread_id or self._user_id
 
             invoke_start = perf_counter()
-            result: AIMessage = agent.invoke(
-                {"messages": messages},
-                config=config,
-                context=AgentContext(agent_name=agent.name),
-            )
+            result = None
+            if on_delta is not None:
+                result = self._invoke_streaming(agent, messages, config, on_delta)
+            if result is None:
+                result: AIMessage = agent.invoke(
+                    {"messages": messages},
+                    config=config,
+                    context=AgentContext(agent_name=agent.name),
+                )
             chain_logger.info(
                 f"[timing] agent loop ({agent.name}): {perf_counter() - invoke_start:.2f}s"
             )
