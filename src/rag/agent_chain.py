@@ -17,6 +17,7 @@ import re
 import random
 import glob
 from datetime import datetime
+from time import perf_counter
 
 from src.database.weavservice import WeaviateService
 
@@ -817,8 +818,12 @@ class ExecutiveAgentChain:
         Phase 1: Validation, Scope-Check and language detection.
         Does not call the agent directly.
         """
+        # Latency monitoring: per-step timings are logged so regressions
+        # show up immediately instead of being guessed at later.
+        self._turn_start_time = perf_counter()
+
         # Remember fallback language
-        current_language = self._stored_language 
+        current_language = self._stored_language
 
         if len(self._conversation_history) >= config.convstate.MAX_CONVERSATION_TURNS:
             return LeadAgentQueryResponse(
@@ -1015,8 +1020,14 @@ class ExecutiveAgentChain:
                 )
             
 
-        # 6. Preprocessing is finished - the agent has to answer the query 
-        response = self._query_lead(query) 
+        # 6. Preprocessing is finished - the agent has to answer the query
+        preprocess_elapsed = perf_counter() - self._turn_start_time
+        chain_logger.info(f"[timing] preprocessing: {preprocess_elapsed:.2f}s")
+
+        response = self._query_lead(query)
+
+        total_elapsed = perf_counter() - self._turn_start_time
+        chain_logger.info(f"[timing] total turn: {total_elapsed:.2f}s")
         
         if config.cache.ENABLED and response.should_cache:
             self._cache.set(
@@ -3222,10 +3233,14 @@ class ExecutiveAgentChain:
             config = self._config.copy()
             config['configurable']['thread_id'] = thread_id or self._user_id
 
+            invoke_start = perf_counter()
             result: AIMessage = agent.invoke(
                 {"messages": messages},
                 config=config,
                 context=AgentContext(agent_name=agent.name),
+            )
+            chain_logger.info(
+                f"[timing] agent loop ({agent.name}): {perf_counter() - invoke_start:.2f}s"
             )
             response = result.get(
                 'structured_response',
