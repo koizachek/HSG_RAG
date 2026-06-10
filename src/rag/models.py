@@ -7,7 +7,6 @@ logger = get_logger("model_config")
 
 class ModelConfigurator:
     _main_model_instance: BaseChatModel = None
-    _subagent_model_instance: BaseChatModel = None
     _fallback_models_instances: list[BaseChatModel] = None
     _summarization_model_instance: BaseChatModel = None
     _confidence_scoring_model_instance: BaseChatModel = None 
@@ -69,27 +68,6 @@ class ModelConfigurator:
         except Exception as e:
             logger.error(f"Failed to initialize the summarization model: {e}")
             raise e
-
-    @classmethod
-    def get_subagent_model(cls) -> BaseChatModel:
-        if cls._subagent_model_instance:
-            return cls._subagent_model_instance
-
-        subagent_provider = config.llm.LLM_PROVIDER
-        subagent_model = (
-            'gpt-5-mini'
-            if subagent_provider.base == 'openai'
-            else config.llm.get_default_model(subagent_provider)
-        )
-        cls._subagent_model_instance = cls._initialize_model(
-            provider=subagent_provider,
-            model=subagent_model,
-        )
-        logger.info(
-            f"Initialized subagent model '{subagent_provider.name}:{subagent_model}'"
-        )
-        return cls._subagent_model_instance
-
 
     @classmethod
     def get_main_agent_model(cls) -> BaseChatModel:

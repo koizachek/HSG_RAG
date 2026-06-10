@@ -142,8 +142,13 @@ class TestLanguageHeuristics:
 # ------------------------------ Config flags --------------------------------
 
 class TestConfigDefaults:
-    def test_legacy_fact_router_disabled(self):
-        assert config.chain.ENABLE_LEGACY_FACT_ROUTER is False
+    def test_legacy_fact_router_removed(self):
+        """The legacy regex fact routers were deleted entirely — neither the
+        config flag nor the router methods may resurface."""
+        assert not hasattr(config.chain, "ENABLE_LEGACY_FACT_ROUTER")
+        from src.rag.agent_chain import ExecutiveAgentChain
+        assert not hasattr(ExecutiveAgentChain, "_serve_programme_overview")
+        assert not hasattr(ExecutiveAgentChain, "_extract_chf_amounts")
 
     def test_quality_eval_disabled(self):
         assert config.chain.EVALUATE_RESPONSE_QUALITY is False

@@ -74,20 +74,12 @@ class ProcessingConfig(ConfigBase):
 
 
 class ChainConfig(ConfigBase):
-    ENABLE_SUBAGENTS:          bool  = _get('ENABLE_SUBAGENTS', False)
     ENABLE_RESPONSE_CHUNKING:  bool  = _get('ENABLE_RESPONSE_CHUNKING', False)
     # Latency fix: quality eval was a blocking LLM call AFTER each finished
     # answer (and discarded it on low score). Moved out of the request path;
     # re-enable only as async/offline evaluation.
     EVALUATE_RESPONSE_QUALITY: bool  = _get('ENABLE_EVALUATE_RESPONSE_QUALITY', False)
     CONFIDENCE_THRESHOLD:      float = _get('CONFIDENCE_THRESHOLD')
-
-    # Hallucination fix: the legacy keyword/regex fact routers extracted CHF
-    # amounts, dates and durations from chunks via regex and could attribute
-    # them to the wrong programme. Disabled by default in favour of verified
-    # programme facts injected into the system prompt (src/rag/verified_facts.py).
-    # Set to True only to restore the old deterministic answer paths.
-    ENABLE_LEGACY_FACT_ROUTER: bool = _get('ENABLE_LEGACY_FACT_ROUTER', False)
 
     # Hallucination fix: 4 chunks x 200 tokens (~800 tokens) was too little
     # grounding context, causing the model to fill gaps from world knowledge.

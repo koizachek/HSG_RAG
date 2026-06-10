@@ -157,13 +157,11 @@ SCRAPING_PRIO_INTERVAL = {
 # for agentic responses. Defaults to True.
 ENABLE_EVALUATE_RESPONSE_QUALITY = False
 
-# A boolean: either True or False. Activates the usage of the program-specific subagents.
-ENABLE_SUBAGENTS = False
-
-# A boolean. Re-enables the legacy keyword/regex fact routers in the agent chain.
-# Disabled by default: volatile core facts now come from data/programme_facts.json
-# (auto-generated from official sources, injected into the system prompt).
-ENABLE_LEGACY_FACT_ROUTER = False
+# NOTE: The programme-specific subagents and the legacy keyword/regex fact
+# routers were removed entirely. Volatile core facts come from
+# data/programme_facts.json (auto-generated from official sources, injected
+# into the system prompt); everything else is answered by the single lead
+# agent with the retrieval tool.
 
 # A float in range from 0 to 1. Sets the treshold value for the quality evaluation.
 # The fallback mechanism will be activated if the quality of the agentic response 

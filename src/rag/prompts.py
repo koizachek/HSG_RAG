@@ -190,10 +190,6 @@ GENERAL:
 
     _SUMMARY_PREFIX_PROMPT = "Conversation Summary:"
 
-    _SUBAGENT_TOOL_ROUTING = """- Call `call_emba_agent` ONLY for German-speaking EMBA HSG inquiries.
-    - Call `call_iemba_agent` ONLY for International (English) IEMBA inquiries.
-    - Call `call_embax_agent` ONLY for emba X (Tech/ETH) inquiries."""
-
     _RETRIEVE_CONTEXT_TOOL_ROUTING = """- Use the `retrieve_context` tool to retrieve more information about the programs."""
 
     _QUALITY_SCORING_PROMPT = """Rate the response (0.0-1.0) on: format, context, pricing, scope, and rules.
@@ -219,7 +215,6 @@ GENERAL:
         cls,
         agent: str,
         language: str = 'en',
-        use_subagents: bool = False,
     ):
         # 1. Determine Language Settings
         if language == 'de':
@@ -240,7 +235,7 @@ GENERAL:
         if agent_key == 'lead':
             return cls._LEAD_SYSTEM_PROMPT.format(
                 university_name=university_name,
-                tool_routing=cls._SUBAGENT_TOOL_ROUTING if use_subagents else cls._RETRIEVE_CONTEXT_TOOL_ROUTING,
+                tool_routing=cls._RETRIEVE_CONTEXT_TOOL_ROUTING,
             ) + facts_block
 
         # 3. Configure Program Agents
