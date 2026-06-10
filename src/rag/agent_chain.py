@@ -1039,6 +1039,34 @@ class ExecutiveAgentChain:
         }
         return normalized in continuation_terms
 
+    def _extract_programmes_from_text(self, text: str) -> list[str]:
+        """Return normalised programme ids mentioned in the text.
+
+        Most specific names are matched first so "emba X" is not
+        misclassified as the generic EMBA HSG. Used by the profile tracking
+        to record programme interest.
+        """
+        text_lower = (text or "").lower()
+        if not text_lower:
+            return []
+
+        found: list[str] = []
+        if "emba x" in text_lower or "embax" in text_lower:
+            found.append("emba_x")
+        if "iemba" in text_lower or "international emba" in text_lower or "international executive mba" in text_lower:
+            found.append("iemba")
+        # Generic EMBA only counts when it is not part of an emba X / IEMBA mention
+        stripped = (
+            text_lower
+            .replace("emba x", " ")
+            .replace("embax", " ")
+            .replace("iemba", " ")
+            .replace("international emba", " ")
+        )
+        if re.search(r"\bemba\b", stripped):
+            found.append("emba")
+        return found
+
     @staticmethod
     def _normalise_programme_id(programme: str | None) -> str | None:
         if not programme:
