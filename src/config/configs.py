@@ -76,11 +76,19 @@ class ProcessingConfig(ConfigBase):
 class ChainConfig(ConfigBase):
     ENABLE_SUBAGENTS:          bool  = _get('ENABLE_SUBAGENTS', False)
     ENABLE_RESPONSE_CHUNKING:  bool  = _get('ENABLE_RESPONSE_CHUNKING', False)
-    EVALUATE_RESPONSE_QUALITY: bool  = _get('ENABLE_EVALUATE_RESPONSE_QUALITY', True)
+    # Latency fix: quality eval was a blocking LLM call AFTER each finished
+    # answer (and discarded it on low score). Moved out of the request path;
+    # re-enable only as async/offline evaluation.
+    EVALUATE_RESPONSE_QUALITY: bool  = _get('ENABLE_EVALUATE_RESPONSE_QUALITY', False)
     CONFIDENCE_THRESHOLD:      float = _get('CONFIDENCE_THRESHOLD')
-    
-    TOP_K_RETRIEVAL: int = _get('TOP_K_RETRIEVAL', 4)
-    MAX_RETRIES:     int = _get('MODEL_MAX_RETRIES', 3)
+
+    # Hallucination fix: 4 chunks x 200 tokens (~800 tokens) was too little
+    # grounding context, causing the model to fill gaps from world knowledge.
+    TOP_K_RETRIEVAL: int = _get('TOP_K_RETRIEVAL', 8)
+    MAX_RETRIES:     int = _get('MODEL_MAX_RETRIES', 2)
+    # Latency fix: cap the conversation history sent to the agent per turn
+    # (full history grew unbounded and made every turn slower and costlier).
+    MAX_HISTORY_MESSAGES: int = _get('MAX_HISTORY_MESSAGES', 16)
     MAX_RESPONSE_WORDS_LEAD:     int = _get('MAX_RESPONSE_WORDS_LEAD', 350)
     MAX_RESPONSE_WORDS_SUBAGENT: int = _get('MAX_RESPONSE_WORDS_SUBAGENT', 200)
 
@@ -165,8 +173,11 @@ class LLMProviderConfig:
     OPEN_ROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
 
     # OpenAI settings
+    # Latency fix: gpt-5.1 (reasoning model) replaced with a fast non-reasoning
+    # model. Reasoning added 10-30s per agent loop without quality benefit for
+    # this narrow advisory use case.
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
-    OPENAI_MODEL:   str = "gpt-5.1"
+    OPENAI_MODEL:   str = "gpt-4.1"
     
     # The gpt-oss:20b model is preferable but takes much more space
     # Set to False if you only have the llama3.2 installed
@@ -185,9 +196,10 @@ class LLMProviderConfig:
         provider = provider or cls.LLM_PROVIDER
         match provider.base:
             case 'openai':
+                # Latency fix: a single fallback model. A longer chain
+                # multiplied worst-case latency (retries x fallbacks).
                 return [
                     (provider, 'gpt-5-mini'),
-                    (provider, 'gpt-5-nano'),
                 ]
             case 'open_router':
                 return [

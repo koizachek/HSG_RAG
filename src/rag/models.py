@@ -22,10 +22,11 @@ class ModelConfigurator:
             cls._language_detector_model_instance = ChatOpenAI(
                 model='gpt-4o-mini',
                 openai_api_key=config.llm.get_api_key(),
-                max_tokens=3072,
+                # Returns a single ISO code — small budget, tight timeout
+                max_tokens=64,
                 temperature=0.00,
-                timeout=60,
-                request_timeout=60,
+                timeout=10,
+                request_timeout=10,
             )
             logger.info(f"Initialized language detection model")
             return cls._language_detector_model_instance
@@ -171,8 +172,10 @@ class ModelConfigurator:
                         openai_api_key=config.llm.get_api_key(),
                         max_tokens=3072,
                         temperature=0.01,
-                        timeout=60,
-                        request_timeout=60,
+                        # Latency fix: 60s timeout x retries x fallbacks
+                        # multiplied worst-case latency into minutes
+                        timeout=30,
+                        request_timeout=30,
                     )
                 case 'ollama':
                     from langchain_ollama import ChatOllama

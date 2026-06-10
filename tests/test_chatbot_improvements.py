@@ -446,7 +446,7 @@ Here are the programs:
             programmes=["emba", "iemba", "emba_x"],
         )
 
-        assert len(agent._retrieve_context_tool.payloads) >= 4
+        assert len(agent._retrieve_context_tool.payloads) == 3
         assert "EMBA HSG" in response.response
         assert "IEMBA HSG" in response.response
         assert "emba X" in response.response

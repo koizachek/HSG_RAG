@@ -130,6 +130,19 @@ class ExecutiveAgentChain:
                 },
             )
             serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
+            # Hallucination guard: an empty tool result silently invited the
+            # model to answer from world knowledge. Make the gap explicit and
+            # instruct the model to acknowledge it instead of inventing facts.
+            if not serialized.strip():
+                chain_logger.warning(
+                    f"retrieve_context returned no documents (program='{program}', lang='{lang}', query='{query}')"
+                )
+                return (
+                    "NO_CONTEXT_FOUND: The knowledge base returned no documents for this "
+                    "query. Do NOT answer from memory or general knowledge. Tell the user "
+                    "that this specific information is not available right now and "
+                    "recommend confirming it with the admissions team."
+                )
             return serialized
         except Exception as e:
             raise e
@@ -1024,9 +1037,17 @@ class ExecutiveAgentChain:
         language_instruction = SystemMessage(f"Respond in {get_language_name(response_language)} language.")
 
         # 3. Agent Call
+        # Latency fix: cap the history sent to the model. The full history
+        # grew unbounded, making every turn slower and more expensive.
+        max_history = config.chain.MAX_HISTORY_MESSAGES
+        history_window = (
+            self._conversation_history[-max_history:]
+            if max_history and max_history > 0
+            else self._conversation_history
+        )
         structured_response = self._query(
             agent=self._agents['lead'],
-            messages=self._conversation_history + [language_instruction], 
+            messages=history_window + [language_instruction],
         )
         agent_response = structured_response.response
         additional_details = ResponseFormatter.clean_response(
@@ -1824,14 +1845,7 @@ class ExecutiveAgentChain:
         facts_by_category: dict[str, list[str]],
         categories: list[str],
     ) -> bool:
-        if ExecutiveAgentChain._has_missing_requested_facts(facts_by_category, categories):
-            return True
-
-        cost_values = facts_by_category.get("cost") or []
-        if "cost" in categories and cost_values and not any(":" in value for value in cost_values):
-            return True
-
-        return False
+        return ExecutiveAgentChain._has_missing_requested_facts(facts_by_category, categories)
 
     @staticmethod
     def _build_targeted_fact_query(
@@ -2155,22 +2169,6 @@ class ExecutiveAgentChain:
             )
 
         if category == "cost":
-            current_flat_tuition_by_language = {
-                "de": {
-                    "emba": "CHF 77'500",
-                    "iemba": "CHF 85'000",
-                },
-                "en": {
-                    "emba": "CHF 77,500",
-                    "iemba": "CHF 85,000",
-                },
-            }
-            current_flat_tuition = current_flat_tuition_by_language.get(
-                language,
-                current_flat_tuition_by_language["en"],
-            ).get(programme or "")
-            if current_flat_tuition:
-                return [current_flat_tuition]
             values = self._unique_texts(
                 value
                 for sentence in candidates

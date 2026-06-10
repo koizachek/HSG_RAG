@@ -36,8 +36,9 @@ MAX_CONVERSATION_TURNS = 20
 # Defines the main model provider for the application.
 LLM_PROVIDER = 'openai' 
 
-# A string. Defines the model that will be used by the application agents. 
-OPENAI_MODEL = 'gpt-5.1'
+# A string. Defines the model that will be used by the application agents.
+# Latency fix: gpt-5.1 (reasoning) -> gpt-4.1 (fast, non-reasoning).
+OPENAI_MODEL = 'gpt-4.1'
 # GROQ_MODEL = 
 # OLLAMA_MODEL = 
 # OPEN_ROUTER_MODEL = 
@@ -164,13 +165,18 @@ ENABLE_SUBAGENTS = False
 # is lower than the confidence threshold.
 CONFIDENCE_THRESHOLD = 0.6
 
-# An integer. Defines the amount of chunks that should be retrieved from the database 
-# upon querying by subagents during conversation. Defaults to 4.
-TOP_K_RETRIEVAL = 4  
+# An integer. Defines the amount of chunks that should be retrieved from the database
+# upon querying by subagents during conversation.
+# Hallucination fix: 4 chunks x 200 tokens was too little grounding context.
+TOP_K_RETRIEVAL = 8
 
-# An integer. Sets the amount of model invocation retries after which the fallback model 
+# An integer. Sets the amount of model invocation retries after which the fallback model
 # will be invoked. Defaults to 3.
-MODEL_MAX_RETRIES = 3
+MODEL_MAX_RETRIES = 2
+
+# An integer. Caps the number of conversation history messages sent to the model
+# per turn (latency fix: unbounded history made every turn slower). 0 = no cap.
+MAX_HISTORY_MESSAGES = 16
 
 # An integer. Sets the maximum amount of words in the response from the lead agent.
 MAX_RESPONSE_WORDS_LEAD = 100 

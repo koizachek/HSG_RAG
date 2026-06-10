@@ -24,6 +24,39 @@ SHORT_WORDS_EN = {
     'maybe', 'probably', 'definitely', 'certainly', 'alright',
 }
 
+# Stopword sets for full-text heuristic detection (latency fix: avoids the
+# LLM round-trip for the vast majority of inputs). High-frequency function
+# words are near-guaranteed to appear in any real sentence.
+STOPWORDS_DE = SHORT_WORDS_DE | {
+    'der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'einen', 'einem',
+    'einer', 'ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr', 'mich', 'mir',
+    'ist', 'sind', 'war', 'waren', 'sein', 'haben', 'habe', 'hat', 'hatte',
+    'kann', 'können', 'muss', 'müssen', 'möchte', 'will', 'wollen', 'soll',
+    'nicht', 'kein', 'keine', 'auch', 'nur', 'sehr', 'dann', 'wenn', 'weil',
+    'dass', 'für', 'mit', 'von', 'aus', 'auf', 'bei', 'nach', 'über', 'unter',
+    'zum', 'zur', 'als', 'wie', 'um', 'an', 'im', 'am', 'beim', 'durch',
+    'mein', 'meine', 'dein', 'ihre', 'ihren', 'unser', 'euch', 'uns',
+    'jahre', 'jahren', 'erfahrung', 'studium', 'kosten', 'dauer', 'beginn',
+}
+STOPWORDS_EN = SHORT_WORDS_EN | {
+    'the', 'a', 'an', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'my',
+    'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do',
+    'does', 'did', 'can', 'could', 'would', 'should', 'will', 'shall', 'must',
+    'not', 'also', 'only', 'very', 'then', 'if', 'because', 'that', 'this',
+    'for', 'with', 'from', 'of', 'on', 'at', 'by', 'after', 'about', 'to',
+    'in', 'as', 'your', 'our', 'their', 'us', 'them', 'want', 'like', 'need',
+    'years', 'experience', 'study', 'cost', 'costs', 'duration', 'start',
+}
+
+# Characters that only occur in German (among the two supported languages)
+GERMAN_CHARS = set('äöüß')
+
+# Scripts we cannot map to de/en heuristically (Cyrillic, Arabic, CJK, ...)
+NON_LATIN_SCRIPT_RE = re.compile(
+    r'[Ѐ-ӿ֐-׿؀-ۿऀ-ॿ一-鿿'
+    r'぀-ヿ가-힯]'
+)
+
 # Patterns for explicit language switch requests
 SWITCH_TO_EN_PATTERNS = [
     'in english', 'to english', 'switch to english', 'continue in english',
@@ -55,8 +88,14 @@ class LanguageDetectionResult(BaseModel):
 
 class LanguageDetector:
     def __init__(self) -> None:
-        self._model = modconf.get_language_detector_model()
-        self._model = self._model.with_structured_output(LanguageDetectionResult)
+        # Lazy init: the LLM is only needed for the rare ambiguous case
+        self._model = None
+
+    def _get_model(self):
+        if self._model is None:
+            model = modconf.get_language_detector_model()
+            self._model = model.with_structured_output(LanguageDetectionResult)
+        return self._model
 
     def detect_explicit_switch_request(self, query: str) -> str | None:
         """
@@ -105,18 +144,61 @@ class LanguageDetector:
         normalized = re.sub(r"\s+", " ", normalized).strip()
         return normalized in LANGUAGE_NEUTRAL_PROGRAM_PATTERNS
 
+    def _heuristic_detect(self, query: str) -> str | None:
+        """
+        Full-text heuristic detection for de/en. Returns None when ambiguous
+        or when the text is written in a non-Latin script (so the LLM
+        fallback can return the correct ISO code and the chain can reject
+        unsupported languages).
+        """
+        text = query.lower()
+
+        # Non-Latin script -> not decidable as de/en, let the LLM classify it
+        if NON_LATIN_SCRIPT_RE.search(text):
+            return None
+
+        # Umlauts / eszett are a strong German signal
+        if any(ch in GERMAN_CHARS for ch in text):
+            logger.info("Heuristic detection: German characters found -> de")
+            return 'de'
+
+        words = re.findall(r"[a-z']+", text)
+        if not words:
+            return None
+
+        de_hits = sum(1 for w in words if w in STOPWORDS_DE)
+        en_hits = sum(1 for w in words if w in STOPWORDS_EN)
+
+        # Require a clear signal: at least one stopword hit and a strict
+        # majority. Ties and zero-hit inputs stay ambiguous.
+        if de_hits > en_hits and de_hits > 0:
+            logger.info(f"Heuristic detection: de ({de_hits} vs {en_hits} stopword hits)")
+            return 'de'
+        if en_hits > de_hits and en_hits > 0:
+            logger.info(f"Heuristic detection: en ({en_hits} vs {de_hits} stopword hits)")
+            return 'en'
+
+        return None
+
     def detect_language(self, query: str) -> str:
-        # Try quick detection for short inputs first
+        # 1. Quick detection for short inputs
         quick_result = self._quick_detect_short_words(query)
         if quick_result:
             return quick_result
 
-        # Fall back to LLM for longer/ambiguous inputs
+        # 2. Full-text stopword heuristic (latency fix: resolves the vast
+        #    majority of inputs locally in <1 ms instead of an LLM round-trip)
+        heuristic_result = self._heuristic_detect(query)
+        if heuristic_result:
+            return heuristic_result
+
+        # 3. LLM fallback only for genuinely ambiguous inputs
+        logger.info("Heuristic detection ambiguous, falling back to LLM")
         prompt = promptconf.get_language_detector_prompt(query)
         messages = [HumanMessage(prompt)]
 
         try:
-            result = self._model.invoke(messages)
+            result = self._get_model().invoke(messages)
             return result.language_code
         except Exception as e:
             logger.error(f"Failed to detect language: {e}")
