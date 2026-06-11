@@ -924,7 +924,7 @@ class ExecutiveAgentChain:
         when streaming is unavailable so the caller can fall back to invoke().
         """
         from src.rag.stream_parser import ResponseFieldStreamParser
-        parser = ResponseFieldStreamParser()
+        parser = ResponseFieldStreamParser(allow_plain_text=False)
         last_values = None
         try:
             for mode, payload in agent.stream(

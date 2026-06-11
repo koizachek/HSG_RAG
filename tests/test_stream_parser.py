@@ -65,6 +65,29 @@ class TestJsonMode:
         parser = ResponseFieldStreamParser()
         assert stream_through(parser, payload, 4) == "Antwort hier."
 
+    def test_ignores_response_text_inside_earlier_string_values(self):
+        payload = json.dumps({
+            "query": 'Use "response": "internal query text" for the database lookup',
+            "response": "User-visible answer.",
+        })
+        parser = ResponseFieldStreamParser()
+        result = stream_through(parser, payload, 2)
+        assert result == "User-visible answer."
+        assert "internal query text" not in result
+
+    def test_ignores_nested_response_fields(self):
+        payload = json.dumps({
+            "tool_call": {
+                "name": "retrieve_context",
+                "args": {"response": "internal nested text"},
+            },
+            "response": "Final answer.",
+        })
+        parser = ResponseFieldStreamParser()
+        result = stream_through(parser, payload, 3)
+        assert result == "Final answer."
+        assert "internal nested text" not in result
+
     def test_random_chunk_boundaries_fuzz(self):
         rng = random.Random(42)
         for _ in range(25):
@@ -86,6 +109,32 @@ class TestPlainMode:
     def test_leading_whitespace_then_plain(self):
         parser = ResponseFieldStreamParser()
         assert stream_through(parser, "   Hallo Welt", 4) == "   Hallo Welt"
+
+    def test_strict_mode_suppresses_plain_preamble_and_streams_response(self):
+        parser = ResponseFieldStreamParser(allow_plain_text=False)
+        text = (
+            "Thinking about database query internals...\n"
+            '{"query": "retrieve hidden text", "program": "emba"}'
+            '{"response": "Only this answer is visible."}'
+        )
+        result = stream_through(parser, text, 4)
+        assert result == "Only this answer is visible."
+        assert "Thinking" not in result
+        assert "retrieve hidden text" not in result
+
+    def test_strict_mode_recovers_after_noisy_retrieval_stream(self):
+        parser = ResponseFieldStreamParser(allow_plain_text=False)
+        text = (
+            'Need retrieve_context(query="cost {EMBA", program="emba"). '
+            '[programme: emba | source: db]\n'
+            'Snippet with unmatched brace { and quoted "response" text. '
+            '{"query": "database lookup only", "program": "emba"}'
+            '{"response": "Streaming resumes after retrieval."}'
+        )
+        result = stream_through(parser, text, 3)
+        assert result == "Streaming resumes after retrieval."
+        assert "retrieve_context" not in result
+        assert "database lookup only" not in result
 
 
 class TestEdgeCases:

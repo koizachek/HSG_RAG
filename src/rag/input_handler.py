@@ -3,7 +3,6 @@ Input handler for processing and validating user messages.
 Handles numeric inputs, validation, and interpretation.
 """
 import re
-from src.rag.utilclasses import ConversationState
 from src.utils.logging import get_logger
 
 logger = get_logger("input_handler")
