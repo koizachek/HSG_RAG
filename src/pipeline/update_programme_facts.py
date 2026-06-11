@@ -1,5 +1,5 @@
 """
-Regenerate data/programme_facts.json from the official programme websites.
+Regenerate data/database/programme_facts.json from the official programme websites.
 
 Offline fact-extraction step (multi-agent offline, single-agent online):
 this script runs OUTSIDE the chat request path — manually, via cron, or as a
@@ -25,7 +25,7 @@ from src.utils.logging import get_logger
 
 logger = get_logger('update_programme_facts')
 
-FACTS_PATH = os.path.join(config.paths.DATA, 'programme_facts.json')
+FACTS_PATH = os.path.join(config.paths.DATA, 'database', 'programme_facts.json')
 
 # Pages that contain the volatile core facts (tuition, deadlines, starts).
 FACT_SOURCES = {
@@ -235,6 +235,7 @@ def main() -> int:
         print(json.dumps(new_facts, indent=2, ensure_ascii=False))
         return 0
 
+    os.makedirs(os.path.dirname(FACTS_PATH), exist_ok=True)
     with open(FACTS_PATH, 'w', encoding='utf-8') as f:
         json.dump(new_facts, f, indent=2, ensure_ascii=False)
     logger.info(f"Wrote {FACTS_PATH}")

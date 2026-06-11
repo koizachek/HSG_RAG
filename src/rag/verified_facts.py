@@ -19,7 +19,7 @@ from src.utils.logging import get_logger
 
 logger = get_logger('verified_facts')
 
-FACTS_FILENAME = 'programme_facts.json'
+FACTS_FILENAME = os.path.join('database', 'programme_facts.json')
 
 _LABELS = {
     'de': {

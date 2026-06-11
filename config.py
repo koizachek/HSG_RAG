@@ -159,7 +159,7 @@ ENABLE_EVALUATE_RESPONSE_QUALITY = False
 
 # NOTE: The programme-specific subagents and the legacy keyword/regex fact
 # routers were removed entirely. Volatile core facts come from
-# data/programme_facts.json (auto-generated from official sources, injected
+# data/database/programme_facts.json (auto-generated from official sources, injected
 # into the system prompt); everything else is answered by the single lead
 # agent with the retrieval tool.
 

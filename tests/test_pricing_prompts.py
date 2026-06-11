@@ -57,7 +57,8 @@ def test_lead_prompt_does_not_embed_specific_programme_figures():
     assert "CHF 77,500" not in prompt
     assert "CHF 85,000" not in prompt
     assert "31 October 2026" not in prompt
-    assert "route programme-specific questions to the relevant sub-agent" in prompt
+    assert "use retrieval for programme-specific context" in prompt
+    assert "route programme-specific questions to the relevant sub-agent" not in prompt
 
 
 def test_embax_prompt_uses_social_responsibility_positioning():
@@ -69,11 +70,11 @@ def test_embax_prompt_uses_social_responsibility_positioning():
 
 
 def test_lead_prompt_uses_updated_embax_positioning():
-    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en", use_subagents=True)
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "call_embax_agent" in prompt
     assert "Tech / innovation / transformation focus or tech background" in prompt
-    assert "route to a sub-agent based on the language heuristic" in prompt
+    assert "use the retrieval tool based on the language heuristic" in prompt
+    assert "call_embax_agent" not in prompt
     assert "double EMBA degree" not in prompt
 
 

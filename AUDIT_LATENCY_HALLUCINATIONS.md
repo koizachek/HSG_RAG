@@ -49,7 +49,7 @@
 - [x] **Timing-Logs** pro Pipeline-Schritt (`[timing] preprocessing / agent loop / total turn`)
 
 ### Halluzinationen
-- [x] **Verifizierte Faktenbasis** `data/programme_facts.json`: Preise, Fristen, Starts, Dauer, Struktur, Orte, Advisors für alle 3 Programme — gegen die offiziellen Quellen geprüft (emba.unisg.ch, emba.unisg.ch/bewerbung/fristen, embax.ch)
+- [x] **Verifizierte Faktenbasis** `data/database/programme_facts.json`: Preise, Fristen, Starts, Dauer, Struktur, Orte, Advisors für alle 3 Programme — gegen die offiziellen Quellen geprüft (emba.unisg.ch, emba.unisg.ch/bewerbung/fristen, embax.ch)
 - [x] **Prompt-Injection** des Faktenblocks (DE/EN) als autoritative Quelle für volatile Fakten (`src/rag/verified_facts.py`), inkl. Regel für abgelaufene Fristen
 - [x] **Auto-Regeneration**: `src/pipeline/update_programme_facts.py` scrapt die Quellseiten, extrahiert per Structured Output, difft gegen den Bestand, alarmiert via Notification-Center (E-Mail/Slack) bei Preis-/Fristen-Änderungen. **Cron: täglich 06:00.** Niemand pflegt das File von Hand.
 - [x] Leer-Kontext-Guard im Retrieval (explizites `NO_CONTEXT_FOUND` statt Leerstring)
