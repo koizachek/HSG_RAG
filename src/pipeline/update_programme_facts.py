@@ -16,6 +16,7 @@ import json
 import os
 import sys
 from datetime import date
+from tempfile import NamedTemporaryFile
 
 import requests
 from pydantic import BaseModel, Field
@@ -27,13 +28,15 @@ logger = get_logger('update_programme_facts')
 
 FACTS_PATH = os.path.join(config.paths.DATA, 'database', 'programme_facts.json')
 
-# Pages that contain the volatile core facts (tuition, deadlines, starts).
+# Pages and data-plan PDFs that contain the volatile core facts.
 FACT_SOURCES = {
     'overview':  'https://emba.unisg.ch/',
     'deadlines': 'https://emba.unisg.ch/bewerbung/fristen',
     'emba':      'https://emba.unisg.ch/programm/emba',
     'iemba':     'https://emba.unisg.ch/programm/iemba',
     'emba_x':    'https://embax.ch/',
+    'emba_plan': 'https://emba.unisg.ch/wp-content/uploads/2026/05/Neuer-Dataplan-EMBA71-mitRatenplan.pdf',
+    'iemba_plan': 'https://emba.unisg.ch/wp-content/uploads/2026/05/IEMBA-14-info-sheet-with-payment-plan-6.pdf',
 }
 
 REQUEST_TIMEOUT = 30
@@ -58,6 +61,7 @@ class ProgrammeFactsSchema(BaseModel):
     language: BilingualText = Field(description="Programme teaching language")
     programme_start: str = Field(description="ISO date YYYY-MM-DD of the next cohort start")
     duration: BilingualText
+    ects_credits: int = Field(default=0, description="ECTS credits as plain integer, e.g. 75; 0 if missing")
     structure: BilingualText = Field(description="Courses, campus weeks, projects")
     locations: BilingualText
     first_deadline: DeadlineFee
@@ -83,6 +87,7 @@ Rules:
 - Never guess or fill gaps from prior knowledge. If a value is genuinely
   missing from the pages, use an empty string.
 - Fees are CHF integers without separators (CHF 77'500 -> 77500).
+- ECTS credits are plain integers (75 ECTS -> 75). If missing, use 0.
 - Dates in ISO format (14. September 2026 -> 2026-09-14).
 - Never mix values between programmes. The deadlines page contains one row
   per programme - keep them strictly separated.
@@ -93,6 +98,23 @@ PAGE CONTENT:
 
 # --------------------------------- Fetching ----------------------------------
 
+def extract_pdf_text(content: bytes, url: str) -> str:
+    """Extract text from a PDF response using the existing docling dependency."""
+    suffix = os.path.splitext(url)[1] or '.pdf'
+    with NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+    try:
+        from docling.document_converter import DocumentConverter
+        result = DocumentConverter().convert(tmp_path)
+        return result.document.export_to_markdown()
+    finally:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+
+
 def fetch_sources() -> dict[str, str]:
     """Fetch all fact source pages. Raises when a page cannot be fetched."""
     pages = {}
@@ -100,6 +122,10 @@ def fetch_sources() -> dict[str, str]:
         logger.info(f"Fetching {url}")
         resp = requests.get(url, timeout=REQUEST_TIMEOUT, headers={'User-Agent': USER_AGENT})
         resp.raise_for_status()
+        content_type = resp.headers.get('Content-Type', '').lower()
+        if url.lower().endswith('.pdf') or 'application/pdf' in content_type:
+            pages[key] = extract_pdf_text(resp.content, url)
+            continue
         # Lightweight HTML -> text. The scraping pipeline has richer
         # processors; for fact extraction visible text is sufficient.
         try:
@@ -137,6 +163,7 @@ def to_facts_document(extracted: AllProgrammesSchema) -> dict:
             'language': p.language.model_dump(),
             'programme_start': p.programme_start,
             'duration': p.duration.model_dump(),
+            'ects_credits': p.ects_credits,
             'structure': p.structure.model_dump(),
             'locations': p.locations.model_dump(),
             'tuition_chf': {
@@ -160,8 +187,8 @@ def to_facts_document(extracted: AllProgrammesSchema) -> dict:
         'generator': 'src/pipeline/update_programme_facts.py',
         'sources': list(FACT_SOURCES.values()),
         'programmes': {
-            'emba': programme(extracted.emba, [FACT_SOURCES['emba'], FACT_SOURCES['deadlines']]),
-            'iemba': programme(extracted.iemba, [FACT_SOURCES['iemba'], FACT_SOURCES['deadlines']]),
+            'emba': programme(extracted.emba, [FACT_SOURCES['emba'], FACT_SOURCES['deadlines'], FACT_SOURCES['emba_plan']]),
+            'iemba': programme(extracted.iemba, [FACT_SOURCES['iemba'], FACT_SOURCES['deadlines'], FACT_SOURCES['iemba_plan']]),
             'emba_x': programme(extracted.emba_x, [FACT_SOURCES['emba_x'], FACT_SOURCES['deadlines']]),
         },
     }

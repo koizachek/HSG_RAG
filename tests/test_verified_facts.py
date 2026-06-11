@@ -43,6 +43,8 @@ class TestFactsFile:
     def test_every_programme_has_volatile_core_facts(self):
         for key, prog in _facts_file()["programmes"].items():
             assert prog.get("programme_start"), f"{key}: missing programme_start"
+            assert isinstance(prog.get("ects_credits"), int), f"{key}: ects_credits must be int"
+            assert prog["ects_credits"] > 0, f"{key}: missing ects_credits"
             tuition = prog.get("tuition_chf", {})
             for deadline_key in ("first_deadline", "final_deadline"):
                 entry = tuition.get(deadline_key, {})
@@ -82,6 +84,11 @@ class TestPromptBlock:
         for prog in _facts_file()["programmes"].values():
             fee = prog["tuition_chf"]["final_deadline"]["fee"]
             assert f"CHF {fee:,}".replace(",", "'") in block
+
+    def test_block_contains_ects_credits(self):
+        block = VerifiedFacts.render_prompt_block(language="en")
+        for prog in _facts_file()["programmes"].values():
+            assert f"ECTS: {prog['ects_credits']}" in block
 
     def test_block_contains_advisors(self):
         block = VerifiedFacts.render_prompt_block(language="en")

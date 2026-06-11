@@ -1,0 +1,152 @@
+{
+  "generated_at": "2026-06-11",
+  "generator": "src/pipeline/update_programme_facts.py",
+  "sources": [
+    "https://emba.unisg.ch/",
+    "https://emba.unisg.ch/bewerbung/fristen",
+    "https://emba.unisg.ch/programm/emba",
+    "https://emba.unisg.ch/programm/iemba",
+    "https://embax.ch/",
+    "https://emba.unisg.ch/wp-content/uploads/2026/05/Neuer-Dataplan-EMBA71-mitRatenplan.pdf",
+    "https://emba.unisg.ch/wp-content/uploads/2026/05/IEMBA-14-info-sheet-with-payment-plan-6.pdf"
+  ],
+  "programmes": {
+    "emba": {
+      "official_name": "Executive MBA HSG",
+      "current_cohort": "EMBA 71",
+      "language": {
+        "de": "Deutsch",
+        "en": "German"
+      },
+      "programme_start": "2026-09-14",
+      "duration": {
+        "de": "18 Monate (bis max. 48 Monate)",
+        "en": "18 months (up to max. 48 months)"
+      },
+      "ects_credits": 75,
+      "structure": {
+        "de": "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus, Capstone-Projekt, Selbststudium, Personal Development Programm, zeitliche Flexibilität möglich.",
+        "en": "9 core courses, 5 electives, 14 weeks on campus, capstone project, self-study, personal development programme, flexible timing possible."
+      },
+      "locations": {
+        "de": "Schweiz (St. Gallen), Belgien (Wahlkurs)",
+        "en": "Switzerland (St. Gallen), Belgium (elective)"
+      },
+      "tuition_chf": {
+        "first_deadline": {
+          "deadline": "2026-06-29",
+          "fee": 72500
+        },
+        "final_deadline": {
+          "deadline": "2026-08-10",
+          "fee": 77500
+        },
+        "note": {
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
+          "en": "Deadline-based tuition: earlier application = reduced fee"
+        }
+      },
+      "advisor": {
+        "name": "Cyra von Müller",
+        "email": "cyra.vonmueller@unisg.ch",
+        "phone": "+41 71 224 27 12"
+      },
+      "source_urls": [
+        "https://emba.unisg.ch/programm/emba",
+        "https://emba.unisg.ch/bewerbung/fristen",
+        "https://emba.unisg.ch/wp-content/uploads/2026/05/Neuer-Dataplan-EMBA71-mitRatenplan.pdf"
+      ]
+    },
+    "iemba": {
+      "official_name": "International Executive MBA HSG",
+      "current_cohort": "IEMBA 14",
+      "language": {
+        "de": "Englisch",
+        "en": "English"
+      },
+      "programme_start": "2026-08-24",
+      "duration": {
+        "de": "18 Monate",
+        "en": "18 months"
+      },
+      "ects_credits": 0,
+      "structure": {
+        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland, Selbststudium, Diplomarbeit.",
+        "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, self-study, thesis."
+      },
+      "locations": {
+        "de": "St. Gallen (Schweiz), Costa Rica (Wahlkurs), Tokio (Japan), New York City (Wahlkurs), Peking (China), UC Berkeley (USA), UC Irvine (USA), Italien (Wahlkurs), Südafrika (Wahlkurs), Spanien (Wahlkurs)",
+        "en": "St. Gallen (Switzerland), Costa Rica (elective), Tokyo (Japan), New York City (elective), Beijing (China), UC Berkeley (USA), UC Irvine (USA), Italy (elective), South Africa (elective), Spain (elective)"
+      },
+      "tuition_chf": {
+        "first_deadline": {
+          "deadline": "2026-03-31",
+          "fee": 80000
+        },
+        "final_deadline": {
+          "deadline": "2026-06-30",
+          "fee": 85000
+        },
+        "note": {
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
+          "en": "Deadline-based tuition: earlier application = reduced fee"
+        }
+      },
+      "advisor": {
+        "name": "Kristin Fuchs",
+        "email": "kristin.fuchs@unisg.ch",
+        "phone": "+41 71 224 75 46"
+      },
+      "source_urls": [
+        "https://emba.unisg.ch/programm/iemba",
+        "https://emba.unisg.ch/bewerbung/fristen",
+        "https://emba.unisg.ch/wp-content/uploads/2026/05/IEMBA-14-info-sheet-with-payment-plan-6.pdf"
+      ]
+    },
+    "emba_x": {
+      "official_name": "emba X (ETH Zurich & University of St.Gallen)",
+      "current_cohort": "emba X6",
+      "language": {
+        "de": "Englisch",
+        "en": "English"
+      },
+      "programme_start": "2027-02-02",
+      "duration": {
+        "de": "18 Monate",
+        "en": "18 months"
+      },
+      "ects_credits": 75,
+      "structure": {
+        "de": "13 Essential Kurse, 13 Wochen am Campus, 2 Tage online, 2 Impact-Projekte, Blended Format.",
+        "en": "13 essential courses, 13 weeks on campus, 2 days online, 2 impact projects, blended format."
+      },
+      "locations": {
+        "de": "Zürich, St. Gallen, Online",
+        "en": "Zurich, St. Gallen, Online"
+      },
+      "tuition_chf": {
+        "first_deadline": {
+          "deadline": "2026-08-31",
+          "fee": 99000
+        },
+        "final_deadline": {
+          "deadline": "2026-10-31",
+          "fee": 110000
+        },
+        "note": {
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
+          "en": "Deadline-based tuition: earlier application = reduced fee"
+        }
+      },
+      "advisor": {
+        "name": "Teyuna Giger",
+        "email": "teyuna.giger@unisg.ch",
+        "phone": "+41 71 224 77 65"
+      },
+      "source_urls": [
+        "https://embax.ch/",
+        "https://emba.unisg.ch/bewerbung/fristen"
+      ]
+    }
+  }
+}
