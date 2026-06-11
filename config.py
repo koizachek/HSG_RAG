@@ -32,16 +32,21 @@ MAX_CONVERSATION_TURNS = 20
 
 # ============================================ LLM Configuration ============================================
 
-# A string, either 'openai', 'groq', 'open_router' or 'ollama' (local).
-# Defines the main model provider for the application.
-LLM_PROVIDER = 'openai' 
+# Each role-specific model configuration is defined as (PROVIDER, MODEL_NAME).
+# Keep the master branch's latency-oriented defaults.
+MAIN_AGENT_MODEL = ('openai', 'gpt-4.1')
+FALLBACK_MODELS = [('openai', 'gpt-5-mini')]
+SUBAGENT_MODEL = ('openai', 'gpt-5-mini')
+LANGUAGE_DETECTION_MODEL = ('openai', 'gpt-4o-mini')
+CONFIDENCE_SCORING_MODEL = ('openai', 'gpt-4o-mini')
+SUMMARIZATION_MODEL = ('openai', 'gpt-4.1')
 
-# A string. Defines the model that will be used by the application agents.
-# Latency fix: gpt-5.1 (reasoning) -> gpt-4.1 (fast, non-reasoning).
+# Legacy defaults retained for compatibility with existing callers.
+LLM_PROVIDER = 'openai'
 OPENAI_MODEL = 'gpt-4.1'
-# GROQ_MODEL = 
-# OLLAMA_MODEL = 
-# OPEN_ROUTER_MODEL = 
+# GROQ_MODEL =
+# OLLAMA_MODEL =
+# OPEN_ROUTER_MODEL =
 
 # ==================================== Weaviate Database Configuration ======================================
 
@@ -69,7 +74,7 @@ PROPERTIES_PATH = 'data/database'
 
 # A string representing a system path where property strategies will be stored.
 # More information on property strategies in the documentation.
-STRATEGIES_PATH = 'data/database/strategies'
+STRATEGIES_PATH = 'src/database/strategies'
 
 # An integer. Defines a connection timeout to the cloud weaviate service (in seconds). 
 # Defaults to 90.
@@ -82,6 +87,17 @@ WEAVIATE_QUERY_TIMEOUT = 60
 # An integer. Defines the chunk insertion time limit when importing new chunks to database (in seconds).
 # Defaults to 600
 WEAVIATE_INSERT_TIMEOUT = 600
+
+# A boolean. Starts a lightweight background query loop that keeps the Weaviate
+# client/vectorizer warm while users are typing between chat turns.
+WEAVIATE_KEEP_WARM_ENABLED = True
+
+# An integer. Defines how often the keep-warm loop may query Weaviate while idle (in seconds).
+WEAVIATE_KEEP_WARM_INTERVAL = 30
+
+# An integer. Defines when an idle Weaviate client is considered stale enough to
+# reconnect proactively (in seconds).
+WEAVIATE_CLIENT_IDLE_TIMEOUT = 25 * 60
 
 # ========================================== Cache Configuration ============================================
 
@@ -140,7 +156,6 @@ SCRAPING_BACKOFF_RATE = 1.25
 # A list of string URLs. Defines the starting points for the website scraping.
 SCRAPING_TARGET_URLS = [
     'https://emba.unisg.ch/',                   # EMBA HSG root
-    'https://emba.unisg.ch/programm/iemba',     # IEMBA HSG
     'https://embax.ch/',                        # emba X root
 ]
 

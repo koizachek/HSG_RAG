@@ -47,10 +47,6 @@ build/
 
 # Output data
 data/*
-!data/database/
-!data/database/**
-data/database/**/__pycache__/
-data/database/**/*.pyc
 
 # Pyright config may differ from one platform to another 
 pyrightconfig.json

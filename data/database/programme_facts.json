@@ -25,8 +25,8 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus, Capstone-Projekt, Selbststudium, Personal Development Programm, zeitliche Flexibilität möglich.",
-        "en": "9 core courses, 5 electives, 14 weeks on campus, capstone project, self-study, personal development programme, flexible timing possible."
+        "de": "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus, Capstone-Projekt, Selbststudium, zeitliche Flexibilität möglich",
+        "en": "9 core courses, 5 electives, 14 weeks on campus, capstone project, self-study, flexible timing possible"
       },
       "locations": {
         "de": "Schweiz (St. Gallen), Belgien (Wahlkurs)",
@@ -71,8 +71,8 @@
       },
       "ects_credits": 0,
       "structure": {
-        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland, Selbststudium, Diplomarbeit.",
-        "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, self-study, thesis."
+        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland, Diplomarbeit, Selbststudium",
+        "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, thesis, self-study"
       },
       "locations": {
         "de": "St. Gallen (Schweiz), Costa Rica (Wahlkurs), Tokio (Japan), New York City (Wahlkurs), Peking (China), UC Berkeley (USA), UC Irvine (USA), Italien (Wahlkurs), Südafrika (Wahlkurs), Spanien (Wahlkurs)",
@@ -117,8 +117,8 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "13 Essential Kurse, 13 Wochen am Campus, 2 Tage online, 2 Impact-Projekte, Blended Format.",
-        "en": "13 essential courses, 13 weeks on campus, 2 days online, 2 impact projects, blended format."
+        "de": "13 Essential Kurse, 13 Wochen am Campus, 2 Tage online, 2 Impact-Projekte, Blended Format",
+        "en": "13 essential courses, 13 weeks on campus, 2 days online, 2 impact projects, blended format"
       },
       "locations": {
         "de": "Zürich, St. Gallen, Online",

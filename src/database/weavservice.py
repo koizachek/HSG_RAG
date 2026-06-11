@@ -1,7 +1,7 @@
 from functools import reduce
 import weaviate as wvt
 import datetime, os
-from threading import Lock
+from threading import Event, Lock, RLock, Thread
 
 from time import perf_counter, sleep
 from weaviate.classes.config import Configure, Property, DataType
@@ -56,18 +56,23 @@ class WeaviateService:
 
         self._connection_type = 'local' if config.weaviate.LOCAL_DATABASE else 'cloud'
         self._client = None 
-        self._client_lock = Lock()
+        self._client_lock = RLock()
         
         # Some parameters to ensure that the connection will not be closed 
         # during long pauses in conversations
         self._last_query_time = perf_counter()
-        self._idle_timeout = 25 * 60
+        self._idle_timeout = config.weaviate.CLIENT_IDLE_TIMEOUT
+        self._keep_warm_enabled = config.weaviate.KEEP_WARM_ENABLED
+        self._keep_warm_interval = max(1, config.weaviate.KEEP_WARM_INTERVAL)
+        self._keep_warm_stop = Event()
+        self._keep_warm_thread = None
         self._initialized = True
 
         # Initialize the client for the first time 
         logger.info("Initializing Weaviate service...")
         try:
             self._init_client()
+            self._start_keep_warm_loop()
             logger.info("Weaviate service initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Weaviate service: {e}")
@@ -111,33 +116,24 @@ class WeaviateService:
                 try:
                     if config.weaviate.LOCAL_DATABASE:
                         self._client = wvt.connect_to_local()
-                        break
-
-                    self._client = wvt.connect_to_weaviate_cloud(
-                        cluster_url=config.weaviate.CLUSTER_URL,
-                        auth_credentials=config.weaviate.WEAVIATE_API_KEY,
-                        additional_config=AdditionalConfig(
-                            timeout=Timeout(
-                                init=config.weaviate.INIT_TIMEOUT, 
-                                query=config.weaviate.QUERY_TIMEOUT, 
-                                insert=config.weaviate.INSERT_TIMEOUT,
+                    else:
+                        self._client = wvt.connect_to_weaviate_cloud(
+                            cluster_url=config.weaviate.CLUSTER_URL,
+                            auth_credentials=config.weaviate.WEAVIATE_API_KEY,
+                            additional_config=AdditionalConfig(
+                                timeout=Timeout(
+                                    init=config.weaviate.INIT_TIMEOUT,
+                                    query=config.weaviate.QUERY_TIMEOUT,
+                                    insert=config.weaviate.INSERT_TIMEOUT,
+                                ),
+                                skip_init_checks=False,
                             ),
-                            skip_init_checks=False,
-                        ),
-                        headers={
-                            "X-HuggingFace-Api-Key": config.weaviate.HUGGING_FACE_API_KEY,
-                        },
-                    ) 
+                            headers={
+                                "X-HuggingFace-Api-Key": config.weaviate.HUGGING_FACE_API_KEY,
+                            },
+                        )
 
-                    # Warm-up query 
-                    logger.info("Running warm-up query to initialize server...")
-                    try:
-                        collection = _get_collection_name(config.get('AVAILABLE_LANGUAGES')[0])
-                        self._client.collections.exists(collection)
-                        logger.info("Warm-up finished - server is ready!")
-                    except Exception as warmup_err:
-                        logger.warning(f"Warm-up query failed (non-critical): {warmup_err}")
-                    
+                    self._warm_up_client(self._client)
                     break
                 except Exception as e:
                     last_exception = e
@@ -152,6 +148,95 @@ class WeaviateService:
             logger.info(f"Successully connected to the {self._connection_type} weaviate database")
             self._last_query_time = perf_counter()
             return self._client
+
+
+    def _start_keep_warm_loop(self) -> None:
+        """
+        Start a background keep-warm loop that periodically touches Weaviate while
+        the chat UI is idle, e.g. while a user is composing the next question.
+        """
+        if not self._keep_warm_enabled:
+            logger.debug("Weaviate keep-warm loop is disabled")
+            return
+
+        if self._keep_warm_thread and self._keep_warm_thread.is_alive():
+            return
+
+        self._keep_warm_stop.clear()
+        self._keep_warm_thread = Thread(
+            target=self._keep_warm_loop,
+            name="weaviate-keep-warm",
+            daemon=True,
+        )
+        self._keep_warm_thread.start()
+        logger.debug(
+            "Started Weaviate keep-warm loop with %s second interval",
+            self._keep_warm_interval,
+        )
+
+
+    def _keep_warm_loop(self) -> None:
+        while not self._keep_warm_stop.wait(self._keep_warm_interval):
+            try:
+                self._keep_warm_once()
+            except Exception as e:
+                logger.warning(f"Weaviate keep-warm tick failed (non-critical): {e}")
+
+
+    def _keep_warm_once(self) -> bool:
+        """
+        Run one scheduled keep-warm tick when the client has been idle long enough.
+
+        Returns:
+            bool: True when a warm-up query was attempted, False when skipped.
+        """
+        client = self._client
+        if client is None:
+            return False
+
+        time_since_query = perf_counter() - self._last_query_time
+        if time_since_query < self._keep_warm_interval:
+            return False
+
+        logger.debug(
+            "Running scheduled Weaviate keep-warm after %3.2f seconds idle",
+            time_since_query,
+        )
+        self._warm_up_client(client)
+        return True
+
+
+    def stop_keep_warm(self) -> None:
+        """Stop the background keep-warm loop, mainly for tests and clean shutdowns."""
+        self._keep_warm_stop.set()
+        thread = self._keep_warm_thread
+        if thread and thread.is_alive():
+            thread.join(timeout=1)
+        self._keep_warm_thread = None
+
+
+    def _warm_up_client(self, client: wvt.WeaviateClient) -> None:
+        """
+        Quickly query the client to decrease the response latency of future calls.
+        """
+        logger.debug("Running warm-up query to initialize server and vectorizer...")
+        try:
+            collection_name = _get_collection_name(config.get('AVAILABLE_LANGUAGES')[0])
+            with self._client_lock:
+                if not client.collections.exists(collection_name):
+                    logger.warning("Warm-up skipped because collection %s does not exist", collection_name)
+                    return
+
+                collection = client.collections.get(collection_name)
+                collection.query.hybrid(
+                    query="HSG",
+                    limit=1,
+                    return_metadata=MetadataQuery.full(),
+                )
+            self._last_query_time = perf_counter()
+            logger.debug("Warm-up finished - server and vectorizer are ready!")
+        except Exception as warmup_err:
+            logger.warning(f"Warm-up query failed (non-critical): {warmup_err}")
 
 
     def _select_collection(self, lang: str) -> tuple[Collection, str]:
@@ -197,18 +282,40 @@ class WeaviateService:
         import_errors = []
         logger.info(f"Batch importing {len(data_rows)} rows into {collection_name}")
 
+        batch_size = 10
+        max_attempts = 2
+
+        def _import_batch(batch_rows: list[tuple[int, dict]]) -> None:
+            with collection.batch.fixed_size(batch_size=batch_size, concurrent_requests=1) as batch:
+                for idx, data_row in batch_rows:
+                    try:
+                        batch.add_object(properties=data_row)
+                    except Exception as e:
+                        import_errors.append({'index': idx, 'chunk_id': data_row['chunk_id'], 'error': str(e)})
+
+                    if idx % 20 == 0 and idx > 0:
+                        if batch.number_errors > 0:
+                            logger.info(f"Failed imports at index {idx}: {batch.number_errors}")
+
         try:
             with self._client_lock:
-                with collection.batch.fixed_size(batch_size=100, concurrent_requests=2) as batch:
-                    for idx, data_row in enumerate(data_rows):
+                for start_idx in range(0, len(data_rows), batch_size):
+                    batch_rows = list(enumerate(data_rows[start_idx:start_idx + batch_size], start=start_idx))
+                    for attempt in range(1, max_attempts + 1):
                         try:
-                            batch.add_object(properties=data_row)
+                            _import_batch(batch_rows)
+                            break
                         except Exception as e:
-                            import_errors.append({'index': idx, 'chunk_id': data_row['chunk_id'], 'error': str(e)})
-                            
-                        if idx % 20 == 0 and idx > 0:
-                            if batch.number_errors > 0:
-                                logger.info(f"Failed imports at index {idx}: {batch.number_errors}")
+                            if attempt == max_attempts:
+                                raise e
+
+                            logger.warning(
+                                "Batch import failed for rows %s-%s; retrying once: %s",
+                                start_idx,
+                                start_idx + len(batch_rows) - 1,
+                                e,
+                            )
+                            sleep(1)
 
             self._last_query_time = perf_counter()
             logger.info(f"Batch import finished. Total errors: {len(import_errors)}")
