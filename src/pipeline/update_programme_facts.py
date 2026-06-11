@@ -14,6 +14,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import date
 from tempfile import NamedTemporaryFile
@@ -34,6 +35,7 @@ FACT_SOURCES = {
     'deadlines': 'https://emba.unisg.ch/bewerbung/fristen',
     'emba':      'https://emba.unisg.ch/programm/emba',
     'iemba':     'https://emba.unisg.ch/programm/iemba',
+    'iemba_es':  'https://es.unisg.ch/en/executive-programme/international-executive-mba-hsg/',
     'emba_x':    'https://embax.ch/',
     'emba_plan': 'https://emba.unisg.ch/wp-content/uploads/2026/05/Neuer-Dataplan-EMBA71-mitRatenplan.pdf',
     'iemba_plan': 'https://emba.unisg.ch/wp-content/uploads/2026/05/IEMBA-14-info-sheet-with-payment-plan-6.pdf',
@@ -154,6 +156,38 @@ def extract_facts(pages: dict[str, str]) -> AllProgrammesSchema:
     return model.invoke(EXTRACTION_PROMPT.format(page_content=page_content))
 
 
+def _extract_ects_credits(text: str) -> int:
+    """Deterministically extract ECTS credits from nearby label/value text."""
+    patterns = [
+        r'ECTS[-\s]*(?:Punkte|Credits?)\s*[:\n\r\s]+(\d{1,3})\b',
+        r'(\d{1,3})\s*(?:ECTS|Credits?)\b',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            return int(match.group(1))
+    return 0
+
+
+def apply_deterministic_fallbacks(extracted: AllProgrammesSchema, pages: dict[str, str]) -> AllProgrammesSchema:
+    """Fill simple numeric facts that the LLM occasionally misses."""
+    fallback_sources = {
+        'emba': ['emba_plan', 'emba'],
+        'iemba': ['iemba_es', 'iemba_plan', 'iemba'],
+        'emba_x': ['emba_x'],
+    }
+    for programme_key, source_keys in fallback_sources.items():
+        programme = getattr(extracted, programme_key)
+        if programme.ects_credits:
+            continue
+        for source_key in source_keys:
+            ects = _extract_ects_credits(pages.get(source_key, ''))
+            if ects:
+                programme.ects_credits = ects
+                break
+    return extracted
+
+
 def to_facts_document(extracted: AllProgrammesSchema) -> dict:
     """Convert the extraction schema into the programme_facts.json layout."""
     def programme(p: ProgrammeFactsSchema, source_urls: list[str]) -> dict:
@@ -188,7 +222,7 @@ def to_facts_document(extracted: AllProgrammesSchema) -> dict:
         'sources': list(FACT_SOURCES.values()),
         'programmes': {
             'emba': programme(extracted.emba, [FACT_SOURCES['emba'], FACT_SOURCES['deadlines'], FACT_SOURCES['emba_plan']]),
-            'iemba': programme(extracted.iemba, [FACT_SOURCES['iemba'], FACT_SOURCES['deadlines'], FACT_SOURCES['iemba_plan']]),
+            'iemba': programme(extracted.iemba, [FACT_SOURCES['iemba'], FACT_SOURCES['iemba_es'], FACT_SOURCES['deadlines'], FACT_SOURCES['iemba_plan']]),
             'emba_x': programme(extracted.emba_x, [FACT_SOURCES['emba_x'], FACT_SOURCES['deadlines']]),
         },
     }
@@ -243,6 +277,7 @@ def main() -> int:
 
     pages = fetch_sources()
     extracted = extract_facts(pages)
+    extracted = apply_deterministic_fallbacks(extracted, pages)
     new_facts = to_facts_document(extracted)
 
     old_facts = {}

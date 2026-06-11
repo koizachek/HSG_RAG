@@ -110,6 +110,16 @@ class TestPromptBlock:
         assert "AUTHORITATIVE" in prompt
 
 
+# --------------------------- Facts extraction -------------------------------
+
+class TestFactExtractionFallbacks:
+    def test_ects_fallback_reads_es_hsg_label_value(self):
+        from src.pipeline.update_programme_facts import _extract_ects_credits
+
+        text = "### ECTS-Punkte\n\n75\n\n### Dauer\n\n18 months"
+        assert _extract_ects_credits(text) == 75
+
+
 # --------------------------- Language detection -----------------------------
 
 class TestLanguageHeuristics:
