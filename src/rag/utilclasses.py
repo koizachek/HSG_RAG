@@ -16,6 +16,7 @@ class AgentContext:
 class LeadAgentQueryResponse:
     response: str
     language: str
+    additional_details: str | None = None
     processed_query: str = None
     confidence_fallback: bool = False
     max_turns_reached: bool = False
@@ -26,7 +27,16 @@ class LeadAgentQueryResponse:
 
 
 class StructuredAgentResponse(BaseModel):
-    response: str = Field(description="Main response to the query.")
+    response: str = Field(description="Main response shown directly to the user.")
+    additional_details: str = Field(
+        default="",
+        description=(
+            "Optional secondary details shown in an expandable UI section. "
+            "Use this only when the main answer would otherwise become too long. "
+            "Do NOT move critical facts such as tuition, duration, deadlines, "
+            "eligibility requirements, or direct answers into this field."
+        )
+    )
     is_context_dependent: bool = Field(
         default=True,
         description=(

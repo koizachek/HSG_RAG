@@ -85,19 +85,17 @@ class ChatbotApplication:
             # ---- Chat Screen (Page 2) ----
             with gr.Column(visible=False) as chat_screen:
                 chat = gr.ChatInterface(
-                    fn=lambda msg, history, agent: self._chat(
-                        message=msg, history=history, agent=agent
-                    ),
+                    fn=self._chat,
                     additional_inputs=[agent_state],
+                    additional_outputs=[agent_state],
                     title="Executive Education Adviser",
                     type="messages",
                 )
-            
-            with gr.Row():
-                withdraw_button = gr.Button(WITHDRAW_TEXT[language], visible=False, variant="stop")
 
-            def create_session_id() -> str:
-                return str(uuid.uuid4())
+            booking_widget = gr.HTML(
+                value=BOOKING_WIDGET_HTML[language],
+                visible=False,
+            )
 
             def initialize_agent(lang: str, session_id: str):
                 agent = ExecutiveAgentChain(language=lang, session_id=session_id)
@@ -105,9 +103,10 @@ class ChatbotApplication:
 
                 disclaimer_html = get_disclaimer_widget(lang)
 
-                full_content = f"{disclaimer_html}{greeting}"
-
-                return agent, [{"role": "assistant", "content": full_content}]
+                return agent, [
+                    {"role": "assistant", "content": disclaimer_html},
+                    {"role": "assistant", "content": greeting},
+                ]
 
             def label_to_lang_code(label: str) -> str:
                 return "en" if label == "English" else "de"
@@ -131,8 +130,8 @@ class ChatbotApplication:
                         gr.update(value=ACCEPT[lang_code]),
                         gr.update(visible=False, value=""),
                         None,   # agent_state stays None
-                        None,   # chat stays as it is
-                        gr.update(value=WITHDRAW_TEXT[lang_code], visible=False),
+                        [],     # chat stays empty
+                        gr.update(value=BOOKING_WIDGET_HTML[lang_code], visible=False),
                     )
 
                 # After consent
@@ -145,7 +144,7 @@ class ChatbotApplication:
                     gr.update(visible=False, value=""),
                     new_agent,
                     greeting,
-                    gr.update(value=WITHDRAW_TEXT[lang_code], visible=True),
+                    gr.update(value=BOOKING_WIDGET_HTML[lang_code], visible=True),
                 )
 
             def on_accept(lang: str, session_id: str):
@@ -160,7 +159,7 @@ class ChatbotApplication:
                     greeting,                         # chat initial history
                     gr.update(visible=False, value=""),  # decline_info hide
                     gr.update(visible=True),         # show reset_button
-                    gr.update(value=WITHDRAW_TEXT[lang], visible=True),
+                    gr.update(value=BOOKING_WIDGET_HTML[lang], visible=True),
                 )
 
             def on_decline(lang: str, session_id: str):
@@ -173,6 +172,8 @@ class ChatbotApplication:
                     None,                      # agent_state
                     [],                        # chat history empty
                     gr.update(visible=True, value=DECLINE_MESSAGE[lang]),
+                    gr.update(visible=False),  # hide reset_button
+                    gr.update(value=BOOKING_WIDGET_HTML[lang], visible=False),
                 )
 
             def on_reset_chat(lang: str, session_id: str):
@@ -180,37 +181,15 @@ class ChatbotApplication:
                 self._language = lang
                 return (
                     agent,
-                    greeting,  
-                )
-            
-            def on_withdraw(lang: str, agent, session_id: str):
-                self._consentLogger.log(session_id, "withdrawn", policy_version="1.0")
-                
-                # 1) wipe server-side
-                if agent is not None:
-                    try:
-                        agent.wipe_session_data()
-                        logger.info("wipe_session_data executed")
-                    except Exception as e:
-                        logger.error(f"wipe_session_data failed: {e}", exc_info=True)
-                
-                # 2) lock chat again (back to consent screen)
-                new_session_id = create_session_id()
-                return (
-                    gr.update(visible=True),                                    # consent_screen
-                    gr.update(value=PRIVACY_NOTICE[lang]),                      # data_policy
-                    gr.update(value=DECLINE[lang]),                             # decline_btn
-                    gr.update(value=ACCEPT[lang]),                              # accept_btn
-                    gr.update(visible=False),                                   # chat_screen
-                    gr.update(visible=True, value=WITHDRAW_CONFIRMATION_MESSAGE[lang]),  # decline_info
-                    False,                                                      # consent_state
-                    None,                                                       # agent_state
-                    [],                                                         # chat.chatbot_value (history)
-                    gr.update(visible=False),                                   # reset_button
-                    gr.update(visible=False),                                   # withdraw_button
-                    new_session_id,                                             # session_id_state
+                    greeting,
+                    gr.update(value=BOOKING_WIDGET_HTML[lang], visible=True),
                 )
 
+            def on_builtin_clear(agent):
+                if agent is not None:
+                    agent.reset_conversation_state()
+                    logger.info("Cleared agent state after Gradio chat clear event")
+                return agent
             # Language switch updates consent UI if consent not given
             lang_selector.change(
                 fn=on_language_change,
@@ -222,7 +201,7 @@ class ChatbotApplication:
                         decline_info, 
                         agent_state, 
                         chat.chatbot_value,
-                        withdraw_button,
+                        booking_widget,
                     ],
                 queue=True,
             )
@@ -239,7 +218,7 @@ class ChatbotApplication:
                     chat.chatbot_value,
                     decline_info,
                     reset_button,
-                    withdraw_button,
+                    booking_widget,
                 ],
                 queue=True,
             )
@@ -247,7 +226,16 @@ class ChatbotApplication:
             decline_btn.click(
                 fn=on_decline,
                 inputs=[lang_state, session_id_state],
-                outputs=[consent_screen, chat_screen, consent_state, agent_state, chat.chatbot_value, decline_info],
+                outputs=[
+                    consent_screen,
+                    chat_screen,
+                    consent_state,
+                    agent_state,
+                    chat.chatbot_value,
+                    decline_info,
+                    reset_button,
+                    booking_widget,
+                ],
                 queue=True,
             )
 
@@ -258,52 +246,111 @@ class ChatbotApplication:
                 outputs=[
                     agent_state,
                     chat.chatbot_value,
-                ],
-                queue=True,
-            )
-            
-            # Withdraw consent
-            withdraw_button.click(
-                fn=on_withdraw,
-                inputs=[lang_state, agent_state, session_id_state],
-                outputs=[
-                    consent_screen,
-                    data_policy, 
-                    decline_btn, 
-                    accept_btn, 
-                    chat_screen,
-                    decline_info,
-                    consent_state,
-                    agent_state,
-                    chat.chatbot_value,    
-                    reset_button,
-                    withdraw_button,
-                    session_id_state,
+                    booking_widget,
                 ],
                 queue=True,
             )
 
-
+            chat.chatbot.clear(
+                fn=on_builtin_clear,
+                inputs=[agent_state],
+                outputs=[agent_state],
+                queue=False,
+            )
     @property
     def app(self) -> gr.Blocks:
         """Expose underlying Gradio Blocks for external runners (e.g., HF Spaces)."""
         return self._app
 
     def _chat(self, message: str, history: list[dict], agent: ExecutiveAgentChain):
+        """
+        Streaming chat handler (generator). Yields partial text while the lead
+        agent streams its answer, then a final yield with the post-processed
+        response. Latency fix: perceived latency drops to time-to-first-token
+        instead of waiting for the full pipeline.
+        """
         if agent is None:
             logger.error("Agent not initialized")
-            return ["I apologize, but the chatbot is not properly initialized."]
+            yield ["I apologize, but the chatbot is not properly initialized."], agent
+            return
 
         answers = []
         try:
+            if self._visible_history_is_empty(history) and self._agent_has_conversation(agent):
+                logger.warning(
+                    "Visible chat history is empty but agent state contains prior turns; "
+                    "resetting agent state before processing query."
+                )
+                agent.reset_conversation_state()
+
             logger.info(f"Processing user query: {message[:100]}...")
-            response = agent.query(message)
-            answers.append(response.response) 
+
+            # Run the agent in a worker thread; consume streamed deltas here.
+            import threading
+            import queue as queue_mod
+
+            delta_queue: queue_mod.Queue = queue_mod.Queue()
+            outcome: dict = {}
+
+            def _worker():
+                try:
+                    outcome['response'] = agent.query(message, on_delta=delta_queue.put)
+                except Exception as worker_error:  # surfaced after the loop
+                    outcome['error'] = worker_error
+                finally:
+                    delta_queue.put(None)  # sentinel: stream finished
+
+            worker = threading.Thread(target=_worker, daemon=True)
+            worker.start()
+
+            partial = ""
+            while True:
+                item = delta_queue.get()
+                if item is None:
+                    break
+                partial += item
+                yield partial, agent
+
+            worker.join()
+            if 'error' in outcome:
+                raise outcome['error']
+
+            response = outcome['response']
+            # Final yield uses the post-processed text (formatting, chunking),
+            # replacing the raw streamed preview.
+            answers.append(response.response)
             self._language = response.language
-            
-            if response.show_booking_widget:
-                html_code = get_booking_widget(language=self._language, programs=response.relevant_programs)
-                answers.append(gr.HTML(value=html_code))
+
+            if response.additional_details:
+                details_label = (
+                    "Weitere Informationen"
+                    if response.language == "de"
+                    else "More information"
+                )
+                formatted_details = response.additional_details.strip().replace("\n", "<br>")
+                details_html = f"""
+                <details style="
+                    margin-top:10px;
+                    padding:12px;
+                    border:1px solid #374151;
+                    border-radius:8px;
+                    background:#1f2937;
+                    color:#f9fafb;
+                ">
+                    <summary style="
+                        cursor:pointer;
+                        font-weight:600;
+                        color:#93c5fd;
+                        list-style:none;
+                    ">{details_label}</summary>
+                    <div style="
+                        margin-top:8px;
+                        color:#e5e7eb;
+                        line-height:1.6;
+                    ">{formatted_details}</div>
+                </details>
+                """
+                answers.append(gr.HTML(value=details_html))
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
             error_message = (
@@ -312,7 +359,20 @@ class ChatbotApplication:
             )
             answers.append(error_message)
 
-        return answers
+        yield answers, agent
+
+    @staticmethod
+    def _visible_history_is_empty(history: list[dict] | None) -> bool:
+        if not history:
+            return True
+        for item in history:
+            if isinstance(item, dict) and item.get("content"):
+                return False
+        return True
+
+    @staticmethod
+    def _agent_has_conversation(agent: ExecutiveAgentChain) -> bool:
+        return bool(getattr(agent, "_conversation_history", []))
 
 
     def run(self):

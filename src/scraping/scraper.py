@@ -322,7 +322,11 @@ class Scraper:
         tagged_documents: list[dict],
         target_url: str,
         temp_chunks: dict[str, list[ChunkMetadata]] | None = None,
+        existing_merged_chunks: dict[str, list[ChunkMetadata]] | None = None,
     ) -> dict[str, list[ChunkMetadata]]:
+        if temp_chunks is None:
+            temp_chunks = existing_merged_chunks or {}
+
         raw_chunks     = []
         deleted_chunks = []
         merged_chunks, final_chunks = self._read_temp_chunks(temp_chunks, tagged_documents)

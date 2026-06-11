@@ -17,6 +17,7 @@ import re
 import random
 import glob
 from datetime import datetime
+from time import perf_counter
 
 from src.database.weavservice import WeaviateService
 
@@ -26,6 +27,7 @@ from src.rag.middleware import AgentChainMiddleware as chainmdw
 from src.rag.prompts import PromptConfigurator as promptconf
 from src.rag.models import ModelConfigurator as modelconf
 from src.rag.input_handler import InputHandler
+from src.rag.conversation_state import ConversationStateManager
 from src.rag.response_formatter import ResponseFormatter
 from src.rag.scope_guardian import ScopeGuardian
 from src.rag.language_detection import LanguageDetector
@@ -45,13 +47,14 @@ class ExecutiveAgentChain:
         self._stored_language = language
         self._dbservice = WeaviateService()
         self._agents, self._config = self._init_agents()
-        self._conversation_history = [] 
+        self._conversation_history = []
+        self._pending_continuation: str | None = None
         self._cache = Cache.get_cache()
 
         if config.chain.EVALUATE_RESPONSE_QUALITY:
             from src.rag.quality_score_handler import QualityScoreHandler
             self._quality_handler = QualityScoreHandler()
-        
+
         self._language_detector = LanguageDetector()
 
         # Generate unique user ID for this session
@@ -79,6 +82,10 @@ class ExecutiveAgentChain:
         self._scope_violation_counts: dict[str, int] = {}
         self._aggressive_violation_count = 0
 
+        # Profile tracking lives in its own component (adopted from the
+        # chatbot-decoupling branch) to keep this class a thin orchestrator.
+        self._state_manager = ConversationStateManager(self)
+
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
 
     def _retrieve_context(self, query: str, program: str, language: str = None):
@@ -91,28 +98,51 @@ class ExecutiveAgentChain:
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
         """
         lang = language if language in ['en', 'de'] else self._initial_language
+        # Adopted from chatbot-decoupling: normalise the programme id before
+        # filtering. The DB tags chunks with 'emba x' (with space); model
+        # inputs like 'embax' or 'EMBA X' would silently match nothing.
+        normalized = self._normalise_programme_id(program)
+        db_program = {'emba': 'emba', 'iemba': 'iemba', 'emba_x': 'emba x'}.get(normalized)
+        property_filters = {'programs': [db_program]} if db_program else {'programs': [program]}
         try:
             response, _ = self._dbservice.query(
                 query=query,
                 lang=lang,
                 limit=config.get('TOP_K_RETRIEVAL'),
-                property_filters={
-                    'programs': [program],
-                },
+                property_filters=property_filters,
             )
-            serialized = '\n\n'.join([doc.properties.get('body', '') for doc in response.objects])
+            # Hallucination fix: include source metadata per chunk so the
+            # model can keep programmes apart and ground its answer, instead
+            # of receiving an anonymous wall of concatenated text.
+            serialized_chunks = []
+            for doc in response.objects:
+                props = doc.properties or {}
+                body = props.get('body', '')
+                if not body:
+                    continue
+                programs = props.get('programs') or []
+                source = props.get('source') or 'unknown'
+                header = f"[programme: {', '.join(programs) if programs else 'unspecified'} | source: {source}]"
+                serialized_chunks.append(f"{header}\n{body}")
+            serialized = '\n\n'.join(serialized_chunks)
+            # Hallucination guard: an empty tool result silently invited the
+            # model to answer from world knowledge. Make the gap explicit and
+            # instruct the model to acknowledge it instead of inventing facts.
+            if not serialized.strip():
+                chain_logger.warning(
+                    f"retrieve_context returned no documents (program='{program}', lang='{lang}', query='{query}')"
+                )
+                return (
+                    "NO_CONTEXT_FOUND: The knowledge base returned no documents for this "
+                    "query. Do NOT answer from memory or general knowledge. Tell the user "
+                    "that this specific information is not available right now and "
+                    "recommend confirming it with the admissions team."
+                )
             return serialized
         except Exception as e:
             raise e
 
-
     def _init_agents(self):
-        from .subagents import SubagentProvider
-        if config.chain.ENABLE_SUBAGENTS:
-            chain_logger.warning("Subagents activated! This might lead to high response times!")
-
-        sub_provider = SubagentProvider(self._initial_language, self._query, self._retrieve_context)
-        
         run_config: RunnableConfig = {
             'configurable': {'thread_id': 0}
         }
@@ -125,26 +155,25 @@ class ExecutiveAgentChain:
             args_schema=RetrieveContextInput,
             description=(
                 "Retrieve current programme context from the vector database. "
-                "Arguments: query, program, optional language."
+                "Arguments: query, program, optional language. "
+                "Language guidance: use 'de' for EMBA HSG (German-speaking programme), "
+                "'en' for IEMBA and emba X (English-speaking programmes); "
+                "write the query in that same language."
             ),
             return_direct=False,
             parse_docstring=False,
         )
-
-        lead_agent_tools = (sub_provider.get_subagent_tools() 
-            if config.chain.ENABLE_SUBAGENTS 
-            else [tool_retrieve_context])
+        self._retrieve_context_tool = tool_retrieve_context
 
         agents = {
             'lead': create_agent(
                 name="lead_agent",
                 model=modelconf.get_main_agent_model(),
-                tools=lead_agent_tools,
+                tools=[tool_retrieve_context],
                 state_schema=LeadInformationState,
                 system_prompt=promptconf.get_configured_agent_prompt(
-                    'lead', 
+                    'lead',
                     language=self._initial_language,
-                    use_subagents=config.chain.ENABLE_SUBAGENTS
                 ),
                 middleware=[
                     chainmdw.get_tool_wrapper(),
@@ -157,125 +186,8 @@ class ExecutiveAgentChain:
                 ),
             ),
         }
-        if config.chain.ENABLE_SUBAGENTS:
-            agents |= sub_provider.get_subagents(fallback_middleware)
-
         return agents, run_config
 
-
-    def _extract_experience_years(self, conversation: str) -> int | None:
-        """Extract years of professional experience from conversation text."""
-        # Look for patterns like "10 years", "5 years experience", etc.
-        patterns = [
-            r'(\d+)\s*years?\s*(?:of\s*)?(?:experience|work)',
-            r'(\d+)\s*years?\s*in\s*(?:the\s*)?(?:field|industry)',
-            r'working\s*for\s*(\d+)\s*years?',
-            r'(\d+)\s*Jahre\s*(?:Erfahrung|Berufserfahrung)',  # German
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, conversation, re.IGNORECASE)
-            if match:
-                return int(match.group(1))
-        return None
-
-    def _extract_leadership_years(self, conversation: str) -> int | None:
-        """Extract years of leadership experience from conversation text."""
-        patterns = [
-            r'(\d+)\s*years?\s*(?:of\s*)?(?:leadership|management|managing)',
-            r'(?:lead|led|manage|managed)\s*(?:for\s*)?(\d+)\s*years?',
-            r'(\d+)\s*Jahre\s*(?:Führungserfahrung|Führung)',  # German
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, conversation, re.IGNORECASE)
-            if match:
-                return int(match.group(1))
-        return None
-
-    def _extract_field(self, conversation: str) -> str | None:
-        """Extract professional field/industry from conversation text."""
-        # Common fields mentioned in executive education
-        fields = [
-            'finance', 'banking', 'technology', 'tech', 'IT', 'healthcare',
-            'consulting', 'manufacturing', 'retail', 'marketing', 'sales',
-            'engineering', 'pharma', 'telecommunications', 'energy',
-            'Finanzwesen', 'Technologie', 'Gesundheitswesen', 'Beratung'  # German
-        ]
-        conversation_lower = conversation.lower()
-        for field in fields:
-            if field.lower() in conversation_lower:
-                return field.capitalize()
-        return None
-
-    def _extract_interest(self, conversation: str) -> str | None:
-        """Extract content interests from conversation text."""
-        # Look for interest indicators
-        interests = [
-            'strategy', 'innovation', 'leadership', 'digital transformation',
-            'finance', 'operations', 'marketing', 'entrepreneurship',
-            'social impact', 'technology', 'management',
-            'Strategie', 'Innovation', 'Führung', 'Digitalisierung'  # German
-        ]
-        conversation_lower = conversation.lower()
-        found_interests = [interest for interest in interests
-                           if interest.lower() in conversation_lower]
-        return ', '.join(found_interests) if found_interests else None
-
-    def _extract_name(self, conversation: str) -> str | None:
-        """Extract user's name from conversation text."""
-        patterns = [
-            r"(?:my name is|i'm|i am|call me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
-            r"(?:this is|it's)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
-            r"(?:ich heiße|mein Name ist|ich bin)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",  # German
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, conversation, re.IGNORECASE)
-            if match:
-                name = match.group(1).strip()
-                # Filter out common words that might be误ly matched
-                excluded = ['interested', 'looking', 'working', 'searching', 'asking']
-                if name.lower() not in excluded:
-                    return name
-        return None
-
-    def _detect_handover_request(self, conversation: str) -> bool:
-        """Detect if user requested appointment, callback, or contact."""
-        # Keywords indicating handover request
-        handover_keywords = [
-            'appointment', 'call me', 'contact me', 'schedule', 'meeting',
-            'callback', 'reach out', 'follow up', 'get in touch', 'speak with',
-            'talk to', 'consultation', 'discuss with', 'meet with',
-            'Termin', 'Rückruf', 'kontaktieren', 'Gespräch', 'anrufen',  # German
-            'zurückrufen', 'Beratung', 'treffen'
-        ]
-        conversation_lower = conversation.lower()
-        return any(keyword.lower() in conversation_lower for keyword in handover_keywords)
-
-    def _previous_response_offered_booking(self) -> bool:
-        """Return True if the latest assistant turn offered booking as a next step."""
-        booking_offer_terms = [
-            "appointment slots",
-            "book an appointment",
-            "book a consultation",
-            "appointment booking",
-            "show you available appointments",
-            "show appointment options",
-            "terminbuchung",
-            "termin buchen",
-            "termine anzeigen",
-            "verfügbare termine",
-            "beratungstermin",
-        ]
-
-        for message in reversed(self._conversation_history):
-            if not isinstance(message, AIMessage):
-                continue
-            content = getattr(message, "content", "") or getattr(message, "text", "")
-            if isinstance(content, list):
-                content = " ".join(str(part) for part in content)
-            content_lower = str(content).lower()
-            return any(term in content_lower for term in booking_offer_terms)
-
-        return False
 
     def _get_latest_ai_message_content(self, skip_latest: bool = False) -> str:
         """Return the latest assistant message content from conversation history."""
@@ -506,137 +418,14 @@ class ExecutiveAgentChain:
             return True
 
         return (
-            self._previous_response_offered_booking()
+            self._state_manager.previous_response_offered_booking()
             and any(contains_term(term) for term in acceptance_terms)
         )
 
-    def _determine_suggested_program(self) -> str | None:
-        """Determine recommended program based on user profile."""
-        state = self._conversation_state
-
-        # If program interest was explicitly mentioned
-        if state['program_interest']:
-            return state['program_interest'][0]
-
-        # Make recommendation based on profile
-        experience = state.get('experience_years', 0) or 0
-        leadership = state.get('leadership_years', 0) or 0
-
-        # EMBA: 5+ years experience, 2+ years leadership
-        if experience >= 5 and leadership >= 2:
-            return 'EMBA'
-        # IEMBA: International focus, 3+ years experience
-        elif experience >= 3:
-            return 'IEMBA'
-        # EMBA X: Digital/Innovation focus
-        elif state.get('interest') and any(kw in state.get('interest', '').lower()
-                                           for kw in ['digital', 'innovation', 'technology']):
-            return 'emba X'
-
-        return None
-
-    def _update_conversation_state(self, user_query: str, agent_response: str) -> None:
-        """Update conversation state by extracting information from the conversation."""
-        if not config.convstate.TRACK_USER_PROFILE:
-            return
-
-        # Combine query and response for analysis
-        conversation_text = f"{user_query} {agent_response}"
-
-        # Extract profile information
-        if not self._conversation_state.get('experience_years'):
-            exp_years = self._extract_experience_years(conversation_text)
-            if exp_years:
-                self._conversation_state['experience_years'] = exp_years
-                chain_logger.info(f"Extracted experience years: {exp_years}")
-
-        if not self._conversation_state.get('leadership_years'):
-            lead_years = self._extract_leadership_years(conversation_text)
-            if lead_years:
-                self._conversation_state['leadership_years'] = lead_years
-                chain_logger.info(f"Extracted leadership years: {lead_years}")
-
-        if not self._conversation_state.get('field'):
-            field = self._extract_field(conversation_text)
-            if field:
-                self._conversation_state['field'] = field
-                chain_logger.info(f"Extracted field: {field}")
-
-        if not self._conversation_state.get('interest'):
-            interest = self._extract_interest(conversation_text)
-            if interest:
-                self._conversation_state['interest'] = interest
-                chain_logger.info(f"Extracted interest: {interest}")
-
-        # Extract name
-        if not self._conversation_state.get('user_name'):
-            name = self._extract_name(conversation_text)
-            if name:
-                self._conversation_state['user_name'] = name
-                chain_logger.info(f"Extracted name: {name}")
-
-        # Detect handover request from the user only; assistant soft offers should not count.
-        if self._detect_handover_request(user_query):
-            self._conversation_state['handover_requested'] = True
-            chain_logger.info("Handover request detected")
-
-        # Check for program mentions
-        programs = ['EMBA', 'IEMBA', 'EMBA X']
-        for program in programs:
-            if program.lower() in conversation_text.lower():
-                if program not in self._conversation_state['program_interest']:
-                    self._conversation_state['program_interest'].append(program)
-
-        # Update suggested program
-        suggested = self._determine_suggested_program()
-        if suggested and not self._conversation_state.get('suggested_program'):
-            self._conversation_state['suggested_program'] = suggested
-            chain_logger.info(f"Suggested program: {suggested}")
-
-    def _log_user_profile(self) -> None:
-        """Log user profile to JSON file."""
-        if not config.convstate.TRACK_USER_PROFILE:
-            return
-
-        try:
-            # Create logs directory if it doesn't exist
-            log_dir = os.path.join('logs', 'user_profiles')
-            os.makedirs(log_dir, exist_ok=True)
-
-            # Create profile data
-            profile_data = {
-                'session_id': self._conversation_state['session_id'],
-                'user_id': self._conversation_state['user_id'],
-                'name': self._conversation_state.get('user_name'),
-                'timestamp': datetime.now().isoformat(),
-                'experience_years': self._conversation_state.get('experience_years'),
-                'leadership_years': self._conversation_state.get('leadership_years'),
-                'field': self._conversation_state.get('field'),
-                'interest': self._conversation_state.get('interest'),
-                'suggested_program': self._conversation_state.get('suggested_program'),
-                'handover': self._conversation_state.get('handover_requested'),
-                'user_language': self._conversation_state.get('user_language'),
-                'program_interest': self._conversation_state.get('program_interest', []),
-            }
-
-            # Log file path with timestamp
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            log_file = os.path.join(log_dir, f'profile_{self._user_id}_{timestamp}.json')
-
-            # Write to file
-            with open(log_file, 'w', encoding='utf-8') as f:
-                json.dump(profile_data, f, indent=2, ensure_ascii=False)
-
-            chain_logger.info(f"User profile logged to {log_file}")
-
-        except Exception as e:
-            chain_logger.error(f"Failed to log user profile: {e}")
-    
-    def wipe_session_data(self) -> None:
-        """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
-
-        # --- 1) In-memory wipe ---
+    def reset_conversation_state(self) -> None:
+        """Clear in-memory conversation state while keeping the same session id."""
         self._conversation_history = []
+        self._pending_continuation = None
         self._conversation_state.update({
             'user_language': None,
             'user_name': None,
@@ -653,6 +442,12 @@ class ExecutiveAgentChain:
         })
         self._scope_violation_counts = {}
         self._aggressive_violation_count = 0
+
+    def wipe_session_data(self) -> None:
+        """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
+
+        # --- 1) In-memory wipe ---
+        self.reset_conversation_state()
 
         # --- 2) On-disk wipe (delete profile_<user_id>_*.json) ---
         if not self._user_id:
@@ -677,13 +472,23 @@ class ExecutiveAgentChain:
         return greeting_message
 
     @traceable
-    def query(self, query: str) -> LeadAgentQueryResponse:
+    def query(self, query: str, on_delta=None) -> LeadAgentQueryResponse:
         """
         Phase 1: Validation, Scope-Check and language detection.
         Does not call the agent directly.
+
+        Args:
+            on_delta: Optional callback receiving displayable text deltas while
+                the lead agent streams its answer. Early-return paths (scope
+                check, cache hits, invalid input) skip streaming and only
+                return the final response.
         """
+        # Latency monitoring: per-step timings are logged so regressions
+        # show up immediately instead of being guessed at later.
+        self._turn_start_time = perf_counter()
+
         # Remember fallback language
-        current_language = self._stored_language 
+        current_language = self._stored_language
 
         if len(self._conversation_history) >= config.convstate.MAX_CONVERSATION_TURNS:
             return LeadAgentQueryResponse(
@@ -749,6 +554,16 @@ class ExecutiveAgentChain:
                         processed_query=processed_query
                     )
 
+        if self._pending_continuation and self._is_continuation_request(processed_query):
+            return self._serve_pending_continuation(
+                processed_query=processed_query,
+                response_language=current_language,
+            )
+
+        if self._pending_continuation:
+            chain_logger.info("Discarding pending continuation because the user started a new request.")
+            self._pending_continuation = None
+
         # 4. Scope Check
         scope_type = ScopeGuardian.check_scope(processed_query, current_language)
 
@@ -780,13 +595,14 @@ class ExecutiveAgentChain:
                 appointment_requested=False,
                 show_booking_widget=False,
             )
-        
-        # 5. Check if cached data already exists for this session 
+
+        # 5. Check if cached data already exists for this session
         if config.cache.ENABLED:
             cached_data = self._cache.get(query, current_language, self._user_id)
             if cached_data and isinstance(cached_data, dict):
                 return LeadAgentQueryResponse(
                     response=cached_data["response"],
+                    additional_details=cached_data.get("additional_details", ""),
                     language=current_language,
                     appointment_requested=cached_data.get("appointment_requested", False),
                     show_booking_widget=cached_data.get("show_booking_widget", False),
@@ -794,14 +610,21 @@ class ExecutiveAgentChain:
                 )
             
 
-        # 6. Preprocessing is finished - the agent has to answer the query 
-        response = self._query_lead(query) 
+        # 6. Preprocessing is finished - the agent has to answer the query
+        preprocess_elapsed = perf_counter() - self._turn_start_time
+        chain_logger.info(f"[timing] preprocessing: {preprocess_elapsed:.2f}s")
+
+        response = self._query_lead(query, on_delta=on_delta)
+
+        total_elapsed = perf_counter() - self._turn_start_time
+        chain_logger.info(f"[timing] total turn: {total_elapsed:.2f}s")
         
         if config.cache.ENABLED and response.should_cache:
             self._cache.set(
                 key=query,
                 value={
                     "response":              response.response,
+                    "additional_details":    response.additional_details,
                     "appointment_requested": response.appointment_requested,
                     "show_booking_widget":    response.show_booking_widget,
                     "relevant_programs":     response.relevant_programs,
@@ -813,7 +636,7 @@ class ExecutiveAgentChain:
         return response 
 
 
-    def _query_lead(self, preprocessed_query: str) -> LeadAgentQueryResponse:
+    def _query_lead(self, preprocessed_query: str, on_delta=None) -> LeadAgentQueryResponse:
         """
         Phase 2: Execute agent.
         Takes the ALREADY validated query from the preprocessing phase.
@@ -836,23 +659,50 @@ class ExecutiveAgentChain:
         language_instruction = SystemMessage(f"Respond in {get_language_name(response_language)} language.")
 
         # 3. Agent Call
+        # Latency fix: cap the history sent to the model. The full history
+        # grew unbounded, making every turn slower and more expensive.
+        max_history = config.chain.MAX_HISTORY_MESSAGES
+        history_window = (
+            self._conversation_history[-max_history:]
+            if max_history and max_history > 0
+            else self._conversation_history
+        )
         structured_response = self._query(
             agent=self._agents['lead'],
-            messages=self._conversation_history + [language_instruction], 
+            messages=history_window + [language_instruction],
+            on_delta=on_delta,
         )
         agent_response = structured_response.response
+        additional_details = ResponseFormatter.clean_response(
+            ResponseFormatter.remove_tables(structured_response.additional_details or "")
+        )
         chain_logger.info(f"Is answer context dependent: {structured_response.is_context_dependent}")
+        chain_logger.info(f"Additional details returned: {bool(additional_details)}")
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
         chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
 
+        # Keep the complete answer in internal memory even when the UI only
+        # shows the first chunk. Otherwise follow-up turns only "remember" the
+        # truncated version and tend to repeat themselves.
+        full_response = ResponseFormatter.clean_response(
+            ResponseFormatter.remove_tables(agent_response)
+        )
+
         # 4. Formatting
-        if config.chain.ENABLE_RESPONSE_CHUNKING:
-            formatted_response = ResponseFormatter.format_response(
-                agent_response, agent_type='lead', enable_chunking=True, language=response_language
+        if (
+            config.chain.ENABLE_RESPONSE_CHUNKING
+            and not self._text_mentions_multiple_programmes(full_response)
+        ):
+            formatted_response, continuation = ResponseFormatter.chunk_response(
+                full_response,
+                config.chain.MAX_RESPONSE_WORDS_LEAD,
+                response_language,
             )
+            self._pending_continuation = continuation
         else:
-            formatted_response = ResponseFormatter.remove_tables(agent_response)
+            formatted_response = full_response
+            self._pending_continuation = None
 
         formatted_response = ResponseFormatter.clean_response(formatted_response)
 
@@ -867,19 +717,49 @@ class ExecutiveAgentChain:
                 formatted_response = CONFIDENCE_FALLBACK_MESSAGE[response_language]
                 chain_logger.info("Fallback Mechanism activated!")
 
-        # Add to history
-        self._conversation_history.append(AIMessage(formatted_response))
+        history_response = ResponseFormatter.format_name_of_university(
+            full_response,
+            language=response_language,
+        )
+
+        # Add the full answer to internal history, not the visible chunk.
+        self._conversation_history.append(AIMessage(history_response))
 
         # 6. Profiling
         if config.convstate.TRACK_USER_PROFILE:
-            self._update_conversation_state(preprocessed_query, formatted_response)
+            self._state_manager.update(preprocessed_query, history_response)
             
             message_count = len([m for m in self._conversation_history if isinstance(m, HumanMessage)])
             if message_count % 5 == 0 or self._conversation_state.get('suggested_program'):
-                self._log_user_profile()
+                self._state_manager.log_user_profile()
 
-        formatted_response = ResponseFormatter.format_name_of_university(formatted_response, language=response_language)
-        booking_flow_requested = explicit_booking_intent or booking_preference_follow_up
+        formatted_response = ResponseFormatter.format_name_of_university(
+            formatted_response,
+            language=response_language,
+        )
+
+        # Proactive booking offer.
+        # When the lead model signals booking readiness AND the assessment chain
+        # has identified a clear programme match, the booking widget is shown
+        # without waiting for an explicit "book"/"appointment" word from the user.
+        # The match comes from the existing profile-based assessment
+        # (suggested_program, set by _update_conversation_state above) or from
+        # relevant_programs returned by the lead model. Without this gate, the
+        # earlier user-led-only logic meant the widget effectively never fired.
+        clear_programme_match = (
+            self._conversation_state.get('suggested_program') is not None
+            or bool(structured_response.relevant_programs)
+        )
+        proactive_booking_offer = (
+            clear_programme_match
+            and structured_response.show_booking_widget
+        )
+
+        booking_flow_requested = (
+            explicit_booking_intent
+            or booking_preference_follow_up
+            or proactive_booking_offer
+        )
         appointment_requested = bool(booking_flow_requested)
         show_booking_widget = bool(
             booking_flow_requested and (
@@ -888,13 +768,20 @@ class ExecutiveAgentChain:
             )
         )
 
-        if structured_response.appointment_requested and not booking_flow_requested:
-            chain_logger.info("Suppressed booking state because no user-led booking intent was detected.")
+        if proactive_booking_offer and not (explicit_booking_intent or booking_preference_follow_up):
+            chain_logger.info(
+                "Proactive booking offer triggered "
+                f"(suggested_program={self._conversation_state.get('suggested_program')}, "
+                f"relevant_programs={structured_response.relevant_programs})"
+            )
+        elif structured_response.appointment_requested and not booking_flow_requested:
+            chain_logger.info("Suppressed booking state because no programme match or booking intent was detected.")
         elif booking_preference_follow_up and show_booking_widget:
             chain_logger.info("Continuing active booking flow and showing booking widget for a preference follow-up.")
         
         return LeadAgentQueryResponse(
             response = formatted_response,
+            additional_details = additional_details,
             language = response_language,
             confidence_fallback = confidence_fallback,
             should_cache = False if (confidence_fallback or appointment_requested or structured_response.is_context_dependent) else True,
@@ -904,15 +791,181 @@ class ExecutiveAgentChain:
             relevant_programs = structured_response.relevant_programs
         )
 
-    def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
-        try:
-            config = self._config.copy()
-            config['configurable']['thread_id'] = thread_id or 0
+    def _is_continuation_request(self, query: str) -> bool:
+        normalized = re.sub(r"[.!?,;:]", " ", query.lower()).strip()
+        normalized = re.sub(r"\s+", " ", normalized)
+        continuation_terms = {
+            "ja",
+            "ja bitte",
+            "bitte",
+            "gerne",
+            "weiter",
+            "bitte weiter",
+            "mehr",
+            "mehr details",
+            "mehr details bitte",
+            "ja mehr details",
+            "noch mehr",
+            "fortfahren",
+            "weiter bitte",
+            "and",
+            "and more",
+            "continue",
+            "continue please",
+            "more",
+            "more details",
+            "more details please",
+        }
+        return normalized in continuation_terms
 
-            result: AIMessage = agent.invoke(
+    def _extract_programmes_from_text(self, text: str) -> list[str]:
+        """Return normalised programme ids mentioned in the text.
+
+        Most specific names are matched first so "emba X" is not
+        misclassified as the generic EMBA HSG. Used by the profile tracking
+        to record programme interest.
+        """
+        text_lower = (text or "").lower()
+        if not text_lower:
+            return []
+
+        found: list[str] = []
+        if "emba x" in text_lower or "embax" in text_lower:
+            found.append("emba_x")
+        if "iemba" in text_lower or "international emba" in text_lower or "international executive mba" in text_lower:
+            found.append("iemba")
+        # Generic EMBA only counts when it is not part of an emba X / IEMBA mention
+        stripped = (
+            text_lower
+            .replace("emba x", " ")
+            .replace("embax", " ")
+            .replace("iemba", " ")
+            .replace("international emba", " ")
+        )
+        if re.search(r"\bemba\b", stripped):
+            found.append("emba")
+        return found
+
+    @staticmethod
+    def _normalise_programme_id(programme: str | None) -> str | None:
+        if not programme:
+            return None
+        programme_lower = str(programme).lower().replace("-", "_").replace(" ", "_")
+        if programme_lower in {"emba_x", "embax"}:
+            return "emba_x"
+        if programme_lower in {"iemba", "iemba_hsg", "international_emba"}:
+            return "iemba"
+        if programme_lower in {"emba", "emba_hsg"}:
+            return "emba"
+        return None
+
+    def _text_mentions_multiple_programmes(self, text: str) -> bool:
+        text_lower = text.lower()
+        if not text_lower:
+            return False
+
+        programme_mentions = [
+            "emba hsg" in text_lower or "deutschsprachig" in text_lower,
+            "iemba" in text_lower or "international emba" in text_lower,
+            "emba x" in text_lower or "embax" in text_lower,
+        ]
+        return sum(programme_mentions) >= 2
+
+    def _serve_pending_continuation(
+        self,
+        processed_query: str,
+        response_language: str,
+    ) -> LeadAgentQueryResponse:
+        chain_logger.info("Serving pending continuation without a new model call.")
+
+        formatted_response, continuation = ResponseFormatter.chunk_response(
+            self._pending_continuation or "",
+            config.chain.MAX_RESPONSE_WORDS_LEAD,
+            response_language,
+        )
+        self._pending_continuation = continuation
+        formatted_response = ResponseFormatter.clean_response(formatted_response)
+        formatted_response = ResponseFormatter.format_name_of_university(
+            formatted_response,
+            language=response_language,
+        )
+
+        return LeadAgentQueryResponse(
+            response=formatted_response,
+            language=response_language,
+            confidence_fallback=False,
+            should_cache=False,
+            processed_query=processed_query,
+            appointment_requested=False,
+            show_booking_widget=False,
+            relevant_programs=[],
+        )
+
+    @staticmethod
+    def _chunk_text(chunk) -> str:
+        """Best-effort extraction of text content from a streamed message chunk."""
+        content = getattr(chunk, 'content', None)
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for part in content:
+                if isinstance(part, dict):
+                    parts.append(part.get('text', ''))
+                elif isinstance(part, str):
+                    parts.append(part)
+            return ''.join(parts)
+        return ""
+
+    def _invoke_streaming(self, agent, messages: list, config, on_delta):
+        """
+        Stream the agent loop, pushing displayable text deltas to `on_delta`.
+        Returns the final graph state (same shape as agent.invoke), or None
+        when streaming is unavailable so the caller can fall back to invoke().
+        """
+        from src.rag.stream_parser import ResponseFieldStreamParser
+        parser = ResponseFieldStreamParser(allow_plain_text=False)
+        last_values = None
+        try:
+            for mode, payload in agent.stream(
                 {"messages": messages},
                 config=config,
                 context=AgentContext(agent_name=agent.name),
+                stream_mode=["messages", "values"],
+            ):
+                if mode == "values":
+                    last_values = payload
+                elif mode == "messages":
+                    chunk = payload[0] if isinstance(payload, tuple) else payload
+                    text = self._chunk_text(chunk)
+                    if text:
+                        delta = parser.feed(text)
+                        if delta:
+                            on_delta(delta)
+        except Exception as e:
+            chain_logger.warning(
+                f"Streaming failed for {agent.name} ({e}); falling back to blocking invoke."
+            )
+            return None
+        return last_values
+
+    def _query(self, agent, messages: list, thread_id: str = None, on_delta=None) -> StructuredAgentResponse:
+        try:
+            config = self._config.copy()
+            config['configurable']['thread_id'] = thread_id or self._user_id
+
+            invoke_start = perf_counter()
+            result = None
+            if on_delta is not None:
+                result = self._invoke_streaming(agent, messages, config, on_delta)
+            if result is None:
+                result: AIMessage = agent.invoke(
+                    {"messages": messages},
+                    config=config,
+                    context=AgentContext(agent_name=agent.name),
+                )
+            chain_logger.info(
+                f"[timing] agent loop ({agent.name}): {perf_counter() - invoke_start:.2f}s"
             )
             response = result.get(
                 'structured_response',

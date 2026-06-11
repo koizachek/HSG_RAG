@@ -36,8 +36,9 @@ MAX_CONVERSATION_TURNS = 20
 # Defines the main model provider for the application.
 LLM_PROVIDER = 'openai' 
 
-# A string. Defines the model that will be used by the application agents. 
-OPENAI_MODEL = 'gpt-5.1'
+# A string. Defines the model that will be used by the application agents.
+# Latency fix: gpt-5.1 (reasoning) -> gpt-4.1 (fast, non-reasoning).
+OPENAI_MODEL = 'gpt-4.1'
 # GROQ_MODEL = 
 # OLLAMA_MODEL = 
 # OPEN_ROUTER_MODEL = 
@@ -154,23 +155,31 @@ SCRAPING_PRIO_INTERVAL = {
 
 # A boolean; either True or False. Activates the response quality evaluation procedure
 # for agentic responses. Defaults to True.
-ENABLE_EVALUATE_RESPONSE_QUALITY = False 
+ENABLE_EVALUATE_RESPONSE_QUALITY = False
 
-# A boolean: either True or False. Activates the usage of the program-specific subagents. 
-ENABLE_SUBAGENTS = True
+# NOTE: The programme-specific subagents and the legacy keyword/regex fact
+# routers were removed entirely. Volatile core facts come from
+# data/database/programme_facts.json (auto-generated from official sources, injected
+# into the system prompt); everything else is answered by the single lead
+# agent with the retrieval tool.
 
 # A float in range from 0 to 1. Sets the treshold value for the quality evaluation.
 # The fallback mechanism will be activated if the quality of the agentic response 
 # is lower than the confidence threshold.
 CONFIDENCE_THRESHOLD = 0.6
 
-# An integer. Defines the amount of chunks that should be retrieved from the database 
-# upon querying by subagents during conversation. Defaults to 4.
-TOP_K_RETRIEVAL = 4  
+# An integer. Defines the amount of chunks that should be retrieved from the database
+# upon querying by subagents during conversation.
+# Hallucination fix: 4 chunks x 200 tokens was too little grounding context.
+TOP_K_RETRIEVAL = 8
 
-# An integer. Sets the amount of model invocation retries after which the fallback model 
+# An integer. Sets the amount of model invocation retries after which the fallback model
 # will be invoked. Defaults to 3.
-MODEL_MAX_RETRIES = 3
+MODEL_MAX_RETRIES = 2
+
+# An integer. Caps the number of conversation history messages sent to the model
+# per turn (latency fix: unbounded history made every turn slower). 0 = no cap.
+MAX_HISTORY_MESSAGES = 16
 
 # An integer. Sets the maximum amount of words in the response from the lead agent.
 MAX_RESPONSE_WORDS_LEAD = 100 
@@ -178,9 +187,12 @@ MAX_RESPONSE_WORDS_LEAD = 100
 # An integer. Sets the maximum amount of words in the response for subagents.
 MAX_RESPONSE_WORDS_SUBAGENT = 200
 
-# A boolean; either True or False. If response chunking is enabled, long responses 
+# A boolean; either True or False. If response chunking is enabled, long responses
 # from the lead agent will be split and retuned through multiple conversation turns.
-ENABLE_RESPONSE_CHUNKING = True
+# Disabled (adopted from chatbot-decoupling): chunking forced "continue" turns -
+# each one a full LLM round-trip for already-generated content. The prompt word
+# budgets keep answers short; secondary material belongs in additional_details.
+ENABLE_RESPONSE_CHUNKING = False
 
 # ========================================== Notification Configuration =====================================
 

@@ -7,7 +7,6 @@ logger = get_logger("model_config")
 
 class ModelConfigurator:
     _main_model_instance: BaseChatModel = None
-    _subagent_model_instance: BaseChatModel = None
     _fallback_models_instances: list[BaseChatModel] = None
     _summarization_model_instance: BaseChatModel = None
     _confidence_scoring_model_instance: BaseChatModel = None 
@@ -22,10 +21,11 @@ class ModelConfigurator:
             cls._language_detector_model_instance = ChatOpenAI(
                 model='gpt-4o-mini',
                 openai_api_key=config.llm.get_api_key(),
-                max_tokens=3072,
+                # Returns a single ISO code — small budget, tight timeout
+                max_tokens=64,
                 temperature=0.00,
-                timeout=60,
-                request_timeout=60,
+                timeout=10,
+                request_timeout=10,
             )
             logger.info(f"Initialized language detection model")
             return cls._language_detector_model_instance
@@ -70,23 +70,6 @@ class ModelConfigurator:
             raise e
 
     @classmethod
-    def get_subagent_model(cls) -> BaseChatModel:
-        if cls._subagent_model_instance:
-            return cls._subagent_model_instance
-        
-        from langchain_openai import ChatOpenAI
-        cls._subagent_model_instance = ChatOpenAI(
-            model='gpt-5.1-nano',
-            openai_api_key=config.llm.get_api_key(),
-            max_tokens=3072,
-            temperature=0.01,
-            timeout=60,
-            request_timeout=60,
-        )
-        return cls._subagent_model_instance
-
-
-    @classmethod
     def get_main_agent_model(cls) -> BaseChatModel:
         """Initialize the language model based on config."""
         if cls._main_model_instance:
@@ -118,7 +101,7 @@ class ModelConfigurator:
     @classmethod
     def _initialize_fallback_models(cls) -> list[BaseChatModel]:
         fallback_models_instances = []
-        for fallback_provider, fallback_model in config.llm.get_fallback_models().items():
+        for fallback_provider, fallback_model in config.llm.get_fallback_models():
             try:
                 fallback_model_instance = cls._initialize_model(
                     provider=fallback_provider,
@@ -167,8 +150,10 @@ class ModelConfigurator:
                         openai_api_key=config.llm.get_api_key(),
                         max_tokens=3072,
                         temperature=0.01,
-                        timeout=60,
-                        request_timeout=60,
+                        # Latency fix: 60s timeout x retries x fallbacks
+                        # multiplied worst-case latency into minutes
+                        timeout=30,
+                        request_timeout=30,
                     )
                 case 'ollama':
                     from langchain_ollama import ChatOllama

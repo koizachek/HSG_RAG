@@ -24,6 +24,9 @@ from src.utils.logging import get_logger
 model_logger = get_logger('chain_model_call')
 tool_logger  = get_logger('chain_tool_call')
 
+class ContextRetrievalError(RuntimeError):
+    pass
+
 class AgentChainMiddleware:
     _tool_wrapper_middleware = None 
     _model_wrapper_middleware = None
@@ -60,6 +63,7 @@ class AgentChainMiddleware:
                 model_logger.info(f"{context.agent_name} recieved response from model after {attempt} attempt{'s' if attempt > 1 else ''}")
                 result = response.result[0]
                 metadata = result.response_metadata
+                finish_reason = metadata.get('finish_reason')
                 # Check if any errors occured during tool call execution.
                 # Some errors might be fatal, making the model unusable in the agent chain
                 if hasattr(result, 'invalid_tool_calls') and result.invalid_tool_calls:
@@ -69,8 +73,15 @@ class AgentChainMiddleware:
                         if 'JSONDecodeError' in fail_reason:
                             model_logger.error(f"Model does not support current tool call architecture! Switching to the fallback model...")
                             raise Exception("Unsupported model") 
-                elif not result.content and metadata['finish_reason'] != 'tool_calls':
-                    model_logger.warning(f"Model returned an empty response, reason - {metadata['finish_reason']}! Retrying the call...")
+                elif not result.content and finish_reason != 'tool_calls':
+                    if finish_reason == 'length':
+                        errormsg = (
+                            f"Model '{model.model_name}' exhausted completion tokens "
+                            "without producing a user-visible response."
+                        )
+                        model_logger.error(errormsg)
+                        raise RuntimeError(errormsg)
+                    model_logger.warning(f"Model returned an empty response, reason - {finish_reason}! Retrying the call...")
                 else:
                     return response
             except OpenAIError as e:
@@ -113,6 +124,9 @@ class AgentChainMiddleware:
             return response       
         except Exception as e:
             tool_logger.error(f"Failed to use tool {tool_call['name']} with id {tool_call['id']}")
+            if tool_call['name'] == 'retrieve_context':
+                raise ContextRetrievalError(str(e)) from e
+
             artifact = {
                 'error_type': type(e).__name__,
                 'error_message': str(e),
