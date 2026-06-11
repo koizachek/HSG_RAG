@@ -18,33 +18,33 @@
       },
       "programme_start": "2026-09-14",
       "duration": {
-        "de": "18 Monate, berufsbegleitend",
-        "en": "18 months, part-time"
+        "de": "18 Monate (bis max. 48 Monate)",
+        "en": "18 months (up to max. 48 months)"
       },
       "structure": {
-        "de": "Modulares Executive-MBA-Programm mit Praesenzmodulen und Transferarbeit",
-        "en": "Modular Executive MBA programme with in-person modules and transfer work"
+        "de": "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus, Capstone-Projekt, Selbststudium, zeitliche Flexibilität möglich",
+        "en": "9 core courses, 5 electives, 14 weeks on campus, capstone project, self-study, flexible timing possible"
       },
       "locations": {
-        "de": "St.Gallen und weitere Modulorte",
-        "en": "St.Gallen and additional module locations"
+        "de": "Schweiz (St. Gallen), Belgien (Wahlkurs)",
+        "en": "Switzerland (St. Gallen), Belgium (elective)"
       },
       "tuition_chf": {
         "first_deadline": {
-          "deadline": "2026-08-31",
-          "fee": 77500
+          "deadline": "2026-06-29",
+          "fee": 72500
         },
         "final_deadline": {
-          "deadline": "2026-10-31",
-          "fee": 85000
+          "deadline": "2026-08-10",
+          "fee": 77500
         },
         "note": {
-          "de": "Fristabhaengige Studiengebuehr: fruehere Bewerbung = reduzierte Gebuehr",
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
           "en": "Deadline-based tuition: earlier application = reduced fee"
         }
       },
       "advisor": {
-        "name": "Cyra von Mueller",
+        "name": "Cyra von Müller",
         "email": "cyra.vonmueller@unisg.ch",
         "phone": "+41 71 224 27 12"
       },
@@ -62,28 +62,28 @@
       },
       "programme_start": "2026-08-24",
       "duration": {
-        "de": "18 Monate, berufsbegleitend",
-        "en": "18 months, part-time"
+        "de": "18 Monate",
+        "en": "18 months"
       },
       "structure": {
-        "de": "International ausgerichtetes Executive-MBA-Programm mit Modulen in der Schweiz und im Ausland",
-        "en": "International Executive MBA programme with modules in Switzerland and abroad"
+        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland, Diplomarbeit, Selbststudium",
+        "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, thesis, self-study"
       },
       "locations": {
-        "de": "St.Gallen und internationale Modulorte",
-        "en": "St.Gallen and international module locations"
+        "de": "St. Gallen (Schweiz), Costa Rica (Wahlkurs), Tokio (Japan), New York City (Wahlkurs), Peking (China), UC Berkeley (USA), UC Irvine (USA), Italien (Wahlkurs), Südafrika (Wahlkurs), Spanien (Wahlkurs)",
+        "en": "St. Gallen (Switzerland), Costa Rica (elective), Tokyo (Japan), New York City (elective), Beijing (China), UC Berkeley (USA), UC Irvine (USA), Italy (elective), South Africa (elective), Spain (elective)"
       },
       "tuition_chf": {
         "first_deadline": {
-          "deadline": "2026-08-31",
-          "fee": 88500
+          "deadline": "2026-03-31",
+          "fee": 80000
         },
         "final_deadline": {
-          "deadline": "2026-10-31",
-          "fee": 99000
+          "deadline": "2026-06-30",
+          "fee": 85000
         },
         "note": {
-          "de": "Fristabhaengige Studiengebuehr: fruehere Bewerbung = reduzierte Gebuehr",
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
           "en": "Deadline-based tuition: earlier application = reduced fee"
         }
       },
@@ -98,24 +98,24 @@
       ]
     },
     "emba_x": {
-      "official_name": "emba X",
+      "official_name": "emba X (ETH Zurich & University of St.Gallen)",
       "current_cohort": "emba X6",
       "language": {
         "de": "Englisch",
         "en": "English"
       },
-      "programme_start": "2027-02-01",
+      "programme_start": "2027-02-02",
       "duration": {
-        "de": "18 Monate, berufsbegleitend",
-        "en": "18 months, part-time"
+        "de": "18 Monate",
+        "en": "18 months"
       },
       "structure": {
-        "de": "Blended Joint-Degree-Programm mit Fokus auf Leadership, Technologie und Innovation",
-        "en": "Blended joint-degree programme focused on leadership, technology, and innovation"
+        "de": "13 Essential Kurse, 13 Wochen am Campus, 2 Tage online, 2 Impact-Projekte, Blended Format",
+        "en": "13 essential courses, 13 weeks on campus, 2 days online, 2 impact projects, blended format"
       },
       "locations": {
-        "de": "St.Gallen, Zuerich und weitere Modulorte",
-        "en": "St.Gallen, Zurich, and additional module locations"
+        "de": "Zürich, St. Gallen, Online",
+        "en": "Zurich, St. Gallen, Online"
       },
       "tuition_chf": {
         "first_deadline": {
@@ -127,7 +127,7 @@
           "fee": 110000
         },
         "note": {
-          "de": "Fristabhaengige Studiengebuehr: fruehere Bewerbung = reduzierte Gebuehr",
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
           "en": "Deadline-based tuition: earlier application = reduced fee"
         }
       },
