@@ -23,9 +23,17 @@ class ResponseFieldStreamParser:
     }
     _FIELD_KEY = '"response"'
 
-    def __init__(self) -> None:
+    def __init__(self, allow_plain_text: bool = True) -> None:
+        """
+        Args:
+            allow_plain_text: When False, suppress all non-JSON/preamble text
+                and emit only a decoded top-level ``response`` field. Use this
+                for structured-output agent streams where tool calls, tool
+                arguments, or provider reasoning must never be shown to users.
+        """
         self._buffer = ""
         self._mode: str | None = None   # None (undecided) | 'json' | 'plain'
+        self._allow_plain_text = allow_plain_text
         self._emitted_plain = 0
         self._emitted_value = 0
         self.field_complete = False
@@ -40,7 +48,7 @@ class ResponseFieldStreamParser:
             stripped = self._buffer.lstrip()
             if not stripped:
                 return ""
-            self._mode = 'json' if stripped[0] == '{' else 'plain'
+            self._mode = 'json' if stripped[0] == '{' or not self._allow_plain_text else 'plain'
 
         if self._mode == 'plain':
             delta = self._buffer[self._emitted_plain:]
@@ -68,7 +76,7 @@ class ResponseFieldStreamParser:
         (None, False) when the field has not started yet.
         """
         buf = self._buffer
-        key_pos = buf.find(self._FIELD_KEY)
+        key_pos = self._find_top_level_response_key(buf)
         if key_pos == -1:
             return None, False
 
@@ -109,3 +117,120 @@ class ResponseFieldStreamParser:
                 i += 1
 
         return ''.join(out), False
+
+    def _find_top_level_response_key(self, buf: str) -> int:
+        """
+        Return the position of a real top-level ``"response"`` object key.
+
+        A simple ``str.find('"response"')`` is unsafe for streaming agent
+        output: retrieval/tool arguments can contain the word "response" inside
+        string values before the final structured answer arrives. Matching that
+        text makes the UI stream internal query/database content. This scanner
+        searches candidate JSON objects independently and only accepts keys at
+        depth 1, outside strings, followed by a colon. Treating each object
+        independently matters because agent streams can contain plain preamble,
+        tool-call JSON, database snippets, and then the final structured object;
+        braces or quotes in the earlier material must not poison the final
+        answer scan.
+        """
+        start = 0
+        while True:
+            obj_start = buf.find('{', start)
+            if obj_start == -1:
+                return -1
+
+            if not self._looks_like_json_object_start(buf, obj_start):
+                start = obj_start + 1
+                continue
+
+            key_pos, obj_end, is_valid_candidate = self._scan_object_for_response_key(
+                buf,
+                obj_start,
+            )
+            if key_pos != -1:
+                return key_pos
+            if obj_end is not None:
+                start = obj_end + 1
+                continue
+            if is_valid_candidate:
+                return -1
+
+            start = obj_start + 1
+
+    @staticmethod
+    def _looks_like_json_object_start(buf: str, obj_start: int) -> bool:
+        i = obj_start + 1
+        while i < len(buf) and buf[i] in ' \t\r\n':
+            i += 1
+        return i >= len(buf) or buf[i] in '"}'
+
+    def _scan_object_for_response_key(
+        self,
+        buf: str,
+        obj_start: int,
+    ) -> tuple[int, int | None, bool]:
+        """
+        Scan one candidate JSON object.
+
+        Returns:
+            (key_position, object_end, is_valid_candidate)
+            key_position is -1 when no top-level response key is present.
+            object_end is None when the candidate object is still incomplete.
+            is_valid_candidate is False for plain-text brace fragments that are
+            not worth waiting on.
+        """
+        depth = 0
+        in_string = False
+        escaped = False
+        expecting_key = False
+        saw_key_or_end = False
+        i = obj_start
+
+        while i < len(buf):
+            ch = buf[i]
+
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif ch == '\\':
+                    escaped = True
+                elif ch == '"':
+                    in_string = False
+                i += 1
+                continue
+
+            if ch == '"':
+                if depth == 1 and expecting_key and buf.startswith(self._FIELD_KEY, i):
+                    end = i + len(self._FIELD_KEY)
+                    j = end
+                    while j < len(buf) and buf[j] in ' \t\r\n':
+                        j += 1
+                    if j < len(buf) and buf[j] == ':':
+                        return i, None, True
+                saw_key_or_end = True
+                in_string = True
+                i += 1
+                continue
+
+            if ch == '{':
+                depth += 1
+                expecting_key = depth == 1
+            elif ch == '}':
+                depth = max(0, depth - 1)
+                if depth == 0:
+                    return -1, i, True
+                expecting_key = False
+            elif ch == '[':
+                depth += 1
+                expecting_key = False
+            elif ch == ']':
+                depth = max(0, depth - 1)
+                expecting_key = False
+            elif depth == 1 and ch == ',':
+                expecting_key = True
+            elif depth == 1 and ch == ':':
+                expecting_key = False
+
+            i += 1
+
+        return -1, None, saw_key_or_end or expecting_key

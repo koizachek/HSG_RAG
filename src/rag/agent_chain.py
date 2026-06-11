@@ -81,7 +81,6 @@ class ExecutiveAgentChain:
         # Track scope violations for escalation
         self._scope_violation_counts: dict[str, int] = {}
         self._aggressive_violation_count = 0
-        self._invalid_input_count = 0
 
         # Profile tracking lives in its own component (adopted from the
         # chatbot-decoupling branch) to keep this class a thin orchestrator.
@@ -450,7 +449,6 @@ class ExecutiveAgentChain:
         })
         self._scope_violation_counts = {}
         self._aggressive_violation_count = 0
-        self._invalid_input_count = 0
 
     def _log_user_profile(self) -> None:
         """Backward-compatible wrapper for tests/callers using the old chain API."""
@@ -517,29 +515,18 @@ class ExecutiveAgentChain:
             ) 
 
         # 2. Input Processing
-        input_result = InputHandler.process_input_with_metadata(
+        processed_query, is_valid = InputHandler.process_input(
             query,
             [msg for msg in self._conversation_history if isinstance(msg, (HumanMessage, AIMessage))]
         )
-        processed_query = input_result.processed_message
-        is_valid = input_result.is_valid
 
         if not is_valid or not processed_query:
             chain_logger.warning(f"Invalid input received: '{query}'")
-            self._invalid_input_count = getattr(self, "_invalid_input_count", 0) + 1
-            invalid_response = (
-                f"{NOT_VALID_QUERY_MESSAGE[self._stored_language]}\n\n"
-                f"{get_admissions_contact_text(self._stored_language)}"
-                if self._invalid_input_count >= 2
-                else NOT_VALID_QUERY_MESSAGE[self._stored_language]
-            )
             return LeadAgentQueryResponse(
-                response=invalid_response,
+                response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
                 language=current_language,
                 processed_query=query
             )
-
-        self._invalid_input_count = 0
 
         # Log check
         if processed_query != query:
@@ -952,7 +939,7 @@ class ExecutiveAgentChain:
         when streaming is unavailable so the caller can fall back to invoke().
         """
         from src.rag.stream_parser import ResponseFieldStreamParser
-        parser = ResponseFieldStreamParser()
+        parser = ResponseFieldStreamParser(allow_plain_text=False)
         last_values = None
         try:
             for mode, payload in agent.stream(

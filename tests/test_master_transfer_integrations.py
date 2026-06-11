@@ -1,7 +1,6 @@
 from threading import RLock
 from types import SimpleNamespace
 
-from src.const.agent_response_constants import NOT_VALID_QUERY_MESSAGE
 from src.database.weavservice import WeaviateService
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.models import ModelConfigurator
@@ -34,20 +33,6 @@ def test_retrieve_context_filters_embax_with_canonical_programme_id():
 
     assert "emba X context" in result
     assert agent._dbservice.calls[0]["property_filters"] == {"programs": ["emba_x"]}
-
-
-def test_repeated_invalid_input_uses_master_chain_early_return():
-    agent = object.__new__(ExecutiveAgentChain)
-    agent._stored_language = "en"
-    agent._conversation_history = []
-
-    first = agent.query("aklwjkenmjk")
-    second = agent.query("oekeolw 12112")
-
-    assert first.response == NOT_VALID_QUERY_MESSAGE["en"]
-    assert "admissions team" in second.response.lower()
-    assert "emba@unisg.ch" in second.response
-    assert agent._conversation_history == []
 
 
 class FakeQuery:
