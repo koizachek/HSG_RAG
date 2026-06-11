@@ -85,13 +85,10 @@ class ChatbotApplication:
             # ---- Chat Screen (Page 2) ----
             with gr.Column(visible=False) as chat_screen:
                 chat = gr.ChatInterface(
-                    fn=lambda msg, history, agent: self._chat(
-                        message=msg, history=history, agent=agent
-                    ),
+                    fn=self._chat,
                     additional_inputs=[agent_state],
                     additional_outputs=[agent_state],
                     title="Executive Education Adviser",
-                    type="messages",
                 )
 
             booking_widget = gr.HTML(
