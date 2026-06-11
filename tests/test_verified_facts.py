@@ -24,7 +24,7 @@ def fresh_facts_cache():
 
 
 def _facts_file() -> dict:
-    path = os.path.join(config.paths.DATA, "programme_facts.json")
+    path = os.path.join(config.paths.DATA, "database", "programme_facts.json")
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 

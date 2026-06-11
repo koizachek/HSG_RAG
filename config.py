@@ -74,7 +74,7 @@ PROPERTIES_PATH = 'data/database'
 
 # A string representing a system path where property strategies will be stored.
 # More information on property strategies in the documentation.
-STRATEGIES_PATH = 'data/database/strategies'
+STRATEGIES_PATH = 'src/database/strategies'
 
 # An integer. Defines a connection timeout to the cloud weaviate service (in seconds). 
 # Defaults to 90.
@@ -156,7 +156,6 @@ SCRAPING_BACKOFF_RATE = 1.25
 # A list of string URLs. Defines the starting points for the website scraping.
 SCRAPING_TARGET_URLS = [
     'https://emba.unisg.ch/',                   # EMBA HSG root
-    'https://emba.unisg.ch/programm/iemba',     # IEMBA HSG
     'https://embax.ch/',                        # emba X root
 ]
 
@@ -175,7 +174,7 @@ ENABLE_EVALUATE_RESPONSE_QUALITY = False
 
 # NOTE: The programme-specific subagents and the legacy keyword/regex fact
 # routers were removed entirely. Volatile core facts come from
-# data/programme_facts.json (auto-generated from official sources, injected
+# data/database/programme_facts.json (auto-generated from official sources, injected
 # into the system prompt); everything else is answered by the single lead
 # agent with the retrieval tool.
 

@@ -29,7 +29,7 @@ def test_log_user_profile_uses_valid_session_path(monkeypatch, tmp_path):
     monkeypatch.setattr(agent_chain_module.config.convstate, "TRACK_USER_PROFILE", True)
 
     agent = agent_chain_module.ExecutiveAgentChain(language="en", session_id="session-123")
-    agent._log_user_profile()
+    agent._state_manager.log_user_profile()
 
     log_dir = tmp_path / "logs" / "user_profiles"
     created_files = list(log_dir.glob("profile_session-123_*.json"))

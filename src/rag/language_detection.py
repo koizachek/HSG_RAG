@@ -3,6 +3,7 @@ from langchain_core.messages import HumanMessage
 from src.rag.models import ModelConfigurator as modconf
 from src.rag.prompts import PromptConfigurator as promptconf
 import re
+import unicodedata
 
 from src.utils.logging import get_logger
 
@@ -157,6 +158,11 @@ class LanguageDetector:
         if NON_LATIN_SCRIPT_RE.search(text):
             return None
 
+        # Other Latin diacritics (e.g. Turkish, Hungarian, Latvian) should not
+        # be forced into de/en by a coincidental German-looking character.
+        if self._has_non_german_latin_diacritic(text):
+            return None
+
         # Umlauts / eszett are a strong German signal
         if any(ch in GERMAN_CHARS for ch in text):
             logger.info("Heuristic detection: German characters found -> de")
@@ -179,6 +185,15 @@ class LanguageDetector:
             return 'en'
 
         return None
+
+    @staticmethod
+    def _has_non_german_latin_diacritic(text: str) -> bool:
+        for ch in text:
+            if ord(ch) <= 127 or ch in GERMAN_CHARS:
+                continue
+            if 'LATIN' in unicodedata.name(ch, ''):
+                return True
+        return False
 
     def detect_language(self, query: str) -> str:
         # 1. Quick detection for short inputs

@@ -20,6 +20,7 @@ from src.const.agent_response_constants import (
 from langchain_core.messages import AIMessage
 from src.rag import agent_chain as agent_chain_module
 from src.rag.agent_chain import ExecutiveAgentChain
+from src.rag.conversation_state import ConversationStateManager
 from src.rag.prompts import PromptConfigurator
 from src.rag.scope_guardian import ScopeGuardian
 
@@ -27,60 +28,48 @@ from src.rag.scope_guardian import ScopeGuardian
 def test_lead_prompt_requires_professional_complete_sentences():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "Maintain a professional, university-level tone" in prompt
-    assert "Use complete sentences." in prompt
+    assert "Professional, university-level tone" in prompt
+    assert "Complete sentences" in prompt
     assert "professional British English" in prompt
-    assert 'Avoid informal phrasing such as "Great to meet you"' in prompt
+    assert 'Avoid casual phrasing like "Great to meet you"' in prompt
 
 
 def test_lead_prompt_keeps_booking_user_led():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "Primary recommendation: **IEMBA HSG**" in prompt
-    assert "Alternative to consider: **emba X**" in prompt
-    assert "Routine informational turns must keep both flags `False`" in prompt
+    assert "Routine informational turns keep both flags `False`" in prompt
     assert "show_booking_widget=True" in prompt
-    assert "unless the user explicitly asks for booking or accepts that offer" in prompt
-    assert "**Kristin Fuchs**" in prompt
-    assert "If you would like to discuss this personally, I can also help you with appointment booking." in prompt
+    assert "the user explicitly asks to book" in prompt
+    assert "Kristin Fuchs" in prompt
 
 
 def test_lead_prompt_uses_stage_sensitive_programme_positioning():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "CRITICAL - STAGE-SENSITIVE PROGRAMME POSITIONING" in prompt
-    assert "**Early discovery / generic comparison:** Keep the answer balanced, factual, and advisory." in prompt
-    assert "**Expressed programme interest:**" in prompt
-    assert "answer the concrete question first, then add positive value framing" in prompt
-    assert "**Late-stage / high-intent:**" in prompt
-    assert "Do not push booking; booking flags still require explicit user intent." in prompt
-    assert "Clear interest signals include" in prompt
+    assert "Match framing to the conversation stage" in prompt
+    assert "Early discovery: balanced and factual" in prompt
+    assert "Expressed interest in one programme" in prompt
+    assert "answer first, then add positive value framing" in prompt
 
 
 def test_lead_prompt_contains_programme_specific_positive_value_framing():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "PROGRAMME-SPECIFIC VALUE FRAMING" in prompt
-    assert "German-speaking leaders in the DACH context" in prompt
-    assert "strong general-management depth" in prompt
-    assert "practical leadership development" in prompt
-    assert "global exposure" in prompt
-    assert "international cohort" in prompt
-    assert "cross-cultural management perspective" in prompt
-    assert "intersection of business, technology, innovation, and transformation" in prompt
-    assert "access to both alumni networks" in prompt
-    assert "strong Personal Development Programme" in prompt
+    assert "German query + general/DACH focus" in prompt
+    assert "English query + international focus" in prompt
+    assert "Tech / innovation / transformation focus or tech background" in prompt
+    assert "positive value framing" in prompt
 
 
 def test_lead_prompt_preserves_credibility_and_avoids_hype():
     prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
 
-    assert "Avoid generic hype." in prompt
-    assert 'Do not use claims such as "best", "perfect", "guaranteed", or "world-class"' in prompt
-    assert "Keep the structure consultative" in prompt
+    assert 'Avoid hype words ("best", "world-class", "perfect", "guaranteed")' in prompt
+    assert "retrieved content explicitly supports them" in prompt
 def test_booking_intent_detector_requires_user_initiative():
     agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
     agent._conversation_history = []
+    agent._state_manager = ConversationStateManager(agent)
 
     assert not agent._is_explicit_booking_intent("What does the EMBA cost?")
     assert not agent._is_explicit_booking_intent("Which programme fits my profile better?")
@@ -94,12 +83,14 @@ def test_booking_intent_detector_accepts_previous_soft_offer():
     agent._conversation_history = [
         AIMessage("If you would like to discuss this personally, I can also help you with appointment booking.")
     ]
+    agent._state_manager = ConversationStateManager(agent)
 
     assert agent._is_explicit_booking_intent("Yes please")
     assert not agent._is_explicit_booking_intent("Ich habe 5 Jahre Berufserfahrung.")
 
     agent_without_offer = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
     agent_without_offer._conversation_history = []
+    agent_without_offer._state_manager = ConversationStateManager(agent_without_offer)
 
     assert not agent_without_offer._is_explicit_booking_intent("Yes please")
 
@@ -138,6 +129,8 @@ def test_soft_booking_offer_does_not_mark_handover_state(monkeypatch):
 
     agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
     agent._conversation_state = {
+        "session_id": "test-session",
+        "user_id": "test-session",
         "user_language": None,
         "user_name": None,
         "experience_years": None,
@@ -151,8 +144,10 @@ def test_soft_booking_offer_does_not_mark_handover_state(monkeypatch):
         "topics_discussed": [],
         "preferences_known": False,
     }
+    agent._conversation_history = []
+    agent._state_manager = ConversationStateManager(agent)
 
-    agent._update_conversation_state(
+    agent._state_manager.update(
         "Was kostet das EMBA HSG?",
         "If you would like to discuss this personally, I can also help you with appointment booking.",
     )

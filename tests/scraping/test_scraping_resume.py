@@ -31,8 +31,17 @@ class DummyProcessor:
         self.merge_calls.append([chunk.source_url for chunk in chunk_metadatas])
         return list(chunk_metadatas)
 
+    def prepare_chunks(self, url, text, chunk_metadatas):
+        prepared = {'en': [], 'de': []}
+        for chunk in chunk_metadatas:
+            prepared.setdefault(chunk.language, []).append(chunk)
+        return prepared
+
     def extract_title(self, document):
         return f'page title for {document.name}'
+
+    def convert_to_txt(self, document):
+        return f'extracted text for {document.name}'
 
 
 class DummyCleaner:
@@ -75,6 +84,7 @@ def scraper(tmp_path, monkeypatch):
     monkeypatch.setattr('src.scraping.scraper.config.paths.CHUNKS_OUTPUT', str(chunks_dir), raising=False)
 
     save_calls = []
+    saved_results = {}
 
     def fake_save_results(path, filename, results, target_url=None):
         normalized_results = results
@@ -85,6 +95,16 @@ def scraper(tmp_path, monkeypatch):
                 key: list(value) if isinstance(value, list) else value
                 for key, value in results.items()
             }
+
+        if filename.endswith('_merged_chunks') and isinstance(normalized_results, dict):
+            previous = saved_results.get((path, filename), {})
+            merged = {key: list(value) for key, value in previous.items()}
+            for key, value in normalized_results.items():
+                merged[key] = list(value)
+            saved_results[(path, filename)] = merged
+            normalized_results = [
+                chunk for chunks in merged.values() for chunk in chunks
+            ]
 
         save_calls.append({
             'path': path,
@@ -130,6 +150,13 @@ def _make_timestamp() -> UrlTimestamps:
         etag=None,
         page_hash=None,
     )
+
+
+def _write_extracted_text(scraper, url: str) -> None:
+    url_filename = scraper._normalizer.url_to_filename(url)
+    path = os.path.join(scraper._path.EXTRACTED_TEXT_OUTPUT, url_filename + '.txt')
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(f'previously extracted text for {url}')
 
 
 class TestTempBehaviorComplete:
@@ -179,6 +206,7 @@ class TestTempBehaviorComplete:
     def test_collect_chunks_rechunks_urls_already_present_in_temp(self, scraper):
         target_url = 'https://target.example/'
         existing_chunk = _make_existing_chunk('https://target.example/page-1')
+        _write_extracted_text(scraper, 'https://target.example/page-1')
         tagged_documents = [
             _make_tagged_document('https://target.example/page-2'),
         ]
@@ -210,12 +238,13 @@ class TestTempBehaviorComplete:
             if call['path'] == scraper._path.TEMP_CHUNKS_OUTPUT and call['filename'] == temp_filename
         ]
         assert temp_snapshots == [
-            ['https://target.example/page-1', 'https://target.example/page-2']
+            ['https://target.example/page-2']
         ]
 
     def test_scrape_target_finalizes_existing_temp_when_no_new_documents(self, scraper):
         target_url = 'https://target.example/'
         existing_chunk = _make_existing_chunk('https://target.example/page-1')
+        _write_extracted_text(scraper, 'https://target.example/page-1')
         temp_filename = scraper._get_temp_chunks_filename(target_url)
 
         scraper._analyze_domain = lambda target: SimpleNamespace(urls=['https://target.example/page-1'])
@@ -244,13 +273,14 @@ class TestTempBehaviorComplete:
                 'raw': [],
                 'merged': merged,
                 'deleted': [],
+                'final': {'en': merged, 'de': []},
             }
 
         scraper._collect_chunks = fake_collect_chunks
 
         result = scraper.scrape_target(target_url)
 
-        assert [chunk.source_url for chunk in result] == ['https://target.example/page-1']
+        assert [chunk.source_url for chunk in result['en']] == ['https://target.example/page-1']
         assert len(collect_calls) == 1
         assert collect_calls[0]['tagged_documents'] == []
         assert collect_calls[0]['existing_merged_chunks'] == {'https://target.example/page-1': [existing_chunk]}

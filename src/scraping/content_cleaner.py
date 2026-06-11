@@ -11,7 +11,7 @@ from ..config import config
 logger = get_logger('scraper.cleaning')
 
 class ContentCleaner:
-    def __init__(self, full_scraping: bool = False) -> None:
+    def __init__(self, full_scraping=True) -> None:
         self._repetitions_counter: Counter = Counter()
         self._repetitive_content:  list[str] = []
         self.full_scraping: bool = full_scraping

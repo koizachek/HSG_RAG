@@ -1,7 +1,7 @@
 """
 LLM eval set: 30 fact questions (DE/EN) against the live agent chain.
 
-Expected values are read dynamically from data/programme_facts.json, so the
+Expected values are read dynamically from data/database/programme_facts.json, so the
 eval stays valid after every facts regeneration. The core assertion per case:
 the answer must contain the correct programme's value AND must NOT contain
 another programme's value (cross-contamination guard — the historic bug).
@@ -30,7 +30,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def _facts() -> dict:
-    path = os.path.join(config.paths.DATA, "programme_facts.json")
+    path = os.path.join(config.paths.DATA, "database", "programme_facts.json")
     with open(path, encoding="utf-8") as f:
         return json.load(f)["programmes"]
 
