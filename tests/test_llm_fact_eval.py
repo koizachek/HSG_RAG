@@ -50,6 +50,10 @@ def _start_year(prog: str) -> str:
     return _facts()[prog]["programme_start"][:4]
 
 
+def _ects(prog: str) -> str:
+    return str(_facts()[prog]["ects_credits"])
+
+
 # --------------------------------------------------------------------------
 # Eval cases. Fields:
 #   id            unique test id (language prefix included)
@@ -146,7 +150,7 @@ def build_cases() -> list[dict]:
              forbid=[]),
         dict(id="en_duration_embax", lang="en",
              query="How long does the emba X take and how many ECTS is it?",
-             expect_any=[["18"], ["75"]],
+             expect_any=[["18"], [_ects("emba_x")]],
              forbid=[]),
 
         # ------------------------- Language / format -----------------------

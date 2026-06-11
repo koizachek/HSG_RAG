@@ -26,6 +26,7 @@ _LABELS = {
         'language': 'Sprache',
         'start': 'Programmstart',
         'duration': 'Dauer',
+        'ects': 'ECTS',
         'structure': 'Struktur',
         'locations': 'Orte',
         'tuition': 'Studiengebühr',
@@ -38,6 +39,7 @@ _LABELS = {
         'language': 'Language',
         'start': 'Programme start',
         'duration': 'Duration',
+        'ects': 'ECTS',
         'structure': 'Structure',
         'locations': 'Locations',
         'tuition': 'Tuition fee',
@@ -109,6 +111,8 @@ class VerifiedFacts:
             lines.append(f"- {labels['start']}: {prog['programme_start']}")
         if prog.get('duration'):
             lines.append(f"- {labels['duration']}: {cls._lang_value(prog['duration'], language)}")
+        if prog.get('ects_credits'):
+            lines.append(f"- {labels['ects']}: {prog['ects_credits']}")
         if prog.get('structure'):
             lines.append(f"- {labels['structure']}: {cls._lang_value(prog['structure'], language)}")
         if prog.get('locations'):
@@ -171,7 +175,7 @@ class VerifiedFacts:
             + "\n\n".join(sections)
             + "\n\nRULES FOR THESE FACTS:\n"
             "- These verified facts are the AUTHORITATIVE source for tuition fees, "
-            "application deadlines, start dates, duration, structure, locations, "
+            "application deadlines, start dates, duration, ECTS credits, structure, locations, "
             "programme language, and advisor contacts.\n"
             "- Prefer them over retrieved context for these categories. If retrieved "
             "chunks conflict with these facts, use these facts and do not mention the conflict.\n"
