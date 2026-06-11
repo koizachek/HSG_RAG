@@ -228,12 +228,26 @@ def make_chain():
     return _factory
 
 
+# Latency gate: a single turn must never exceed this (generous cap that still
+# catches gross regressions such as switching back to a reasoning model).
+MAX_TURN_SECONDS = 25.0
+
+
 @pytest.mark.parametrize("case", CASES, ids=[c["id"] for c in CASES])
 def test_fact_eval(case, make_chain):
+    from time import perf_counter
+
     chain = make_chain(case["lang"])
+    turn_start = perf_counter()
     result = chain.query(case["query"])
+    elapsed = perf_counter() - turn_start
     answer = _normalize(
         (result.response or "") + " " + (result.additional_details or "")
+    )
+
+    assert elapsed < MAX_TURN_SECONDS, (
+        f"Latency regression: turn took {elapsed:.1f}s (cap {MAX_TURN_SECONDS}s) "
+        f"for: {case['query']}"
     )
 
     assert answer.strip(), f"Empty answer for: {case['query']}"
