@@ -22,6 +22,15 @@ def _get(param: str, default=None, type_=None):
         raise ValueError(f"Failed to cast '{param}' value '{value}' to {type_.__name__}")
 
 
+def _get_bool(param: str, default: bool = False) -> bool:
+    value = _get(param, default)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
 class ConfigBase:
     PARAMS: dict = dict()
 
@@ -52,7 +61,7 @@ class PathsConfig(ConfigBase):
 
 
 class ScrapingConfig(ConfigBase):
-    TIMEOUT: int      = _get('SCRAPING_SCRAPING_TIMEOUT', 30)
+    TIMEOUT: int      = _get('SCRAPING_TIMEOUT', 30)
     MAX_RETRIES: int  = _get('SCRAPING_MAX_RETRIES', 3)
     CRAWL_DELAY: int  = _get('SCRAPING_CRAWL_DELAY', 1)
     BACKOFF_RATE: int = _get('SCRAPING_BACKOFF_RATE', 2)
@@ -126,6 +135,9 @@ class WeaviateConfig(ConfigBase):
     INIT_TIMEOUT:   int  = _get('WEAVIATE_INIT_TIMEOUT', 90) 
     QUERY_TIMEOUT:  int  = _get('WEAVIATE_QUERY_TIMEOUT', 60) 
     INSERT_TIMEOUT: int  = _get('WEAVIATE_INSERT_TIMEOUT', 600)
+    KEEP_WARM_ENABLED: bool = _get_bool('WEAVIATE_KEEP_WARM_ENABLED', True)
+    KEEP_WARM_INTERVAL: int = _get('WEAVIATE_KEEP_WARM_INTERVAL', 30, type_=int)
+    CLIENT_IDLE_TIMEOUT: int = _get('WEAVIATE_CLIENT_IDLE_TIMEOUT', 25 * 60, type_=int)
 
 
 #TODO: Clean this configuration (outdated)
@@ -140,7 +152,7 @@ class LLMProvider:
         return LLMProvider(self.base, sub)
 
 
-class LLMProviderConfig:
+class LLMConfig(ConfigBase):
     AVAIABLE_PROVIDERS: list[str] = [
         'groq', 
         'ollama',  
@@ -152,13 +164,20 @@ class LLMProviderConfig:
         'open_router': [
             'openai', 
             'deepseek',
-            'meituan'
-            'alibaba'   # For tongyi models 
+            'meituan',
+            'alibaba',   # For tongyi models
             'nvidia',
         ],
     }
     
-    LLM_PROVIDER: LLMProvider = LLMProvider('openai')
+    LLM_PROVIDER: LLMProvider = LLMProvider(_get('LLM_PROVIDER', 'openai'))
+
+    MAIN_AGENT_MODEL: tuple[str, str] = _get('MAIN_AGENT_MODEL', ('openai', 'gpt-4.1'))
+    FALLBACK_MODELS: list[tuple[str, str]] = _get('FALLBACK_MODELS', [('openai', 'gpt-5-mini')])
+    SUBAGENT_MODEL: tuple[str, str] = _get('SUBAGENT_MODEL', ('openai', 'gpt-5-mini'))
+    LANGUAGE_DETECTION_MODEL: tuple[str, str] = _get('LANGUAGE_DETECTION_MODEL', ('openai', 'gpt-4o-mini'))
+    CONFIDENCE_SCORING_MODEL: tuple[str, str] = _get('CONFIDENCE_SCORING_MODEL', ('openai', 'gpt-4o-mini'))
+    SUMMARIZATION_MODEL: tuple[str, str] = _get('SUMMARIZATION_MODEL', ('openai', 'gpt-4.1'))
     
     # -------------------- Some predefined models for available providers ----------------------
 
@@ -176,7 +195,8 @@ class LLMProviderConfig:
     # model. Reasoning added 10-30s per agent loop without quality benefit for
     # this narrow advisory use case.
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
-    OPENAI_MODEL:   str = "gpt-4.1"
+    HUGGING_FACE_API_KEY: str = os.getenv("HUGGING_FACE_API_KEY")
+    OPENAI_MODEL:   str = MAIN_AGENT_MODEL[1] if MAIN_AGENT_MODEL[0] == "openai" else _get('OPENAI_MODEL', 'gpt-4.1')
     
     # The gpt-oss:20b model is preferable but takes much more space
     # Set to False if you only have the llama3.2 installed
@@ -198,7 +218,9 @@ class LLMProviderConfig:
                 # Latency fix: a single fallback model. A longer chain
                 # multiplied worst-case latency (retries x fallbacks).
                 return [
-                    (provider, 'gpt-5-mini'),
+                    (LLMProvider(fallback_provider), fallback_model)
+                    for fallback_provider, fallback_model in cls.FALLBACK_MODELS
+                    if fallback_provider == 'openai'
                 ]
             case 'open_router':
                 return [
@@ -215,32 +237,39 @@ class LLMProviderConfig:
     @classmethod
     def get_reasoning_support(cls, provider: LLMProvider | None = None) -> bool:
         provider = provider or cls.LLM_PROVIDER
+        provider_base = provider.base if hasattr(provider, "base") else str(provider).split(":", 1)[0]
         return {
             "groq":   True,
             "openai": True, 
             "open_router": True,
-        }.get(provider.base, False)
+        }.get(provider_base, False)
 
 
     @classmethod
     def get_default_model(cls, provider: LLMProvider | None = None) -> str:
         provider = provider or cls.LLM_PROVIDER
+        provider_name = provider.name if hasattr(provider, "name") else str(provider)
+        provider_base = provider.base if hasattr(provider, "base") else provider_name.split(":", 1)[0]
+        if provider_name == cls.MAIN_AGENT_MODEL[0]:
+            return cls.MAIN_AGENT_MODEL[1]
         return {
             "groq":   cls.GROQ_MODEL,
             "openai": cls.OPENAI_MODEL, 
             "ollama": cls.OLLAMA_MODEL,
             "open_router":   cls.OPEN_ROUTER_MODEL,
-        }.get(provider.base)
+        }.get(provider_base)
    
 
     @classmethod
     def get_api_key(cls, provider: LLMProvider | None = None) -> str:
         provider = provider or cls.LLM_PROVIDER
+        provider_name = provider.name if hasattr(provider, "name") else str(provider)
+        provider_base = provider.base if hasattr(provider, "base") else provider_name.split(":", 1)[0]
         return {
             "groq": cls.GROQ_API_KEY,
             "openai": cls.OPENAI_API_KEY,
             "open_router": cls.OPEN_ROUTER_API_KEY,
-        }.get(provider.base)
+        }.get(provider_base)
 
 
 class NotificationCenterConfig(ConfigBase):

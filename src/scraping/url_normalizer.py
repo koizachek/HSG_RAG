@@ -12,7 +12,7 @@ class UrlNormalizer:
             if forbidden in path:
                 return True
                 
-        return False
+        return len(path) > 35
     
 
     @staticmethod

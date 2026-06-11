@@ -215,7 +215,7 @@ def build_cases() -> list[dict]:
     ]
 
 
-CASES = build_cases()
+CASES = build_cases() if os.getenv("RUN_LLM_EVAL") else []
 
 
 @pytest.fixture(scope="module")

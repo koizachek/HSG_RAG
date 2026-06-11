@@ -56,7 +56,8 @@ class AgentChainMiddleware:
     def _model_call_wrapper(request: ModelRequest, handler):
         context: AgentContext  = request.runtime.context
         model:   BaseChatModel = request.model
-        model_logger.info(f"{context.agent_name} is attempting to call model '{model.model_name}'...")
+        model_name = getattr(model, "model_name", None) or getattr(model, "model_id", None) or model.__class__.__name__
+        model_logger.info(f"{context.agent_name} is attempting to call model '{model_name}'...")
         for attempt in range(1, config.chain.MAX_RETRIES+1):
             try:
                 response: ModelResponse = handler(request)
@@ -76,7 +77,7 @@ class AgentChainMiddleware:
                 elif not result.content and finish_reason != 'tool_calls':
                     if finish_reason == 'length':
                         errormsg = (
-                            f"Model '{model.model_name}' exhausted completion tokens "
+                            f"Model '{model_name}' exhausted completion tokens "
                             "without producing a user-visible response."
                         )
                         model_logger.error(errormsg)
@@ -98,7 +99,7 @@ class AgentChainMiddleware:
                         raise e
 
                 if attempt == config.chain.MAX_RETRIES:
-                    model_logger.warning(f"Failed to recieve response from model '{model.model_name}' after {config.chain.MAX_RETRIES} attempt{'s' if attempt > 1 else ''}, reason: {e.body['message']}")
+                    model_logger.warning(f"Failed to recieve response from model '{model_name}' after {config.chain.MAX_RETRIES} attempt{'s' if attempt > 1 else ''}, reason: {e.body['message']}")
                     model_logger.info(f"Switching to the fallback model...")
                     raise e
             except Exception as e:

@@ -81,12 +81,21 @@ class ExecutiveAgentChain:
         # Track scope violations for escalation
         self._scope_violation_counts: dict[str, int] = {}
         self._aggressive_violation_count = 0
+        self._invalid_input_count = 0
 
         # Profile tracking lives in its own component (adopted from the
         # chatbot-decoupling branch) to keep this class a thin orchestrator.
         self._state_manager = ConversationStateManager(self)
 
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
+
+    def _state_tracker(self) -> ConversationStateManager:
+        """Return a state manager, including for tests that bypass __init__."""
+        manager = getattr(self, "_state_manager", None)
+        if manager is None:
+            manager = ConversationStateManager(self)
+            self._state_manager = manager
+        return manager
 
     def _retrieve_context(self, query: str, program: str, language: str = None):
         """
@@ -99,10 +108,9 @@ class ExecutiveAgentChain:
         """
         lang = language if language in ['en', 'de'] else self._initial_language
         # Adopted from chatbot-decoupling: normalise the programme id before
-        # filtering. The DB tags chunks with 'emba x' (with space); model
-        # inputs like 'embax' or 'EMBA X' would silently match nothing.
+        # filtering. The DB tags chunks with canonical programme ids.
         normalized = self._normalise_programme_id(program)
-        db_program = {'emba': 'emba', 'iemba': 'iemba', 'emba_x': 'emba x'}.get(normalized)
+        db_program = {'emba': 'emba', 'iemba': 'iemba', 'emba_x': 'emba_x'}.get(normalized)
         property_filters = {'programs': [db_program]} if db_program else {'programs': [program]}
         try:
             response, _ = self._dbservice.query(
@@ -418,7 +426,7 @@ class ExecutiveAgentChain:
             return True
 
         return (
-            self._state_manager.previous_response_offered_booking()
+            self._state_tracker().previous_response_offered_booking()
             and any(contains_term(term) for term in acceptance_terms)
         )
 
@@ -442,6 +450,15 @@ class ExecutiveAgentChain:
         })
         self._scope_violation_counts = {}
         self._aggressive_violation_count = 0
+        self._invalid_input_count = 0
+
+    def _log_user_profile(self) -> None:
+        """Backward-compatible wrapper for tests/callers using the old chain API."""
+        self._state_tracker().log_user_profile()
+
+    def _update_conversation_state(self, user_query: str, agent_response: str) -> None:
+        """Backward-compatible wrapper for tests/callers using the old chain API."""
+        self._state_tracker().update(user_query, agent_response)
 
     def wipe_session_data(self) -> None:
         """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
@@ -500,18 +517,29 @@ class ExecutiveAgentChain:
             ) 
 
         # 2. Input Processing
-        processed_query, is_valid = InputHandler.process_input(
+        input_result = InputHandler.process_input_with_metadata(
             query,
             [msg for msg in self._conversation_history if isinstance(msg, (HumanMessage, AIMessage))]
         )
+        processed_query = input_result.processed_message
+        is_valid = input_result.is_valid
 
         if not is_valid or not processed_query:
             chain_logger.warning(f"Invalid input received: '{query}'")
+            self._invalid_input_count = getattr(self, "_invalid_input_count", 0) + 1
+            invalid_response = (
+                f"{NOT_VALID_QUERY_MESSAGE[self._stored_language]}\n\n"
+                f"{get_admissions_contact_text(self._stored_language)}"
+                if self._invalid_input_count >= 2
+                else NOT_VALID_QUERY_MESSAGE[self._stored_language]
+            )
             return LeadAgentQueryResponse(
-                response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
+                response=invalid_response,
                 language=current_language,
                 processed_query=query
             )
+
+        self._invalid_input_count = 0
 
         # Log check
         if processed_query != query:

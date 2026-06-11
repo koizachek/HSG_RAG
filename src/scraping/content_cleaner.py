@@ -11,7 +11,7 @@ from ..config import config
 logger = get_logger('scraper.cleaning')
 
 class ContentCleaner:
-    def __init__(self, full_scraping) -> None:
+    def __init__(self, full_scraping: bool = False) -> None:
         self._repetitions_counter: Counter = Counter()
         self._repetitive_content:  list[str] = []
         self.full_scraping: bool = full_scraping
@@ -54,9 +54,14 @@ class ContentCleaner:
                 content_analysis = json.load(f)
             self._repetitive_content = content_analysis['repetitive_content']
         else:
-            self._repetitive_content = [{'content': text, 'amount': count}
-                for text, count in self._repetitions_counter.items()
-                    if text not in REPETITION_WHITELIST and count > 1]
+            self._repetitive_content = []
+            for text, count in self._repetitions_counter.items():
+                if count < 3:
+                    continue
+                if any(allowed_item in text for allowed_item in REPETITION_WHITELIST):
+                    continue
+
+                self._repetitive_content.append({'content': text, 'amount': count})
             logger.info(f"Content analysis for target URL '{target_url}' " +
                         f"yielded {len(self._repetitive_content)} repetitive text lines")
 
@@ -131,4 +136,3 @@ class ContentCleaner:
                 node.children.clear()
             if hasattr(node, 'parent'):
                 node.parent = None
-

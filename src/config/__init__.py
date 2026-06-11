@@ -14,7 +14,7 @@ class AppConfig:
     cache:      CacheConfig             = CacheConfig()
     paths:      PathsConfig             = PathsConfig()
     dbapp:      DatabaseAppConfig       = DatabaseAppConfig()
-    llm:        LLMProviderConfig       = LLMProviderConfig()
+    llm:        LLMConfig               = LLMConfig()
     
     # ===========================================================================
 
