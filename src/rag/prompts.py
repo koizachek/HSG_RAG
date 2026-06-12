@@ -226,13 +226,16 @@ GENERAL:
 
         agent_key = agent.lower().replace(" ", "")
 
-        # Verified programme facts (auto-generated from official sources).
-        # Hallucination fix: gives the model an authoritative in-prompt source
-        # for volatile core facts instead of regex-extraction from chunks.
-        facts_block = VerifiedFacts.render_prompt_block(language=language)
-
         # 2. Configure Lead Agent
         if agent_key == 'lead':
+            # Verified programme facts (auto-generated from official sources).
+            # Hallucination fix: gives the model an authoritative in-prompt
+            # source for volatile core facts instead of regex-extraction from
+            # chunks. ONLY the lead prompt gets this block — the (currently
+            # unused) programme-agent prompts keep their retrieval-first
+            # invariant: no volatile facts embedded in the prompt text
+            # (guarded by tests/test_pricing_prompts.py).
+            facts_block = VerifiedFacts.render_prompt_block(language=language)
             return cls._LEAD_SYSTEM_PROMPT.format(
                 university_name=university_name,
                 tool_routing=cls._RETRIEVE_CONTEXT_TOOL_ROUTING,
@@ -248,7 +251,7 @@ GENERAL:
                 selected_language=selected_language,
                 university_name=university_name,
                 program_name=agent.upper()
-            ) + facts_block
+            )
         else:
             # Fallback
             return cls._BASE_PROGRAM_PROMPT.format(

@@ -50,19 +50,30 @@ class ProcessorBase:
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
             },
         )
-        tokenizer = AutoTokenizer.from_pretrained(config.processing.EMBEDDING_MODEL)
-        self._chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer(
-                tokenizer=tokenizer,
-                max_tokens=config.processing.MAX_TOKENS
-            ),
-            serializer_provider=EnhansedSerializerProvider(),
-            max_tokens=config.processing.MAX_TOKENS, 
-            merge_peers=True
-        )
+        # Lazy: loading the embedding tokenizer hits the HF Hub. Doing it at
+        # construction time made Scraper()/processor instantiation fail
+        # without network access or with a stale HF token, even for code
+        # paths that never chunk anything (e.g. scraping priority logic).
+        self._chunker_instance: HybridChunker | None = None
         self.strategies_processor = StrategiesProcessor()
         self._logging_callback = config.dbapp['logging_callback'] or logging_callback_placeholder
     
+
+    @property
+    def _chunker(self) -> HybridChunker:
+        """Build the chunker (and download the tokenizer) on first use only."""
+        if self._chunker_instance is None:
+            tokenizer = AutoTokenizer.from_pretrained(config.processing.EMBEDDING_MODEL)
+            self._chunker_instance = HybridChunker(
+                tokenizer=HuggingFaceTokenizer(
+                    tokenizer=tokenizer,
+                    max_tokens=config.processing.MAX_TOKENS
+                ),
+                serializer_provider=EnhansedSerializerProvider(),
+                max_tokens=config.processing.MAX_TOKENS,
+                merge_peers=True
+            )
+        return self._chunker_instance
 
     def process(self):
         """
