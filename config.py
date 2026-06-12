@@ -36,7 +36,6 @@ MAX_CONVERSATION_TURNS = 20
 # Keep the master branch's latency-oriented defaults.
 MAIN_AGENT_MODEL = ('openai', 'gpt-4.1')
 FALLBACK_MODELS = [('openai', 'gpt-5-mini')]
-SUBAGENT_MODEL = ('openai', 'gpt-5-mini')
 LANGUAGE_DETECTION_MODEL = ('openai', 'gpt-4o-mini')
 CONFIDENCE_SCORING_MODEL = ('openai', 'gpt-4o-mini')
 SUMMARIZATION_MODEL = ('openai', 'gpt-4.1')
@@ -93,7 +92,9 @@ WEAVIATE_INSERT_TIMEOUT = 600
 WEAVIATE_KEEP_WARM_ENABLED = True
 
 # An integer. Defines how often the keep-warm loop may query Weaviate while idle (in seconds).
-WEAVIATE_KEEP_WARM_INTERVAL = 30
+# 180s keeps the vectorizer warm enough between turns while cutting idle
+# hybrid queries (and HF API usage) to a sixth of the previous 30s setting.
+WEAVIATE_KEEP_WARM_INTERVAL = 180
 
 # An integer. Defines when an idle Weaviate client is considered stale enough to
 # reconnect proactively (in seconds).
