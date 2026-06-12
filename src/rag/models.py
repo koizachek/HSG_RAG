@@ -7,7 +7,6 @@ logger = get_logger("model_config")
 
 class ModelConfigurator:
     _main_model_instance: BaseChatModel = None
-    _subagent_model_instance: BaseChatModel = None
     _fallback_models_instances: list[BaseChatModel] = None
     _summarization_model_instance: BaseChatModel = None
     _confidence_scoring_model_instance: BaseChatModel = None 
@@ -65,23 +64,6 @@ class ModelConfigurator:
             logger.error(f"Failed to initialize summarization model '{provider}:{model}': {e}")
             raise e
 
-
-    @classmethod
-    def get_subagent_model(cls) -> BaseChatModel:
-        if cls._subagent_model_instance:
-            return cls._subagent_model_instance
-        provider, model = config.llm.SUBAGENT_MODEL
-        try:
-            cls._subagent_model_instance = cls._initialize_model(
-                provider=provider,
-                model=model,
-                role="main",
-            )
-            logger.info(f"Initialized subagent model '{provider}:{model}'")
-            return cls._subagent_model_instance
-        except Exception as e:
-            logger.error(f"Failed to initialize subagent model '{provider}:{model}': {e}")
-            raise e
 
     @classmethod
     def get_main_agent_model(cls) -> BaseChatModel:

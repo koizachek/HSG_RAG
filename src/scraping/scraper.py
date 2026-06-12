@@ -351,13 +351,13 @@ class Scraper:
 
         raw_chunks     = []
         deleted_chunks = []
-        new_urls = {entry.document.name for entry in tagged_documents}
-        self._active_temp_chunks = {
-            url: chunks
-            for url, chunks in (temp_chunks or {}).items()
-            if url not in new_urls
-        }
         merged_chunks, final_chunks = self._read_temp_chunks(temp_chunks, tagged_documents)
+        # Temp snapshots must only carry (a) URLs newly chunked in this session
+        # (added by _store_temp_chunks) and (b) URLs whose restore failed and
+        # which must survive for the next session. Successfully restored URLs
+        # are finalized now — keeping them in temp would re-restore them on the
+        # next resume and duplicate their chunks.
+        self._active_temp_chunks = dict(getattr(self, '_unrestorable_temp_chunks', {}))
 
         program_counter = self._build_program_counter_from_merged_chunks(merged_chunks)
 
@@ -443,14 +443,18 @@ class Scraper:
                 del loaded_temp_chunks[url]
         
         restored_temp_chunks = []
+        # URLs whose chunks could not be finalized; they must stay in the temp
+        # store so the next session can re-scrape them (read in _collect_chunks).
+        self._unrestorable_temp_chunks: dict[str, list[ChunkMetadata]] = {}
         for url, chunks in loaded_temp_chunks.items():
             url_filename = self._normalizer.url_to_filename(url)
             extracted_text_path = os.path.join(self._path.EXTRACTED_TEXT_OUTPUT, url_filename + '.txt')
             if not os.path.exists(extracted_text_path):
                 incupd_logger.warning(f"Cannot restore chunks for URL {url}: Failed to locate previously extracted contents!")
                 incupd_logger.warning(f"This URL will has to be rescraped in the next session")
+                self._unrestorable_temp_chunks[url] = chunks
                 restored_temp_chunks.extend(chunks)
-                continue 
+                continue
             
             with open(extracted_text_path, 'r') as f:
                 url_text = f.read()

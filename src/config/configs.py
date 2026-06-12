@@ -136,7 +136,7 @@ class WeaviateConfig(ConfigBase):
     QUERY_TIMEOUT:  int  = _get('WEAVIATE_QUERY_TIMEOUT', 60) 
     INSERT_TIMEOUT: int  = _get('WEAVIATE_INSERT_TIMEOUT', 600)
     KEEP_WARM_ENABLED: bool = _get_bool('WEAVIATE_KEEP_WARM_ENABLED', True)
-    KEEP_WARM_INTERVAL: int = _get('WEAVIATE_KEEP_WARM_INTERVAL', 30, type_=int)
+    KEEP_WARM_INTERVAL: int = _get('WEAVIATE_KEEP_WARM_INTERVAL', 180, type_=int)
     CLIENT_IDLE_TIMEOUT: int = _get('WEAVIATE_CLIENT_IDLE_TIMEOUT', 25 * 60, type_=int)
 
 
@@ -174,7 +174,6 @@ class LLMConfig(ConfigBase):
 
     MAIN_AGENT_MODEL: tuple[str, str] = _get('MAIN_AGENT_MODEL', ('openai', 'gpt-4.1'))
     FALLBACK_MODELS: list[tuple[str, str]] = _get('FALLBACK_MODELS', [('openai', 'gpt-5-mini')])
-    SUBAGENT_MODEL: tuple[str, str] = _get('SUBAGENT_MODEL', ('openai', 'gpt-5-mini'))
     LANGUAGE_DETECTION_MODEL: tuple[str, str] = _get('LANGUAGE_DETECTION_MODEL', ('openai', 'gpt-4o-mini'))
     CONFIDENCE_SCORING_MODEL: tuple[str, str] = _get('CONFIDENCE_SCORING_MODEL', ('openai', 'gpt-4o-mini'))
     SUMMARIZATION_MODEL: tuple[str, str] = _get('SUMMARIZATION_MODEL', ('openai', 'gpt-4.1'))

@@ -176,19 +176,40 @@ class WeaviateService:
 
 
     def _keep_warm_loop(self) -> None:
-        while not self._keep_warm_stop.wait(self._keep_warm_interval):
+        # Exponential backoff on consecutive failures: a broken vectorizer
+        # key (e.g. HF 401) would otherwise be hammered every interval,
+        # spamming logs and burning API quota for nothing.
+        consecutive_failures = 0
+        max_wait = 30 * 60
+        while True:
+            wait = min(self._keep_warm_interval * (2 ** consecutive_failures), max_wait)
+            if self._keep_warm_stop.wait(wait):
+                return
             try:
-                self._keep_warm_once()
+                result = self._keep_warm_once()
+                if result is True:
+                    consecutive_failures = 0
+                elif result is False:
+                    consecutive_failures += 1
+                # result None: skipped (recent real query) — leave backoff as is
             except Exception as e:
+                consecutive_failures += 1
                 logger.warning(f"Weaviate keep-warm tick failed (non-critical): {e}")
+            if consecutive_failures == 3:
+                logger.warning(
+                    "Keep-warm failed 3 times in a row - backing off. If the error is a "
+                    "vectorizer 401, check HUGGING_FACE_API_KEY."
+                )
 
 
-    def _keep_warm_once(self) -> bool:
+    def _keep_warm_once(self) -> bool | None:
         """
         Run one scheduled keep-warm tick when the client has been idle long enough.
 
         Returns:
-            bool: True when a warm-up query was attempted, False when skipped.
+            True when the warm-up query succeeded, False when it was attempted
+            but failed (drives the backoff), None when skipped because a real
+            query happened recently.
         """
         client = self._client
         if client is None:
@@ -196,14 +217,13 @@ class WeaviateService:
 
         time_since_query = perf_counter() - self._last_query_time
         if time_since_query < self._keep_warm_interval:
-            return False
+            return None
 
         logger.debug(
             "Running scheduled Weaviate keep-warm after %3.2f seconds idle",
             time_since_query,
         )
-        self._warm_up_client(client)
-        return True
+        return self._warm_up_client(client)
 
 
     def stop_keep_warm(self) -> None:
@@ -215,9 +235,12 @@ class WeaviateService:
         self._keep_warm_thread = None
 
 
-    def _warm_up_client(self, client: wvt.WeaviateClient) -> None:
+    def _warm_up_client(self, client: wvt.WeaviateClient) -> bool:
         """
         Quickly query the client to decrease the response latency of future calls.
+
+        Returns:
+            bool: True when the warm-up query succeeded.
         """
         logger.debug("Running warm-up query to initialize server and vectorizer...")
         try:
@@ -225,7 +248,7 @@ class WeaviateService:
             with self._client_lock:
                 if not client.collections.exists(collection_name):
                     logger.warning("Warm-up skipped because collection %s does not exist", collection_name)
-                    return
+                    return False
 
                 collection = client.collections.get(collection_name)
                 collection.query.hybrid(
@@ -235,8 +258,10 @@ class WeaviateService:
                 )
             self._last_query_time = perf_counter()
             logger.debug("Warm-up finished - server and vectorizer are ready!")
+            return True
         except Exception as warmup_err:
             logger.warning(f"Warm-up query failed (non-critical): {warmup_err}")
+            return False
 
 
     def _select_collection(self, lang: str) -> tuple[Collection, str]:
