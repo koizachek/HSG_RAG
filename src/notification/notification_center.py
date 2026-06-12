@@ -22,9 +22,9 @@ class EmailNotifier:
         self.smtp_use_tls = NC.SMTP_USE_TLS
         self.from_email = NC.FROM_EMAIL
         self.to_emails = self._parse_recipients(NC.TO_EMAIL)
-
-        if self.enabled:
-            self._validate()
+        # Validation happens at send time, not at construction: constructing a
+        # NotificationCenter (e.g. inside Scraper.__init__) must not require a
+        # complete SMTP configuration on machines that never send alerts.
 
     @staticmethod
     def _parse_recipients(value: str | None) -> list[str]:
@@ -57,6 +57,8 @@ class EmailNotifier:
     ) -> None:
         if not self.enabled:
             return
+
+        self._validate()
 
         if isinstance(attachments, str):
             attachments = [attachments]
@@ -95,9 +97,7 @@ class SlackNotifier:
     def __init__(self):
         self.enabled = NC.ENABLE_SLACK_ALERTS
         self.webhook_url = NC.SLACK_WEBHOOK_URL
-
-        if self.enabled:
-            self._validate()
+        # Validated at send time (see EmailNotifier note above).
 
     def _validate(self) -> None:
         if not self.webhook_url:
@@ -106,6 +106,8 @@ class SlackNotifier:
     def send(self, subject: str, body: str) -> None:
         if not self.enabled:
             return
+
+        self._validate()
 
         text = f"*{subject}*\n{body}"
 
