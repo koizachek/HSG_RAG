@@ -77,7 +77,12 @@ class ConversationStateConfig(ConfigBase):
 
 class ProcessingConfig(ConfigBase):
     LANG_AMBIGUITY_THRESHOLD: float = _get('LANG_AMBIGUITY_THRESHOLD')
-    EMBEDDING_MODEL:          float = _get('EMBEDDING_MODEL')
+    EMBEDDING_MODEL:          str   = _get('EMBEDDING_MODEL', 'openai/text-embedding-3-small')
+    EMBEDDING_BASE_URL:       str   = _get('EMBEDDING_BASE_URL', 'https://openrouter.ai/api/v1')
+    EMBEDDING_API_KEY:        str   = _get('EMBEDDING_API_KEY') or _get('OPEN_ROUTER_API_KEY')
+    EMBEDDING_DIMENSIONS:     int   = _get('EMBEDDING_DIMENSIONS', 1536, type_=int)
+    EMBEDDING_BATCH_SIZE:     int   = _get('EMBEDDING_BATCH_SIZE', 32, type_=int)
+    EMBEDDING_VECTOR_NAME:    str   = _get('EMBEDDING_VECTOR_NAME', 'hsg_rag_embeddings')
     MAX_TOKENS:    int = _get('MAX_TOKENS')
     CHUNK_OVERLAP: int = _get('CHUNK_OVERLAP')
 
@@ -118,7 +123,6 @@ class CacheConfig(ConfigBase):
 
 
 class WeaviateConfig(ConfigBase):
-    LOCAL_DATABASE: bool = _get('WEAVIATE_IS_LOCAL')
     WEAVIATE_COLLECTION_BASENAME: str = _get('WEAVIATE_COLLECTION_BASENAME')
     
     BACKUP_METHODS: list[str] = ['manual', 'filesystem', 's3']
@@ -130,13 +134,12 @@ class WeaviateConfig(ConfigBase):
 
     CLUSTER_URL:          str = _get('WEAVIATE_CLUSTER_URL')
     WEAVIATE_API_KEY:     str = _get('WEAVIATE_API_KEY')
-    HUGGING_FACE_API_KEY: str = _get('HUGGING_FACE_API_KEY')
    
     INIT_TIMEOUT:   int  = _get('WEAVIATE_INIT_TIMEOUT', 90) 
     QUERY_TIMEOUT:  int  = _get('WEAVIATE_QUERY_TIMEOUT', 60) 
     INSERT_TIMEOUT: int  = _get('WEAVIATE_INSERT_TIMEOUT', 600)
     KEEP_WARM_ENABLED: bool = _get_bool('WEAVIATE_KEEP_WARM_ENABLED', True)
-    KEEP_WARM_INTERVAL: int = _get('WEAVIATE_KEEP_WARM_INTERVAL', 30, type_=int)
+    KEEP_WARM_INTERVAL: int = _get('WEAVIATE_KEEP_WARM_INTERVAL', 180, type_=int)
     CLIENT_IDLE_TIMEOUT: int = _get('WEAVIATE_CLIENT_IDLE_TIMEOUT', 25 * 60, type_=int)
 
 
@@ -174,7 +177,6 @@ class LLMConfig(ConfigBase):
 
     MAIN_AGENT_MODEL: tuple[str, str] = _get('MAIN_AGENT_MODEL', ('openai', 'gpt-4.1'))
     FALLBACK_MODELS: list[tuple[str, str]] = _get('FALLBACK_MODELS', [('openai', 'gpt-5-mini')])
-    SUBAGENT_MODEL: tuple[str, str] = _get('SUBAGENT_MODEL', ('openai', 'gpt-5-mini'))
     LANGUAGE_DETECTION_MODEL: tuple[str, str] = _get('LANGUAGE_DETECTION_MODEL', ('openai', 'gpt-4o-mini'))
     CONFIDENCE_SCORING_MODEL: tuple[str, str] = _get('CONFIDENCE_SCORING_MODEL', ('openai', 'gpt-4o-mini'))
     SUMMARIZATION_MODEL: tuple[str, str] = _get('SUMMARIZATION_MODEL', ('openai', 'gpt-4.1'))

@@ -2,9 +2,11 @@ from collections import defaultdict
 import os, re
 
 from pathlib import Path
-from transformers import AutoTokenizer
+from typing import Any
 
-from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
+import tiktoken
+from pydantic import ConfigDict
+from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling.datamodel.pipeline_options import PdfPipelineOptions, LayoutOptions
 from docling_core.transforms.serializer.markdown import MarkdownDocSerializer 
 from docling.document_converter import DocumentConverter, PdfFormatOption, InputFormat
@@ -19,6 +21,41 @@ from ..config import config
 
 weblogger  = get_logger("website_processor")
 datalogger = get_logger("data_processor")
+
+
+class TiktokenTokenizer(BaseTokenizer):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    encoding: Any
+    max_tokens: int
+
+    def count_tokens(self, text: str) -> int:
+        return len(self.encode(text))
+
+    def get_max_tokens(self) -> int:
+        return self.max_tokens
+
+    def get_tokenizer(self) -> Any:
+        return self.encoding
+
+    def encode(self, text: str) -> list[int]:
+        return self.encoding.encode(text, disallowed_special=())
+
+    def decode(self, tokens: list[int], *_, **__) -> str:
+        return self.encoding.decode(tokens)
+
+
+def _embedding_tokenizer_model() -> str:
+    return config.processing.EMBEDDING_MODEL.split('/', 1)[-1]
+
+
+def _embedding_tokenizer() -> TiktokenTokenizer:
+    try:
+        encoding = tiktoken.encoding_for_model(_embedding_tokenizer_model())
+    except KeyError:
+        encoding = tiktoken.get_encoding('cl100k_base')
+    return TiktokenTokenizer(encoding=encoding, max_tokens=config.processing.MAX_TOKENS)
+
 
 class ProcessorBase:
     def __init__(self) -> None:
@@ -50,19 +87,21 @@ class ProcessorBase:
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
             },
         )
-        tokenizer = AutoTokenizer.from_pretrained(config.processing.EMBEDDING_MODEL)
-        self._chunker = HybridChunker(
-            tokenizer=HuggingFaceTokenizer(
-                tokenizer=tokenizer,
-                max_tokens=config.processing.MAX_TOKENS
-            ),
-            serializer_provider=EnhansedSerializerProvider(),
-            max_tokens=config.processing.MAX_TOKENS, 
-            merge_peers=True
-        )
+        self._chunker_instance: HybridChunker | None = None
         self.strategies_processor = StrategiesProcessor()
         self._logging_callback = config.dbapp['logging_callback'] or logging_callback_placeholder
     
+
+    @property
+    def _chunker(self) -> HybridChunker:
+        if self._chunker_instance is None:
+            self._chunker_instance = HybridChunker(
+                tokenizer=_embedding_tokenizer(),
+                serializer_provider=EnhansedSerializerProvider(),
+                max_tokens=config.processing.MAX_TOKENS,
+                merge_peers=True
+            )
+        return self._chunker_instance
 
     def process(self):
         """
@@ -240,7 +279,7 @@ class ProcessorBase:
 
         tokens = tokenizer.encode(document_content)
         chunk_size = self._chunker.max_tokens
-        overlap = 50
+        overlap = min(config.processing.CHUNK_OVERLAP, max(0, chunk_size - 1))
         
         collected_chunks = []
         for i in range(0, len(tokens), chunk_size-overlap):

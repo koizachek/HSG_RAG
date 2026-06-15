@@ -6,13 +6,21 @@ class UrlNormalizer:
     @staticmethod
     def is_url_blacklisted(url: str) -> bool:
         url_lower = url.lower()
-        path = url_lower.split('://', 1)[-1].split('/', 1)[-1] 
-        
+        path = url_lower.split('://', 1)[-1].split('/', 1)[-1]
+
         for forbidden in PAGE_BLACKLIST:
             if forbidden in path:
                 return True
-                
-        return len(path) > 35
+
+        # Guard against junk/tracking URLs without dropping legitimate content
+        # pages. A plain length cap (previously: len(path) > 35) silently
+        # skipped real pages such as /admissions/ready-to-relearn-the-future/
+        # (39 chars). Use structural signals instead:
+        if '?' in path or '&' in path or '=' in path:
+            return True  # query strings: filters, tracking, form states
+        if path.count('/') > 4:
+            return True  # deeper than any real content page on the targets
+        return len(path) > 100  # extreme guard for runaway slugs
     
 
     @staticmethod

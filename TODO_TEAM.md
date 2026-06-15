@@ -20,7 +20,7 @@ Status: 2026-06-11 · Base: branch `master` · Context: `AUDIT_LATENCY_HALLUCINA
 
 ## Backlog (prioritised)
 
-- [ ] **Move embeddings off the HF Inference API** (OpenAI `text-embedding-3-small` or local) + **re-chunking** 200 → 512–1024 tokens; requires rebuilding the Weaviate collection + re-import. Trigger: frequent BM25 fallbacks or weak long-tail answers
+- [ ] **Rebuild retrieval collections after embedding migration** — current code uses OpenRouter `openai/text-embedding-3-small` with app-side vectors and 512-token chunks; run `python main.py --weaviate redo`, then the existing scrape/import jobs, and monitor BM25 fallback warnings
 - [ ] **LLM eval as CI gate** (GitHub Action with `RUN_LLM_EVAL=1` on PRs against `main`; secret for the API key budget)
 - [ ] **Rework or remove the cache** — currently exact query match per session (hit rate ~0); either normalised/semantic keys or delete the code
 - [ ] **Simplify booking logic further** — replace the remaining keyword heuristics in `_query_lead` (explicit booking intent, preference follow-up) with pure structured-output flags

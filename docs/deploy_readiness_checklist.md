@@ -38,8 +38,7 @@ This checklist reflects the GitHub `main` state at commit `c0462c1b7c5074af682ec
 - DNS for `bot.hsg.ch` points to the target server
 - Caddy is installed and configured with `deploy/Caddyfile`
 - Port `7860` is reachable internally on the host
-- Weaviate is available:
-  - local or cloud
+- Weaviate Cloud is available
 - Redis is available:
   - local or cloud
 - Outbound network access exists for required model downloads, or models are pre-cached
