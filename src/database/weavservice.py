@@ -228,11 +228,10 @@ class WeaviateService:
                     return
 
                 collection = client.collections.get(collection_name)
-                collection.query.hybrid(
-                    query="HSG",
-                    limit=1,
-                    return_metadata=MetadataQuery.full(),
-                )
+                collection = client.collections.get(collection_name)
+                collection.query.fetch_objects(
+                limit=1,
+)
             self._last_query_time = perf_counter()
             logger.debug("Warm-up finished - server and vectorizer are ready!")
         except Exception as warmup_err:

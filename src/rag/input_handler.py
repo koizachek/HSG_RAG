@@ -211,8 +211,8 @@ class InputHandler:
             and any(pattern in joined_words for pattern in InputHandler.KEYBOARD_MASH_PATTERNS)
         ):
             return True
-        if InputHandler._looks_like_nonsense_word(joined_words):
-            return True
+        # if InputHandler._looks_like_nonsense_word(joined_words):
+        #     return True
         if any(InputHandler._looks_like_nonsense_word(word) for word in words):
             return True
         if (

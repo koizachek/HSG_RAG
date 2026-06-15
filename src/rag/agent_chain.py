@@ -789,7 +789,7 @@ class ExecutiveAgentChain:
         )
 
         if not is_valid or not processed_query:
-            chain_logger.warning(f"Invalid input received: '{query}'")
+            chain_logger.warning(f"Invalid input received: '{query}' - is_valid={is_valid}, processed='{processed_query}'")
             self._fallback_counters["invalid_input"] += 1
             invalid_response = (
                 get_repeated_not_valid_query_message(self._stored_language)
@@ -4231,24 +4231,35 @@ class ExecutiveAgentChain:
 
     def _query(self, agent, messages: list, thread_id: str = None) -> StructuredAgentResponse:
         try:
-            config = self._config.copy()
-            config['configurable']['thread_id'] = thread_id or self._user_id
+          config = self._config.copy()
+          config['configurable']['thread_id'] = thread_id or self._user_id
 
-            result: AIMessage = agent.invoke(
-                {"messages": messages},
-                config=config,
-                context=AgentContext(agent_name=agent.name),
+          result: AIMessage = agent.invoke(
+            {"messages": messages},
+            config=config,
+            context=AgentContext(agent_name=agent.name),
+        )
+          response = result.get(
+            'structured_response',
+            StructuredAgentResponse(
+                response=result['messages'][-1].text,
             )
-            response = result.get(
-                'structured_response',
-                StructuredAgentResponse(
-                    response=result['messages'][-1].text,
-                )
-            )
-            return response
+        )
+
+        # Safety check - if response is empty, extract from last message directly
+          if not response.response:
+            last_msg = result['messages'][-1]
+            content = getattr(last_msg, 'text', '') or getattr(last_msg, 'content', '')
+            if isinstance(content, list):
+                content = ' '.join(str(p) for p in content)
+            chain_logger.warning(f"Empty structured response, extracting from raw message content")
+            response = StructuredAgentResponse(response=str(content))
+
+          return response
+
         except Exception as e:
-            error_msg = e.body['message'] if hasattr(e, 'body') else str(e)
-            chain_logger.error(f"Failed to invoke the agent: {error_msg}")
-            return StructuredAgentResponse(
-                response=QUERY_EXCEPTION_MESSAGE[self._stored_language],
-            )
+          error_msg = e.body['message'] if hasattr(e, 'body') else str(e)
+          chain_logger.error(f"Failed to invoke the agent: {error_msg}")
+          return StructuredAgentResponse(
+            response=QUERY_EXCEPTION_MESSAGE[self._stored_language],
+        )
