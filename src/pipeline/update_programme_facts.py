@@ -16,6 +16,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from datetime import date
 from tempfile import NamedTemporaryFile
 
@@ -248,6 +249,145 @@ def to_facts_document(extracted: AllProgrammesSchema) -> dict:
 
 # ----------------------------------- Diff ------------------------------------
 
+DESCRIPTIVE_FACT_SUFFIXES = (
+    'duration.de',
+    'duration.en',
+    'structure.de',
+    'structure.en',
+    'locations.de',
+    'locations.en',
+)
+
+FACT_COMPARISON_STOP_WORDS = {
+    'a',
+    'am',
+    'and',
+    'as',
+    'at',
+    'auf',
+    'bis',
+    'by',
+    'das',
+    'der',
+    'die',
+    'en',
+    'for',
+    'im',
+    'in',
+    'max',
+    'maximum',
+    'mit',
+    'of',
+    'on',
+    'the',
+    'to',
+    'up',
+    'und',
+    'with',
+}
+
+
+def _flat_facts(d: dict, prefix: str = '') -> dict:
+    items = {}
+    for key, value in (d or {}).items():
+        flat_key = f"{prefix}{key}"
+        if isinstance(value, dict):
+            items.update(_flat_facts(value, flat_key + '.'))
+        elif not isinstance(value, list):
+            items[flat_key] = value
+    return items
+
+
+def _set_nested_value(d: dict, dotted_key: str, value) -> None:
+    current = d
+    parts = dotted_key.split('.')
+    for part in parts[:-1]:
+        current = current[part]
+    current[parts[-1]] = value
+
+
+def _strip_accents(value: str) -> str:
+    normalized = unicodedata.normalize('NFKD', value)
+    return ''.join(ch for ch in normalized if not unicodedata.combining(ch))
+
+
+def _canonical_text(value: str) -> str:
+    value = _strip_accents(str(value)).casefold()
+    value = value.replace('&', ' and ')
+    value = re.sub(r'[^a-z0-9]+', ' ', value)
+    return re.sub(r'\s+', ' ', value).strip()
+
+
+def _meaningful_tokens(value: str) -> set[str]:
+    return {
+        token
+        for token in _canonical_text(value).split()
+        if token not in FACT_COMPARISON_STOP_WORDS
+    }
+
+
+def _number_signature(value: str) -> tuple[str, ...]:
+    return tuple(re.findall(r'\d+(?:\.\d+)?', str(value)))
+
+
+def _is_descriptive_fact(key: str) -> bool:
+    return key.endswith(DESCRIPTIVE_FACT_SUFFIXES)
+
+
+def _is_non_material_text_change(key: str, old_value, new_value) -> bool:
+    """Detect LLM wording drift for descriptive fields.
+
+    The extraction is LLM-based, so prose fields can fluctuate between terse
+    and verbose wording. Alerts should be driven by stable core facts, not
+    punctuation, ordering, or added explanatory detail.
+    """
+    if not isinstance(old_value, str) or not isinstance(new_value, str):
+        return False
+
+    old_text = _canonical_text(old_value)
+    new_text = _canonical_text(new_value)
+    if old_text == new_text:
+        return True
+
+    if not _is_descriptive_fact(key):
+        return False
+
+    old_tokens = _meaningful_tokens(old_value)
+    new_tokens = _meaningful_tokens(new_value)
+    if old_tokens and old_tokens.issubset(new_tokens):
+        return True
+
+    if key.endswith(('duration.de', 'duration.en')):
+        old_numbers = _number_signature(old_value)
+        new_numbers = _number_signature(new_value)
+        return old_numbers == new_numbers and bool(old_numbers)
+
+    return False
+
+
+def _is_material_change(key: str, old_value, new_value) -> bool:
+    if old_value == new_value:
+        return False
+    if _is_non_material_text_change(key, old_value, new_value):
+        return False
+    return True
+
+
+def preserve_non_material_changes(old: dict, new: dict) -> dict:
+    """Keep existing wording when the new extraction is only a paraphrase."""
+    old_programmes = (old or {}).get('programmes', {})
+    for prog_key, new_prog in new.get('programmes', {}).items():
+        old_prog = old_programmes.get(prog_key, {})
+        old_flat, new_flat = _flat_facts(old_prog), _flat_facts(new_prog)
+        for key in sorted(set(old_flat) & set(new_flat)):
+            if old_flat[key] == new_flat[key]:
+                continue
+            full_key = f"{prog_key}.{key}"
+            if not _is_material_change(full_key, old_flat[key], new_flat[key]):
+                _set_nested_value(new_prog, key, old_flat[key])
+    return new
+
+
 def diff_facts(old: dict, new: dict) -> list[str]:
     """Compare volatile values between old and new facts; returns change lines."""
     changes = []
@@ -255,19 +395,10 @@ def diff_facts(old: dict, new: dict) -> list[str]:
     for prog_key, new_prog in new.get('programmes', {}).items():
         old_prog = old_programmes.get(prog_key, {})
 
-        def flat(d, prefix=''):
-            items = {}
-            for k, v in (d or {}).items():
-                key = f"{prefix}{k}"
-                if isinstance(v, dict):
-                    items.update(flat(v, key + '.'))
-                elif not isinstance(v, list):
-                    items[key] = v
-            return items
-
-        old_flat, new_flat = flat(old_prog), flat(new_prog)
+        old_flat, new_flat = _flat_facts(old_prog), _flat_facts(new_prog)
         for key in sorted(set(old_flat) | set(new_flat)):
-            if old_flat.get(key) != new_flat.get(key):
+            full_key = f"{prog_key}.{key}"
+            if _is_material_change(full_key, old_flat.get(key), new_flat.get(key)):
                 changes.append(
                     f"{prog_key}.{key}: {old_flat.get(key, '<missing>')} -> {new_flat.get(key, '<missing>')}"
                 )
@@ -303,6 +434,9 @@ def main() -> int:
         with open(FACTS_PATH, encoding='utf-8') as f:
             old_facts = json.load(f)
 
+    if old_facts:
+        new_facts = preserve_non_material_changes(old_facts, new_facts)
+
     changes = diff_facts(old_facts, new_facts)
     if changes:
         logger.warning(f"Detected {len(changes)} fact change(s):")
@@ -313,6 +447,10 @@ def main() -> int:
 
     if args.dry_run:
         print(json.dumps(new_facts, indent=2, ensure_ascii=False))
+        return 0
+
+    if old_facts and not changes:
+        logger.info("Keeping existing facts file because only non-material wording changed.")
         return 0
 
     os.makedirs(os.path.dirname(FACTS_PATH), exist_ok=True)

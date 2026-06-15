@@ -119,6 +119,69 @@ class TestFactExtractionFallbacks:
         text = "### ECTS-Punkte\n\n75\n\n### Dauer\n\n18 months"
         assert _extract_ects_credits(text) == 75
 
+    def test_diff_ignores_descriptive_llm_paraphrases(self):
+        from src.pipeline.update_programme_facts import diff_facts, preserve_non_material_changes
+
+        old = {
+            "programmes": {
+                "emba": {
+                    "duration": {"en": "18 months (up to 48 months)"},
+                    "structure": {
+                        "en": "9 core courses, 5 electives, 14 weeks on campus, capstone project, self-study"
+                    },
+                    "tuition_chf": {
+                        "final_deadline": {"deadline": "2026-07-15", "fee": 77500}
+                    },
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "emba": {
+                    "duration": {"en": "18 months (up to max. 48 months)"},
+                    "structure": {
+                        "en": (
+                            "9 core courses, 5 electives, 14 weeks on campus, "
+                            "capstone project, self-study, flexible timing."
+                        )
+                    },
+                    "tuition_chf": {
+                        "final_deadline": {"deadline": "2026-07-15", "fee": 77500}
+                    },
+                }
+            }
+        }
+
+        stabilized = preserve_non_material_changes(old, new)
+        assert diff_facts(old, stabilized) == []
+        assert stabilized["programmes"]["emba"]["duration"]["en"] == "18 months (up to 48 months)"
+
+    def test_diff_keeps_alerting_on_material_core_fact_changes(self):
+        from src.pipeline.update_programme_facts import diff_facts
+
+        old = {
+            "programmes": {
+                "emba": {
+                    "tuition_chf": {
+                        "final_deadline": {"deadline": "2026-07-15", "fee": 77500}
+                    }
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "emba": {
+                    "tuition_chf": {
+                        "final_deadline": {"deadline": "2026-07-15", "fee": 79500}
+                    }
+                }
+            }
+        }
+
+        assert diff_facts(old, new) == [
+            "emba.tuition_chf.final_deadline.fee: 77500 -> 79500"
+        ]
+
 
 # --------------------------- Language detection -----------------------------
 
