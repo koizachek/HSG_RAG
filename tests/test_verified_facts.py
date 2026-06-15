@@ -182,6 +182,126 @@ class TestFactExtractionFallbacks:
             "emba.tuition_chf.final_deadline.fee: 77500 -> 79500"
         ]
 
+    def test_locations_are_parsed_from_official_page_block(self):
+        from src.pipeline.update_programme_facts import _extract_locations_from_programme_page
+
+        html = """
+        <div class="locations">
+          <small>Orte</small>
+          <ul class="items-amount-10">
+            <li>Costa Rica <small class='type'>Wahlkurs</small></li>
+            <li>Tokio, Japan</li>
+            <li>New York City <small class='type'>Wahlkurs</small></li>
+            <li>St. Gallen, Schweiz</li>
+            <li>Peking, China</li>
+            <li>UC Berkeley, USA</li>
+            <li>UC Irvine, USA</li>
+            <li>Italien <small class='type'>Wahlkurs</small></li>
+            <li>Südafrika <small class='type'>Wahlkurs</small></li>
+            <li>Spanien <small class='type'>Wahlkurs</small></li>
+          </ul>
+        </div>
+        """
+
+        locations = _extract_locations_from_programme_page(html)
+
+        assert locations is not None
+        assert "Costa Rica (Wahlkurs)" in locations.de
+        assert "New York City (Wahlkurs)" in locations.de
+        assert "St. Gallen, Switzerland" in locations.en
+        assert "Beijing, China" in locations.en
+        assert "South Africa (elective)" in locations.en
+
+    def test_location_changes_are_not_treated_as_prose_paraphrases(self):
+        from src.pipeline.update_programme_facts import diff_facts, preserve_non_material_changes
+
+        old = {
+            "programmes": {
+                "iemba": {
+                    "locations": {
+                        "en": "Switzerland (St. Gallen), China, USA, Japan, Spain, South Africa, Italy"
+                    }
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "iemba": {
+                    "locations": {
+                        "en": (
+                            "Costa Rica (elective), Tokyo, Japan, New York City (elective), "
+                            "St. Gallen, Switzerland, Beijing, China, UC Berkeley, USA, "
+                            "UC Irvine, USA, Italy (elective), South Africa (elective), Spain (elective)"
+                        )
+                    }
+                }
+            }
+        }
+
+        stabilized = preserve_non_material_changes(old, new)
+        assert stabilized["programmes"]["iemba"]["locations"]["en"] == new["programmes"]["iemba"]["locations"]["en"]
+        assert diff_facts(old, stabilized) == [
+            (
+                "iemba.locations.en: Switzerland (St. Gallen), China, USA, Japan, Spain, South Africa, Italy"
+                " -> Costa Rica (elective), Tokyo, Japan, New York City (elective), St. Gallen, "
+                "Switzerland, Beijing, China, UC Berkeley, USA, UC Irvine, USA, Italy (elective), "
+                "South Africa (elective), Spain (elective)"
+            )
+        ]
+
+    def test_source_locations_override_incomplete_llm_extraction(self):
+        from src.pipeline.update_programme_facts import (
+            AllProgrammesSchema,
+            BilingualText,
+            DeadlineFee,
+            ProgrammeFactsSchema,
+            apply_deterministic_source_facts,
+        )
+
+        def programme(locations: BilingualText) -> ProgrammeFactsSchema:
+            return ProgrammeFactsSchema(
+                official_name="test",
+                current_cohort="test",
+                language=BilingualText(de="Deutsch", en="English"),
+                programme_start="2026-01-01",
+                duration=BilingualText(de="18 Monate", en="18 months"),
+                ects_credits=75,
+                structure=BilingualText(de="Struktur", en="structure"),
+                locations=locations,
+                first_deadline=DeadlineFee(deadline="2026-01-01", fee=1),
+                final_deadline=DeadlineFee(deadline="2026-02-01", fee=2),
+                advisor_name="Advisor",
+                advisor_email="advisor@example.com",
+                advisor_phone="+41 00 000 00 00",
+            )
+
+        extracted = AllProgrammesSchema(
+            emba=programme(BilingualText(de="Schweiz", en="Switzerland")),
+            iemba=programme(BilingualText(
+                de="St. Gallen (Schweiz), China, USA, Japan, Spanien, Südafrika, Italien",
+                en="St. Gallen (Switzerland), China, USA, Japan, Spain, South Africa, Italy",
+            )),
+            emba_x=programme(BilingualText(de="Zürich", en="Zurich")),
+        )
+        pages = {
+            "emba": "",
+            "iemba": """
+            <div class="locations">
+              <small>Orte</small>
+              <ul>
+                <li>Costa Rica <small class='type'>Wahlkurs</small></li>
+                <li>New York City <small class='type'>Wahlkurs</small></li>
+                <li>St. Gallen, Schweiz</li>
+              </ul>
+            </div>
+            """,
+        }
+
+        result = apply_deterministic_source_facts(extracted, pages)
+
+        assert "Costa Rica (Wahlkurs)" in result.iemba.locations.de
+        assert "New York City (elective)" in result.iemba.locations.en
+
 
 # --------------------------- Language detection -----------------------------
 

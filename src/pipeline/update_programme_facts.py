@@ -12,6 +12,7 @@ Usage:
     python -m src.pipeline.update_programme_facts --dry-run  # show diff only
 """
 import argparse
+import html
 import json
 import os
 import re
@@ -207,6 +208,71 @@ def apply_deterministic_fallbacks(extracted: AllProgrammesSchema, pages: dict[st
     return extracted
 
 
+LOCATION_TRANSLATIONS = {
+    'Belgien': 'Belgium',
+    'Italien': 'Italy',
+    'Peking': 'Beijing',
+    'Schweiz': 'Switzerland',
+    'Schweiz (St. Gallen)': 'Switzerland (St. Gallen)',
+    'Spanien': 'Spain',
+    'Südafrika': 'South Africa',
+    'Tokio': 'Tokyo',
+}
+
+
+def _clean_html_fragment(value: str) -> str:
+    value = re.sub(r'<[^>]+>', '', value)
+    value = html.unescape(value)
+    return re.sub(r'\s+', ' ', value).strip()
+
+
+def _translate_location_name(value: str) -> str:
+    parts = [part.strip() for part in value.split(',')]
+    return ', '.join(LOCATION_TRANSLATIONS.get(part, part) for part in parts if part)
+
+
+def _extract_locations_from_programme_page(text: str) -> BilingualText | None:
+    """Deterministically parse the official programme-page locations block."""
+    match = re.search(
+        r'<div class="locations">\s*<small>Orte</small>\s*<ul[^>]*>(.*?)</ul>',
+        text or '',
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        return None
+
+    de_locations = []
+    en_locations = []
+    for item_html in re.findall(r'<li>(.*?)</li>', match.group(1), flags=re.IGNORECASE | re.DOTALL):
+        is_elective = re.search(r'<small[^>]*>\s*Wahlkurs\s*</small>', item_html, flags=re.IGNORECASE)
+        location_de = _clean_html_fragment(
+            re.sub(r'<small[^>]*>.*?</small>', '', item_html, flags=re.IGNORECASE | re.DOTALL)
+        )
+        if not location_de:
+            continue
+
+        location_en = _translate_location_name(location_de)
+        if is_elective:
+            location_de = f"{location_de} (Wahlkurs)"
+            location_en = f"{location_en} (elective)"
+        de_locations.append(location_de)
+        en_locations.append(location_en)
+
+    if not de_locations:
+        return None
+
+    return BilingualText(de=', '.join(de_locations), en=', '.join(en_locations))
+
+
+def apply_deterministic_source_facts(extracted: AllProgrammesSchema, pages: dict[str, str]) -> AllProgrammesSchema:
+    """Override LLM prose where the official page exposes a structured fact block."""
+    for programme_key, source_key in {'emba': 'emba', 'iemba': 'iemba'}.items():
+        locations = _extract_locations_from_programme_page(pages.get(source_key, ''))
+        if locations:
+            getattr(extracted, programme_key).locations = locations
+    return extracted
+
+
 def to_facts_document(extracted: AllProgrammesSchema) -> dict:
     """Convert the extraction schema into the programme_facts.json layout."""
     def programme(p: ProgrammeFactsSchema, source_urls: list[str]) -> dict:
@@ -254,8 +320,6 @@ DESCRIPTIVE_FACT_SUFFIXES = (
     'duration.en',
     'structure.de',
     'structure.en',
-    'locations.de',
-    'locations.en',
 )
 
 FACT_COMPARISON_STOP_WORDS = {
@@ -427,6 +491,7 @@ def main() -> int:
     pages = fetch_sources()
     extracted = extract_facts(pages)
     extracted = apply_deterministic_fallbacks(extracted, pages)
+    extracted = apply_deterministic_source_facts(extracted, pages)
     new_facts = to_facts_document(extracted)
 
     old_facts = {}
