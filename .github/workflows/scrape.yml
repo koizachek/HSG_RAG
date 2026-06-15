@@ -1,0 +1,83 @@
+name: Scrape
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 0" # Sunday at 03:17 UTC
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
+      EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY || secrets.OPEN_ROUTER_API_KEY }}
+      WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY }}
+      WEAVIATE_CLUSTER_URL: ${{ secrets.WEAVIATE_CLUSTER_URL }}
+      HUGGING_FACE_API_KEY: ${{ secrets.HUGGING_FACE_API_KEY }}
+      LANGSMITH_TRACING: "true"
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
+      LANGSMITH_ENDPOINT: https://api.smith.langchain.com
+      WEAVIATE_KEEP_WARM_ENABLED: "false"
+      NOTIFY_ENABLE_EMAIL_ALERTS: ${{ vars.NOTIFY_ENABLE_EMAIL_ALERTS || 'true' }}
+      NOTIFY_SMTP_HOST: ${{ secrets.NOTIFY_SMTP_HOST }}
+      NOTIFY_SMTP_PORT: ${{ vars.NOTIFY_SMTP_PORT || '587' }}
+      NOTIFY_SMTP_USE_TLS: ${{ vars.NOTIFY_SMTP_USE_TLS || 'true' }}
+      NOTIFY_SMTP_USER: ${{ secrets.NOTIFY_SMTP_USER }}
+      NOTIFY_SMTP_PASSWORD: ${{ secrets.NOTIFY_SMTP_PASSWORD }}
+      NOTIFY_FROM_EMAIL: ${{ secrets.NOTIFY_FROM_EMAIL }}
+      NOTIFY_TO_EMAIL: ${{ secrets.NOTIFY_TO_EMAIL }}
+      NOTIFY_ENABLE_SLACK_ALERTS: ${{ vars.NOTIFY_ENABLE_SLACK_ALERTS || 'false' }}
+      NOTIFY_SLACK_WEBHOOK_URL: ${{ secrets.NOTIFY_SLACK_WEBHOOK_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run scraper
+        run: |
+          set -euo pipefail
+          cmd=(python main.py --scrape)
+          echo "SCRAPE_COMMAND=${cmd[*]}" >> "$GITHUB_ENV"
+
+          set +e
+          "${cmd[@]}"
+          status=$?
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            echo "SCRAPE_EXIT_CODE=$status" >> "$GITHUB_ENV"
+            echo "SCRAPE_FAILED_STEP=Run scraper" >> "$GITHUB_ENV"
+            exit "$status"
+          fi
+
+      - name: Notify scraping failure
+        if: failure()
+        run: |
+          set -euo pipefail
+          python tools/notify_workflow_failure.py
+
+      - name: Trigger programme facts update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run update_programme_facts.yml --ref "$GITHUB_REF_NAME"
