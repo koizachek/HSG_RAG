@@ -6,8 +6,6 @@ import langsmith
 from langsmith import traceable
 from src.utils.logging import init_logging, get_logger
 from config import AVAILABLE_LANGUAGES
-from src.cache.cache import Cache
-from src.config import config
 
 
 # Initialize logging
@@ -67,18 +65,10 @@ def run_weaviate_command(command: str, backup_id: str = None):
         service._checkhealth()
 
 
-def clear_cache():
-    cache = Cache.get_cache()
-    if cache:
-        cache.clear_cache()
-
-
-def run_application(lang: str, cache_mode, cache) -> None:
+def run_application(lang: str = 'en') -> None:
     """Run the chatbot web application."""
     from src.apps.chat.app import ChatbotApplication
     logger = logging_startup()
-    
-    Cache.configure(cache_mode, cache)
 
     logger.info("Starting chatbot web application...")
     app = ChatbotApplication(language=lang)
@@ -107,14 +97,6 @@ def parse_args():
                         help="Runs different database actions")
     parser.add_argument("--backup-id", type=str, help="Required when calling the --weaviate restore command!")
 
-    parser.add_argument("--cache-mode", type=str, choices=['local', 'cloud', 'dict'], default=config.cache.CACHE_MODE,
-                        help="Defines whether to use the local or cloud Redis database or the special python dict as cache")
-
-    parser.add_argument("--cache", action="store_false", help="(De-)activates the caching mechanism")
-
-    parser.add_argument("--clear-cache", action="store_true",
-                        help="Clears the cache")
-
     parser.add_argument("--cli", action="store_true", help="Run the chatbot CLI")
     parser.add_argument("--app", type=str, choices=AVAILABLE_LANGUAGES, help="Run the chatbot web application")
     parser.add_argument("--dbapp", action="store_true", help="Run the database management application")
@@ -125,35 +107,25 @@ def parse_args():
 def main():
     """Main entry point for the application."""
     args = parse_args()
-    
-    # Load cache settings with the cache args  
-    must_clear_cache = False
 
     # Check if any argument is provided
-    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.cache, args.app, args.dbapp]):
+    if not any([args.scrape, args.imports, args.weaviate, args.cli, args.app, args.dbapp]):
         # If no argument is provided, run the chatbot by default
-        run_application(cache_mode=args.cache_mode, cache=args.cache)
+        run_application()
         return
 
     # Run the specified components
     if args.scrape:
-        must_clear_cache = True
         run_scraper()
 
     if args.imports:
-        must_clear_cache = True
         run_importer(args.imports)
 
     if args.weaviate:
-        if args.weaviate in ["init", "redo", "restore"]:
-            must_clear_cache = True
         run_weaviate_command(command=args.weaviate, backup_id=args.backup_id)
-    
-    if args.clear_cache or must_clear_cache:
-        clear_cache()
 
     if args.app:
-        run_application(lang=args.app, cache_mode=args.cache_mode, cache=args.cache)
+        run_application(lang=args.app)
 
     if args.dbapp:
         run_dbapp()

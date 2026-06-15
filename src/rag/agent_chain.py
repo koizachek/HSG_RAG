@@ -37,8 +37,6 @@ from src.utils.logging import get_logger
 from src.utils.lang import get_language_name
 from src.config import config
 
-from ..cache.cache import Cache
-
 chain_logger = get_logger('agent_chain')
 
 class ExecutiveAgentChain:
@@ -49,7 +47,6 @@ class ExecutiveAgentChain:
         self._agents, self._config = self._init_agents()
         self._conversation_history = []
         self._pending_continuation: str | None = None
-        self._cache = Cache.get_cache()
 
         if config.chain.EVALUATE_RESPONSE_QUALITY:
             from src.rag.quality_score_handler import QualityScoreHandler
@@ -495,8 +492,8 @@ class ExecutiveAgentChain:
         Args:
             on_delta: Optional callback receiving displayable text deltas while
                 the lead agent streams its answer. Early-return paths (scope
-                check, cache hits, invalid input) skip streaming and only
-                return the final response.
+                check, invalid input) skip streaming and only return the final
+                response.
         """
         # Latency monitoring: per-step timings are logged so regressions
         # show up immediately instead of being guessed at later.
@@ -611,21 +608,7 @@ class ExecutiveAgentChain:
                 show_booking_widget=False,
             )
 
-        # 5. Check if cached data already exists for this session
-        if config.cache.ENABLED:
-            cached_data = self._cache.get(query, current_language, self._user_id)
-            if cached_data and isinstance(cached_data, dict):
-                return LeadAgentQueryResponse(
-                    response=cached_data["response"],
-                    additional_details=cached_data.get("additional_details", ""),
-                    language=current_language,
-                    appointment_requested=cached_data.get("appointment_requested", False),
-                    show_booking_widget=cached_data.get("show_booking_widget", False),
-                    relevant_programs=cached_data.get("relevant_programs", []),
-                )
-            
-
-        # 6. Preprocessing is finished - the agent has to answer the query
+        # 5. Preprocessing is finished - the agent has to answer the query
         preprocess_elapsed = perf_counter() - self._turn_start_time
         chain_logger.info(f"[timing] preprocessing: {preprocess_elapsed:.2f}s")
 
@@ -633,21 +616,7 @@ class ExecutiveAgentChain:
 
         total_elapsed = perf_counter() - self._turn_start_time
         chain_logger.info(f"[timing] total turn: {total_elapsed:.2f}s")
-        
-        if config.cache.ENABLED and response.should_cache:
-            self._cache.set(
-                key=query,
-                value={
-                    "response":              response.response,
-                    "additional_details":    response.additional_details,
-                    "appointment_requested": response.appointment_requested,
-                    "show_booking_widget":    response.show_booking_widget,
-                    "relevant_programs":     response.relevant_programs,
-                },
-                language   = current_language,
-                session_id = self._user_id,
-            )
-        
+
         return response 
 
 
@@ -691,7 +660,6 @@ class ExecutiveAgentChain:
         additional_details = ResponseFormatter.clean_response(
             ResponseFormatter.remove_tables(structured_response.additional_details or "")
         )
-        chain_logger.info(f"Is answer context dependent: {structured_response.is_context_dependent}")
         chain_logger.info(f"Additional details returned: {bool(additional_details)}")
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
         chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
@@ -799,7 +767,6 @@ class ExecutiveAgentChain:
             additional_details = additional_details,
             language = response_language,
             confidence_fallback = confidence_fallback,
-            should_cache = False if (confidence_fallback or appointment_requested or structured_response.is_context_dependent) else True,
             processed_query = preprocessed_query,
             appointment_requested = appointment_requested,
             show_booking_widget = show_booking_widget,
@@ -909,7 +876,6 @@ class ExecutiveAgentChain:
             response=formatted_response,
             language=response_language,
             confidence_fallback=False,
-            should_cache=False,
             processed_query=processed_query,
             appointment_requested=False,
             show_booking_widget=False,

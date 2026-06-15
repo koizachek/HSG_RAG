@@ -39,15 +39,12 @@ This checklist reflects the GitHub `main` state at commit `c0462c1b7c5074af682ec
 - Caddy is installed and configured with `deploy/Caddyfile`
 - Port `7860` is reachable internally on the host
 - Weaviate Cloud is available
-- Redis is available:
-  - local or cloud
 - Outbound network access exists for required model downloads, or models are pre-cached
 
 ## Environment Variables And Secrets
 
 - LLM provider keys are configured
 - Weaviate credentials and endpoints are configured
-- Redis credentials and mode are configured
 - Optional LangSmith keys are configured if tracing is desired
 - Production `.env` values are verified against `src/config/configs.py`
 
@@ -75,7 +72,6 @@ This checklist reflects the GitHub `main` state at commit `c0462c1b7c5074af682ec
 - Verify consent flow
 - Verify German and English responses
 - Verify retrieval from Weaviate
-- Verify cache behavior
 - Verify admissions handover path
 - Verify booking widget visibility
 - If imports are part of rollout:

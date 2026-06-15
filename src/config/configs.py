@@ -106,22 +106,6 @@ class ChainConfig(ConfigBase):
     MAX_RESPONSE_WORDS_SUBAGENT: int = _get('MAX_RESPONSE_WORDS_SUBAGENT', 200)
 
 
-class CacheConfig(ConfigBase):
-    ENABLED: bool = _get('CACHE_ENABLED', False)
-    CACHE_MODE: Literal['local', 'cloud', 'dict'] = _get('CACHE_MODE')
-
-    LOCAL_HOST: str = _get('CACHE_LOCAL_HOST', 'localhost')
-    LOCAL_PORT: int = _get('CACHE_LOCAL_PORT', 6379)
-    LOCAL_PASS: str = _get('CACHE_LOCAL_PASSWORD', '')
-    
-    CLOUD_HOST: str = _get('REDIS_CLOUD_HOST')
-    CLOUD_PORT: int = _get('REDIS_CLOUD_PORT', type_=int)
-    CLOUD_PASS: str = _get('REDIS_CLOUD_PASSWORD')
-
-    TTL_CACHE:      int = _get('CACHE_TTL', 86400)
-    MAX_SIZE_CACHE: int = _get('CACHE_MAX_SIZE', 1000)
-
-
 class WeaviateConfig(ConfigBase):
     WEAVIATE_COLLECTION_BASENAME: str = _get('WEAVIATE_COLLECTION_BASENAME')
     

@@ -13,7 +13,7 @@ The system hides logic fragments that were previously visible to the customer, g
 
 ## Features
 
-- **Modular Architecture**: Settings are grouped by domain (e.g., `config.llm`, `config.cache`, `config.weaviate`), improving code readability and IDE autocomplete support.
+- **Modular Architecture**: Settings are grouped by domain (e.g., `config.llm`, `config.weaviate`, `config.scraping`), improving code readability and IDE autocomplete support.
 
 - **Type Safety**: The system strictly enforces data types. It attempts to cast environment variables to the correct Python types (e.g., `int`, `bool`, `float`) and raises errors on startup if the conversion fails.
 
@@ -24,7 +24,7 @@ The system hides logic fragments that were previously visible to the customer, g
 
 - **Validation**: Critical parameters can be marked as required. If a required setting is missing from both the environment and the config file, the application prevents startup to avoid runtime errors.
 
-- **Constraint Checking**: Specific fields support strict allowable values (e.g., `Literal['local', 'cloud']`).
+- **Constraint Checking**: Specific fields support strict allowable values.
 
 ## Basic Usage
 

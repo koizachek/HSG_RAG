@@ -7,7 +7,6 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.cache.cache import Cache
 from src.config import config
 from src.rag.agent_chain import ExecutiveAgentChain
 
@@ -39,13 +38,6 @@ _READY, _SKIP_REASON = _has_real_agent_prerequisites()
 
 @pytest.mark.skipif(not _READY, reason=_SKIP_REASON)
 def test_reply_speed_sample_conversation_real_agent():
-    old_cache_enabled = config.cache.ENABLED
-    old_cache_settings = Cache._settings
-    old_cache_instance = Cache._instance
-
-    Cache.configure(mode="dict", cache=False)
-    Cache._instance = None
-
     max_turn_seconds = float(os.getenv("REAL_REPLY_SPEED_MAX_TURN_SEC", "45"))
     max_total_seconds = float(os.getenv("REAL_REPLY_SPEED_MAX_TOTAL_SEC", "150"))
 
@@ -57,35 +49,29 @@ def test_reply_speed_sample_conversation_real_agent():
 
     timings = []
 
-    try:
-        agent = ExecutiveAgentChain(
-            language="de",
-            session_id=f"real-reply-speed-{uuid.uuid4()}",
+    agent = ExecutiveAgentChain(
+        language="de",
+        session_id=f"real-reply-speed-{uuid.uuid4()}",
+    )
+
+    total_start = perf_counter()
+    responses = []
+    for turn in conversation:
+        turn_start = perf_counter()
+        response = agent.query(turn)
+        elapsed = perf_counter() - turn_start
+        responses.append(response)
+        timings.append(
+            {
+                "query": turn,
+                "elapsed_s": elapsed,
+                "language": response.language,
+                "show_booking_widget": response.show_booking_widget,
+                "appointment_requested": response.appointment_requested,
+                "response_preview": response.response[:140].replace("\n", " "),
+            }
         )
-
-        total_start = perf_counter()
-        responses = []
-        for turn in conversation:
-            turn_start = perf_counter()
-            response = agent.query(turn)
-            elapsed = perf_counter() - turn_start
-            responses.append(response)
-            timings.append(
-                {
-                    "query": turn,
-                    "elapsed_s": elapsed,
-                    "language": response.language,
-                    "show_booking_widget": response.show_booking_widget,
-                    "appointment_requested": response.appointment_requested,
-                    "response_preview": response.response[:140].replace("\n", " "),
-                }
-            )
-        total_elapsed = perf_counter() - total_start
-
-    finally:
-        config.cache.ENABLED = old_cache_enabled
-        Cache._settings = old_cache_settings
-        Cache._instance = old_cache_instance
+    total_elapsed = perf_counter() - total_start
 
     summary_lines = ["Real agent reply speed summary:"]
     for idx, timing in enumerate(timings, start=1):
