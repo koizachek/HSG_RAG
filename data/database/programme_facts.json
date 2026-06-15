@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-11",
+  "generated_at": "2026-06-15",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -76,8 +76,8 @@
         "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, thesis, self-study"
       },
       "locations": {
-        "de": "Schweiz (St. Gallen), China, USA, Japan, Spanien, Südafrika, Italien, Costa Rica (Wahlkurs), New York City (Wahlkurs)",
-        "en": "Switzerland (St. Gallen), China, USA, Japan, Spain, South Africa, Italy, Costa Rica (elective), New York City (elective)"
+        "de": "St. Gallen (Schweiz), China, USA, Japan, Spanien, Südafrika, Italien",
+        "en": "St. Gallen (Switzerland), China, USA, Japan, Spain, South Africa, Italy"
       },
       "tuition_chf": {
         "first_deadline": {
