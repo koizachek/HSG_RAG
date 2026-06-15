@@ -27,21 +27,18 @@ jobs:
       - name: Validate Hugging Face configuration
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGING_FACE_API_KEY }}
-          HF_REPO_ID: ${{ inputs.huggingface_repo_id || vars.HF_REPO_ID }}
+          HF_REPO_ID: ${{ inputs.huggingface_repo_id || vars.HF_REPO_ID || 'koizachek/HSG_RAG' }}
         run: |
           if [ -z "$HF_TOKEN" ]; then
             echo "Missing Hugging Face token. Set either HF_TOKEN or HUGGING_FACE_API_KEY as a repository secret."
             exit 1
           fi
 
-          if [ -z "$HF_REPO_ID" ]; then
-            echo "Missing Hugging Face repo id. Set repository variable HF_REPO_ID or pass huggingface_repo_id manually."
-            exit 1
-          fi
+          echo "Sync target: $HF_REPO_ID"
 
       - name: Sync repository to Hugging Face Hub
         uses: huggingface/hub-sync@v0.1.0
         with:
           github_repo_id: ${{ github.repository }}
-          huggingface_repo_id: ${{ inputs.huggingface_repo_id || vars.HF_REPO_ID }}
+          huggingface_repo_id: ${{ inputs.huggingface_repo_id || vars.HF_REPO_ID || 'koizachek/HSG_RAG' }}
           hf_token: ${{ secrets.HF_TOKEN || secrets.HUGGING_FACE_API_KEY }}
