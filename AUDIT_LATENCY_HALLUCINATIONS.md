@@ -88,7 +88,7 @@ Offline (kein User wartet):
 
 ## 4. Offene Punkte (bewusst nicht gemacht)
 
-- **Embeddings** laufen weiter über die HF Inference API (`text2vec_huggingface`). Wechsel auf OpenAI-Embeddings oder lokales Modell erfordert Neu-Erstellung der Weaviate-Collection + Re-Import — lohnt sich zusammen mit Re-Chunking (200 → 512–1024 Tokens). Der BM25-Fallback loggt jetzt sichtbar.
+- **Embeddings:** Die Migration auf app-seitig erzeugte OpenRouter-Embeddings (`openai/text-embedding-3-small`) erfordert weiterhin Neu-Erstellung der Weaviate-Collection + Re-Import. Der BM25-Fallback loggt sichtbar, falls Embedding oder Vektor-Hybrid-Query fehlschlägt.
 - **Merge-Strategie:** lokale Arbeit liegt auf `master`, Remote-Hauptbranch ist `main` — vor dem Push klären (Rename oder PR).
 - Cron läuft auf dem Entwicklungs-Mac nur, wenn er wach ist — auf dem Produktivserver einrichten.
 - `scripts/remove_legacy_code.py` ist ein verbrauchtes Einweg-Skript und kann gelöscht werden.

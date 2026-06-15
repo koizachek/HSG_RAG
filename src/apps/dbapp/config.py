@@ -16,6 +16,14 @@ def _dump_schema(schema):
         yaml.safe_dump(schema, f)
 
 
+def _skip_vectorization_from_module_config(prop: dict) -> bool:
+    module_config = prop.get('moduleConfig', {}) or {}
+    for module_data in module_config.values():
+        if isinstance(module_data, dict) and 'skip' in module_data:
+            return module_data['skip']
+    return False
+
+
 class SchemaConfigurationFrame(CustomFrameBase):
     def __init__(self, parent, service: WeaviateService) -> None:
         super().__init__(parent, service)
@@ -71,7 +79,7 @@ class SchemaConfigurationFrame(CustomFrameBase):
                 'data_type': prop['dataType'][0],
                 'filterable': prop['indexFilterable'],
                 'searchable': prop['indexSearchable'],
-                'skip_vectorization': prop['moduleConfig']['text2vec-huggingface']['skip'],
+                'skip_vectorization': _skip_vectorization_from_module_config(prop),
             }
             schema_data[prop['name']] = data_property
         

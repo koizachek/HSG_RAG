@@ -1,12 +1,13 @@
 # Weaviate Database Setup
 
-This project uses a local instance of a Weaviate vector database to store vector embeddings. The chosen embedding model is Sentence Transformers. The model is integrated in the embedding insertion pipeline and will be installed alongside the database.
+This project uses Weaviate Cloud to store retrieval chunks and vectors. The
+application generates embeddings through OpenRouter
+`openai/text-embedding-3-small` and stores them as self-provided vectors.
 
 ## Installation steps
 1. Create a new python virtual environment using `python -m venv venv`, activate the environment via `source venv/bin/activate`, install the needed requirements from the `requirements.txt` file if you haven't done it already.
-2. Follow the installation guide to install [Docker Desktop](https://docs.docker.com/desktop/) on your device.
-3. Navigate to `src/database` and locate the `docker-compose.yml` file. Inside this directory call the command `docker compose up -d` to install and setup the database and embedding model containers. Wait for installation to finish gracefully.
-4. With the python environment activated, call the collection creation script from the `weaviate.py` located in the same directory using `python wvt_service.py --create_collections`. Inspect the logs to check whether the creation of the collections was successfull.
+2. Configure `WEAVIATE_CLUSTER_URL`, `WEAVIATE_API_KEY`, and `OPEN_ROUTER_API_KEY`.
+3. With the python environment activated, initialize the collections with `python main.py --weaviate init`. Inspect the logs to check whether collection creation was successful.
 
 If you've managed to setup the database and create the collections, the installation process is finished and the database is accessible from the other parts of the program.
 
@@ -20,6 +21,16 @@ To manage the state of the database directly, multiple useful scripts were devel
 - `-cb` or `--create_backup`: creates a backup of the current state of the database.
 - `-rb` pr `--restore_backup`: restores the state of the database from the provided backup\_id.
 
+When changing embedding model, tokenizer, or vector dimensions, rebuild the collections and re-import content:
+
+```bash
+python main.py --weaviate redo
+python main.py --scrape
+```
+
+Run `python main.py --imports ...` afterward for any local documents that are
+part of the knowledge base.
+
 ## Data properties
 Embeddings are stored in the corresponding language collection with a set of properties that define chunk metadata:
 
@@ -32,4 +43,4 @@ Embeddings are stored in the corresponding language collection with a set of pro
 
 
 ## WeaviateService
-The WeaviateService class manages the connection and the interaction with the local database.
+The WeaviateService class manages the connection and interaction with Weaviate Cloud.

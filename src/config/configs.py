@@ -77,7 +77,12 @@ class ConversationStateConfig(ConfigBase):
 
 class ProcessingConfig(ConfigBase):
     LANG_AMBIGUITY_THRESHOLD: float = _get('LANG_AMBIGUITY_THRESHOLD')
-    EMBEDDING_MODEL:          float = _get('EMBEDDING_MODEL')
+    EMBEDDING_MODEL:          str   = _get('EMBEDDING_MODEL', 'openai/text-embedding-3-small')
+    EMBEDDING_BASE_URL:       str   = _get('EMBEDDING_BASE_URL', 'https://openrouter.ai/api/v1')
+    EMBEDDING_API_KEY:        str   = _get('EMBEDDING_API_KEY') or _get('OPEN_ROUTER_API_KEY')
+    EMBEDDING_DIMENSIONS:     int   = _get('EMBEDDING_DIMENSIONS', 1536, type_=int)
+    EMBEDDING_BATCH_SIZE:     int   = _get('EMBEDDING_BATCH_SIZE', 32, type_=int)
+    EMBEDDING_VECTOR_NAME:    str   = _get('EMBEDDING_VECTOR_NAME', 'hsg_rag_embeddings')
     MAX_TOKENS:    int = _get('MAX_TOKENS')
     CHUNK_OVERLAP: int = _get('CHUNK_OVERLAP')
 
@@ -118,7 +123,6 @@ class CacheConfig(ConfigBase):
 
 
 class WeaviateConfig(ConfigBase):
-    LOCAL_DATABASE: bool = _get('WEAVIATE_IS_LOCAL')
     WEAVIATE_COLLECTION_BASENAME: str = _get('WEAVIATE_COLLECTION_BASENAME')
     
     BACKUP_METHODS: list[str] = ['manual', 'filesystem', 's3']
@@ -130,7 +134,6 @@ class WeaviateConfig(ConfigBase):
 
     CLUSTER_URL:          str = _get('WEAVIATE_CLUSTER_URL')
     WEAVIATE_API_KEY:     str = _get('WEAVIATE_API_KEY')
-    HUGGING_FACE_API_KEY: str = _get('HUGGING_FACE_API_KEY')
    
     INIT_TIMEOUT:   int  = _get('WEAVIATE_INIT_TIMEOUT', 90) 
     QUERY_TIMEOUT:  int  = _get('WEAVIATE_QUERY_TIMEOUT', 60) 

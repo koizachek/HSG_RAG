@@ -56,9 +56,9 @@ Following variables are required for every mode to run:
 
 ```bash
 OPENAI_API_KEY=...
+OPEN_ROUTER_API_KEY=...
 WEAVIATE_API_KEY=...
 WEAVIATE_CLUSTER_URL=...
-HUGGING_FACE_API_KEY=...
 ```
 
 Optional but commonly useful:
@@ -70,7 +70,6 @@ LANGSMITH_PROJECT=...
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 
 GROQ_API_KEY=...
-OPEN_ROUTER_API_KEY=...
 
 REDIS_CLOUD_HOST=...
 REDIS_CLOUD_PORT=...
@@ -161,6 +160,18 @@ python main.py --weaviate redo
 python main.py --clear-cache
 python main.py --dbapp
 ```
+
+Embedding model changes require a Weaviate collection rebuild and re-import:
+
+```bash
+python main.py --weaviate redo
+python main.py --scrape
+# plus python main.py --imports ... for any local source files you maintain
+```
+
+The default cloud embedding path uses OpenRouter `openai/text-embedding-3-small`
+and stores app-generated vectors in Weaviate. The existing scraper restoration
+flow is unchanged.
 
 Cache mode can be selected explicitly:
 

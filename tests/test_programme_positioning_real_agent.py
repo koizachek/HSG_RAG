@@ -19,16 +19,13 @@ def _has_real_agent_prerequisites() -> tuple[bool, str]:
     if not llm_api_key:
         return False, "No LLM API key configured for the real agent positioning test."
 
-    if config.weaviate.LOCAL_DATABASE:
-        return True, ""
-
     missing = []
     if not config.weaviate.CLUSTER_URL:
         missing.append("WEAVIATE_CLUSTER_URL")
     if not config.weaviate.WEAVIATE_API_KEY:
         missing.append("WEAVIATE_API_KEY")
-    if not config.weaviate.HUGGING_FACE_API_KEY:
-        missing.append("HUGGING_FACE_API_KEY")
+    if not config.processing.EMBEDDING_API_KEY:
+        missing.append("OPEN_ROUTER_API_KEY")
 
     if missing:
         return False, f"Missing Weaviate configuration for real agent positioning test: {', '.join(missing)}"

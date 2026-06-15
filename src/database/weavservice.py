@@ -13,6 +13,7 @@ from weaviate.config import AdditionalConfig
 
 from ..utils.logging import get_logger
 from ..config import config
+from .embeddings import EmbeddingError, OpenRouterEmbeddingClient
 
 logger = get_logger("weaviate_service")
 
@@ -54,7 +55,7 @@ class WeaviateService:
         if hasattr(self, '_initialized'):
             return 
 
-        self._connection_type = 'local' if config.weaviate.LOCAL_DATABASE else 'cloud'
+        self._connection_type = 'cloud'
         self._client = None 
         self._client_lock = RLock()
         
@@ -66,6 +67,7 @@ class WeaviateService:
         self._keep_warm_interval = max(1, config.weaviate.KEEP_WARM_INTERVAL)
         self._keep_warm_stop = Event()
         self._keep_warm_thread = None
+        self._embedding_client = OpenRouterEmbeddingClient()
         self._initialized = True
 
         # Initialize the client for the first time 
@@ -114,24 +116,18 @@ class WeaviateService:
             last_exception: Exception = None
             while retries < 3:
                 try:
-                    if config.weaviate.LOCAL_DATABASE:
-                        self._client = wvt.connect_to_local()
-                    else:
-                        self._client = wvt.connect_to_weaviate_cloud(
-                            cluster_url=config.weaviate.CLUSTER_URL,
-                            auth_credentials=config.weaviate.WEAVIATE_API_KEY,
-                            additional_config=AdditionalConfig(
-                                timeout=Timeout(
-                                    init=config.weaviate.INIT_TIMEOUT,
-                                    query=config.weaviate.QUERY_TIMEOUT,
-                                    insert=config.weaviate.INSERT_TIMEOUT,
-                                ),
-                                skip_init_checks=False,
+                    self._client = wvt.connect_to_weaviate_cloud(
+                        cluster_url=config.weaviate.CLUSTER_URL,
+                        auth_credentials=config.weaviate.WEAVIATE_API_KEY,
+                        additional_config=AdditionalConfig(
+                            timeout=Timeout(
+                                init=config.weaviate.INIT_TIMEOUT,
+                                query=config.weaviate.QUERY_TIMEOUT,
+                                insert=config.weaviate.INSERT_TIMEOUT,
                             ),
-                            headers={
-                                "X-HuggingFace-Api-Key": config.weaviate.HUGGING_FACE_API_KEY,
-                            },
-                        )
+                            skip_init_checks=False,
+                        ),
+                    )
 
                     self._warm_up_client(self._client)
                     break
@@ -176,9 +172,8 @@ class WeaviateService:
 
 
     def _keep_warm_loop(self) -> None:
-        # Exponential backoff on consecutive failures: a broken vectorizer
-        # key (e.g. HF 401) would otherwise be hammered every interval,
-        # spamming logs and burning API quota for nothing.
+        # Exponential backoff on consecutive failures: a broken embedding key
+        # would otherwise be hammered every interval, spamming logs and quota.
         consecutive_failures = 0
         max_wait = 30 * 60
         while True:
@@ -198,7 +193,7 @@ class WeaviateService:
             if consecutive_failures == 3:
                 logger.warning(
                     "Keep-warm failed 3 times in a row - backing off. If the error is a "
-                    "vectorizer 401, check HUGGING_FACE_API_KEY."
+                    "vector query or embedding 401, check OPEN_ROUTER_API_KEY."
                 )
 
 
@@ -235,6 +230,53 @@ class WeaviateService:
         self._keep_warm_thread = None
 
 
+    @staticmethod
+    def _embedding_vector_name() -> str:
+        return config.processing.EMBEDDING_VECTOR_NAME
+
+
+    def _embed_query(self, query: str) -> list[float]:
+        return self._embedding_client.embed_query(query)
+
+
+    def _embed_batch_vectors(self, batch_rows: list[tuple[int, dict]]) -> list[dict]:
+        embeddings = self._embedding_client.embed_documents(
+            data_row.get("body", "") for _, data_row in batch_rows
+        )
+        vector_name = self._embedding_vector_name()
+        return [{vector_name: embedding} for embedding in embeddings]
+
+
+    def _hybrid_query_kwargs(
+        self,
+        query: str,
+        filters=None,
+        limit: int = 5,
+        query_vector: list[float] | None = None,
+    ) -> dict:
+        kwargs = {
+            "query": query,
+            "filters": filters,
+            "limit": limit,
+            "return_metadata": MetadataQuery.full(),
+        }
+
+        kwargs["vector"] = query_vector if query_vector is not None else self._embed_query(query)
+        kwargs["target_vector"] = self._embedding_vector_name()
+
+        return kwargs
+
+
+    @staticmethod
+    def _bm25_query_kwargs(query: str, filters=None, limit: int = 5) -> dict:
+        return {
+            "query": query,
+            "filters": filters,
+            "limit": limit,
+            "return_metadata": MetadataQuery.full(),
+        }
+
+
     def _warm_up_client(self, client: wvt.WeaviateClient) -> bool:
         """
         Quickly query the client to decrease the response latency of future calls.
@@ -251,13 +293,9 @@ class WeaviateService:
                     return False
 
                 collection = client.collections.get(collection_name)
-                collection.query.hybrid(
-                    query="HSG",
-                    limit=1,
-                    return_metadata=MetadataQuery.full(),
-                )
+                collection.query.hybrid(**self._hybrid_query_kwargs(query="HSG", limit=1))
             self._last_query_time = perf_counter()
-            logger.debug("Warm-up finished - server and vectorizer are ready!")
+            logger.debug("Warm-up finished - server and embeddings are ready!")
             return True
         except Exception as warmup_err:
             logger.warning(f"Warm-up query failed (non-critical): {warmup_err}")
@@ -307,14 +345,15 @@ class WeaviateService:
         import_errors = []
         logger.info(f"Batch importing {len(data_rows)} rows into {collection_name}")
 
-        batch_size = 10
+        batch_size = max(1, config.processing.EMBEDDING_BATCH_SIZE)
         max_attempts = 2
 
         def _import_batch(batch_rows: list[tuple[int, dict]]) -> None:
+            vectors = self._embed_batch_vectors(batch_rows)
             with collection.batch.fixed_size(batch_size=batch_size, concurrent_requests=1) as batch:
-                for idx, data_row in batch_rows:
+                for (idx, data_row), vector in zip(batch_rows, vectors):
                     try:
-                        batch.add_object(properties=data_row)
+                        batch.add_object(properties=data_row, vector=vector)
                     except Exception as e:
                         import_errors.append({'index': idx, 'chunk_id': data_row['chunk_id'], 'error': str(e)})
 
@@ -422,9 +461,7 @@ class WeaviateService:
 
     def ping(self, lang: str) -> dict:
         try:
-            collection, _ = self._select_collection(lang)
-            with self._client_lock:
-                collection.query.hybrid("health check query")
+            self.query("health check query", lang=lang, limit=1)
             return { 'status': 'OK' }
         except Exception as e: 
             return { 'status': 'ERROR', 'error': e } 
@@ -468,28 +505,30 @@ class WeaviateService:
                 logger.info(f"Querying collection {collection_name}")
                 query_start_time = perf_counter()
 
+                try:
+                    query_vector = self._embed_query(query)
+                except EmbeddingError as embed_err:
+                    query_vector = None
+                    logger.warning(
+                        "OpenRouter embedding query failed. "
+                        "Falling back to BM25 keyword retrieval: %s",
+                        embed_err,
+                    )
+
                 with self._client_lock:
-                    try:
-                        resp = collection.query.hybrid(
-                            query=query,
-                            filters=filters,
-                            limit=limit,
-                            return_metadata=MetadataQuery.full()
+                    if query_vector is None:
+                        resp = collection.query.bm25(**self._bm25_query_kwargs(query, filters, limit))
+                    else:
+                        try:
+                            resp = collection.query.hybrid(
+                                **self._hybrid_query_kwargs(query, filters, limit, query_vector=query_vector)
                         )
-                    except Exception as hybrid_err:
-                        if not self._should_fallback_to_bm25(hybrid_err):
-                            raise hybrid_err
-                        logger.warning(
-                            "Hybrid query failed during remote vectorization. "
-                            "Falling back to BM25 keyword retrieval: %s",
-                            hybrid_err,
-                        )
-                        resp = collection.query.bm25(
-                            query=query,
-                            filters=filters,
-                            limit=limit,
-                            return_metadata=MetadataQuery.full()
-                        )
+                        except Exception as hybrid_err:
+                            logger.warning(
+                                "Hybrid vector query failed. Falling back to BM25 keyword retrieval: %s",
+                                hybrid_err,
+                            )
+                            resp = collection.query.bm25(**self._bm25_query_kwargs(query, filters, limit))
                 elapsed = perf_counter() - query_start_time
                 self._last_query_time = perf_counter()
                 logger.info(f"Querying retrieved {len(resp.objects)} objects in {elapsed:3.2f} seconds")
@@ -504,15 +543,6 @@ class WeaviateService:
                         raise e
                 else: # Probably not a server issue
                     raise e
-
-    @staticmethod
-    def _should_fallback_to_bm25(error: Exception) -> bool:
-        error_text = str(error).lower()
-        return (
-            "remote client vectorize" in error_text
-            or "vectorize" in error_text and "401" in error_text
-            or "invalid username or password" in error_text
-        )
     
 
     def _load_properties(self) -> list[Property]:
@@ -564,6 +594,10 @@ class WeaviateService:
         return final_properties
 
 
+    def _vector_config(self):
+        return Configure.Vectors.self_provided(name=self._embedding_vector_name())
+
+
     def _create_collections(self):
         """
         Create and initialize language-specific collections.
@@ -575,14 +609,7 @@ class WeaviateService:
             client = self._init_client()
             logger.info('Attempting collections creation...')
             
-            vector_config = (
-                Configure.Vectors.text2vec_transformers() if config.weaviate.LOCAL_DATABASE
-                else Configure.Vectors.text2vec_huggingface(
-                    name='hsg_rag_embeddings',
-                    source_properties=['body'],
-                    model=config.processing.EMBEDDING_MODEL,
-                )
-            )
+            vector_config = self._vector_config()
             
             successful_creations = 0
             
@@ -874,29 +901,18 @@ class WeaviateService:
                 with self._client_lock:
                     metainfo = client.get_meta()
                 
-                # Format module information
                 modules = metainfo.get('modules', {})
                 modules_list = list(modules.keys()) if isinstance(modules, dict) else modules
                 modules_str = ', '.join(str(m) for m in modules_list) if modules_list else 'None'
                 
-                # Truncate long module strings for logging
                 if len(modules_str) > 50:
                     modules_str = modules_str[:47] + '...'
                 
-                # Log connection details
-                if config.weaviate.LOCAL_DATABASE:
-                    logger.info(
-                        f"Database metadata: "
-                        f"HOSTNAME={metainfo.get('hostname', 'unknown')}, "
-                        f"VERSION={metainfo.get('version', 'unknown')}, "
-                        f"MODULES={modules_str}"
-                    )
-                else:
-                    logger.info(
-                        f"Database metadata: "
-                        f"VERSION={metainfo.get('version', 'unknown')}, "
-                        f"MODULES={modules_str}"
-                    )
+                logger.info(
+                    f"Database metadata: "
+                    f"VERSION={metainfo.get('version', 'unknown')}, "
+                    f"MODULES={modules_str}"
+                )
                 
             except Exception as e:
                 logger.warning(f"Could not retrieve database metadata: {e}")
