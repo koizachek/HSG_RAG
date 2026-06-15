@@ -16,18 +16,18 @@ def logging_startup():
     return get_logger('main_module')
 
 
-def run_scraper() -> None:
+def run_scraper(full_scrape: bool = False) -> None:
     """
     Run the scraper to collect program data.
 
     Args:
-        use_selenium: Whether to use Selenium for scraping.
+        full_scrape: Whether to ignore timestamps and scrape all pages.
     """
     from src.pipeline.pipeline import ImportPipeline
     logger = logging_startup()
 
     logger.info("Running scraper...")
-    ImportPipeline().scrape_website()
+    ImportPipeline().scrape_website(scrape_all=full_scrape)
     logger.info("Scraping completed.")
 
 
@@ -101,6 +101,8 @@ def parse_args():
     # Add arguments
     parser.add_argument("--scrape", action="store_true",
                         help="Scrapes the data from the HSG website and imports it into the database")
+    parser.add_argument("--full_scrape", action="store_true",
+                        help="When used with --scrape, ignores timestamps and scrapes all pages")
     parser.add_argument("--imports", nargs="+", help="Runs the data importing pipeline for the provided files")
 
     parser.add_argument("--weaviate", type=str, choices=['init', 'delete', 'redo', 'checkhealth', 'backup', 'restore'],
@@ -138,7 +140,7 @@ def main():
     # Run the specified components
     if args.scrape:
         must_clear_cache = True
-        run_scraper()
+        run_scraper(args.full_scrape)
 
     if args.imports:
         must_clear_cache = True

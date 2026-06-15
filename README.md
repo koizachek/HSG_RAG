@@ -153,6 +153,7 @@ Useful operational commands:
 
 ```bash
 python main.py --scrape
+python main.py --scrape --full_scrape
 python main.py --imports path/to/file1 path/to/file2
 python main.py --weaviate checkhealth
 python main.py --weaviate init

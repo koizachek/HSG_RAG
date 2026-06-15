@@ -4,6 +4,7 @@ from ..scraping.scraper import Scraper
 
 from ..database.weavservice  import WeaviateService
 from ..utils.logging import get_logger
+from ..utils.tools import call_with_exponential_backoff
 from ..config import config
 
 pipelogger = get_logger("pipeline_module")
@@ -57,17 +58,27 @@ class ImportPipeline:
             implogger.warning("No target URLs configured for scraping.")
             return
 
-        scraper = Scraper(scrape_all=scrape_all)
-        for target_url in target_urls:
-            self._logging_callback(f"Scraping target {target_url}...", 0)
-            scraped_chunks = scraper.scrape_target(target_url)
-            if not scraped_chunks:
-                self._logging_callback(f"No importable chunks scraped from {target_url}.", 100)
-                continue
+        def scrape() -> None:
+            try:
+                scraper = Scraper(scrape_all=scrape_all)
+                for target_url in target_urls:
+                    self._logging_callback(f"Scraping target {target_url}...", 0)
+                    scraped_chunks = scraper.scrape_target(target_url)
+                    if not scraped_chunks:
+                        self._logging_callback(f"No importable chunks scraped from {target_url}.", 100)
+                    else:
+                        self._logging_callback(f"Importing scraped chunks from {target_url}...", 90)
 
-            self._logging_callback(f"Importing scraped chunks from {target_url}...", 90)
-            self.import_from_scraper(scraped_chunks)
-            self._logging_callback(f"Finished scraping import for {target_url}.", 100)
+                    self.import_from_scraper(scraped_chunks)
+                    scraper.delete_temp_merged_chunks(target_url)
+                    self._logging_callback(f"Finished scraping import for {target_url}.", 100)
+            except Exception as e:
+                implogger.error(f"Scraping task was interrupted: {e}")
+                raise e
+
+        result = call_with_exponential_backoff(scrape)
+        if result["status"] != "OK":
+            raise result["last_error"]
 
 
     def import_many_documents(self, sources: list[str]) -> None:
