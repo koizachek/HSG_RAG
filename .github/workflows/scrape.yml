@@ -55,7 +55,7 @@ jobs:
       - name: Run scraper
         run: |
           set -euo pipefail
-          cmd=(python main.py --scrape)
+          cmd=(python -m tools.scraping --full_scrape)
           echo "SCRAPE_COMMAND=${cmd[*]}" >> "$GITHUB_ENV"
 
           set +e

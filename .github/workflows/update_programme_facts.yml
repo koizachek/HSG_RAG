@@ -3,7 +3,7 @@ name: Update Programme Facts
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 6 * * *" # Daily at 06:00 UTC
+    - cron: "23 6 * * *" # Daily at 06:23 UTC
 
 permissions:
   contents: write
