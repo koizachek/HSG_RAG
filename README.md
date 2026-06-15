@@ -1,12 +1,9 @@
 ---
-title: HSG RAG EEA
-emoji: 🎓
-colorFrom: blue
-colorTo: green
-sdk: gradio
-sdk_version: "6.14.0"
-python_version: "3.11"
-app_file: app.py
+title: Hsg Eaa RAG Bot
+emoji: 🤖
+colorFrom: green
+colorTo: purple
+sdk: docker
 pinned: false
 ---
 
