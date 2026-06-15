@@ -47,6 +47,8 @@ build/
 
 # Output data
 data/*
+!data/
+!data/database
 !data/database/
 data/database/*
 !data/database/programme_facts.json
@@ -59,7 +61,6 @@ pyrightconfig.json
 
 # OS junk
 .Trashes.env
-.env
 .env
 
 #idk
