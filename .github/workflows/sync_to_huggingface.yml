@@ -73,6 +73,20 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGING_FACE_API_KEY }}
         run: |
+          cat > /tmp/hf_readme_header.md <<'EOF'
+          ---
+          title: Hsg Eaa RAG Bot
+          emoji: 🤖
+          colorFrom: green
+          colorTo: purple
+          sdk: docker
+          pinned: false
+          ---
+
+          EOF
+          cat README.md >> /tmp/hf_readme_header.md
+          mv /tmp/hf_readme_header.md README.md
+          
           python - <<'PY'
           import os
           from huggingface_hub import HfApi

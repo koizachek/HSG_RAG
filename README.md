@@ -1,12 +1,3 @@
----
-title: Hsg Eaa RAG Bot
-emoji: 🤖
-colorFrom: green
-colorTo: purple
-sdk: docker
-pinned: false
----
-
 # Executive Education RAG Chatbot
 
 A retrieval-augmented chatbot for the University of St.Gallen Executive Education programmes. The current system covers **EMBA HSG**, **IEMBA HSG**, and **emba X**, supports **English and German**, and combines scraping, document import, vector retrieval, caching, and a Gradio-based chat interface.
