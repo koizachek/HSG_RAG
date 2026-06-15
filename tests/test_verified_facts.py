@@ -208,9 +208,67 @@ class TestFactExtractionFallbacks:
         assert locations is not None
         assert "Costa Rica (Wahlkurs)" in locations.de
         assert "New York City (Wahlkurs)" in locations.de
-        assert "St. Gallen, Switzerland" in locations.en
-        assert "Beijing, China" in locations.en
+        assert "Switzerland (St. Gallen)" in locations.en
+        assert "China (Beijing)" in locations.en
+        assert "USA (UC Berkeley)" in locations.en
         assert "South Africa (elective)" in locations.en
+
+    def test_locations_are_parsed_from_visible_text_fallback(self):
+        from src.pipeline.update_programme_facts import _extract_locations_from_programme_page
+
+        text = """
+        Locations
+        Costa Rica
+        Elective course
+        Tokyo, Japan
+        New York City
+        Elective course
+        St. Gallen, Switzerland
+        Beijing, China
+        UC Berkeley, USA
+        UC Irvine, USA
+        Italy
+        Elective course
+        South Africa
+        Elective course
+        Spain
+        Elective course
+        Courses
+        """
+
+        locations = _extract_locations_from_programme_page(text)
+
+        assert locations is not None
+        assert "Costa Rica (Wahlkurs)" in locations.de
+        assert "New York City (elective)" in locations.en
+        assert "Switzerland (St. Gallen)" in locations.en
+        assert "China (Beijing)" in locations.en
+        assert "USA (UC Irvine)" in locations.en
+
+    def test_location_country_city_reordering_is_not_material(self):
+        from src.pipeline.update_programme_facts import diff_facts, preserve_non_material_changes
+
+        old = {
+            "programmes": {
+                "iemba": {
+                    "locations": {
+                        "en": "St. Gallen (Switzerland), China, USA, Japan, Spain, South Africa, Italy"
+                    }
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "iemba": {
+                    "locations": {
+                        "en": "Switzerland (St. Gallen), China, USA, Japan, Spain, South Africa, Italy"
+                    }
+                }
+            }
+        }
+
+        stabilized = preserve_non_material_changes(old, new)
+        assert diff_facts(old, stabilized) == []
 
     def test_location_changes_are_not_treated_as_prose_paraphrases(self):
         from src.pipeline.update_programme_facts import diff_facts, preserve_non_material_changes

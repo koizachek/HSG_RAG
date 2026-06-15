@@ -133,6 +133,16 @@ def extract_pdf_text(content: bytes, url: str) -> str:
             pass
 
 
+def _extract_fact_html_snippets(text: str) -> str:
+    """Keep structured fact blocks before converting the page to visible text."""
+    matches = re.findall(
+        r'<div[^>]*class=["\'][^"\']*\blocations\b[^"\']*["\'][^>]*>.*?</div>',
+        text or '',
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return "\n".join(matches)
+
+
 def fetch_sources() -> dict[str, str]:
     """Fetch all fact source pages. Raises when a page cannot be fetched."""
     pages = {}
@@ -150,12 +160,14 @@ def fetch_sources() -> dict[str, str]:
             continue
         # Lightweight HTML -> text. The scraping pipeline has richer
         # processors; for fact extraction visible text is sufficient.
+        fact_html = _extract_fact_html_snippets(resp.text)
         try:
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(resp.text, 'html.parser')
             for tag in soup(['script', 'style', 'noscript']):
                 tag.decompose()
-            pages[key] = soup.get_text(separator='\n', strip=True)
+            visible_text = soup.get_text(separator='\n', strip=True)
+            pages[key] = "\n\n".join(part for part in (fact_html, visible_text) if part)
         except ImportError:
             pages[key] = resp.text
     return pages
@@ -210,13 +222,41 @@ def apply_deterministic_fallbacks(extracted: AllProgrammesSchema, pages: dict[st
 
 LOCATION_TRANSLATIONS = {
     'Belgien': 'Belgium',
+    'Belgium': 'Belgium',
+    'Beijing': 'Beijing',
+    'China': 'China',
+    'Costa Rica': 'Costa Rica',
     'Italien': 'Italy',
+    'Italy': 'Italy',
+    'Japan': 'Japan',
     'Peking': 'Beijing',
     'Schweiz': 'Switzerland',
-    'Schweiz (St. Gallen)': 'Switzerland (St. Gallen)',
+    'Switzerland': 'Switzerland',
+    'South Africa': 'South Africa',
     'Spanien': 'Spain',
+    'Spain': 'Spain',
     'Südafrika': 'South Africa',
+    'Tokyo': 'Tokyo',
     'Tokio': 'Tokyo',
+    'USA': 'USA',
+}
+
+LOCATION_COUNTRIES_DE = set(LOCATION_TRANSLATIONS)
+LOCATION_ELECTIVE_MARKERS = {'wahlkurs', 'elective course', 'elective'}
+LOCATION_SECTION_STARTS = {'orte', 'locations'}
+LOCATION_SECTION_ENDS = {
+    'courses',
+    'course structure',
+    'duration',
+    'fees',
+    'programme structure',
+    'start',
+    'total',
+    'kurse',
+    'dauer',
+    'gebühr',
+    'programmstruktur',
+    'start',
 }
 
 
@@ -226,28 +266,29 @@ def _clean_html_fragment(value: str) -> str:
     return re.sub(r'\s+', ' ', value).strip()
 
 
-def _translate_location_name(value: str) -> str:
+def _canonicalize_location_de(value: str) -> str:
+    value = re.sub(r'\s+', ' ', value).strip()
     parts = [part.strip() for part in value.split(',')]
-    return ', '.join(LOCATION_TRANSLATIONS.get(part, part) for part in parts if part)
+    if len(parts) == 2 and parts[1] in LOCATION_COUNTRIES_DE:
+        return f"{parts[1]} ({parts[0]})"
+    return value
 
 
-def _extract_locations_from_programme_page(text: str) -> BilingualText | None:
-    """Deterministically parse the official programme-page locations block."""
-    match = re.search(
-        r'<div class="locations">\s*<small>Orte</small>\s*<ul[^>]*>(.*?)</ul>',
-        text or '',
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-    if not match:
-        return None
+def _translate_location_name(value: str) -> str:
+    match = re.fullmatch(r'(.+?) \((.+)\)', value)
+    if match:
+        country_de, place_de = match.groups()
+        country_en = LOCATION_TRANSLATIONS.get(country_de, country_de)
+        place_en = LOCATION_TRANSLATIONS.get(place_de, place_de)
+        return f"{country_en} ({place_en})"
+    return LOCATION_TRANSLATIONS.get(value, value)
 
+
+def _locations_from_items(items: list[tuple[str, bool]]) -> BilingualText | None:
     de_locations = []
     en_locations = []
-    for item_html in re.findall(r'<li>(.*?)</li>', match.group(1), flags=re.IGNORECASE | re.DOTALL):
-        is_elective = re.search(r'<small[^>]*>\s*Wahlkurs\s*</small>', item_html, flags=re.IGNORECASE)
-        location_de = _clean_html_fragment(
-            re.sub(r'<small[^>]*>.*?</small>', '', item_html, flags=re.IGNORECASE | re.DOTALL)
-        )
+    for location_de, is_elective in items:
+        location_de = _canonicalize_location_de(location_de)
         if not location_de:
             continue
 
@@ -264,12 +305,77 @@ def _extract_locations_from_programme_page(text: str) -> BilingualText | None:
     return BilingualText(de=', '.join(de_locations), en=', '.join(en_locations))
 
 
+def _extract_locations_from_html(text: str) -> BilingualText | None:
+    match = re.search(
+        r'<div[^>]*class=["\'][^"\']*\blocations\b[^"\']*["\'][^>]*>\s*'
+        r'<small>\s*Orte\s*</small>\s*<ul[^>]*>(.*?)</ul>',
+        text or '',
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        return None
+
+    items = []
+    for item_html in re.findall(r'<li>(.*?)</li>', match.group(1), flags=re.IGNORECASE | re.DOTALL):
+        is_elective = re.search(r'<small[^>]*>\s*Wahlkurs\s*</small>', item_html, flags=re.IGNORECASE)
+        location_de = _clean_html_fragment(
+            re.sub(r'<small[^>]*>.*?</small>', '', item_html, flags=re.IGNORECASE | re.DOTALL)
+        )
+        if location_de:
+            items.append((location_de, bool(is_elective)))
+    return _locations_from_items(items)
+
+
+def _extract_locations_from_text(text: str) -> BilingualText | None:
+    lines = [
+        _clean_html_fragment(line)
+        for line in (text or '').splitlines()
+        if _clean_html_fragment(line)
+    ]
+    start_index = None
+    for index, line in enumerate(lines):
+        if _canonical_text(line) in LOCATION_SECTION_STARTS:
+            start_index = index + 1
+            break
+    if start_index is None:
+        return None
+
+    items = []
+    index = start_index
+    while index < len(lines):
+        line = lines[index]
+        canonical_line = _canonical_text(line)
+        if canonical_line in LOCATION_SECTION_ENDS:
+            break
+        if canonical_line in LOCATION_ELECTIVE_MARKERS:
+            index += 1
+            continue
+
+        next_line = lines[index + 1] if index + 1 < len(lines) else ''
+        is_elective = _canonical_text(next_line) in LOCATION_ELECTIVE_MARKERS
+        items.append((line, is_elective))
+        index += 2 if is_elective else 1
+
+    return _locations_from_items(items)
+
+
+def _extract_locations_from_programme_page(text: str) -> BilingualText | None:
+    """Deterministically parse the official programme-page locations block."""
+    return _extract_locations_from_html(text) or _extract_locations_from_text(text)
+
+
 def apply_deterministic_source_facts(extracted: AllProgrammesSchema, pages: dict[str, str]) -> AllProgrammesSchema:
     """Override LLM prose where the official page exposes a structured fact block."""
-    for programme_key, source_key in {'emba': 'emba', 'iemba': 'iemba'}.items():
-        locations = _extract_locations_from_programme_page(pages.get(source_key, ''))
-        if locations:
-            getattr(extracted, programme_key).locations = locations
+    source_keys_by_programme = {
+        'emba': ['emba'],
+        'iemba': ['iemba', 'iemba_es'],
+    }
+    for programme_key, source_keys in source_keys_by_programme.items():
+        for source_key in source_keys:
+            locations = _extract_locations_from_programme_page(pages.get(source_key, ''))
+            if locations:
+                getattr(extracted, programme_key).locations = locations
+                break
     return extracted
 
 
@@ -320,6 +426,10 @@ DESCRIPTIVE_FACT_SUFFIXES = (
     'duration.en',
     'structure.de',
     'structure.en',
+)
+LOCATION_FACT_SUFFIXES = (
+    'locations.de',
+    'locations.en',
 )
 
 FACT_COMPARISON_STOP_WORDS = {
@@ -398,6 +508,10 @@ def _is_descriptive_fact(key: str) -> bool:
     return key.endswith(DESCRIPTIVE_FACT_SUFFIXES)
 
 
+def _is_location_fact(key: str) -> bool:
+    return key.endswith(LOCATION_FACT_SUFFIXES)
+
+
 def _is_non_material_text_change(key: str, old_value, new_value) -> bool:
     """Detect LLM wording drift for descriptive fields.
 
@@ -412,6 +526,9 @@ def _is_non_material_text_change(key: str, old_value, new_value) -> bool:
     new_text = _canonical_text(new_value)
     if old_text == new_text:
         return True
+
+    if _is_location_fact(key):
+        return _meaningful_tokens(old_value) == _meaningful_tokens(new_value)
 
     if not _is_descriptive_fact(key):
         return False
