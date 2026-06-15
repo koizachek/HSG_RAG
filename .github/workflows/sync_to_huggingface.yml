@@ -17,6 +17,9 @@ permissions:
 jobs:
   sync-to-huggingface:
     runs-on: ubuntu-latest
+    env:
+      HF_REPO_ID: ${{ inputs.huggingface_repo_id || vars.HF_REPO_ID || 'Pygmales/hsg_rag_eea' }}
+      HF_REPO_TYPE: space
 
     steps:
       - name: Checkout repository
@@ -24,10 +27,18 @@ jobs:
         with:
           lfs: true
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Hugging Face CLI
+        run: |
+          python -m pip install --upgrade "huggingface_hub[cli]"
+
       - name: Validate Hugging Face configuration
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGING_FACE_API_KEY }}
-          HF_REPO_ID: ${{ inputs.huggingface_repo_id || vars.HF_REPO_ID || 'koizachek/HSG_RAG' }}
         run: |
           if [ -z "$HF_TOKEN" ]; then
             echo "Missing Hugging Face token. Set either HF_TOKEN or HUGGING_FACE_API_KEY as a repository secret."
@@ -35,10 +46,54 @@ jobs:
           fi
 
           echo "Sync target: $HF_REPO_ID"
+          python - <<'PY'
+          import os
+          import sys
+          from huggingface_hub import HfApi
+
+          token = os.environ["HF_TOKEN"]
+          repo_id = os.environ["HF_REPO_ID"]
+          repo_type = os.environ["HF_REPO_TYPE"]
+          api = HfApi(token=token)
+
+          try:
+              whoami = api.whoami()
+              print(f"Authenticated Hugging Face user: {whoami.get('name', '<unknown>')}")
+              api.repo_info(repo_id=repo_id, repo_type=repo_type)
+          except Exception as exc:
+              print(
+                  f"Cannot access Hugging Face {repo_type} '{repo_id}'. "
+                  "Create it once on Hugging Face and make sure the token has write access to it."
+              )
+              print(f"Original error: {exc}")
+              sys.exit(1)
+          PY
 
       - name: Sync repository to Hugging Face Hub
-        uses: huggingface/hub-sync@v0.1.0
-        with:
-          github_repo_id: ${{ github.repository }}
-          huggingface_repo_id: ${{ inputs.huggingface_repo_id || vars.HF_REPO_ID || 'koizachek/HSG_RAG' }}
-          hf_token: ${{ secrets.HF_TOKEN || secrets.HUGGING_FACE_API_KEY }}
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGING_FACE_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.upload_folder(
+              folder_path=".",
+              repo_id=os.environ["HF_REPO_ID"],
+              repo_type=os.environ["HF_REPO_TYPE"],
+              commit_message=f"Sync from GitHub {os.environ['GITHUB_SHA']}",
+              ignore_patterns=[
+                  ".git/*",
+                  ".github/*",
+                  ".env",
+                  ".venv/*",
+                  "venv/*",
+                  "env/*",
+                  "__pycache__/*",
+                  ".pytest_cache/*",
+                  "logs/*",
+              ],
+              delete_patterns=["*"],
+          )
+          PY
