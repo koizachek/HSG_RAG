@@ -215,7 +215,7 @@ def _robots_exist(robots_url) -> bool:
 
 
 def parse_robots(base_url: str) -> RobotFileParser | None:
-    robots_url = f'{base_url.rstrip('/')}/robots.txt'
+    robots_url = f"{base_url.rstrip('/')}/robots.txt"
 
     # Check whether the robots.txt file is accessible from this url 
     response = call_with_exponential_backoff(_robots_exist, args=(robots_url,)) 
