@@ -42,7 +42,21 @@ FACT_SOURCES = {
 }
 
 REQUEST_TIMEOUT = 30
-USER_AGENT = 'HSG-RAG-FactChecker/1.0 (+https://emba.unisg.ch)'
+REQUEST_HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/125.0 Safari/537.36'
+    ),
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'de-CH,de;q=0.9,en;q=0.8',
+    'Accept-Encoding': 'gzip, deflate',
+    'Cache-Control': 'no-cache',
+}
+FALLBACK_REQUEST_HEADERS = {
+    **REQUEST_HEADERS,
+    'Referer': 'https://emba.unisg.ch/',
+}
 
 
 # ----------------------------- Extraction schema -----------------------------
@@ -120,9 +134,13 @@ def extract_pdf_text(content: bytes, url: str) -> str:
 def fetch_sources() -> dict[str, str]:
     """Fetch all fact source pages. Raises when a page cannot be fetched."""
     pages = {}
+    session = requests.Session()
     for key, url in FACT_SOURCES.items():
         logger.info(f"Fetching {url}")
-        resp = requests.get(url, timeout=REQUEST_TIMEOUT, headers={'User-Agent': USER_AGENT})
+        resp = session.get(url, timeout=REQUEST_TIMEOUT, headers=REQUEST_HEADERS)
+        if resp.status_code == 415:
+            logger.warning(f"Retrying {url} after HTTP 415 with fallback headers")
+            resp = session.get(url, timeout=REQUEST_TIMEOUT, headers=FALLBACK_REQUEST_HEADERS)
         resp.raise_for_status()
         content_type = resp.headers.get('Content-Type', '').lower()
         if url.lower().endswith('.pdf') or 'application/pdf' in content_type:
