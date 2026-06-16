@@ -70,6 +70,10 @@ PROPERTIES_PATH = 'data/database'
 # More information on property strategies in the documentation.
 STRATEGIES_PATH = 'src/database/strategies'
 
+# An integer. Sets the replication factor for Weaviate collections.
+# Paid/high-availability Weaviate clusters can require a minimum factor of 3.
+WEAVIATE_REPLICATION_FACTOR = 3
+
 # An integer. Defines a connection timeout to the cloud weaviate service (in seconds). 
 # Defaults to 90.
 WEAVIATE_INIT_TIMEOUT = 90

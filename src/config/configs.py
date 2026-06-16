@@ -135,6 +135,7 @@ class WeaviateConfig(ConfigBase):
     CLUSTER_URL:          str = _get('WEAVIATE_CLUSTER_URL')
     WEAVIATE_API_KEY:     str = _get('WEAVIATE_API_KEY')
    
+    REPLICATION_FACTOR: int = _get('WEAVIATE_REPLICATION_FACTOR', 3, type_=int)
     INIT_TIMEOUT:   int  = _get('WEAVIATE_INIT_TIMEOUT', 90) 
     QUERY_TIMEOUT:  int  = _get('WEAVIATE_QUERY_TIMEOUT', 60) 
     INSERT_TIMEOUT: int  = _get('WEAVIATE_INSERT_TIMEOUT', 600)
