@@ -11,7 +11,6 @@ class AppConfig:
     weaviate:   WeaviateConfig          = WeaviateConfig()
     scraping:   ScrapingConfig          = ScrapingConfig()
     chain:      ChainConfig             = ChainConfig()
-    cache:      CacheConfig             = CacheConfig()
     paths:      PathsConfig             = PathsConfig()
     dbapp:      DatabaseAppConfig       = DatabaseAppConfig()
     llm:        LLMConfig               = LLMConfig()

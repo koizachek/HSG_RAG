@@ -12,7 +12,6 @@ TEST_DEPENDENCIES = {
     "tests/scraping/test_scraping.py": {"colorama", "docling_core", "usp", "fake_useragent", "tiktoken"},
     "tests/scraping/test_scraping_resume.py": {"colorama", "docling_core", "usp", "fake_useragent", "tiktoken"},
     "tests/scraping/test_utils.py": {"fake_useragent"},
-    "tests/test_cache.py": {"langchain"},
     "tests/test_chatbot_improvements.py": {"langchain_core", "langchain", "langsmith"},
     "tests/test_language_handling.py": {"langchain_core"},
     "tests/test_programme_positioning_real_agent.py": {"langchain_core", "langchain", "langsmith", "weaviate"},

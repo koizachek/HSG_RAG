@@ -20,7 +20,6 @@ class LeadAgentQueryResponse:
     processed_query: str = None
     confidence_fallback: bool = False
     max_turns_reached: bool = False
-    should_cache: bool = False
     appointment_requested: bool = False
     show_booking_widget: bool = False
     relevant_programs: List[str] = field(default_factory=list)
@@ -35,16 +34,6 @@ class StructuredAgentResponse(BaseModel):
             "Use this only when the main answer would otherwise become too long. "
             "Do NOT move critical facts such as tuition, duration, deadlines, "
             "eligibility requirements, or direct answers into this field."
-        )
-    )
-    is_context_dependent: bool = Field(
-        default=True,
-        description=(
-            "Set to False only if the question can be answered without using any user-specific "
-            "information (e.g. name, age, preferences, extracted profile data) and without relying "
-            "on prior conversation turns or conversation history. "
-            "Must be True for responses involving eligibility, recommendations, comparisons after prior turns, "
-            "or any answer influenced by user profile data or conversation context."
         )
     )
     appointment_requested: bool = Field(
