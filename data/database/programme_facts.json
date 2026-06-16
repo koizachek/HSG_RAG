@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-15",
+  "generated_at": "2026-06-16",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -106,7 +106,7 @@
       ]
     },
     "emba_x": {
-      "official_name": "emba X (ETH Zurich & University of St.Gallen)",
+      "official_name": "EMBA ETH HSG (emba X)",
       "current_cohort": "emba X6",
       "language": {
         "de": "Englisch",
