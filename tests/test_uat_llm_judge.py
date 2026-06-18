@@ -227,7 +227,10 @@ def _hard_facts() -> dict[str, Any]:
             },
             "advisor": programme["advisor"],
         }
-    return {"programmes": programmes}
+    return {
+        "generated_at": facts.get("generated_at"),
+        "programmes": programmes,
+    }
 
 
 def _run_chatbot_case(case: UATCase) -> list[dict[str, Any]]:
@@ -248,7 +251,6 @@ def _run_chatbot_case(case: UATCase) -> list[dict[str, Any]]:
                 "additional_details": result.additional_details or "",
                 "language": result.language,
                 "appointment_requested": result.appointment_requested,
-                "show_booking_widget": result.show_booking_widget,
                 "relevant_programs": result.relevant_programs,
                 "elapsed_s": round(time.perf_counter() - started, 3),
             }
@@ -290,6 +292,16 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
                 "You are a strict but fair UAT judge for the HSG Executive Education chatbot. "
                 "Evaluate the whole transcript against the scenario, success criteria, red flags, "
                 "and current hard facts. Current hard facts override stale scenario wording. "
+                "Use hard_facts_current_source_of_truth.generated_at as the reference date for "
+                "deadline-sensitive tuition. A first-deadline fee is acceptable only when the "
+                "answer clearly states the deadline and that deadline has not passed by that "
+                "reference date; otherwise expect the final-deadline fee. "
+                "Do not grade any legacy booking-widget visibility flag; that flag is not part "
+                "of the current acceptance criteria. For appointment/booking/Termin scenarios, "
+                "judge only the user-facing behaviour: whether the assistant acknowledges the "
+                "user's intent and explains how the user can make a Termin, such as using the "
+                "booking section at the bottom of the page or following the correct advisor/contact "
+                "path. Do not fail a case because a hidden widget flag is absent or false. "
                 "Do not require exact phrasing. Reward helpful, grounded, concise advisory answers. "
                 "Penalize wrong programme facts, wrong language, unsupported promises, hidden/internal "
                 "architecture talk, missed booking or handover behavior, and rude tone. "
@@ -318,6 +330,37 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
     return json.loads(content)
 
 
+def _result_dir() -> Path:
+    return Path(os.getenv("UAT_RESULTS_DIR", "uat-results"))
+
+
+def _write_case_result(
+    case: UATCase,
+    transcript: list[dict[str, Any]],
+    judgement: dict[str, Any],
+    score: float,
+    passed: bool,
+    error: str | None = None,
+) -> None:
+    result_dir = _result_dir()
+    result_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "case_id": case.case_id,
+        "title": case.title,
+        "score": score,
+        "minimum_score": MIN_ACCEPTABLE_SCORE,
+        "passed": passed,
+        "verdict": judgement.get("verdict"),
+        "issues": judgement.get("issues", []),
+        "criteria_missed": judgement.get("criteria_missed", []),
+        "judgement": judgement,
+        "transcript": transcript,
+        "error": error,
+    }
+    path = result_dir / f"{case.case_id}.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 UAT_CASES = _selected_cases()
 
 
@@ -329,11 +372,27 @@ UAT_CASES = _selected_cases()
 )
 @pytest.mark.parametrize("case", UAT_CASES, ids=[case.case_id for case in UAT_CASES])
 def test_uat_case_passes_llm_judge(case: UATCase):
-    transcript = _run_chatbot_case(case)
-    judgement = _judge_case(case, transcript)
-    score = float(judgement.get("overall_score", 0))
+    transcript = []
+    judgement: dict[str, Any] = {}
+    try:
+        transcript = _run_chatbot_case(case)
+        judgement = _judge_case(case, transcript)
+        score = float(judgement.get("overall_score", 0))
+    except Exception as exc:
+        score = 0.0
+        judgement = {
+            "passed": False,
+            "verdict": f"UAT runner or judge error: {exc}",
+            "issues": [repr(exc)],
+            "criteria_missed": ["UAT case could not complete"],
+        }
+        _write_case_result(case, transcript, judgement, score, passed=False, error=repr(exc))
+        raise
 
-    assert score >= MIN_ACCEPTABLE_SCORE and judgement.get("passed", True), (
+    passed = score >= MIN_ACCEPTABLE_SCORE and judgement.get("passed", True)
+    _write_case_result(case, transcript, judgement, score, passed=passed)
+
+    assert passed, (
         f"\nUAT case: {case.case_id} - {case.title}"
         f"\nScore: {score} (minimum {MIN_ACCEPTABLE_SCORE})"
         f"\nVerdict: {judgement.get('verdict')}"
