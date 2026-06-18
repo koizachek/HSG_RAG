@@ -52,6 +52,8 @@ class ExecutiveAgentChain:
             from src.rag.quality_score_handler import QualityScoreHandler
             self._quality_handler = QualityScoreHandler()
 
+        self._input_handler = InputHandler()
+        self._scope_guardian = ScopeGuardian()
         self._language_detector = LanguageDetector()
 
         # Generate unique user ID for this session
@@ -78,6 +80,7 @@ class ExecutiveAgentChain:
         # Track scope violations for escalation
         self._scope_violation_counts: dict[str, int] = {}
         self._aggressive_violation_count = 0
+        self._invalid_input_count = 0
 
         # Profile tracking lives in its own component (adopted from the
         # chatbot-decoupling branch) to keep this class a thin orchestrator.
@@ -446,6 +449,7 @@ class ExecutiveAgentChain:
         })
         self._scope_violation_counts = {}
         self._aggressive_violation_count = 0
+        self._invalid_input_count = 0
 
     def _log_user_profile(self) -> None:
         """Backward-compatible wrapper for tests/callers using the old chain API."""
@@ -512,18 +516,26 @@ class ExecutiveAgentChain:
             ) 
 
         # 2. Input Processing
-        processed_query, is_valid = InputHandler.process_input(
+        processed_query, is_valid = self._input_handler.process_input(
             query,
             [msg for msg in self._conversation_history if isinstance(msg, (HumanMessage, AIMessage))]
         )
 
         if not is_valid or not processed_query:
             chain_logger.warning(f"Invalid input received: '{query}'")
+            self._invalid_input_count += 1
+            invalid_response = (
+                get_repeated_not_valid_query_message(self._stored_language)
+                if self._invalid_input_count >= 2
+                else NOT_VALID_QUERY_MESSAGE[self._stored_language]
+            )
             return LeadAgentQueryResponse(
-                response=NOT_VALID_QUERY_MESSAGE[self._stored_language],
+                response=invalid_response,
                 language=current_language,
                 processed_query=query
             )
+
+        self._invalid_input_count = 0
 
         # Log check
         if processed_query != query:
@@ -577,7 +589,7 @@ class ExecutiveAgentChain:
             self._pending_continuation = None
 
         # 4. Scope Check
-        scope_type = ScopeGuardian.check_scope(processed_query, current_language)
+        scope_type = self._scope_guardian.check_scope(processed_query, current_language)
 
         if scope_type != 'on_topic':
             chain_logger.info(f"Out-of-scope query detected: {scope_type}")
@@ -588,14 +600,14 @@ class ExecutiveAgentChain:
                 self._scope_violation_counts[scope_type] = self._scope_violation_counts.get(scope_type, 0) + 1
                 attempt_count = self._scope_violation_counts[scope_type]
 
-            should_escalate, escalation_type = ScopeGuardian.should_escalate(
+            should_escalate, escalation_type = self._scope_guardian.should_escalate(
                 processed_query, scope_type, attempt_count
             )
 
             if should_escalate:
-                redirect_msg = ScopeGuardian.get_escalation_message(escalation_type, current_language)
+                redirect_msg = self._scope_guardian.get_escalation_message(escalation_type, current_language)
             else:
-                redirect_msg = ScopeGuardian.get_redirect_message(scope_type, current_language)
+                redirect_msg = self._scope_guardian.get_redirect_message(scope_type, current_language)
 
             self._conversation_history.append(HumanMessage(processed_query))
             self._conversation_history.append(AIMessage(redirect_msg))
