@@ -1,7 +1,9 @@
 from functools import reduce
 import weaviate as wvt
-import datetime, os
+import datetime, json, os
+from dataclasses import dataclass
 from threading import Event, Lock, RLock, Thread
+from typing import Any
 
 from time import perf_counter, sleep
 from weaviate.classes.config import Configure, Property, DataType
@@ -10,6 +12,7 @@ from weaviate.collections.collection import Collection
 from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.classes.query import Filter
 from weaviate.config import AdditionalConfig
+from weaviate.util import generate_uuid5
 
 from ..utils.logging import get_logger
 from ..config import config
@@ -19,6 +22,7 @@ logger = get_logger("weaviate_service")
 
 _get_collection_name = lambda lang: f'{config.weaviate.WEAVIATE_COLLECTION_BASENAME}_{lang}'
 _collection_names = [_get_collection_name(lang) for lang in config.get('AVAILABLE_LANGUAGES')]
+_IMPORT_ID_VERSION = 1
 
 
 def _default_properties() -> list[Property]:
@@ -30,6 +34,26 @@ def _default_properties() -> list[Property]:
         Property(name='source', data_type=DataType.TEXT),
         Property(name='date', data_type=DataType.DATE),
     ]
+
+
+class ImportBatchError(RuntimeError):
+    """Raised when Weaviate rejects any object in a strict batch import."""
+
+
+@dataclass(frozen=True)
+class PreparedImportRow:
+    uuid: str
+    properties: dict[str, Any]
+    vector: dict[str, list[float]]
+
+
+@dataclass
+class SourceReconciliationSummary:
+    source: str
+    expected: int = 0
+    retained: int = 0
+    inserted: int = 0
+    deleted: int = 0
 
 
 class WeaviateService:
@@ -323,74 +347,270 @@ class WeaviateService:
         return client.collections.use(collection_name), collection_name
 
 
+    @staticmethod
+    def _deterministic_object_uuid(data_row: dict[str, Any], lang: str) -> str:
+        identity = {
+            "version": _IMPORT_ID_VERSION,
+            "lang": lang,
+            "source": data_row.get("source", ""),
+            "document_id": data_row.get("document_id", ""),
+            "chunk_id": data_row.get("chunk_id", ""),
+            "programs": sorted(data_row.get("programs") or []),
+        }
+        return generate_uuid5(
+            json.dumps(identity, sort_keys=True, separators=(",", ":")),
+            namespace="hsg-rag-import",
+        )
+
+
+    def prepare_batch_import(
+        self,
+        data_rows: list[dict[str, Any]],
+        lang: str,
+    ) -> list[PreparedImportRow]:
+        """Generate all embeddings and deterministic UUIDs without writing to Weaviate."""
+        prepared = []
+        batch_size = max(1, config.processing.EMBEDDING_BATCH_SIZE)
+
+        for start_idx in range(0, len(data_rows), batch_size):
+            batch_rows = list(
+                enumerate(
+                    data_rows[start_idx:start_idx + batch_size],
+                    start=start_idx,
+                )
+            )
+            vectors = self._embed_batch_vectors(batch_rows)
+            prepared.extend(
+                PreparedImportRow(
+                    uuid=self._deterministic_object_uuid(data_row, lang),
+                    properties=data_row,
+                    vector=vector,
+                )
+                for (_, data_row), vector in zip(batch_rows, vectors)
+            )
+
+        return prepared
+
+
+    def _write_prepared_rows(
+        self,
+        prepared_rows: list[PreparedImportRow],
+        lang: str,
+    ) -> None:
+        if not prepared_rows:
+            return
+
+        collection, collection_name = self._select_collection(lang)
+        if collection is None:
+            raise RuntimeError(f"No working collection selected for language '{lang}'")
+
+        logger.info(f"Batch importing {len(prepared_rows)} rows into {collection_name}")
+        batch_size = max(1, config.processing.EMBEDDING_BATCH_SIZE)
+        max_attempts = 2
+
+        with self._client_lock:
+            for start_idx in range(0, len(prepared_rows), batch_size):
+                rows = prepared_rows[start_idx:start_idx + batch_size]
+                last_error = None
+
+                for attempt in range(1, max_attempts + 1):
+                    try:
+                        failed_before = list(
+                            getattr(collection.batch, "failed_objects", [])
+                        )
+                        with collection.batch.fixed_size(
+                            batch_size=batch_size,
+                            concurrent_requests=1,
+                        ) as batch:
+                            for row in rows:
+                                batch.add_object(
+                                    uuid=row.uuid,
+                                    properties=row.properties,
+                                    vector=row.vector,
+                                )
+
+                        failed_after = list(
+                            getattr(collection.batch, "failed_objects", [])
+                        )
+                        new_failures = (
+                            failed_after[len(failed_before):]
+                            if len(failed_after) >= len(failed_before)
+                            else failed_after
+                        )
+                        error_count = max(
+                            getattr(batch, "number_errors", 0),
+                            len(new_failures),
+                        )
+                        if error_count:
+                            details = "; ".join(str(error) for error in new_failures[:3])
+                            raise ImportBatchError(
+                                f"Weaviate rejected {error_count} object(s)"
+                                + (f": {details}" if details else "")
+                            )
+                        last_error = None
+                        break
+                    except Exception as error:
+                        last_error = error
+                        if attempt < max_attempts:
+                            logger.warning(
+                                "Batch import failed for rows %s-%s; retrying once: %s",
+                                start_idx,
+                                start_idx + len(rows) - 1,
+                                error,
+                            )
+                            sleep(1)
+
+                if last_error is not None:
+                    raise ImportBatchError(
+                        f"Failed importing rows {start_idx}-{start_idx + len(rows) - 1} "
+                        f"into {collection_name}: {last_error}"
+                    ) from last_error
+
+        self._last_query_time = perf_counter()
+
+
     def batch_import(self, data_rows: list, lang: str) -> list:
         """
-        Perform a batch import of multiple objects into the current collection.
+        Perform a strict, deterministic batch import into the current collection.
 
         Args:
             data_rows (list): List of dictionaries representing the data rows to import.
             lang (str, optional): Language collection to use. If not provided, uses the current one.
 
         Returns:
-            list[dict]: List of failed imports with error details, if any.
+            An empty list on success, retained for compatibility.
 
         Raises:
-            If no active collection is available or a connection error was catched.
+            ImportBatchError: If any synchronous or asynchronous object import fails.
         """
-        collection, collection_name = self._select_collection(lang)
-        if collection is None:
-            logger.error("No working collection selected!")
-            return []
-
-        import_errors = []
-        logger.info(f"Batch importing {len(data_rows)} rows into {collection_name}")
-
-        batch_size = max(1, config.processing.EMBEDDING_BATCH_SIZE)
-        max_attempts = 2
-
-        def _import_batch(batch_rows: list[tuple[int, dict]]) -> None:
-            vectors = self._embed_batch_vectors(batch_rows)
-            with collection.batch.fixed_size(batch_size=batch_size, concurrent_requests=1) as batch:
-                for (idx, data_row), vector in zip(batch_rows, vectors):
-                    try:
-                        batch.add_object(properties=data_row, vector=vector)
-                    except Exception as e:
-                        import_errors.append({'index': idx, 'chunk_id': data_row['chunk_id'], 'error': str(e)})
-
-                    if idx % 20 == 0 and idx > 0:
-                        if batch.number_errors > 0:
-                            logger.info(f"Failed imports at index {idx}: {batch.number_errors}")
-
         try:
-            with self._client_lock:
-                for start_idx in range(0, len(data_rows), batch_size):
-                    batch_rows = list(enumerate(data_rows[start_idx:start_idx + batch_size], start=start_idx))
-                    for attempt in range(1, max_attempts + 1):
-                        try:
-                            _import_batch(batch_rows)
-                            break
-                        except Exception as e:
-                            if attempt == max_attempts:
-                                raise e
-
-                            logger.warning(
-                                "Batch import failed for rows %s-%s; retrying once: %s",
-                                start_idx,
-                                start_idx + len(batch_rows) - 1,
-                                e,
-                            )
-                            sleep(1)
-
-            self._last_query_time = perf_counter()
-            logger.info(f"Batch import finished. Total errors: {len(import_errors)}")
-            
+            prepared_rows = self.prepare_batch_import(data_rows, lang)
+            self._write_prepared_rows(prepared_rows, lang)
+            logger.info("Batch import finished successfully")
         except Exception as e:
             if 'connection' in str(e).lower():
                 logger.error(f"Connection error during batch import: {e}")
                 self._client = None
             raise e
 
-        return import_errors
+        return []
+
+
+    def _collect_source_objects(
+        self,
+        lang: str,
+        source: str,
+    ) -> dict[str, dict[str, Any]]:
+        collection, _ = self._select_collection(lang)
+        if collection is None:
+            raise RuntimeError(f"No working collection selected for language '{lang}'")
+
+        objects = {}
+        offset = 0
+        page_size = 100
+        filters = Filter.by_property("source").equal(source)
+
+        while True:
+            with self._client_lock:
+                response = collection.query.fetch_objects(
+                    limit=page_size,
+                    offset=offset,
+                    filters=filters,
+                    return_properties=["source", "chunk_id", "document_id", "programs"],
+                )
+            page = response.objects
+            for obj in page:
+                objects[str(obj.uuid)] = obj.properties or {}
+
+            if len(page) < page_size:
+                break
+            offset += page_size
+
+        return objects
+
+
+    def source_object_count(self, source: str) -> int:
+        return sum(
+            len(self._collect_source_objects(lang, source))
+            for lang in config.get('AVAILABLE_LANGUAGES')
+        )
+
+
+    def reconcile_source(
+        self,
+        source: str,
+        rows_by_language: dict[str, list[dict[str, Any]]],
+    ) -> SourceReconciliationSummary:
+        """Insert and verify a complete source replacement before deleting old objects."""
+        languages = config.get('AVAILABLE_LANGUAGES')
+        prepared_by_language = {
+            lang: self.prepare_batch_import(rows_by_language.get(lang, []), lang)
+            for lang in languages
+        }
+        expected_ids = {
+            lang: {row.uuid for row in prepared_by_language[lang]}
+            for lang in languages
+        }
+
+        existing_before = {
+            lang: self._collect_source_objects(lang, source)
+            for lang in languages
+        }
+        summary = SourceReconciliationSummary(
+            source=source,
+            expected=sum(len(ids) for ids in expected_ids.values()),
+            retained=sum(
+                len(expected_ids[lang] & set(existing_before[lang]))
+                for lang in languages
+            ),
+        )
+
+        for lang in languages:
+            missing_rows = [
+                row for row in prepared_by_language[lang]
+                if row.uuid not in existing_before[lang]
+            ]
+            self._write_prepared_rows(missing_rows, lang)
+            summary.inserted += len(missing_rows)
+
+        verified = {
+            lang: self._collect_source_objects(lang, source)
+            for lang in languages
+        }
+        for lang in languages:
+            missing_ids = expected_ids[lang] - set(verified[lang])
+            if missing_ids:
+                raise ImportBatchError(
+                    f"Verification failed for source '{source}' in language '{lang}': "
+                    f"{len(missing_ids)} expected object(s) are missing"
+                )
+
+        for lang in languages:
+            obsolete_ids = set(verified[lang]) - expected_ids[lang]
+            if not obsolete_ids:
+                continue
+
+            collection, collection_name = self._select_collection(lang)
+            if collection is None:
+                raise RuntimeError(f"No working collection selected for language '{lang}'")
+
+            for object_uuid in obsolete_ids:
+                if not collection.data.delete_by_id(object_uuid):
+                    raise RuntimeError(
+                        f"Failed deleting obsolete object {object_uuid} from {collection_name}"
+                    )
+                summary.deleted += 1
+
+        self._last_query_time = perf_counter()
+        logger.info(
+            "Reconciled source %s: expected=%s retained=%s inserted=%s deleted=%s",
+            source,
+            summary.expected,
+            summary.retained,
+            summary.inserted,
+            summary.deleted,
+        )
+        return summary
     
 
     @staticmethod

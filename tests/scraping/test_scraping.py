@@ -1,7 +1,8 @@
 import pytest, os
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
-from src.scraping.types import UrlTimestamps
+from src.scraping.types import FetchResult, ScrapingStatus, UrlTimestamps
 from src.scraping.url_normalizer import UrlNormalizer
 from src.scraping.scraper import Scraper
 from src.utils.logging import init_logging
@@ -70,6 +71,67 @@ class TestScrapingErrors:
 
         for url in scraper._url_timestamps:
             assert scraper._is_url_prioritized(url) == expected[url]
+
+    def test_head_timeout_falls_back_to_get(self, tmp_path, monkeypatch):
+        url = "https://embax.ch/contact/"
+        get_calls = []
+        scraper = Scraper.__new__(Scraper)
+        scraper._scrape_all = True
+        scraper._url_timestamps = {}
+        scraper._url_priorities = {}
+        scraper._normalizer = SimpleNamespace(
+            is_url_blacklisted=lambda _: False,
+            url_to_filename=lambda _: "embax-contact",
+        )
+        scraper._content_cleaner = SimpleNamespace(
+            clean_mobile_content=lambda html: html,
+            extract_urls=lambda document: [],
+            collect_repetitive_content=lambda document: None,
+        )
+        scraper._processor = SimpleNamespace(
+            process=lambda final_url, html: SimpleNamespace(name=final_url),
+            convert_to_txt=lambda document: "contact page",
+        )
+
+        def fail_head(*_):
+            raise TimeoutError("HEAD timed out")
+
+        def fetch_get(request_url, etag):
+            get_calls.append((request_url, etag))
+            return FetchResult(
+                final_url=request_url,
+                last_modified=None,
+                etag=None,
+                text="<html><body>Contact</body></html>",
+                page_hash="hash",
+            )
+
+        def no_wait_backoff(func, args=(), **_):
+            return {
+                "result": func(*args),
+                "retries": 0,
+                "last_error": None,
+                "status": "OK",
+            }
+
+        monkeypatch.setattr("src.scraping.scraper.fetch_head", fail_head)
+        monkeypatch.setattr("src.scraping.scraper.fetch_url", fetch_get)
+        monkeypatch.setattr(
+            "src.scraping.scraper.call_with_exponential_backoff",
+            no_wait_backoff,
+        )
+        monkeypatch.setattr(config.paths, "RAW_HTML_OUTPUT", str(tmp_path))
+        monkeypatch.setattr(config.paths, "RAW_TEXT_OUTPUT", str(tmp_path))
+
+        result = scraper._scrape_page(
+            url=url,
+            crawl_delay=0,
+            visited_urls=set(),
+        )
+
+        assert result.status == ScrapingStatus.OK
+        assert result.final_url == url
+        assert get_calls == [(url, None)]
 
 
 if __name__ == "__main__":

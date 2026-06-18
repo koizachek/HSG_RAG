@@ -69,7 +69,7 @@ class Scraper:
         os.makedirs(self._path.EXTRACTED_TEXT_OUTPUT, exist_ok=True)
 
 
-    def scrape_target(self, target_url: str) -> list[ChunkMetadata]:
+    def scrape_target(self, target_url: str) -> ScrapeManifest:
         if getattr(self, "_content_cleaner", None) is None or hasattr(self, "_scrape_all"):
             self._content_cleaner = ContentCleaner(getattr(self, "_scrape_all", True))
 
@@ -77,7 +77,7 @@ class Scraper:
         analyzed_domain = self._analyze_domain(target_url)
         if not analyzed_domain:
             logger.error(f"Failed to scrape target URL {target_url}")
-            return {}
+            return ScrapeManifest.empty(target_url)
 
         sitemap_urls = analyzed_domain.urls
         self._save_results(self._path.URLS_OUTPUT, 'sitemap_urls', sitemap_urls, target_url)
@@ -106,10 +106,14 @@ class Scraper:
         # Step 4: Load temp chunks first so resume works even when there are no new documents.
         temp_filename      = self._get_temp_chunks_filename(target_url)
         temp_merged_chunks = self._load_data(self._path.TEMP_CHUNKS_OUTPUT, temp_filename)
+        self._pending_timestamps = self._load_data(
+            self._path.TEMP_CHUNKS_OUTPUT,
+            self._get_temp_timestamps_filename(target_url),
+        )
 
         if not documents and not temp_merged_chunks:
             logger.info(f"No new content was scraped from the target URL {target_url}")
-            return {}
+            return ScrapeManifest.empty(target_url)
 
         tagged_documents = []
         # Step 5: Analyze the converted URLs
@@ -136,7 +140,11 @@ class Scraper:
 
         logger.info(f"Scraping finished for target URL '{target_url}'")
 
-        return chunk_metadatas.get('final', chunk_metadatas['merged'])
+        return ScrapeManifest(
+            target_url=target_url,
+            chunks_by_language=chunk_metadatas.get('final', {}),
+            processed_sources=sorted(chunk_metadatas.get('processed_sources', [])),
+        )
 
 
     def _analyze_domain(self, target_url: str) -> DomainAnalysisReport | None:
@@ -351,13 +359,17 @@ class Scraper:
 
         raw_chunks     = []
         deleted_chunks = []
-        merged_chunks, final_chunks = self._read_temp_chunks(temp_chunks, tagged_documents)
+        merged_chunks, final_chunks, restored_sources = self._read_temp_chunks(
+            temp_chunks,
+            tagged_documents,
+        )
         # Temp snapshots must only carry (a) URLs newly chunked in this session
         # (added by _store_temp_chunks) and (b) URLs whose restore failed and
         # which must survive for the next session. Successfully restored URLs
         # are finalized now — keeping them in temp would re-restore them on the
         # next resume and duplicate their chunks.
         self._active_temp_chunks = dict(getattr(self, '_unrestorable_temp_chunks', {}))
+        processed_sources = set(restored_sources)
 
         program_counter = self._build_program_counter_from_merged_chunks(merged_chunks)
 
@@ -368,6 +380,7 @@ class Scraper:
             program  = entry.tags.program
             language = entry.tags.language
             url = document.name
+            processed_sources.add(url)
             url_filename = self._normalizer.url_to_filename(url)
             
             program_counter[program] += 1
@@ -426,6 +439,7 @@ class Scraper:
             'merged':  merged_chunks,
             'deleted': deleted_chunks,
             'final':   final_chunks,
+            'processed_sources': processed_sources,
         }
     
 
@@ -433,7 +447,7 @@ class Scraper:
         self, 
         temp_chunks: dict[str, list[ChunkMetadata]], 
         tagged_documents: list[TaggedDocument]
-    ) -> set[list, list[dict]]:
+    ) -> tuple[list, dict[str, list[dict]], set[str]]:
         loaded_temp_chunks = temp_chunks.copy()
         prepared_temp_chunks = {lang: [] for lang in config.get('AVAILABLE_LANGUAGES', ['en', 'de'])}
 
@@ -443,6 +457,7 @@ class Scraper:
                 del loaded_temp_chunks[url]
         
         restored_temp_chunks = []
+        restored_sources = set()
         # URLs whose chunks could not be finalized; they must stay in the temp
         # store so the next session can re-scrape them (read in _collect_chunks).
         self._unrestorable_temp_chunks: dict[str, list[ChunkMetadata]] = {}
@@ -465,24 +480,32 @@ class Scraper:
                     prepared_temp_chunks[lang].extend(prepared_chunks[lang])
 
             restored_temp_chunks.extend(chunks)
+            restored_sources.add(url)
             incupd_logger.info(f"Restored {len(chunks)} chunks for URL {url} from temp")
         
-        return restored_temp_chunks, prepared_temp_chunks
+        return restored_temp_chunks, prepared_temp_chunks, restored_sources
 
 
     def _store_temp_chunks(self, target_url: str, url: str, chunks: list[ChunkMetadata]) -> None:
-        self._url_timestamps[url] = self._url_temp_timestamps[url]
-        
         temp_chunks = getattr(self, '_active_temp_chunks', {}).copy()
         temp_chunks[url] = chunks
         self._active_temp_chunks = temp_chunks
+
+        pending_timestamps = getattr(self, '_pending_timestamps', {}).copy()
+        if url in self._url_temp_timestamps:
+            pending_timestamps[url] = self._url_temp_timestamps[url]
+        self._pending_timestamps = pending_timestamps
 
         self._save_results(
             self._path.TEMP_CHUNKS_OUTPUT,
             self._get_temp_chunks_filename(target_url),
             _TempChunkSnapshot(temp_chunks),
         )
-        self._save_results(self._path.SCRAPING_OUTPUT, 'url_timestamps', self._url_timestamps)
+        self._save_results(
+            self._path.TEMP_CHUNKS_OUTPUT,
+            self._get_temp_timestamps_filename(target_url),
+            pending_timestamps,
+        )
         
         incupd_logger.info(f"Stored {len(chunks)} chunks in temp for URL {url}")
 
@@ -530,14 +553,70 @@ class Scraper:
         return self._normalizer.url_to_filename(target_url) + '_merged_chunks'
 
 
-    def delete_temp_merged_chunks(self, target_url: str) -> None:
-        temp_path = os.path.join(
+    def _get_temp_timestamps_filename(self, target_url: str) -> str:
+        return self._normalizer.url_to_filename(target_url) + '_pending_timestamps'
+
+
+    def commit_scrape(self, manifest: ScrapeManifest) -> None:
+        """Commit scraper checkpoints after all database sources are reconciled."""
+        processed_sources = set(manifest.processed_sources)
+        pending_timestamps = getattr(self, '_pending_timestamps', {})
+        for url in processed_sources:
+            timestamp = pending_timestamps.get(url)
+            if timestamp:
+                self._url_timestamps[url] = timestamp
+
+        self._save_results(self._path.SCRAPING_OUTPUT, 'url_timestamps', self._url_timestamps)
+
+        remaining_chunks = {
+            url: chunks
+            for url, chunks in getattr(self, '_active_temp_chunks', {}).items()
+            if url not in processed_sources
+        }
+        chunks_path = os.path.join(
             self._path.TEMP_CHUNKS_OUTPUT,
-            self._get_temp_chunks_filename(target_url) + '.json'
+            self._get_temp_chunks_filename(manifest.target_url) + '.json',
         )
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-            incupd_logger.info(f"Deleted temp merged chunks file '{temp_path}'")
+        if os.path.exists(chunks_path):
+            os.remove(chunks_path)
+        if remaining_chunks:
+            self._save_results(
+                self._path.TEMP_CHUNKS_OUTPUT,
+                self._get_temp_chunks_filename(manifest.target_url),
+                _TempChunkSnapshot(remaining_chunks),
+            )
+
+        remaining_timestamps = {
+            url: timestamp
+            for url, timestamp in pending_timestamps.items()
+            if url not in processed_sources
+        }
+        timestamps_path = os.path.join(
+            self._path.TEMP_CHUNKS_OUTPUT,
+            self._get_temp_timestamps_filename(manifest.target_url) + '.json',
+        )
+        if remaining_timestamps:
+            self._save_results(
+                self._path.TEMP_CHUNKS_OUTPUT,
+                self._get_temp_timestamps_filename(manifest.target_url),
+                remaining_timestamps,
+            )
+        elif os.path.exists(timestamps_path):
+            os.remove(timestamps_path)
+
+        self._active_temp_chunks = remaining_chunks
+        self._pending_timestamps = remaining_timestamps
+
+
+    def delete_temp_merged_chunks(self, target_url: str) -> None:
+        for filename in (
+            self._get_temp_chunks_filename(target_url),
+            self._get_temp_timestamps_filename(target_url),
+        ):
+            temp_path = os.path.join(self._path.TEMP_CHUNKS_OUTPUT, filename + '.json')
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+                incupd_logger.info(f"Deleted scraper temp file '{temp_path}'")
 
 
     def _get_etag(self, url: str) -> str | None:
@@ -628,15 +707,17 @@ class Scraper:
         logger.info(f"Fetching head for URL '{url}'...")
 
         etag = self._get_etag(url)
-        response = call_with_exponential_backoff(fetch_head, args=(url, etag), delay=crawl_delay)
-        if response['status'] == 'FAIL':
-            logger.warning(f"Failed to fetch head for URL {url}: {response['last_error']}! Skipping...")
-            return ScrapingResult(status=ScrapingStatus.REJECTED)
-
-        fetch_result = response['result']
-        validation = self._is_fetch_valid(url, visited_urls, fetch_result) 
-        if validation != ScrapingStatus.OK:
-            return ScrapingResult(status=validation)
+        try:
+            fetch_result = fetch_head(url, etag)
+        except Exception as head_error:
+            logger.warning(
+                f"HEAD request failed for URL {url}: {head_error}. "
+                "Falling back to a GET request..."
+            )
+        else:
+            validation = self._is_fetch_valid(url, visited_urls, fetch_result)
+            if validation != ScrapingStatus.OK:
+                return ScrapingResult(status=validation)
 
         response = call_with_exponential_backoff(fetch_url, args=(url, etag), delay=crawl_delay)
         if response['status'] == 'FAIL':
@@ -714,6 +795,12 @@ class Scraper:
                 for url, ts in results.items():
                     results_dict[url] = dataclass_to_dict(ts)
 
+            case _ if filename.endswith('_pending_timestamps'):
+                results_dict = {
+                    url: dataclass_to_dict(timestamp)
+                    for url, timestamp in results.items()
+                }
+
             case 'url_priorities':
                 for prio, urls in results.items():
                     prev = set(results_dict.get(prio, []))
@@ -767,6 +854,12 @@ class Scraper:
                     for url, chunk_metadata in loaded_data.items():
                         loaded_data[url] = [dict_to_dataclass(chunk, ChunkMetadata) for chunk in chunk_metadata]
                     incupd_logger.debug(f"Loaded {len(loaded_data)} temp merged chunks")
+                    return loaded_data
+
+                case _ if filename.endswith('_pending_timestamps'):
+                    for url, timestamp in loaded_data.items():
+                        loaded_data[url] = dict_to_dataclass(timestamp, UrlTimestamps)
+                    incupd_logger.debug(f"Loaded {len(loaded_data)} pending timestamps")
                     return loaded_data
 
                 case _:
