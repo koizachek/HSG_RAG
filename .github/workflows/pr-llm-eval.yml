@@ -152,6 +152,55 @@ jobs:
               return `- \`${item.case_id}\` score ${item.score}/${minScore}: ${item.verdict || 'No verdict.'}${issues}`;
             });
 
+            const clip = (value, maxLength = 1200) => {
+              const text = String(value || '').replace(/```/g, "'''").trim();
+              if (text.length <= maxLength) {
+                return text;
+              }
+              return `${text.slice(0, maxLength)}... [truncated]`;
+            };
+
+            const formatTranscript = (item) => {
+              const transcript = Array.isArray(item.transcript) ? item.transcript : [];
+              const lines = [
+                `### ${item.case_id} (${item.score}/${minScore})`,
+                '',
+              ];
+
+              if (item.verdict) {
+                lines.push(`Judge: ${item.verdict}`, '');
+              }
+
+              if (!transcript.length) {
+                lines.push('No chatbot transcript was captured.');
+                return lines.join('\n');
+              }
+
+              lines.push('```text');
+              for (const turn of transcript) {
+                lines.push(`Turn ${turn.turn ?? '?'}`);
+                lines.push(`User: ${clip(turn.user)}`);
+                lines.push(`Assistant: ${clip(turn.assistant)}`);
+                if (turn.additional_details) {
+                  lines.push(`Additional details: ${clip(turn.additional_details, 800)}`);
+                }
+                if (Array.isArray(turn.relevant_programs) && turn.relevant_programs.length) {
+                  lines.push(`Relevant programs: ${turn.relevant_programs.join(', ')}`);
+                }
+                if (turn.language) {
+                  lines.push(`Language: ${turn.language}`);
+                }
+                if (turn.elapsed_s !== undefined) {
+                  lines.push(`Elapsed: ${turn.elapsed_s}s`);
+                }
+                lines.push('');
+              }
+              lines.push('```');
+              return lines.join('\n');
+            };
+
+            const transcriptBlocks = failed.slice(0, 8).map(formatTranscript);
+
             let outputTail = '';
             if (fs.existsSync('uat-output.txt')) {
               const output = fs.readFileSync('uat-output.txt', 'utf8');
@@ -171,6 +220,16 @@ jobs:
               failed.length ? '### Failing cases' : '### Failing cases\nNone.',
               ...(failed.length ? failureLines : []),
               '',
+              ...(failed.length
+                ? [
+                    '<details><summary>Chatbot transcripts for failing cases</summary>',
+                    '',
+                    ...transcriptBlocks,
+                    '',
+                    '</details>',
+                    '',
+                  ]
+                : []),
               '<details><summary>Pytest output tail</summary>',
               '',
               '```text',
