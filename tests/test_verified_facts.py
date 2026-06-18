@@ -113,6 +113,43 @@ class TestPromptBlock:
 # --------------------------- Facts extraction -------------------------------
 
 class TestFactExtractionFallbacks:
+    def test_pdf_extraction_handles_non_pdf_response(self):
+        from src.pipeline.update_programme_facts import extract_pdf_text
+
+        content = b"<html><body><h1>Not found</h1><script>ignored()</script><p>PDF moved</p></body></html>"
+
+        text = extract_pdf_text(content, "https://example.test/file.pdf")
+
+        assert "Not found" in text
+        assert "PDF moved" in text
+        assert "ignored" not in text
+
+    def test_fetch_sources_skips_unreadable_pdf(self, monkeypatch):
+        import src.pipeline.update_programme_facts as facts_module
+
+        class FakeResponse:
+            status_code = 200
+            headers = {"Content-Type": "application/pdf"}
+            content = b"%PDF invalid"
+            text = ""
+
+            def raise_for_status(self):
+                return None
+
+        class FakeSession:
+            def get(self, *args, **kwargs):
+                return FakeResponse()
+
+        monkeypatch.setattr(facts_module.requests, "Session", lambda: FakeSession())
+        monkeypatch.setattr(facts_module, "FACT_SOURCES", {"broken_plan": "https://example.test/broken.pdf"})
+        monkeypatch.setattr(
+            facts_module,
+            "extract_pdf_text",
+            lambda content, url: (_ for _ in ()).throw(RuntimeError("bad pdf")),
+        )
+
+        assert facts_module.fetch_sources() == {"broken_plan": ""}
+
     def test_ects_fallback_reads_es_hsg_label_value(self):
         from src.pipeline.update_programme_facts import _extract_ects_credits
 

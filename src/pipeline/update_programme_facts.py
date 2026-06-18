@@ -161,15 +161,38 @@ Relevant page snippet:
 # --------------------------------- Fetching ----------------------------------
 
 def extract_pdf_text(content: bytes, url: str) -> str:
-    """Extract text from a PDF response using the existing docling dependency."""
+    """Extract text from a PDF response using available local parsers."""
+    if not content.lstrip().startswith(b'%PDF'):
+        logger.warning(f"PDF URL did not return PDF bytes: {url}")
+        try:
+            text = content.decode('utf-8', errors='ignore')
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(text, 'html.parser')
+            for tag in soup(['script', 'style', 'noscript']):
+                tag.decompose()
+            return soup.get_text(separator='\n', strip=True)
+        except Exception:
+            return content.decode('utf-8', errors='ignore')
+
     suffix = os.path.splitext(url)[1] or '.pdf'
     with NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(content)
         tmp_path = tmp.name
     try:
-        from docling.document_converter import DocumentConverter
-        result = DocumentConverter().convert(tmp_path)
-        return result.document.export_to_markdown()
+        try:
+            from docling.document_converter import DocumentConverter
+            result = DocumentConverter().convert(tmp_path)
+            return result.document.export_to_markdown()
+        except Exception as docling_error:
+            logger.warning(f"Docling could not parse PDF {url}; trying fallback parser: {docling_error}")
+
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(tmp_path)
+            return "\n\n".join(page.extract_text() or '' for page in reader.pages).strip()
+        except Exception as pypdf_error:
+            logger.warning(f"Fallback PDF parser could not parse {url}: {pypdf_error}")
+            raise
     finally:
         try:
             os.remove(tmp_path)
@@ -200,7 +223,11 @@ def fetch_sources() -> dict[str, str]:
         resp.raise_for_status()
         content_type = resp.headers.get('Content-Type', '').lower()
         if url.lower().endswith('.pdf') or 'application/pdf' in content_type:
-            pages[key] = extract_pdf_text(resp.content, url)
+            try:
+                pages[key] = extract_pdf_text(resp.content, url)
+            except Exception as exc:
+                logger.warning(f"Skipping unreadable PDF source {url}: {exc}")
+                pages[key] = ''
             continue
         # Lightweight HTML -> text. The scraping pipeline has richer
         # processors; for fact extraction visible text is sufficient.
