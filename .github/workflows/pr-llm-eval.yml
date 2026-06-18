@@ -83,7 +83,7 @@ jobs:
               def pytest_collection_modifyitems(self, session, config, items):
                   self.count = len(items)
                   self.uat_case_count = sum(
-                      item.name.startswith("test_uat_case_passes_llm_judge")
+                      item.name.startswith("test_uat_average_score_passes_llm_judge")
                       for item in items
                   )
 
@@ -96,8 +96,8 @@ jobs:
           if int(exit_code) != 0:
               raise SystemExit(int(exit_code))
           if counter.uat_case_count <= 0:
-              raise SystemExit("Expected pytest to collect more than 0 UAT judge case tests.")
-          print(f"Collected {counter.uat_case_count} UAT judge case tests ({counter.count} total tests).")
+              raise SystemExit("Expected pytest to collect the UAT average judge test.")
+          print(f"Collected UAT average judge test ({counter.count} total tests).")
           PY
 
       - name: Run UAT LLM judge
