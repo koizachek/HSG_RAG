@@ -1,0 +1,100 @@
+name: PR UAT LLM Judge
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  uat-llm-judge:
+    name: PR UAT LLM judge
+    runs-on: ubuntu-latest
+
+    env:
+      RUN_UAT_LLM_JUDGE: "1"
+      UAT_MIN_SCORE: "7.0"
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
+      EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY || secrets.OPEN_ROUTER_API_KEY }}
+      WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY }}
+      WEAVIATE_CLUSTER_URL: ${{ secrets.WEAVIATE_CLUSTER_URL }}
+      LANGSMITH_TRACING: "true"
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
+      LANGSMITH_ENDPOINT: https://api.smith.langchain.com
+      WEAVIATE_KEEP_WARM_ENABLED: "false"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Validate UAT secrets
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+
+          required = [
+              "OPENAI_API_KEY",
+              "WEAVIATE_API_KEY",
+              "WEAVIATE_CLUSTER_URL",
+          ]
+          missing = [name for name in required if not os.getenv(name)]
+          if missing:
+              raise SystemExit(
+                  "Missing secrets required for PR UAT LLM judge: "
+                  + ", ".join(missing)
+              )
+          PY
+
+      - name: Assert UAT tests collect
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pytest
+
+
+          class CollectionCounter:
+              count = 0
+              uat_case_count = 0
+
+              def pytest_collection_modifyitems(self, session, config, items):
+                  self.count = len(items)
+                  self.uat_case_count = sum(
+                      item.name.startswith("test_uat_case_passes_llm_judge")
+                      for item in items
+                  )
+
+
+          counter = CollectionCounter()
+          exit_code = pytest.main(
+              ["tests/test_uat_llm_judge.py", "--collect-only", "-q", "-o", "addopts="],
+              plugins=[counter],
+          )
+          if int(exit_code) != 0:
+              raise SystemExit(int(exit_code))
+          if counter.uat_case_count <= 0:
+              raise SystemExit("Expected pytest to collect more than 0 UAT judge case tests.")
+          print(f"Collected {counter.uat_case_count} UAT judge case tests ({counter.count} total tests).")
+          PY
+
+      - name: Run UAT LLM judge
+        run: |
+          set -euo pipefail
+          pytest tests/test_uat_llm_judge.py -q -s -o addopts=

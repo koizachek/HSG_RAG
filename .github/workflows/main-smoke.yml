@@ -1,0 +1,65 @@
+name: Main Smoke
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Main push smoke
+    runs-on: ubuntu-latest
+
+    env:
+      SMOKE_TEST_PATHS: tests/test_main_happy_path.py tests/test_stream_parser.py
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert pytest collects tests
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+
+          import pytest
+
+
+          class CollectionCounter:
+              count = 0
+
+              def pytest_collection_modifyitems(self, session, config, items):
+                  self.count = len(items)
+
+
+          counter = CollectionCounter()
+          paths = os.environ["SMOKE_TEST_PATHS"].split()
+          exit_code = pytest.main([*paths, "--collect-only", "-q"], plugins=[counter])
+          if int(exit_code) != 0:
+              raise SystemExit(int(exit_code))
+          if counter.count <= 0:
+              raise SystemExit("Expected pytest to collect more than 0 tests.")
+          print(f"Collected {counter.count} tests.")
+          PY
+
+      - name: Run smoke tests
+        run: |
+          set -euo pipefail
+          pytest -q $SMOKE_TEST_PATHS

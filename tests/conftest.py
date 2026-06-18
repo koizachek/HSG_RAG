@@ -16,6 +16,7 @@ TEST_DEPENDENCIES = {
     "tests/test_language_handling.py": {"langchain_core"},
     "tests/test_programme_positioning_real_agent.py": {"langchain_core", "langchain", "langsmith", "weaviate"},
     "tests/test_reply_speed_real_agent.py": {"langchain_core", "langchain", "langsmith", "weaviate"},
+    "tests/test_uat_llm_judge.py": {"openpyxl", "openai", "langchain_core", "langchain", "langsmith", "weaviate"},
     "tests/test_weaviate_connection.py": {"langchain_core", "langchain", "colorama"},
 }
 
