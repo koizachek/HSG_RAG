@@ -6,7 +6,6 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.cache.cache import Cache
 from src.config import config
 from src.rag.agent_chain import ExecutiveAgentChain
 
@@ -47,22 +46,10 @@ _READY, _SKIP_REASON = _has_real_agent_prerequisites()
 
 @pytest.fixture
 def real_agent_positioning():
-    old_cache_enabled = config.cache.ENABLED
-    old_cache_settings = Cache._settings
-    old_cache_instance = Cache._instance
-
-    Cache.configure(mode="dict", cache=False)
-    Cache._instance = None
-
-    try:
-        yield ExecutiveAgentChain(
-            language="en",
-            session_id=f"programme-positioning-{uuid.uuid4()}",
-        )
-    finally:
-        config.cache.ENABLED = old_cache_enabled
-        Cache._settings = old_cache_settings
-        Cache._instance = old_cache_instance
+    yield ExecutiveAgentChain(
+        language="en",
+        session_id=f"programme-positioning-{uuid.uuid4()}",
+    )
 
 
 @pytest.mark.skipif(not _READY, reason=_SKIP_REASON)

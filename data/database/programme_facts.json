@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-15",
+  "generated_at": "2026-06-18",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -26,8 +26,8 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus, Capstone-Projekt, Selbststudium, Personal Development Programm",
-        "en": "9 core courses, 5 electives, 14 weeks on campus, capstone project, self-study, personal development programme"
+        "de": "9 Pflichtkurse + 5 Wahlkurse, 14 Wochen am Campus, Capstone-Projekt, Selbststudium, persönliche Entwicklung",
+        "en": "9 core courses + 5 electives, 14 weeks on campus, capstone project, self-study, personal development"
       },
       "locations": {
         "de": "Schweiz (St. Gallen), Belgien (Wahlkurs)",
@@ -106,7 +106,7 @@
       ]
     },
     "emba_x": {
-      "official_name": "emba X (ETH Zurich & University of St.Gallen)",
+      "official_name": "EMBA ETH HSG (emba X)",
       "current_cohort": "emba X6",
       "language": {
         "de": "Englisch",

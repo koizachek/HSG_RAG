@@ -1,15 +1,14 @@
 # Executive Education RAG Chatbot
 
-A retrieval-augmented chatbot for the University of St.Gallen Executive Education programmes. The current system covers **EMBA HSG**, **IEMBA HSG**, and **emba X**, supports **English and German**, and combines scraping, document import, vector retrieval, caching, and a Gradio-based chat interface.
+A retrieval-augmented chatbot for the University of St.Gallen Executive Education programmes. The current system covers **EMBA HSG**, **IEMBA HSG**, and **emba X**, supports **English and German**, and combines scraping, document import, vector retrieval, and a Gradio-based chat interface.
 
 ## What The Repository Contains
 
 - A multi-agent RAG chat application for programme information and admissions guidance
 - A scraping and import pipeline for keeping programme content up to date
 - Weaviate-based retrieval across language-specific collections
-- Response caching with `cloud`, `local`, and in-memory `dict` modes
 - A Gradio chat UI plus a separate database management UI
-- A growing pytest suite for consent flow, scraping, prompts, cache behaviour, and formatting
+- A growing pytest suite for consent flow, scraping, prompts, and formatting
 
 ## Core Features
 
@@ -20,7 +19,6 @@ A retrieval-augmented chatbot for the University of St.Gallen Executive Educatio
 - Booking / handover flow with advisor-specific widgets
 - Consent handling and user-profile tracking
 - Scraping, chunking, import, and Weaviate collection management
-- Configurable cache layer for Redis Cloud, local Redis, or in-memory operation
 
 ## Project Layout
 
@@ -31,10 +29,9 @@ HSG_RAG/
 │   ├── apps/
 │   │   ├── chat/               # Gradio chatbot application
 │   │   └── dbapp/              # Database management UI
-│   ├── cache/                  # Cache facade, metrics, and strategies
 │   ├── config/                 # Runtime config loader
 │   ├── const/                  # Static response and content constants
-│   ├── database/               # Redis and Weaviate services
+│   ├── database/               # Weaviate services and collection strategies
 │   ├── notification/           # Notification helpers
 │   ├── pipeline/               # Import pipeline orchestration
 │   ├── rag/                    # Agent chain, prompts, formatting, scope handling
@@ -70,10 +67,6 @@ LANGSMITH_PROJECT=...
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 
 GROQ_API_KEY=...
-
-REDIS_CLOUD_HOST=...
-REDIS_CLOUD_PORT=...
-REDIS_CLOUD_PASSWORD=...
 ```
 
 ## Docker Deployment 
@@ -158,7 +151,6 @@ python main.py --imports path/to/file1 path/to/file2
 python main.py --weaviate checkhealth
 python main.py --weaviate init
 python main.py --weaviate redo
-python main.py --clear-cache
 python main.py --dbapp
 ```
 
@@ -173,14 +165,6 @@ python main.py --scrape
 The default cloud embedding path uses OpenRouter `openai/text-embedding-3-small`
 and stores app-generated vectors in Weaviate. The existing scraper restoration
 flow is unchanged.
-
-Cache mode can be selected explicitly:
-
-```bash
-python main.py --app de --cache-mode dict
-python main.py --app de --cache-mode local
-python main.py --app de --cache-mode cloud
-```
 
 ## Testing
 
@@ -198,7 +182,6 @@ Current default behaviour from [pytest.ini](pytest.ini):
 Examples:
 
 ```bash
-pytest -q tests/test_cache.py
 pytest -q tests/test_pricing_prompts.py
 pytest -q tests/test_tone_and_handover.py
 pytest -q -m integration
@@ -213,9 +196,6 @@ The repository uses `config.py` as the default configuration source, with enviro
 Important defaults in the current repository state:
 
 - Available languages: `en`, `de`
-- Default cache mode: `cloud`
-- Cache TTL: `86400` seconds
-- Cache max size: `1000`
 - Lead response target: `100` words
 - Sub-agent response target: `200` words
 - User-profile tracking: enabled

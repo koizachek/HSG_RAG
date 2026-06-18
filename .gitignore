@@ -71,3 +71,6 @@ pyrightconfig.json
 #feedback I just uploaded into the same file to check for accuracy
 chatbot emba x.docx
 IEBMA Test Cards 1_2.docx
+
+# Internal audit notes (not for the public repo)
+AUDIT_LATENCY_HALLUCINATIONS.md

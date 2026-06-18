@@ -70,6 +70,10 @@ PROPERTIES_PATH = 'data/database'
 # More information on property strategies in the documentation.
 STRATEGIES_PATH = 'src/database/strategies'
 
+# An integer. Sets the replication factor for Weaviate collections.
+# Paid/high-availability Weaviate clusters can require a minimum factor of 3.
+WEAVIATE_REPLICATION_FACTOR = 3
+
 # An integer. Defines a connection timeout to the cloud weaviate service (in seconds). 
 # Defaults to 90.
 WEAVIATE_INIT_TIMEOUT = 90
@@ -94,27 +98,6 @@ WEAVIATE_KEEP_WARM_INTERVAL = 180
 # An integer. Defines when an idle Weaviate client is considered stale enough to
 # reconnect proactively (in seconds).
 WEAVIATE_CLIENT_IDLE_TIMEOUT = 25 * 60
-
-# ========================================== Cache Configuration ============================================
-
-# A string; either 'local', 'cloud' (Redis) or 'dict'. Defaults to 'cloud'.
-# Sets the default cache mode. More information on cache modes in documentation.
-CACHE_MODE = 'cloud'
-
-# An integer. Sets the reset time (time to live) in seconds for the cache storage.
-# The cache storage will be cleared upon reset time exceedance.
-# Defaults to 86400 seconds (24 hours).
-CACHE_TTL = 86400 
-
-# An integer. Maximum amount of cached messages that will be held in the cache storage.
-# Defaults to 1000.
-CACHE_MAX_SIZE = 1000 
-
-# A string. Defines the IP adress to access the local cache storage. Defaults to 'localhost'.
-CACHE_LOCAL_HOST = 'localhost'
-
-# An integer. Defines the port for accessing the local cache storage. Defaults to 6379.
-CACHE_LOCAL_PORT = 6379 
 
 # ===================================== Data Processing Configuration =======================================
 

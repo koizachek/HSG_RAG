@@ -598,6 +598,35 @@ class WeaviateService:
         return Configure.Vectors.self_provided(name=self._embedding_vector_name())
 
 
+    def _replication_factor(self) -> int:
+        factor = config.weaviate.REPLICATION_FACTOR
+        if factor < 1:
+            raise ValueError("WEAVIATE_REPLICATION_FACTOR must be at least 1")
+        return factor
+
+
+    def _schema_config_for_restore(self, cfg: dict) -> dict:
+        restored_cfg = dict(cfg)
+        replication_config = dict(restored_cfg.get("replicationConfig") or {})
+        backup_factor = replication_config.get("factor")
+        target_factor = self._replication_factor()
+
+        if backup_factor != target_factor:
+            replication_config["factor"] = target_factor
+            restored_cfg["replicationConfig"] = replication_config
+            collection_name = (
+                restored_cfg.get("class")
+                or restored_cfg.get("name")
+                or "<unknown>"
+            )
+            logger.info(
+                f"Restoring collection '{collection_name}' with replication factor "
+                f"{target_factor} instead of backup value {backup_factor}"
+            )
+
+        return restored_cfg
+
+
     def _create_collections(self):
         """
         Create and initialize language-specific collections.
@@ -619,7 +648,10 @@ class WeaviateService:
                         client.collections.create(
                             name=collection_name,
                             properties=properties,                          
-                            vector_config=vector_config
+                            vector_config=vector_config,
+                            replication_config=Configure.replication(
+                                factor=self._replication_factor()
+                            )
                         )
                         logger.info(f"Created collection {collection_name}")
                         successful_creations += 1
@@ -827,6 +859,7 @@ class WeaviateService:
                         with open(schema_backup_path) as f:
                             schemas = json.load(f)
                             for cfg in schemas: 
+                                cfg = self._schema_config_for_restore(cfg)
                                 client.collections.create_from_dict(cfg)
 
                         with open(objects_backup_path) as f:

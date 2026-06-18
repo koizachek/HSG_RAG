@@ -61,7 +61,7 @@ class TestJsonMode:
         assert stream_through(parser, payload, 3) == "Studiengebühr: CHF 85'000"
 
     def test_response_field_not_first(self):
-        payload = json.dumps({"is_context_dependent": True, "response": "Antwort hier."})
+        payload = json.dumps({"additional_details": "Interne Details.", "response": "Antwort hier."})
         parser = ResponseFieldStreamParser()
         assert stream_through(parser, payload, 4) == "Antwort hier."
 
