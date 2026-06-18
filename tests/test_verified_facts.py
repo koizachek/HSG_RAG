@@ -156,6 +156,149 @@ class TestFactExtractionFallbacks:
         assert diff_facts(old, stabilized) == []
         assert stabilized["programmes"]["emba"]["duration"]["en"] == "18 months (up to 48 months)"
 
+    def test_extraction_comparison_preserves_equivalent_emba_structure_wording(self):
+        from src.pipeline.update_programme_facts import (
+            diff_facts,
+            preserve_materially_unchanged_extractions,
+        )
+
+        old = {
+            "programmes": {
+                "emba": {
+                    "structure": {
+                        "de": (
+                            "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus, "
+                            "Capstone-Projekt, Selbststudium, Personal Development Programm"
+                        ),
+                        "en": (
+                            "9 core courses, 5 electives, 14 weeks on campus, "
+                            "capstone project, self-study, personal development programme"
+                        ),
+                    }
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "emba": {
+                    "structure": {
+                        "de": (
+                            "9 Pflichtkurse + 5 Wahlkurse, 14 Wochen am Campus, "
+                            "Capstone-Projekt, Selbststudium, pers\u00f6nliche Entwicklung"
+                        ),
+                        "en": (
+                            "9 core courses + 5 electives, 14 weeks on campus, "
+                            "capstone project, self-study, personal development"
+                        ),
+                    }
+                }
+            }
+        }
+
+        stabilized = preserve_materially_unchanged_extractions(old, new, pages={})
+
+        assert diff_facts(old, stabilized) == []
+        assert stabilized["programmes"]["emba"]["structure"] == old["programmes"]["emba"]["structure"]
+
+    @pytest.mark.parametrize("new_structure,expected_fragment", [
+        (
+            "9 core courses, 6 electives, 14 weeks on campus, capstone project, self-study",
+            "5 electives, 14 weeks on campus",
+        ),
+        (
+            "9 core courses, 5 electives, 15 weeks on campus, capstone project, self-study",
+            "14 weeks on campus",
+        ),
+        (
+            "9 core courses, 5 electives, 14 weeks on campus, self-study",
+            "capstone project",
+        ),
+    ])
+    def test_extraction_comparison_keeps_material_structure_changes(self, new_structure, expected_fragment):
+        from src.pipeline.update_programme_facts import (
+            diff_facts,
+            preserve_materially_unchanged_extractions,
+        )
+
+        old = {
+            "programmes": {
+                "emba": {
+                    "structure": {
+                        "en": "9 core courses, 5 electives, 14 weeks on campus, capstone project, self-study"
+                    }
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "emba": {
+                    "structure": {"en": new_structure}
+                }
+            }
+        }
+
+        stabilized = preserve_materially_unchanged_extractions(old, new, pages={})
+        changes = diff_facts(old, stabilized)
+
+        assert len(changes) == 1
+        assert "emba.structure.en:" in changes[0]
+        assert expected_fragment in changes[0]
+
+    def test_extraction_comparison_keeps_fee_and_deadline_changes(self):
+        from src.pipeline.update_programme_facts import (
+            diff_facts,
+            preserve_materially_unchanged_extractions,
+        )
+
+        old = {
+            "programmes": {
+                "emba": {
+                    "tuition_chf": {
+                        "final_deadline": {"deadline": "2026-08-10", "fee": 77500}
+                    }
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "emba": {
+                    "tuition_chf": {
+                        "final_deadline": {"deadline": "2026-08-11", "fee": 79500}
+                    }
+                }
+            }
+        }
+
+        stabilized = preserve_materially_unchanged_extractions(old, new, pages={})
+
+        assert diff_facts(old, stabilized) == [
+            "emba.tuition_chf.final_deadline.deadline: 2026-08-10 -> 2026-08-11",
+            "emba.tuition_chf.final_deadline.fee: 77500 -> 79500",
+        ]
+
+    def test_ambiguous_comparison_preserves_existing_when_llm_unavailable(self, monkeypatch):
+        from src.pipeline.update_programme_facts import evaluate_fact_against_existing
+        from src.rag.models import ModelConfigurator
+
+        monkeypatch.setattr(
+            ModelConfigurator,
+            "get_main_agent_model",
+            classmethod(lambda cls: (_ for _ in ()).throw(RuntimeError("missing API key"))),
+        )
+
+        decision = evaluate_fact_against_existing(
+            existing_value="Executive MBA HSG",
+            observed_value="Executive MBA at HSG",
+            page_content="Executive MBA at HSG",
+            fact_key="emba.official_name",
+            source_info="test",
+            language="en",
+        )
+
+        assert decision.materially_changed is False
+        assert decision.preserve_existing is True
+        assert decision.confidence == 0.0
+
     def test_diff_keeps_alerting_on_material_core_fact_changes(self):
         from src.pipeline.update_programme_facts import diff_facts
 

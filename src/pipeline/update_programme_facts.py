@@ -95,6 +95,14 @@ class AllProgrammesSchema(BaseModel):
     emba_x: ProgrammeFactsSchema
 
 
+class FactComparisonDecision(BaseModel):
+    materially_changed: bool
+    confidence: float = Field(ge=0.0, le=1.0)
+    reason: str
+    fact_value: str
+    preserve_existing: bool
+
+
 EXTRACTION_PROMPT = """You are a fact extraction system. Below is the text content of the
 official HSG Executive MBA websites. Extract the CURRENT facts for the three
 programmes EMBA HSG (German), IEMBA HSG (International, English) and
@@ -109,8 +117,44 @@ Rules:
 - Dates in ISO format (14. September 2026 -> 2026-09-14).
 - Never mix values between programmes. The deadlines page contains one row
   per programme - keep them strictly separated.
+- Currently stored facts are provided for stability and comparison only. Do not
+  use them to fill missing page content, but if the page expresses the same
+  fact with different punctuation, word order, translation-equivalent wording,
+  or minor synonyms, prefer the existing stable wording.
+
+CURRENTLY STORED FACTS:
+{existing_facts_context}
 
 PAGE CONTENT:
+{page_content}"""
+
+
+FACT_COMPARISON_PROMPT = """You compare one stored programme fact with a newly
+observed fact extracted from official page content.
+
+Rules:
+- Return materially_changed=false when the page expresses the same factual
+  content, even if wording, punctuation, formatting, translation, or synonyms
+  differ.
+- Return materially_changed=true only for real factual differences: fees,
+  deadlines, start dates, numbers of courses/modules/electives, campus weeks,
+  admissions requirements, duration, degree/certificate/title, language,
+  location, format, or a component being added or removed.
+- Be conservative. If the difference is stylistic or ambiguous, preserve the
+  existing value and set preserve_existing=true.
+- If the page contains the same information expressed differently, keep the
+  existing stored fact as fact_value.
+
+Fact key: {fact_key}
+Language: {language}
+Source: {source_info}
+Currently stored value:
+{existing_value}
+
+Newly observed/extracted value:
+{observed_value}
+
+Relevant page snippet:
 {page_content}"""
 
 
@@ -175,7 +219,17 @@ def fetch_sources() -> dict[str, str]:
 
 # -------------------------------- Extraction ---------------------------------
 
-def extract_facts(pages: dict[str, str]) -> AllProgrammesSchema:
+def _existing_facts_context(existing_facts: dict | None) -> str:
+    if not existing_facts:
+        return "No currently stored facts were provided."
+    return json.dumps(
+        existing_facts.get('programmes', existing_facts),
+        indent=2,
+        ensure_ascii=False,
+    )[:20000]
+
+
+def extract_facts(pages: dict[str, str], existing_facts: dict | None = None) -> AllProgrammesSchema:
     """LLM-based structured extraction over the fetched pages."""
     from src.rag.models import ModelConfigurator
     model = ModelConfigurator.get_main_agent_model().with_structured_output(
@@ -185,7 +239,10 @@ def extract_facts(pages: dict[str, str]) -> AllProgrammesSchema:
         f"===== SOURCE: {FACT_SOURCES[key]} =====\n{text[:20000]}"
         for key, text in pages.items()
     )
-    return model.invoke(EXTRACTION_PROMPT.format(page_content=page_content))
+    return model.invoke(EXTRACTION_PROMPT.format(
+        existing_facts_context=_existing_facts_context(existing_facts),
+        page_content=page_content,
+    ))
 
 
 def _extract_ects_credits(text: str) -> int:
@@ -460,6 +517,36 @@ FACT_COMPARISON_STOP_WORDS = {
     'with',
 }
 
+FACT_SYNONYM_PHRASES = (
+    (r'\bpersonal\s+development\s+program(?:me)?\b', 'personal development'),
+    (r'\bpersonliche\s+entwicklung\b', 'personal development'),
+    (r'\bpersoenliche\s+entwicklung\b', 'personal development'),
+    (r'\bcapstone\s+projekt\b', 'capstone project'),
+    (r'\bselbststudium\b', 'self study'),
+    (r'\bself\s*study\b', 'self study'),
+    (r'\bpflichtkurse?n?\b', 'core courses'),
+    (r'\bwahlkurse?n?\b', 'electives'),
+    (r'\bessential\s+kurse?n?\b', 'essential courses'),
+    (r'\bwochen\s+am\s+campus\b', 'weeks on campus'),
+    (r'\bwochen\s+im\s+ausland\b', 'weeks abroad'),
+    (r'\bprogramm\b', 'program'),
+    (r'\bprogramme\b', 'program'),
+)
+
+STRUCTURE_COMPONENT_PATTERNS = {
+    'core_courses': r'\bcore\s+courses?\b',
+    'electives': r'\belectives?\b',
+    'campus_weeks': r'\bweeks?\s+on\s+campus\b',
+    'abroad_weeks': r'\bweeks?\s+abroad\b',
+    'capstone': r'\bcapstone\s+project\b',
+    'self_study': r'\bself\s+study\b',
+    'personal_development': r'\bpersonal\s+development\b',
+    'thesis': r'\b(?:thesis|diplomarbeit)\b',
+    'impact_projects': r'\bimpact\s+projects?\b',
+    'online': r'\bonline\b',
+    'essential_courses': r'\bessential\s+courses?\b',
+}
+
 
 def _flat_facts(d: dict, prefix: str = '') -> dict:
     items = {}
@@ -485,9 +572,16 @@ def _strip_accents(value: str) -> str:
     return ''.join(ch for ch in normalized if not unicodedata.combining(ch))
 
 
-def _canonical_text(value: str) -> str:
+def _normalize_fact_phrases(value: str) -> str:
     value = _strip_accents(str(value)).casefold()
     value = value.replace('&', ' and ')
+    for pattern, replacement in FACT_SYNONYM_PHRASES:
+        value = re.sub(pattern, replacement, value, flags=re.IGNORECASE)
+    return value
+
+
+def _canonical_text(value: str) -> str:
+    value = _normalize_fact_phrases(value)
     value = re.sub(r'[^a-z0-9]+', ' ', value)
     return re.sub(r'\s+', ' ', value).strip()
 
@@ -502,6 +596,89 @@ def _meaningful_tokens(value: str) -> set[str]:
 
 def _number_signature(value: str) -> tuple[str, ...]:
     return tuple(re.findall(r'\d+(?:\.\d+)?', str(value)))
+
+
+def _structure_component_signature(value: str) -> set[str]:
+    normalized = _normalize_fact_phrases(value)
+    return {
+        component
+        for component, pattern in STRUCTURE_COMPONENT_PATTERNS.items()
+        if re.search(pattern, normalized, flags=re.IGNORECASE)
+    }
+
+
+def _comparison_decision(
+    materially_changed: bool,
+    confidence: float,
+    reason: str,
+    fact_value,
+    preserve_existing: bool,
+) -> FactComparisonDecision:
+    return FactComparisonDecision(
+        materially_changed=materially_changed,
+        confidence=confidence,
+        reason=reason,
+        fact_value='' if fact_value is None else str(fact_value),
+        preserve_existing=preserve_existing,
+    )
+
+
+def _deterministic_fact_comparison(
+    fact_key: str,
+    existing_value,
+    observed_value,
+) -> FactComparisonDecision | None:
+    if existing_value == observed_value:
+        return _comparison_decision(False, 1.0, "Values are identical.", existing_value, True)
+
+    if existing_value in (None, '') or observed_value in (None, ''):
+        return _comparison_decision(True, 1.0, "One value is missing.", observed_value, False)
+
+    if not isinstance(existing_value, str) or not isinstance(observed_value, str):
+        return _comparison_decision(True, 1.0, "Structured or numeric value changed.", observed_value, False)
+
+    old_text = _canonical_text(existing_value)
+    new_text = _canonical_text(observed_value)
+    if old_text == new_text:
+        return _comparison_decision(
+            False,
+            1.0,
+            "Only punctuation, case, spelling, or separator formatting changed.",
+            existing_value,
+            True,
+        )
+
+    old_numbers = _number_signature(existing_value)
+    new_numbers = _number_signature(observed_value)
+    if old_numbers != new_numbers:
+        return _comparison_decision(True, 1.0, "Numeric/date signature changed.", observed_value, False)
+
+    if _is_location_fact(fact_key):
+        if _meaningful_tokens(existing_value) == _meaningful_tokens(observed_value):
+            return _comparison_decision(False, 1.0, "Location wording/order changed only.", existing_value, True)
+        return _comparison_decision(True, 0.95, "Location set changed.", observed_value, False)
+
+    if fact_key.endswith(('duration.de', 'duration.en')) and old_numbers:
+        return _comparison_decision(False, 0.95, "Duration wording changed but numbers are stable.", existing_value, True)
+
+    if fact_key.endswith(('structure.de', 'structure.en')):
+        old_components = _structure_component_signature(existing_value)
+        new_components = _structure_component_signature(observed_value)
+        if old_components != new_components:
+            return _comparison_decision(True, 0.95, "Programme structure component set changed.", observed_value, False)
+
+        old_tokens = _meaningful_tokens(existing_value)
+        new_tokens = _meaningful_tokens(observed_value)
+        if old_tokens == new_tokens or old_tokens.issubset(new_tokens):
+            return _comparison_decision(
+                False,
+                0.95,
+                "Structure wording changed without changing numbers or components.",
+                existing_value,
+                True,
+            )
+
+    return None
 
 
 def _is_descriptive_fact(key: str) -> bool:
@@ -552,6 +729,122 @@ def _is_material_change(key: str, old_value, new_value) -> bool:
     if _is_non_material_text_change(key, old_value, new_value):
         return False
     return True
+
+
+def _source_keys_for_fact(programme_key: str, fact_key: str) -> list[str]:
+    if fact_key.startswith('tuition_chf.') or 'deadline' in fact_key:
+        return ['deadlines']
+    if programme_key == 'emba':
+        return ['emba', 'emba_plan']
+    if programme_key == 'iemba':
+        return ['iemba', 'iemba_es', 'iemba_plan']
+    if programme_key == 'emba_x':
+        return ['emba_x']
+    return list(FACT_SOURCES)
+
+
+def _snippet_for_fact(pages: dict[str, str], source_keys: list[str], observed_value) -> str:
+    observed_tokens = [
+        token for token in _meaningful_tokens(str(observed_value))
+        if len(token) > 2
+    ][:5]
+    snippets = []
+    for source_key in source_keys:
+        text = pages.get(source_key, '') or ''
+        if not text:
+            continue
+        canonical_text = _canonical_text(text)
+        if observed_tokens and not all(token in canonical_text for token in observed_tokens[:2]):
+            snippets.append(text[:3000])
+            continue
+        snippets.append(text[:3000])
+    return "\n\n".join(snippets)[:8000]
+
+
+def evaluate_fact_against_existing(
+    existing_value,
+    page_content: str,
+    fact_key: str,
+    source_info: str,
+    language: str = '',
+    observed_value=None,
+) -> FactComparisonDecision:
+    """Decide whether an extracted value is a material change from storage."""
+    if observed_value is None:
+        observed_value = page_content
+
+    deterministic = _deterministic_fact_comparison(fact_key, existing_value, observed_value)
+    if deterministic is not None:
+        return deterministic
+
+    try:
+        from src.rag.models import ModelConfigurator
+        model = ModelConfigurator.get_main_agent_model().with_structured_output(
+            FactComparisonDecision
+        )
+        decision = model.invoke(FACT_COMPARISON_PROMPT.format(
+            fact_key=fact_key,
+            language=language or 'unknown',
+            source_info=source_info,
+            existing_value=existing_value,
+            observed_value=observed_value,
+            page_content=(page_content or '')[:8000],
+        ))
+        if decision.materially_changed:
+            decision.preserve_existing = False
+            decision.fact_value = str(observed_value)
+        elif decision.preserve_existing:
+            decision.fact_value = str(existing_value)
+        return decision
+    except Exception as exc:
+        logger.warning(
+            "Could not run LLM fact comparison for %s; preserving existing value "
+            "to avoid an ambiguous overwrite: %s",
+            fact_key,
+            exc,
+        )
+        return _comparison_decision(
+            False,
+            0.0,
+            "LLM comparison unavailable; ambiguous change preserved existing value.",
+            existing_value,
+            True,
+        )
+
+
+def preserve_materially_unchanged_extractions(
+    old: dict,
+    new: dict,
+    pages: dict[str, str] | None = None,
+) -> dict:
+    """Compare extracted facts against stored facts before final diffing."""
+    old_programmes = (old or {}).get('programmes', {})
+    pages = pages or {}
+    for prog_key, new_prog in new.get('programmes', {}).items():
+        old_prog = old_programmes.get(prog_key, {})
+        old_flat, new_flat = _flat_facts(old_prog), _flat_facts(new_prog)
+        for key in sorted(set(old_flat) & set(new_flat)):
+            if old_flat[key] == new_flat[key]:
+                continue
+            full_key = f"{prog_key}.{key}"
+            source_keys = _source_keys_for_fact(prog_key, key)
+            source_info = ", ".join(FACT_SOURCES[source_key] for source_key in source_keys if source_key in FACT_SOURCES)
+            decision = evaluate_fact_against_existing(
+                existing_value=old_flat[key],
+                observed_value=new_flat[key],
+                page_content=_snippet_for_fact(pages, source_keys, new_flat[key]),
+                fact_key=full_key,
+                source_info=source_info,
+                language='de' if key.endswith('.de') else 'en' if key.endswith('.en') else '',
+            )
+            if decision.preserve_existing or not decision.materially_changed:
+                logger.info(
+                    "Preserving existing %s: %s",
+                    full_key,
+                    decision.reason,
+                )
+                _set_nested_value(new_prog, key, old_flat[key])
+    return new
 
 
 def preserve_non_material_changes(old: dict, new: dict) -> dict:
@@ -605,18 +898,24 @@ def main() -> int:
     parser.add_argument('--dry-run', action='store_true', help='Show diff without writing')
     args = parser.parse_args()
 
-    pages = fetch_sources()
-    extracted = extract_facts(pages)
-    extracted = apply_deterministic_fallbacks(extracted, pages)
-    extracted = apply_deterministic_source_facts(extracted, pages)
-    new_facts = to_facts_document(extracted)
-
     old_facts = {}
     if os.path.exists(FACTS_PATH):
         with open(FACTS_PATH, encoding='utf-8') as f:
             old_facts = json.load(f)
 
+    pages = fetch_sources()
+    try:
+        extracted = extract_facts(pages, existing_facts=old_facts)
+    except Exception as exc:
+        logger.error(f"Could not extract programme facts; existing facts file was not changed: {exc}")
+        return 1
+
+    extracted = apply_deterministic_fallbacks(extracted, pages)
+    extracted = apply_deterministic_source_facts(extracted, pages)
+    new_facts = to_facts_document(extracted)
+
     if old_facts:
+        new_facts = preserve_materially_unchanged_extractions(old_facts, new_facts, pages)
         new_facts = preserve_non_material_changes(old_facts, new_facts)
 
     changes = diff_facts(old_facts, new_facts)
