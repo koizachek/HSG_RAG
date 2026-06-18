@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      PYTHONPATH: ${{ github.workspace }}
       SMOKE_TEST_PATHS: tests/test_main_happy_path.py tests/test_stream_parser.py
 
     steps:
