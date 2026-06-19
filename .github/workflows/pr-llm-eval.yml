@@ -1,0 +1,269 @@
+name: PR UAT LLM Judge
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  uat-llm-judge:
+    name: PR UAT LLM judge
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      RUN_UAT_LLM_JUDGE: "1"
+      UAT_RESULTS_DIR: uat-results
+      UAT_MIN_SCORE: "7.0"
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
+      EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY || secrets.OPEN_ROUTER_API_KEY }}
+      WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY }}
+      WEAVIATE_CLUSTER_URL: ${{ secrets.WEAVIATE_CLUSTER_URL }}
+      LANGSMITH_TRACING: "true"
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
+      LANGSMITH_ENDPOINT: https://api.smith.langchain.com
+      WEAVIATE_KEEP_WARM_ENABLED: "false"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Validate UAT secrets
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+
+          required = [
+              "OPENAI_API_KEY",
+              "WEAVIATE_API_KEY",
+              "WEAVIATE_CLUSTER_URL",
+          ]
+          missing = [name for name in required if not os.getenv(name)]
+          if not (os.getenv("EMBEDDING_API_KEY") or os.getenv("OPEN_ROUTER_API_KEY")):
+              missing.append("EMBEDDING_API_KEY or OPEN_ROUTER_API_KEY")
+          if missing:
+              raise SystemExit(
+                  "Missing secrets required for PR UAT LLM judge: "
+                  + ", ".join(missing)
+              )
+          PY
+
+      - name: Assert UAT tests collect
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pytest
+
+
+          class CollectionCounter:
+              count = 0
+              uat_case_count = 0
+
+              def pytest_collection_modifyitems(self, session, config, items):
+                  self.count = len(items)
+                  self.uat_case_count = sum(
+                      item.name.startswith("test_uat_average_score_passes_llm_judge")
+                      for item in items
+                  )
+
+
+          counter = CollectionCounter()
+          exit_code = pytest.main(
+              ["tests/test_uat_llm_judge.py", "--collect-only", "-q", "-o", "addopts="],
+              plugins=[counter],
+          )
+          if int(exit_code) != 0:
+              raise SystemExit(int(exit_code))
+          if counter.uat_case_count <= 0:
+              raise SystemExit("Expected pytest to collect the UAT average judge test.")
+          print(f"Collected UAT average judge test ({counter.count} total tests).")
+          PY
+
+      - name: Run UAT LLM judge
+        id: run_uat
+        run: |
+          set -euo pipefail
+          mkdir -p "$UAT_RESULTS_DIR"
+          set +e
+          pytest tests/test_uat_llm_judge.py -q -s -o addopts= 2>&1 | tee uat-output.txt
+          status=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Comment UAT status on PR
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          UAT_EXIT_CODE: ${{ steps.run_uat.outputs.exit_code }}
+          UAT_RESULTS_DIR: uat-results
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const resultDir = process.env.UAT_RESULTS_DIR || 'uat-results';
+            const exitCode = Number(process.env.UAT_EXIT_CODE || 1);
+            const files = fs.existsSync(resultDir)
+              ? fs.readdirSync(resultDir).filter((name) => name.endsWith('.json')).sort()
+              : [];
+            const results = files.map((name) => {
+              const raw = fs.readFileSync(path.join(resultDir, name), 'utf8');
+              return JSON.parse(raw);
+            });
+            const passed = results.filter((item) => item.passed).length;
+            const failed = results.filter((item) => !item.passed);
+            const scores = results
+              .map((item) => Number(item.score))
+              .filter((score) => Number.isFinite(score));
+            const average = scores.length
+              ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2)
+              : 'n/a';
+            const minScore = results[0]?.minimum_score ?? process.env.UAT_MIN_SCORE ?? 'n/a';
+            const status = exitCode === 0 ? 'passed' : 'failed';
+            const label = exitCode === 0 ? 'PASS' : 'FAIL';
+            const marker = '<!-- hsg-rag-uat-llm-judge -->';
+
+            const failureLines = failed.slice(0, 8).map((item) => {
+              const issues = Array.isArray(item.issues) && item.issues.length
+                ? ` Issues: ${item.issues.slice(0, 2).join('; ')}`
+                : '';
+              return `- \`${item.case_id}\` score ${item.score}/${minScore}: ${item.verdict || 'No verdict.'}${issues}`;
+            });
+
+            const clip = (value, maxLength = 1200) => {
+              const text = String(value || '').replace(/```/g, "'''").trim();
+              if (text.length <= maxLength) {
+                return text;
+              }
+              return `${text.slice(0, maxLength)}... [truncated]`;
+            };
+
+            const formatTranscript = (item) => {
+              const transcript = Array.isArray(item.transcript) ? item.transcript : [];
+              const lines = [
+                `### ${item.case_id} (${item.score}/${minScore})`,
+                '',
+              ];
+
+              if (item.verdict) {
+                lines.push(`Judge: ${item.verdict}`, '');
+              }
+
+              if (!transcript.length) {
+                lines.push('No chatbot transcript was captured.');
+                return lines.join('\n');
+              }
+
+              lines.push('```text');
+              for (const turn of transcript) {
+                lines.push(`Turn ${turn.turn ?? '?'}`);
+                lines.push(`User: ${clip(turn.user)}`);
+                lines.push(`Assistant: ${clip(turn.assistant)}`);
+                if (turn.additional_details) {
+                  lines.push(`Additional details: ${clip(turn.additional_details, 800)}`);
+                }
+                if (Array.isArray(turn.relevant_programs) && turn.relevant_programs.length) {
+                  lines.push(`Relevant programs: ${turn.relevant_programs.join(', ')}`);
+                }
+                if (turn.language) {
+                  lines.push(`Language: ${turn.language}`);
+                }
+                if (turn.elapsed_s !== undefined) {
+                  lines.push(`Elapsed: ${turn.elapsed_s}s`);
+                }
+                lines.push('');
+              }
+              lines.push('```');
+              return lines.join('\n');
+            };
+
+            const transcriptBlocks = failed.slice(0, 8).map(formatTranscript);
+
+            let outputTail = '';
+            if (fs.existsSync('uat-output.txt')) {
+              const output = fs.readFileSync('uat-output.txt', 'utf8');
+              outputTail = output.slice(-6000);
+            }
+
+            const body = [
+              marker,
+              `## ${label} UAT LLM judge ${status}`,
+              '',
+              `- Cases reported: **${results.length}**`,
+              `- Passed: **${passed}**`,
+              `- Failed: **${failed.length}**`,
+              `- Average score: **${average}**`,
+              `- Minimum score: **${minScore}**`,
+              '',
+              failed.length ? '### Failing cases' : '### Failing cases\nNone.',
+              ...(failed.length ? failureLines : []),
+              '',
+              ...(failed.length
+                ? [
+                    '<details><summary>Chatbot transcripts for failing cases</summary>',
+                    '',
+                    ...transcriptBlocks,
+                    '',
+                    '</details>',
+                    '',
+                  ]
+                : []),
+              '<details><summary>Pytest output tail</summary>',
+              '',
+              '```text',
+              outputTail || 'No pytest output captured.',
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const previous = comments.find((comment) => comment.body && comment.body.includes(marker));
+
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail workflow if UAT failed
+        if: steps.run_uat.outputs.exit_code != '0'
+        run: |
+          exit "${{ steps.run_uat.outputs.exit_code }}"
