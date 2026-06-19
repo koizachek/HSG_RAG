@@ -27,6 +27,19 @@ NOT_VALID_QUERY_MESSAGE = {
     "de": "Das habe ich nicht ganz verstanden. Könnten Sie Ihre Frage bitte anders formulieren?",
 }
 
+REPEATED_NOT_VALID_QUERY_MESSAGE = {
+    "en": (
+        "I am still having trouble understanding your message. "
+        "If your question is about the HSG Executive MBA programmes, could you please rephrase it in a full sentence?\n\n"
+        "{admissions_contact}"
+    ),
+    "de": (
+        "Ich habe weiterhin Schwierigkeiten, Ihre Nachricht zu verstehen. "
+        "Falls sich Ihre Frage auf die HSG Executive MBA-Programme bezieht, formulieren Sie sie bitte als vollständigen Satz um.\n\n"
+        "{admissions_contact}"
+    ),
+}
+
 CONFIDENCE_FALLBACK_MESSAGE = {
     "en": (
         "I am sorry, but I could not find sufficiently reliable information in my records to answer that question with confidence. "
@@ -113,6 +126,14 @@ def get_admissions_contact_text(language: str = "en") -> str:
     contact = ADMISSIONS_TEAM_CONTACT.get(language, ADMISSIONS_TEAM_CONTACT["en"])
     template = labels.get(language, labels["en"])
     return template.format(email=contact["email"], phone=contact["phone"])
+
+
+def get_repeated_not_valid_query_message(language: str = "en") -> str:
+    template = REPEATED_NOT_VALID_QUERY_MESSAGE.get(
+        language,
+        REPEATED_NOT_VALID_QUERY_MESSAGE["en"],
+    )
+    return template.format(admissions_contact=get_admissions_contact_text(language))
 
 
 def get_booking_widget(language: str="en", programs: list[str]=None):
