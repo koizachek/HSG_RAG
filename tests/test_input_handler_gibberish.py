@@ -42,6 +42,12 @@ def test_process_input_rejects_probable_gibberish(message):
         "Zurich 8000",
         "leadership 2026",
         "Was sind die nächsten Schritte im Bewerbungsprozess?",
+        # Regression: real queries the gibberish heuristic wrongly rejected.
+        # German compound words contain long consonant runs ("deutschsprachige");
+        # long English sentences false-positived once their words were concatenated.
+        "Wie lange dauert der deutschsprachige EMBA HSG?",
+        "Give me a short overview of all three executive MBA programmes.",
+        "Welche Weiterbildungsmöglichkeiten bietet die Universität?",
         "Ich interessiere mich für ein MBA mit Schwerpunkt nachhaltige Unternehmensführung.\nberufsbegleitend.",
         "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
     ],

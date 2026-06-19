@@ -212,7 +212,11 @@ class InputHandler:
             and any(pattern in joined_words for pattern in InputHandler.KEYBOARD_MASH_PATTERNS)
         ):
             return True
-        if InputHandler._looks_like_nonsense_word(joined_words):
+        # Nonsense scoring on a concatenation only holds for compact input
+        # (e.g. a mash split by stray punctuation). On a real multi-word
+        # sentence it false-positives because word boundaries fabricate
+        # suspicious sequences and consonant runs.
+        if len(words) <= 2 and InputHandler._looks_like_nonsense_word(joined_words):
             return True
         if any(InputHandler._looks_like_nonsense_word(word) for word in words):
             return True
@@ -223,15 +227,18 @@ class InputHandler:
         ):
             return True
 
-        vowel_count = sum(1 for char in joined_words if char in InputHandler.VOWELS)
-        if len(joined_words) >= 8 and vowel_count / len(joined_words) <= 0.18:
-            return True
+        # Vowel-ratio is only a reliable gibberish signal for a single token;
+        # across a whole sentence it is meaningless.
+        if len(words) == 1:
+            vowel_count = sum(1 for char in joined_words if char in InputHandler.VOWELS)
+            if len(joined_words) >= 8 and vowel_count / len(joined_words) <= 0.18:
+                return True
 
+        # A long consonant run alone is a poor signal: German compounds such as
+        # "deutschsprachige" legitimately contain them. Only a complete absence
+        # of vowels in a long token is treated as gibberish here.
         for word in words:
-            if len(word) >= 8 and (
-                InputHandler._has_long_consonant_run(word)
-                or not any(char in InputHandler.VOWELS for char in word)
-            ):
+            if len(word) >= 8 and not any(char in InputHandler.VOWELS for char in word):
                 return True
 
         return False
