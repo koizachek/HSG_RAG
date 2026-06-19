@@ -75,7 +75,7 @@ This checklist reflects the GitHub `main` state at commit `c0462c1b7c5074af682ec
 - Verify admissions handover path
 - Verify booking widget visibility
 - If imports are part of rollout:
-  - verify `--scrape`
+  - verify `--scrape simple` and `--scrape full`
   - verify `--imports`
 - If admin operations are required:
   - verify the DB app

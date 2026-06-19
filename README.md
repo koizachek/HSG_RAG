@@ -145,8 +145,8 @@ python main.py --help
 Useful operational commands:
 
 ```bash
-python main.py --scrape
-python main.py --scrape --full_scrape
+python main.py --scrape simple
+python main.py --scrape full
 python main.py --imports path/to/file1 path/to/file2
 python main.py --weaviate checkhealth
 python main.py --weaviate init
@@ -158,7 +158,7 @@ Embedding model changes require a Weaviate collection rebuild and re-import:
 
 ```bash
 python main.py --weaviate redo
-python main.py --scrape
+python main.py --scrape full
 # plus python main.py --imports ... for any local source files you maintain
 ```
 
