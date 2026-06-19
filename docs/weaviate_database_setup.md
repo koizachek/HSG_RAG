@@ -25,7 +25,7 @@ When changing embedding model, tokenizer, or vector dimensions, rebuild the coll
 
 ```bash
 python main.py --weaviate redo
-python main.py --scrape
+python main.py --scrape full
 ```
 
 Run `python main.py --imports ...` afterward for any local documents that are

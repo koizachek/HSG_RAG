@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from src.scraping.scraper import Scraper
-from src.scraping.types import ChunkMetadata, UrlTimestamps
+from src.scraping.types import ChunkMetadata, ScrapeManifest, UrlTimestamps
 
 
 class DummyNormalizer:
@@ -188,7 +188,8 @@ class TestTempBehaviorComplete:
             'https://target.example/page-1',
             'https://target.example/page-2',
         ]
-        assert set(scraper._url_timestamps) == {
+        assert scraper._url_timestamps == {}
+        assert set(scraper._pending_timestamps) == {
             'https://target.example/page-1',
             'https://target.example/page-2',
         }
@@ -274,13 +275,18 @@ class TestTempBehaviorComplete:
                 'merged': merged,
                 'deleted': [],
                 'final': {'en': merged, 'de': []},
+                'processed_sources': {'https://target.example/page-1'},
             }
 
         scraper._collect_chunks = fake_collect_chunks
 
         result = scraper.scrape_target(target_url)
 
-        assert [chunk.source_url for chunk in result['en']] == ['https://target.example/page-1']
+        assert isinstance(result, ScrapeManifest)
+        assert [chunk.source_url for chunk in result.chunks_by_language['en']] == [
+            'https://target.example/page-1'
+        ]
+        assert result.processed_sources == ['https://target.example/page-1']
         assert len(collect_calls) == 1
         assert collect_calls[0]['tagged_documents'] == []
         assert collect_calls[0]['existing_merged_chunks'] == {'https://target.example/page-1': [existing_chunk]}
@@ -315,7 +321,40 @@ class TestTempBehaviorComplete:
 
         result = scraper.scrape_target(target_url)
 
-        assert result == {}
+        assert isinstance(result, ScrapeManifest)
+        assert not result
         saved_filenames = [call['filename'] for call in scraper._save_calls]
         assert 'merged_chunk_metadata' not in saved_filenames
         assert scraper._content_cleaner.perform_calls == []
+
+    def test_commit_scrape_persists_timestamps_and_removes_temp_files(self, scraper):
+        target_url = 'https://target.example/'
+        source_url = 'https://target.example/page-1'
+        timestamp = _make_timestamp()
+        scraper._pending_timestamps = {source_url: timestamp}
+
+        for filename in (
+            scraper._get_temp_chunks_filename(target_url),
+            scraper._get_temp_timestamps_filename(target_url),
+        ):
+            path = os.path.join(scraper._path.TEMP_CHUNKS_OUTPUT, filename + '.json')
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write('{}')
+
+        scraper.commit_scrape(ScrapeManifest(
+            target_url=target_url,
+            chunks_by_language={'en': [], 'de': []},
+            processed_sources=[source_url],
+        ))
+
+        assert scraper._url_timestamps[source_url] == timestamp
+        assert any(
+            call['filename'] == 'url_timestamps'
+            for call in scraper._save_calls
+        )
+        for filename in (
+            scraper._get_temp_chunks_filename(target_url),
+            scraper._get_temp_timestamps_filename(target_url),
+        ):
+            path = os.path.join(scraper._path.TEMP_CHUNKS_OUTPUT, filename + '.json')
+            assert not os.path.exists(path)

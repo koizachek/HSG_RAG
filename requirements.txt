@@ -30,7 +30,7 @@ beautifulsoup4>=4.14.3
 fake-useragent>=1.5.1
 
 # Weaviate Vector DB 
-weaviate-client>=4.16.9
+weaviate-client>=4.16.9,<5
 PyYAML>=6.0
 
 # Scheduling

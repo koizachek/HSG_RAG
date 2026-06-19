@@ -1,8 +1,9 @@
 from .utils import *
 from .processors import *
 from ..scraping.scraper import Scraper
+from ..scraping.types import ScrapeManifest
 
-from ..database.weavservice  import WeaviateService
+from ..database.weavservice import SourceReconciliationSummary, WeaviateService
 from ..utils.logging import get_logger
 from ..utils.tools import call_with_exponential_backoff
 from ..config import config
@@ -13,8 +14,7 @@ implogger  = get_logger("import_pipeline")
 
 class ImportPipeline:
     """
-    Main pipeline class responsible for importing website and local documents
-    into the database with deduplication and language-based organization.
+    Import website and local documents with source-level safe replacement.
     """
 
     def __init__(
@@ -23,33 +23,43 @@ class ImportPipeline:
         deduplication_callback = None,
     ) -> None:
         """
-        Initialize the import pipeline with optional callbacks for logging and deduplication.
-
-        This sets up the processors for websites and documents and recieves existing chunk IDs 
-        from the database for deduplication purposes.
+        Initialize processors and optional UI callbacks.
 
         Args:
             logging_callback (callable, optional): A callback function for logging progress.
                 Defaults to a placeholder if not provided.
-            deduplication_callback (callable, optional): A callback function for handling
-                deduplication decisions. Defaults to a placeholder if not provided.
+            deduplication_callback (callable, optional): For existing local sources,
+                returns True to replace the source or False to append without cleanup.
         """
         self._logging_callback = logging_callback or logging_callback_placeholder
-        self._deduplication_callback = deduplication_callback or deduplication_callback_placeholder
+        self._deduplication_callback = deduplication_callback
         self._docprocessor = DocumentProcessor()
         self._service      = WeaviateService()
-        self._ids          = self._service._collect_chunk_ids()
         
         implogger.info('Import pipeline initialization finished!')
     
 
-    def import_from_scraper(self, scraper_chunks: dict[str, dict]) -> None:
-        for lang, chunks in scraper_chunks.items():
-            if not chunks: continue
+    def import_from_scraper(
+        self,
+        manifest: ScrapeManifest,
+    ) -> list[SourceReconciliationSummary]:
+        rows_by_source = {
+            source: {
+                lang: []
+                for lang in config.get('AVAILABLE_LANGUAGES')
+            }
+            for source in manifest.processed_sources
+        }
+        for lang, chunks in manifest.chunks_by_language.items():
+            for chunk in chunks:
+                source = chunk.get('source', '')
+                if source in rows_by_source:
+                    rows_by_source[source].setdefault(lang, []).append(chunk)
 
-            sources = list(set([chunk.get('source', '') for chunk in chunks]))
-            self._service.delete_chunks(lang, property_filters={'source': sources})
-            self._service.batch_import(data_rows=chunks, lang=lang)
+        return [
+            self._service.reconcile_source(source, rows_by_source[source])
+            for source in manifest.processed_sources
+        ]
 
 
     def scrape_website(self, target_urls: list[str] | None = None, scrape_all: bool = False) -> None:
@@ -63,14 +73,14 @@ class ImportPipeline:
                 scraper = Scraper(scrape_all=scrape_all)
                 for target_url in target_urls:
                     self._logging_callback(f"Scraping target {target_url}...", 0)
-                    scraped_chunks = scraper.scrape_target(target_url)
-                    if not scraped_chunks:
+                    manifest = scraper.scrape_target(target_url)
+                    if not manifest:
                         self._logging_callback(f"No importable chunks scraped from {target_url}.", 100)
-                    else:
-                        self._logging_callback(f"Importing scraped chunks from {target_url}...", 90)
+                        continue
 
-                    self.import_from_scraper(scraped_chunks)
-                    scraper.delete_temp_merged_chunks(target_url)
+                    self._logging_callback(f"Importing scraped chunks from {target_url}...", 90)
+                    self.import_from_scraper(manifest)
+                    scraper.commit_scrape(manifest)
                     self._logging_callback(f"Finished scraping import for {target_url}.", 100)
             except Exception as e:
                 implogger.error(f"Scraping task was interrupted: {e}")
@@ -93,13 +103,14 @@ class ImportPipeline:
         scraper = Scraper(scrape_all=scrape_all)
         for url in urls:
             self._logging_callback(f"Scraping URL {url}...", 0)
-            scraped_chunks = scraper.scrape_target(url)
-            if not scraped_chunks:
+            manifest = scraper.scrape_target(url)
+            if not manifest:
                 self._logging_callback(f"Failed to scrape URL {url}!", 100, failed=True)
                 continue
 
             self._logging_callback(f"Importing scraped chunks from {url}...", 90)
-            self.import_from_scraper(scraped_chunks)
+            self.import_from_scraper(manifest)
+            scraper.commit_scrape(manifest)
             self._logging_callback(f"Stored scraped chunks for {url}.", 100)
                  
         
@@ -122,102 +133,85 @@ class ImportPipeline:
             reset_collections (bool, optional): If True, reset the database collections before importing.
                 Defaults to False.
         """
-        chunks = self._pipeline(paths, self._docprocessor, reset_collections)
+        results = self._process_documents(paths, fail_fast=reset_collections)
 
         if reset_collections:
-            self._logging_callback('Resetting database collections...', 60)
+            chunks_by_language = {
+                lang: []
+                for lang in config.get('AVAILABLE_LANGUAGES')
+            }
+            for result in results:
+                chunks_by_language[result.lang].extend(result.chunks)
+
+            prepared_by_language = {
+                lang: self._service.prepare_batch_import(chunks, lang)
+                for lang, chunks in chunks_by_language.items()
+            }
+            self._logging_callback(
+                'Resetting database collections (destructive operation)...',
+                60,
+            )
             self._service._reset_collections()
-        
-        self._logging_callback('Importing document chunks to database...', 90)
-        for lang, ch in chunks.items():
-            self._service.batch_import(data_rows=ch, lang=lang) 
+            for lang, prepared in prepared_by_language.items():
+                self._service._write_prepared_rows(prepared, lang)
+        else:
+            for result in results:
+                self._import_document_result(result)
 
         self._import_urls_via_scraper(urls, scrape_all=True)
 
         self._logging_callback(
-            f'Successfully imported {sum([len(ch) for ch in chunks.values()])} document chunks!',
+            f'Successfully imported {sum(len(result.chunks) for result in results)} document chunks!',
             100
         )
 
 
-    def _pipeline(
-            self, 
-            sources: list[str], 
-            processor: ProcessorBase,
-            reset_collections: bool,
-        ) -> dict:
-        """
-        Internal pipeline to process a list of sources using a given processor.
-
-        Handles processing, deduplication (if not resetting), and organizes unique chunks by language.
-        If no new unique data is found, logs a warning and returns empty chunks.
-
-        Args:
-            sources (list[str]): List of sources (paths or URLs) to process.
-            processor (ProcessorBase): The processor instance to use for handling sources.
-            reset_collections (bool): If True, skip deduplication.
-
-        Returns:
-            dict: A dictionary mapping languages to lists of unique chunk dictionaries.
-        """
-        unique_chunks = {lang: [] for lang in config.get('AVAILABLE_LANGUAGES')}
-
-        sources = [s for s in (sources or []) if s != ""]
-        if not sources:
-            return unique_chunks
-        
-        for source in sources:
+    def _process_documents(
+        self,
+        sources: list[str] | None,
+        fail_fast: bool = False,
+    ) -> list[ProcessingResult]:
+        results = []
+        for source in [s for s in (sources or []) if s]:
             self._logging_callback(f'Starting pipeline for {source}...', 0)
-            result = processor.process(source)
+            result = self._docprocessor.process(source)
 
             if not result.chunks:
                 implogger.error(f"Failed to process {source}!")
                 self._logging_callback(f"Failed to process {source}!", 100, result, failed=True)
+                if fail_fast:
+                    raise RuntimeError(
+                        f"Aborting destructive collection reset because '{source}' "
+                        "did not produce importable chunks"
+                    )
                 continue
-            
-            if not reset_collections:
-                self._deduplicate(result)
 
-            self._logging_callback(f'Storing chunks for {source}...', 100, result)
-            unique_chunks[result.lang].extend(result.chunks)
+            results.append(result)
+            self._logging_callback(f'Prepared chunks for {source}.', 70, result)
 
-        if all([len(chunks) == 0 for chunks in unique_chunks.values()]):
+        if sources and not results:
             self._logging_callback('No new data could be extracted from these sources!', 100)
-            implogger.warning(f"File(s) provided for the insertion do not contain any unique information.")
+            implogger.warning("Provided files did not contain importable information.")
 
-        return unique_chunks
-        
+        return results
 
-    def _deduplicate(self, result: ProcessingResult) -> ProcessingResult:
-        """
-        Remove duplicate chunks based on chunks that are already stored in the database.
 
-        If all chunks are duplicates, invokes the deduplication callback to decide whether
-        to delete existing duplicates and reimport. Otherwise, returns only unique chunks.
+    def _import_document_result(
+        self,
+        result: ProcessingResult,
+    ) -> None:
+        existing_count = self._service.source_object_count(result.source)
+        should_replace = True
+        if existing_count and self._deduplication_callback:
+            should_replace = self._deduplication_callback(result.source, existing_count)
 
-        Args:
-            result (ProcessingResult): The processing result containing document chunks.
+        if existing_count and should_replace:
+            rows_by_language = {
+                lang: []
+                for lang in config.get('AVAILABLE_LANGUAGES')
+            }
+            rows_by_language[result.lang] = result.chunks
+            self._service.reconcile_source(result.source, rows_by_language)
+            return
 
-        Returns:
-            list[dict]: List of unique chunk dictionaries (or all if reimporting duplicates).
-        """
-        self._logging_callback('Performing deduplication...', 80)
-        unique_chunks = []
-        duplicate_ids = []
-        for chunk in result.chunks:
-            chunk_id = chunk['chunk_id']
-            if chunk_id in self._ids:
-                duplicate_ids.append(chunk_id)
-            else: 
-                unique_chunks.append(chunk)
-        
-        implogger.info(f"Found {len(duplicate_ids)} already existing IDs in {len(result.chunks)} collected chunks")
-        if duplicate_ids: 
-            implogger.info(f"Duplicates found! Calling deduplication callback...")
-            if self._deduplication_callback(result.source, len(duplicate_ids)):
-                implogger.info('Duplicated chunks will be reimported as new...')
-                self._service._delete_by_id(duplicate_ids) 
-                return result
-        
-        result.chunks = unique_chunks
-        return result
+        self._service.batch_import(result.chunks, result.lang)

@@ -160,8 +160,8 @@ def fetch_head(url: str, etag: str | None = None) -> FetchResult:
             etag          = response.headers.get('ETag')
         )
     except Exception as e:
-        logger.exception(f"Head fetch failed: {url}")
-        raise e 
+        logger.warning(f"Head fetch failed for '{url}': {e}")
+        raise
 
 
 def fetch_url(url: str, etag: str | None = None) -> dict:

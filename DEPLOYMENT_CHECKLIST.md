@@ -70,7 +70,7 @@ Cron auf demselben Host:
 - [x] EU-Cluster bereitgestellt, `.env`: `WEAVIATE_CLUSTER_URL` + `WEAVIATE_API_KEY` gesetzt
 - [x] `python main.py --weaviate checkhealth` → Connection ✓ OK
 - [x] `python main.py --weaviate init` → Collections `hsg_rag_content_de`/`_en` angelegt
-- [ ] **Datenimport abgeschlossen:** `python main.py --scrape --full_scrape`
+- [ ] **Datenimport abgeschlossen:** `python main.py --scrape full`
       (läuft; danach Objekt-Counts in beiden Collections plausibel prüfen — EN/embax nicht unterrepräsentiert)
 - [ ] `python main.py --weaviate checkhealth` → beide Collections ✓ OK
 - [ ] Stichprobe: Query "Was macht die HSG besonders?" liefert echte Chunks (keine `QUERY_EXCEPTION_MESSAGE`)
@@ -109,8 +109,8 @@ Cron auf demselben Host:
       ```
 - [ ] **Scraping-Refresh** — als Cron (robuster als Dauerprozess):
       ```
-      0 3 * * 1-6 cd <repo> && ./venv/bin/python main.py --scrape              >> logs/scrape.log 2>&1
-      0 2 * * 0   cd <repo> && ./venv/bin/python main.py --scrape --full_scrape >> logs/scrape.log 2>&1
+      0 3 * * 1-6 cd <repo> && ./venv/bin/python main.py --scrape simple >> logs/scrape.log 2>&1
+      0 2 * * 0   cd <repo> && ./venv/bin/python main.py --scrape full   >> logs/scrape.log 2>&1
       ```
       (Alternative: `python tools/scraping.py --init_sched` als systemd-Service — APScheduler intern.)
 - [ ] **Alert-Chain einmal testen:** Preis in `data/database/programme_facts.json` ändern →

@@ -14,18 +14,18 @@ def logging_startup():
     return get_logger('main_module')
 
 
-def run_scraper(full_scrape: bool = False) -> None:
+def run_scraper(scrape_type: str) -> None:
     """
     Run the scraper to collect program data.
 
     Args:
-        full_scrape: Whether to ignore timestamps and scrape all pages.
+        scrape_type: Whether to ignore timestamps and scrape all pages.
     """
     from src.pipeline.pipeline import ImportPipeline
     logger = logging_startup()
 
     logger.info("Running scraper...")
-    ImportPipeline().scrape_website(scrape_all=full_scrape)
+    ImportPipeline().scrape_website(scrape_all=True if scrape_type == 'full' else False)
     logger.info("Scraping completed.")
 
 
@@ -89,10 +89,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="University of St. Gallen Executive Education RAG Chatbot")
 
     # Add arguments
-    parser.add_argument("--scrape", action="store_true",
+    parser.add_argument("--scrape", type=str, choices=['simple', 'full'],
                         help="Scrapes the data from the HSG website and imports it into the database")
-    parser.add_argument("--full_scrape", action="store_true",
-                        help="When used with --scrape, ignores timestamps and scrapes all pages")
     parser.add_argument("--imports", nargs="+", help="Runs the data importing pipeline for the provided files")
 
     parser.add_argument("--weaviate", type=str, choices=['init', 'delete', 'redo', 'checkhealth', 'backup', 'restore'],
@@ -118,7 +116,7 @@ def main():
 
     # Run the specified components
     if args.scrape:
-        run_scraper(args.full_scrape)
+        run_scraper(args.scrape)
 
     if args.imports:
         run_importer(args.imports)

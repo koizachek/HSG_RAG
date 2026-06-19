@@ -168,8 +168,8 @@ class FakeBatchContext:
     def __exit__(self, exc_type, exc, tb):
         return False
 
-    def add_object(self, properties, vector=None):
-        self.added.append({"properties": properties, "vector": vector})
+    def add_object(self, properties, vector=None, uuid=None):
+        self.added.append({"properties": properties, "vector": vector, "uuid": uuid})
 
 
 class FakeBatchFactory:
@@ -199,6 +199,7 @@ def test_batch_import_embeds_rows_and_writes_named_vectors(monkeypatch):
     assert errors == []
     assert service._embedding_client.document_inputs == [["First chunk"]]
     assert batch_context.added[0]["vector"] == {"test_vectors": [0.7, 0.8, 0.9]}
+    assert batch_context.added[0]["uuid"]
 
 
 def test_query_embeds_once_and_passes_vector_to_hybrid(monkeypatch):

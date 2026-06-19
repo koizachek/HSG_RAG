@@ -21,9 +21,11 @@ def scraping_task(full_scrape: bool):
             pipeline = ImportPipeline()
 
             for target_url in config.scraping.TARGET_URLS:
-                chunks = scraper.scrape_target(target_url)
-                pipeline.import_from_scraper(chunks)
-                scraper.delete_temp_merged_chunks(target_url)
+                manifest = scraper.scrape_target(target_url)
+                if not manifest:
+                    continue
+                pipeline.import_from_scraper(manifest)
+                scraper.commit_scrape(manifest)
 
             logger.info("Scraper task finished gracefully")
         except Exception as e:

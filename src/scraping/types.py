@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass, is_dataclass 
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from docling_core.types.doc.document import DoclingDocument
 
@@ -97,6 +98,22 @@ class DocumentAnalysisReport:
     url_tags:         dict[str, UrlTags]
     url_priorities:   dict[str, list[str]]
     tagged_documents: list[TaggedDocument]
+
+
+@dataclass
+class ScrapeManifest:
+    """Prepared database rows and authoritative sources from one scrape target."""
+
+    target_url: str
+    chunks_by_language: dict[str, list[dict[str, Any]]]
+    processed_sources: list[str]
+
+    def __bool__(self) -> bool:
+        return bool(self.processed_sources)
+
+    @classmethod
+    def empty(cls, target_url: str) -> "ScrapeManifest":
+        return cls(target_url=target_url, chunks_by_language={}, processed_sources=[])
 
 
 def dataclass_to_dict(obj) -> dict:
