@@ -1,0 +1,105 @@
+name: Main Smoke
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Main push smoke
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      RUN_LLM_EVAL: "1"
+      SMOKE_TEST_PATH: tests/test_llm_fact_eval.py
+      EXPECTED_SMOKE_TESTS: "31"
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY || secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY || secrets.OPEN_ROUTER_API_KEY || secrets.OPENROUTER_API_KEY }}
+      WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY }}
+      WEAVIATE_CLUSTER_URL: ${{ secrets.WEAVIATE_CLUSTER_URL }}
+      LANGSMITH_TRACING: "true"
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
+      LANGSMITH_ENDPOINT: https://api.smith.langchain.com
+      WEAVIATE_KEEP_WARM_ENABLED: "false"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Validate smoke secrets
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+
+          required = [
+              "OPENAI_API_KEY",
+              "WEAVIATE_API_KEY",
+              "WEAVIATE_CLUSTER_URL",
+          ]
+          missing = [name for name in required if not os.getenv(name)]
+          if not (
+              os.getenv("EMBEDDING_API_KEY")
+              or os.getenv("OPEN_ROUTER_API_KEY")
+              or os.getenv("OPENROUTER_API_KEY")
+          ):
+              missing.append("EMBEDDING_API_KEY or OPENROUTER_API_KEY")
+          if missing:
+              raise SystemExit(
+                  "Missing secrets required for main smoke LLM fact eval: "
+                  + ", ".join(missing)
+              )
+          PY
+
+      - name: Assert pytest collects tests
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+
+          import pytest
+
+
+          class CollectionCounter:
+              count = 0
+
+              def pytest_collection_modifyitems(self, session, config, items):
+                  self.count = len(items)
+
+
+          counter = CollectionCounter()
+          path = os.environ["SMOKE_TEST_PATH"]
+          expected = int(os.environ["EXPECTED_SMOKE_TESTS"])
+          exit_code = pytest.main([path, "--collect-only", "-q"], plugins=[counter])
+          if int(exit_code) != 0:
+              raise SystemExit(int(exit_code))
+          if counter.count != expected:
+              raise SystemExit(f"Expected pytest to collect {expected} tests, got {counter.count}.")
+          print(f"Collected {counter.count} tests.")
+          PY
+
+      - name: Run smoke tests
+        run: |
+          set -euo pipefail
+          pytest "$SMOKE_TEST_PATH" -v

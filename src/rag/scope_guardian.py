@@ -2,7 +2,6 @@
 Scope guardian for handling out-of-scope queries and providing appropriate redirections.
 Ensures the chatbot stays within its defined boundaries.
 """
-import re
 from src.const.agent_response_constants import get_admissions_contact_text
 from src.utils.logging import get_logger
 
@@ -52,16 +51,9 @@ class ScopeGuardian:
     
     @staticmethod
     def _matches_any(message_lower: str, keywords: list[str]) -> bool:
-        """
-        Match each keyword as a whole token or whole phrase against the message.
-        Single-word keywords match on word boundaries; multi-word keywords match
-        the full phrase. This avoids the previous bug where 'payment plan' was
-        split into ['payment', 'plan'] and matched if either word appeared
-        anywhere in the message.
-        """
+        """Match each keyword as a substring against the lowercased message."""
         for keyword in keywords:
-            pattern = rf'\b{re.escape(keyword.lower())}\b'
-            if re.search(pattern, message_lower):
+            if keyword.lower() in message_lower:
                 return True
         return False
 
