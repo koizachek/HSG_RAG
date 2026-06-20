@@ -25,9 +25,27 @@ from src.config import config
 from src.rag.agent_chain import ExecutiveAgentChain
 
 
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+
+def _use_openrouter() -> bool:
+    """Route the LLM judge through OpenRouter by default (opt out with
+    UAT_USE_OPENROUTER=0).
+
+    The chatbot's own models already run through OpenRouter via config.py; this
+    keeps the judge consistent so the UAT does not depend on a funded OpenAI
+    account.
+    """
+    if os.getenv("UAT_USE_OPENROUTER") == "0":
+        return False
+    return bool(os.getenv("OPEN_ROUTER_API_KEY"))
+
+
 DEFAULT_EXCEL = Path(__file__).resolve().parent / "fixtures" / "UAT.xlsx"
 SKIPPED_SHEETS = {"About", "TestProtocol", "Reporting"}
-DEFAULT_JUDGE_MODEL = os.getenv("UAT_JUDGE_MODEL", "gpt-4o-mini")
+DEFAULT_JUDGE_MODEL = os.getenv("UAT_JUDGE_MODEL") or (
+    "openai/gpt-4o-mini" if _use_openrouter() else "gpt-4o-mini"
+)
 MIN_ACCEPTABLE_SCORE = float(os.getenv("UAT_MIN_SCORE", "7.0"))
 
 
@@ -263,6 +281,13 @@ def _openai_client():
         from openai import OpenAI
     except ImportError as exc:
         raise RuntimeError("openai is required for the UAT LLM judge.") from exc
+
+    if _use_openrouter():
+        return OpenAI(
+            api_key=os.environ["OPEN_ROUTER_API_KEY"],
+            base_url=OPENROUTER_BASE_URL,
+            timeout=float(os.getenv("UAT_JUDGE_TIMEOUT_S", "120")),
+        )
 
     api_key = os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_COMPAT_API_KEY")
     base_url = os.getenv("OPENAI_COMPAT_BASE_URL")

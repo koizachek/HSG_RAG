@@ -55,11 +55,15 @@ jobs:
           import os
 
           required = [
-              "OPENAI_API_KEY",
               "WEAVIATE_API_KEY",
               "WEAVIATE_CLUSTER_URL",
           ]
           missing = [name for name in required if not os.getenv(name)]
+          # The UAT runs through OpenRouter (agent + judge), so an OpenRouter key
+          # is sufficient; OpenAI is only needed when UAT_USE_OPENROUTER=0.
+          using_openrouter = os.getenv("UAT_USE_OPENROUTER") != "0" and os.getenv("OPEN_ROUTER_API_KEY")
+          if not using_openrouter and not os.getenv("OPENAI_API_KEY"):
+              missing.append("OPEN_ROUTER_API_KEY or OPENAI_API_KEY")
           if not (os.getenv("EMBEDDING_API_KEY") or os.getenv("OPEN_ROUTER_API_KEY")):
               missing.append("EMBEDDING_API_KEY or OPEN_ROUTER_API_KEY")
           if missing:
