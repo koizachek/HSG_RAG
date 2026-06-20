@@ -145,6 +145,7 @@ jobs:
               ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2)
               : 'n/a';
             const minScore = results[0]?.minimum_score ?? process.env.UAT_MIN_SCORE ?? 'n/a';
+            const maxScore = 10;
             const status = exitCode === 0 ? 'passed' : 'failed';
             const label = exitCode === 0 ? 'PASS' : 'FAIL';
             const marker = '<!-- hsg-rag-uat-llm-judge -->';
@@ -153,7 +154,7 @@ jobs:
               const issues = Array.isArray(item.issues) && item.issues.length
                 ? ` Issues: ${item.issues.slice(0, 2).join('; ')}`
                 : '';
-              return `- \`${item.case_id}\` score ${item.score}/${minScore}: ${item.verdict || 'No verdict.'}${issues}`;
+              return `- \`${item.case_id}\` score ${item.score}/${maxScore}: ${item.verdict || 'No verdict.'}${issues}`;
             });
 
             const clip = (value, maxLength = 1200) => {
@@ -167,7 +168,7 @@ jobs:
             const formatTranscript = (item) => {
               const transcript = Array.isArray(item.transcript) ? item.transcript : [];
               const lines = [
-                `### ${item.case_id} (${item.score}/${minScore})`,
+                `### ${item.case_id} (${item.score}/${maxScore})`,
                 '',
               ];
 
@@ -218,8 +219,8 @@ jobs:
               `- Cases reported: **${results.length}**`,
               `- Passed: **${passed}**`,
               `- Failed: **${failed.length}**`,
-              `- Average score: **${average}**`,
-              `- Minimum score: **${minScore}**`,
+              `- Average score: **${average}/${maxScore}**`,
+              `- Minimum passing score: **${minScore}/${maxScore}**`,
               '',
               failed.length ? '### Failing cases' : '### Failing cases\nNone.',
               ...(failed.length ? failureLines : []),
