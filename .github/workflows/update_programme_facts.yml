@@ -14,6 +14,7 @@ jobs:
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY}}
       WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY }}
       WEAVIATE_CLUSTER_URL: ${{ secrets.WEAVIATE_CLUSTER_URL }}
       HUGGING_FACE_API_KEY: ${{ secrets.HUGGING_FACE_API_KEY }}
@@ -47,6 +48,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Validate LLM secret
+        run: |
+          if [ -z "$OPEN_ROUTER_API_KEY" ]; then
+            echo "::error::OPEN_ROUTER_API_KEY is not available to this workflow. Configure secrets.OPEN_ROUTER_API_KEY or secrets.OPENROUTER_API_KEY."
+            exit 1
+          fi
 
       - name: Update programme facts
         run: |
