@@ -234,7 +234,7 @@ def test_query_falls_back_to_bm25_when_embedding_fails(monkeypatch):
     assert collection.query.bm25_calls[0]["limit"] == 3
 
 
-def test_model_config_keeps_master_defaults_and_budgets(monkeypatch):
+def test_model_config_uses_openrouter_defaults_and_budgets(monkeypatch):
     calls = []
 
     def fake_initialize_model(cls, provider, model, role="main"):
@@ -252,10 +252,10 @@ def test_model_config_keeps_master_defaults_and_budgets(monkeypatch):
     ModelConfigurator.get_confidence_scoring_model()
     ModelConfigurator.get_fallback_models()
 
-    assert config.llm.MAIN_AGENT_MODEL == ("openai", "gpt-4.1")
-    assert config.llm.FALLBACK_MODELS == [("openai", "gpt-5-mini")]
-    assert config.llm.get_default_model() == "gpt-4.1"
-    assert config.llm.get_fallback_models()[0][1] == "gpt-5-mini"
+    # All roles run through OpenRouter so the app no longer needs a funded
+    # OpenAI account.
+    assert config.llm.MAIN_AGENT_MODEL == ("open_router:openai", "openai/gpt-4.1")
+    assert config.llm.FALLBACK_MODELS == [("open_router:openai", "openai/gpt-4o-mini")]
     assert ModelConfigurator._openai_budget("main") == {
         "max_tokens": 3072,
         "timeout": 30,
@@ -266,6 +266,6 @@ def test_model_config_keeps_master_defaults_and_budgets(monkeypatch):
         "timeout": 10,
         "request_timeout": 10,
     }
-    assert ("openai", "gpt-4.1", "main") in calls
-    assert ("openai", "gpt-4o-mini", "language_detector") in calls
-    assert ("openai", "gpt-4o-mini", "confidence_scoring") in calls
+    assert ("open_router:openai", "openai/gpt-4.1", "main") in calls
+    assert ("open_router:openai", "openai/gpt-4o-mini", "language_detector") in calls
+    assert ("open_router:openai", "openai/gpt-4o-mini", "confidence_scoring") in calls

@@ -33,12 +33,13 @@ MAX_CONVERSATION_TURNS = 20
 # ============================================ LLM Configuration ============================================
 
 # Each role-specific model configuration is defined as (PROVIDER, MODEL_NAME).
-# Keep the master branch's latency-oriented defaults.
-MAIN_AGENT_MODEL = ('openai', 'gpt-4.1')
-FALLBACK_MODELS = [('openai', 'gpt-5-mini')]
-LANGUAGE_DETECTION_MODEL = ('openai', 'gpt-4o-mini')
-CONFIDENCE_SCORING_MODEL = ('openai', 'gpt-4o-mini')
-SUMMARIZATION_MODEL = ('openai', 'gpt-4.1')
+# All roles run through OpenRouter (OpenAI-compatible) so the app no longer
+# depends on a separately funded OpenAI account.
+MAIN_AGENT_MODEL = ('open_router:openai', 'openai/gpt-4.1')
+FALLBACK_MODELS = [('open_router:openai', 'openai/gpt-4o-mini')]
+LANGUAGE_DETECTION_MODEL = ('open_router:openai', 'openai/gpt-4o-mini')
+CONFIDENCE_SCORING_MODEL = ('open_router:openai', 'openai/gpt-4o-mini')
+SUMMARIZATION_MODEL = ('open_router:openai', 'openai/gpt-4.1')
 
 # Legacy defaults retained for compatibility with existing callers.
 LLM_PROVIDER = 'openai'
