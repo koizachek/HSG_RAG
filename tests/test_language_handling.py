@@ -70,10 +70,14 @@ class TestQueryLanguageDetection:
 
         assert detector.needs_language_clarification("Ich want to know sobre los programs")
         assert detector.detect_language("Ich want to know sobre los programs") == ""
+        assert detector.needs_language_clarification("Hello quiero saber sobre programs")
+        assert detector.detect_language("Hello quiero saber sobre programs") == ""
         assert not detector.needs_language_clarification("I want to know about the programs")
         assert not detector.needs_language_clarification("I want to know about the Executive MBA")
         assert not detector.needs_language_clarification("Ich interessiere mich fuer die Programme")
         assert not detector.needs_language_clarification("Was sind die besten Restaurants in St. Gallen?")
+        assert detector.detect_language("Welche Filme laufen heute?") == "de"
+        assert detector.detect_language("Was kostet emba X?") == "de"
         assert not detector.needs_language_clarification(
             "Buenas tardes, quiero saber sobre el programa EMBA"
         )
@@ -103,6 +107,21 @@ def test_unsupported_language_query_uses_supported_language_fallback():
     agent = _agent_for_language_preprocessing(language="en")
 
     response = agent.query("Buenas tardes, quiero saber sobre el programa EMBA")
+
+    assert response.response == LANGUAGE_FALLBACK_MESSAGE["en"]
+    assert response.language == "en"
+    assert response.appointment_requested is False
+    assert response.show_booking_widget is False
+
+
+def test_unsupported_non_latin_query_uses_supported_language_fallback():
+    agent = _agent_for_language_preprocessing(language="en")
+
+    response = agent.query(
+        "\u0414\u043e\u0431\u0440\u044b\u0439 \u0434\u0435\u043d\u044c, "
+        "\u0445\u043e\u0447\u0443 \u0443\u0437\u043d\u0430\u0442\u044c "
+        "\u0431\u043e\u043b\u044c\u0448\u0435 \u043e EMBA"
+    )
 
     assert response.response == LANGUAGE_FALLBACK_MESSAGE["en"]
     assert response.language == "en"

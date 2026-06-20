@@ -3,6 +3,7 @@ Input handler for processing and validating user messages.
 Handles numeric inputs, validation, and interpretation.
 """
 import re
+import unicodedata
 from src.utils.logging import get_logger
 
 logger = get_logger("input_handler")
@@ -86,6 +87,15 @@ class InputHandler:
                     return True
             else:
                 run_length = 0
+        return False
+
+    @staticmethod
+    def _has_non_latin_letter(message: str) -> bool:
+        for char in message:
+            if not char.isalpha():
+                continue
+            if 'LATIN' not in unicodedata.name(char, ''):
+                return True
         return False
 
     @staticmethod
@@ -179,6 +189,8 @@ class InputHandler:
         if allowlisted in InputHandler.COMMON_SHORT_REPLIES:
             return False
         if allowlisted in InputHandler.PROGRAMME_REFERENCES:
+            return False
+        if InputHandler._has_non_latin_letter(normalized):
             return False
 
         if not re.search(r"[A-Za-zÄÖÜäöü0-9]", normalized):

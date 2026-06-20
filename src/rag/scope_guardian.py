@@ -2,6 +2,8 @@
 Scope guardian for handling out-of-scope queries and providing appropriate redirections.
 Ensures the chatbot stays within its defined boundaries.
 """
+import re
+
 from src.const.agent_response_constants import get_admissions_contact_text
 from src.utils.logging import get_logger
 
@@ -17,12 +19,12 @@ class ScopeGuardian:
     OFF_TOPIC_KEYWORDS = {
         'en': [
             'weather', 'sports', 'politics', 'vacation', 'travel',
-            'restaurant', 'movie', 'entertainment', 'news', 'dating',
-            'recipe', 'cooking'
+            'restaurant', 'restaurants', 'movie', 'movies', 'entertainment',
+            'news', 'dating', 'recipe', 'recipes', 'cooking'
         ],
         'de': [
             'wetter', 'sport', 'politik', 'urlaub', 'reise',
-            'restaurant', 'film', 'unterhaltung', 'nachrichten',
+            'restaurant', 'restaurants', 'film', 'filme', 'unterhaltung', 'nachrichten',
             'rezept', 'kochen'
         ]
     }
@@ -51,11 +53,26 @@ class ScopeGuardian:
     
     @staticmethod
     def _matches_any(message_lower: str, keywords: list[str]) -> bool:
-        """Match each keyword as a substring against the lowercased message."""
+        """Match keywords on word boundaries to avoid substring false positives."""
         for keyword in keywords:
-            if keyword.lower() in message_lower:
+            pattern = rf"(?<!\w){re.escape(keyword.lower())}(?!\w)"
+            if re.search(pattern, message_lower):
                 return True
         return False
+
+    @staticmethod
+    def _is_programme_travel_context(message_lower: str) -> bool:
+        travel_terms = [
+            'travel', 'transport', 'reise', 'reisen', 'anreise',
+        ]
+        programme_context_terms = [
+            'emba', 'iemba', 'programme', 'program', 'module', 'modules',
+            'modul', 'modulen', 'campus',
+        ]
+        return (
+            ScopeGuardian._matches_any(message_lower, travel_terms)
+            and ScopeGuardian._matches_any(message_lower, programme_context_terms)
+        )
 
     @staticmethod
     def check_scope(message: str, language: str = 'en') -> str:
@@ -74,6 +91,9 @@ class ScopeGuardian:
         if ScopeGuardian._matches_any(message_lower, ScopeGuardian.AGGRESSIVE_KEYWORDS):
             logger.warning("Detected aggressive language in message")
             return 'aggressive'
+
+        if ScopeGuardian._is_programme_travel_context(message_lower):
+            return 'on_topic'
 
         off_topic_keywords = (
             ScopeGuardian.OFF_TOPIC_KEYWORDS.get('en', [])

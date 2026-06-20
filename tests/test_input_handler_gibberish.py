@@ -62,6 +62,20 @@ def test_process_input_accepts_normal_inputs(message):
 @pytest.mark.parametrize(
     "message",
     [
+        "\u0414\u043e\u0431\u0440\u044b\u0439 \u0434\u0435\u043d\u044c, \u0445\u043e\u0447\u0443 \u0443\u0437\u043d\u0430\u0442\u044c \u0431\u043e\u043b\u044c\u0448\u0435 \u043e \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0435 EMBA",
+        "\u0645\u0633\u0627\u0621 \u0627\u0644\u062e\u064a\u0631\u060c \u0623\u0631\u064a\u062f \u0645\u0639\u0631\u0641\u0629 \u0627\u0644\u0645\u0632\u064a\u062f \u0639\u0646 EMBA",
+    ],
+)
+def test_process_input_accepts_unsupported_languages_for_language_fallback(message):
+    processed, is_valid = InputHandler.process_input(message, [])
+
+    assert is_valid
+    assert processed == message.strip()
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
         "How much does the IEMBA cost in CHF?",
         "Does emba X require 10 years of experience?",
         "I have 12 years of experience and 4 years of leadership.",

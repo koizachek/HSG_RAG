@@ -11,6 +11,7 @@ from src.rag.scope_guardian import ScopeGuardian
         "Welche Restaurants können Sie empfehlen?",
         "What is the weather today?",
         "Who won the sports match?",
+        "Where should I travel between locations in Switzerland?",
     ],
 )
 def test_off_topic_queries_are_detected(message):
@@ -28,12 +29,35 @@ def test_german_off_topic_redirect_acknowledges_restaurant_subject():
 @pytest.mark.parametrize(
     "message",
     [
+        "Any good movies near St. Gallen?",
+        "Welche Filme laufen heute?",
+    ],
+)
+def test_movie_queries_are_detected_as_off_topic(message):
+    assert ScopeGuardian.check_scope(message) == "off_topic"
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
         "What are the admission requirements for EMBA?",
         "How much does the programme cost?",
         "I work in healthcare and want to strengthen my leadership skills.",
     ],
 )
 def test_on_topic_queries_remain_allowed(message):
+    assert ScopeGuardian.check_scope(message) == "on_topic"
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Is public transport included between modules?",
+        "How do participants travel between module locations?",
+        "Gibt es Transport zwischen den Modulen?",
+    ],
+)
+def test_programme_travel_context_remains_allowed(message):
     assert ScopeGuardian.check_scope(message) == "on_topic"
 
 

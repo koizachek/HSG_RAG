@@ -1,9 +1,13 @@
 import re
 import unicodedata
 
+from langdetect import DetectorFactory, detect_langs
+from langdetect.lang_detect_exception import LangDetectException
+
 from src.utils.logging import get_logger
 
 logger = get_logger('lang_detector')
+DetectorFactory.seed = 0
 
 # Common short words for quick language detection (no LLM needed)
 SHORT_WORDS_DE = {
@@ -34,6 +38,7 @@ STOPWORDS_DE = SHORT_WORDS_DE | {
     'zum', 'zur', 'als', 'wie', 'um', 'an', 'im', 'am', 'beim', 'durch',
     'mein', 'meine', 'dein', 'ihre', 'ihren', 'unser', 'euch', 'uns',
     'jahre', 'jahren', 'erfahrung', 'studium', 'kosten', 'dauer', 'beginn',
+    'kostet', 'welche', 'welcher', 'welches', 'heute',
 }
 STOPWORDS_EN = SHORT_WORDS_EN | {
     'the', 'a', 'an', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'my',
@@ -52,6 +57,9 @@ MIXED_LANGUAGE_AMBIGUOUS_TOKENS = {
     'in',
     'was',
 }
+
+SUPPORTED_LANGUAGES = {'de', 'en'}
+LANGDETECT_MIN_PROBABILITY = 0.75
 
 # Characters that only occur in German (among the two supported languages)
 GERMAN_CHARS = set('äöüß')
@@ -149,6 +157,48 @@ class LanguageDetector:
         normalized = re.sub(r"\s+", " ", normalized).strip()
         return normalized in LANGUAGE_NEUTRAL_PROGRAM_PATTERNS
 
+    @staticmethod
+    def _profile_detect(query: str) -> tuple[str, float] | None:
+        try:
+            found_langs = detect_langs(query)
+        except LangDetectException:
+            return None
+
+        if not found_langs:
+            return None
+
+        top_lang = found_langs[0]
+        logger.info(
+            f"Profile detection: {top_lang.lang} ({top_lang.prob:.2f})"
+        )
+        return top_lang.lang, top_lang.prob
+
+    @staticmethod
+    def _mixed_language_signal_counts(text: str) -> tuple[int, int]:
+        words = re.findall(r"[a-z']+", text)
+        shared_de_en = STOPWORDS_DE & STOPWORDS_EN
+        de_hits = sum(
+            1
+            for word in words
+            if (
+                word in STOPWORDS_DE
+                and word not in shared_de_en
+                and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
+            )
+        )
+        en_hits = sum(
+            1
+            for word in words
+            if (
+                word in STOPWORDS_EN
+                and word not in shared_de_en
+                and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
+            )
+        )
+        if any(ch in GERMAN_CHARS for ch in text):
+            de_hits += 1
+        return de_hits, en_hits
+
     def _heuristic_detect(self, query: str) -> str | None:
         """
         Full-text heuristic detection for de/en. Returns None when ambiguous
@@ -176,13 +226,14 @@ class LanguageDetector:
 
         de_hits = sum(1 for w in words if w in STOPWORDS_DE)
         en_hits = sum(1 for w in words if w in STOPWORDS_EN)
+        min_hits = 1 if len(words) <= 3 else 2
 
         # Require a clear signal: at least one stopword hit and a strict
         # majority. Ties and zero-hit inputs stay ambiguous.
-        if de_hits > en_hits and de_hits > 0:
+        if de_hits > en_hits and de_hits >= min_hits:
             logger.info(f"Heuristic detection: de ({de_hits} vs {en_hits} stopword hits)")
             return 'de'
-        if en_hits > de_hits and en_hits > 0:
+        if en_hits > de_hits and en_hits >= min_hits:
             logger.info(f"Heuristic detection: en ({en_hits} vs {de_hits} stopword hits)")
             return 'en'
 
@@ -195,38 +246,40 @@ class LanguageDetector:
         """
         text = query.lower()
 
-        if NON_LATIN_SCRIPT_RE.search(text) or self._has_non_german_latin_diacritic(text):
-            return False
-
         words = re.findall(r"[a-z']+", text)
-        if len(words) < 4:
-            return False
+        de_hits, en_hits = self._mixed_language_signal_counts(text)
+        supported_hits = de_hits + en_hits
+        has_unsupported_script_signal = (
+            NON_LATIN_SCRIPT_RE.search(text)
+            or self._has_non_german_latin_diacritic(text)
+        )
 
-        shared_de_en = STOPWORDS_DE & STOPWORDS_EN
-        de_hits = sum(
-            1
-            for word in words
-            if (
-                word in STOPWORDS_DE
-                and word not in shared_de_en
-                and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
-            )
-        )
-        en_hits = sum(
-            1
-            for word in words
-            if (
-                word in STOPWORDS_EN
-                and word not in shared_de_en
-                and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
-            )
-        )
-        if de_hits > 0 and en_hits > 0:
+        if len(words) >= 4 and de_hits > 0 and en_hits > 0:
             logger.info(
                 "Mixed-language input detected "
                 f"(de={de_hits}, en={en_hits})"
             )
             return True
+
+        if supported_hits > 0 and has_unsupported_script_signal:
+            logger.info("Mixed supported/unsupported language input detected.")
+            return True
+
+        if self._heuristic_detect(query):
+            return False
+
+        profile_result = self._profile_detect(query) if supported_hits > 0 else None
+        if profile_result:
+            profile_lang, profile_probability = profile_result
+            if (
+                profile_lang not in SUPPORTED_LANGUAGES
+                and profile_probability >= LANGDETECT_MIN_PROBABILITY
+            ):
+                logger.info(
+                    "Mixed supported/unsupported language input detected "
+                    f"(profile={profile_lang}, p={profile_probability:.2f})"
+                )
+                return True
 
         return False
 
@@ -254,6 +307,19 @@ class LanguageDetector:
         heuristic_result = self._heuristic_detect(query)
         if heuristic_result:
             return heuristic_result
+
+        profile_result = self._profile_detect(query)
+        if profile_result:
+            profile_lang, profile_probability = profile_result
+            if (
+                profile_lang in SUPPORTED_LANGUAGES
+                and profile_probability >= LANGDETECT_MIN_PROBABILITY
+            ):
+                logger.info(
+                    "Profile detection accepted: "
+                    f"{profile_lang} ({profile_probability:.2f})"
+                )
+                return profile_lang
 
         # 3. Ambiguous or unsupported input. Do not call an LLM here: the chain
         # handles this through the supported-language fallback.
