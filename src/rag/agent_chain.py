@@ -563,6 +563,27 @@ class ExecutiveAgentChain:
                 chain_logger.info(f"Language locked to '{self._stored_language}' (after {user_message_count} messages)")
                 current_language = self._stored_language
             else:
+                needs_language_clarification = getattr(
+                    self._language_detector,
+                    "needs_language_clarification",
+                    lambda _query: False,
+                )
+                if needs_language_clarification(processed_query):
+                    clarification_language = "de"
+                    clarification_msg = LANGUAGE_CLARIFICATION_MESSAGE[clarification_language]
+                    self._conversation_state['user_language'] = None
+                    self._stored_language = clarification_language
+                    self._conversation_history.append(HumanMessage(processed_query))
+                    self._conversation_history.append(AIMessage(clarification_msg))
+
+                    return LeadAgentQueryResponse(
+                        response=clarification_msg,
+                        language=clarification_language,
+                        processed_query=processed_query,
+                        appointment_requested=False,
+                        show_booking_widget=False,
+                    )
+
                 detected_language = self._language_detector.detect_language(processed_query)
                 self._conversation_state['user_language'] = detected_language
 

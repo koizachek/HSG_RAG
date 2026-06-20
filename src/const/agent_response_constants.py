@@ -65,6 +65,17 @@ LANGUAGE_FALLBACK_MESSAGE = {
     ),
 }
 
+LANGUAGE_CLARIFICATION_MESSAGE = {
+    "en": (
+        "Hello. Your message mixes multiple languages. "
+        "Would you like to continue in English or German?"
+    ),
+    "de": (
+        "Guten Tag. Ihre Nachricht mischt mehrere Sprachen. "
+        "M\u00f6chten Sie auf Deutsch oder Englisch fortfahren?"
+    ),
+}
+
 CONVERSATION_END_MESSAGE = {
     "en": (
         "This conversation has reached its maximum length. "

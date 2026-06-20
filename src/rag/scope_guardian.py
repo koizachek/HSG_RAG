@@ -105,6 +105,13 @@ class ScopeGuardian:
         Returns:
             Redirect message
         """
+        if scope_type == 'off_topic':
+            messages = {
+                'en': "I am specialized in HSG Executive MBA programmes, so I cannot advise on general topics such as restaurants, travel, or local recommendations. I would be happy to discuss programme details, admissions requirements, or help you identify the most suitable option for your goals. What would you like to know about our programmes?",
+                'de': "Ich bin auf HSG Executive MBA-Programme spezialisiert. Zu allgemeinen Themen wie Restaurants, Reisen oder lokalen Empfehlungen kann ich leider nicht beraten. Gerne helfe ich Ihnen bei Programmdetails, Zulassungsvoraussetzungen oder dabei, das richtige Programm f\u00fcr Ihre Ziele zu finden. Was m\u00f6chten Sie \u00fcber unsere Programme wissen?",
+            }
+            return messages.get(language, messages['en'])
+
         messages = {
             'off_topic': {
                 'en': "I am here to help with questions about HSG Executive MBA programmes (EMBA, IEMBA, and emba X). I would be happy to discuss programme details, admissions requirements, or help you identify the most suitable option for your goals. What would you like to know about our programmes?",

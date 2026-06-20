@@ -17,6 +17,14 @@ def test_off_topic_queries_are_detected(message):
     assert ScopeGuardian.check_scope(message) == "off_topic"
 
 
+def test_german_off_topic_redirect_acknowledges_restaurant_subject():
+    message = ScopeGuardian.get_redirect_message("off_topic", "de")
+
+    assert "Restaurants" in message
+    assert "kann ich leider nicht beraten" in message
+    assert "HSG Executive MBA" in message
+
+
 @pytest.mark.parametrize(
     "message",
     [
