@@ -48,6 +48,9 @@ STOPWORDS_EN = SHORT_WORDS_EN | {
 MIXED_LANGUAGE_AMBIGUOUS_TOKENS = {
     # German "im" is also a common ASCII typo for English "I'm".
     'im',
+    # Common in German questions/text but also English stopwords.
+    'in',
+    'was',
 }
 
 # Characters that only occur in German (among the two supported languages)
@@ -199,7 +202,7 @@ class LanguageDetector:
         if len(words) < 4:
             return False
 
-        shared_de_en = SHORT_WORDS_DE & SHORT_WORDS_EN
+        shared_de_en = STOPWORDS_DE & STOPWORDS_EN
         de_hits = sum(
             1
             for word in words
@@ -209,7 +212,15 @@ class LanguageDetector:
                 and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
             )
         )
-        en_hits = sum(1 for word in words if word in STOPWORDS_EN and word not in shared_de_en)
+        en_hits = sum(
+            1
+            for word in words
+            if (
+                word in STOPWORDS_EN
+                and word not in shared_de_en
+                and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
+            )
+        )
         if de_hits > 0 and en_hits > 0:
             logger.info(
                 "Mixed-language input detected "

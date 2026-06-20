@@ -73,6 +73,7 @@ class TestQueryLanguageDetection:
         assert not detector.needs_language_clarification("I want to know about the programs")
         assert not detector.needs_language_clarification("I want to know about the Executive MBA")
         assert not detector.needs_language_clarification("Ich interessiere mich fuer die Programme")
+        assert not detector.needs_language_clarification("Was sind die besten Restaurants in St. Gallen?")
         assert not detector.needs_language_clarification(
             "Buenas tardes, quiero saber sobre el programa EMBA"
         )
