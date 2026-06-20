@@ -167,7 +167,7 @@ def build_cases() -> list[dict]:
              expect_any=[["zürich", "zurich"], ["st.gallen", "st. gallen", "gallen"]],
              forbid=[]),
         dict(id="en_structure_iemba", lang="en",
-             query="How many weeks on campus does the IEMBA require?",
+             query="How many weeks on campus and abroad does the IEMBA require?",
              expect_any=[["10"], ["4", "abroad"]],
              forbid=[]),
 
