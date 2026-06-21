@@ -67,13 +67,18 @@ LANGUAGE_FALLBACK_MESSAGE = {
 
 LANGUAGE_CLARIFICATION_MESSAGE = {
     "en": (
-        "Hello. Your message mixes multiple languages. "
+        "Your message mixes multiple languages. "
         "Would you like to continue in English or German?"
     ),
     "de": (
-        "Guten Tag. Ihre Nachricht mischt mehrere Sprachen. "
+        "Ihre Nachricht mischt mehrere Sprachen. "
         "M\u00f6chten Sie auf Deutsch oder Englisch fortfahren?"
     ),
+}
+
+FIRST_TURN_LANGUAGE_CLARIFICATION_MESSAGE = {
+    "en": f"Hello. {LANGUAGE_CLARIFICATION_MESSAGE['en']}",
+    "de": f"Guten Tag. {LANGUAGE_CLARIFICATION_MESSAGE['de']}",
 }
 
 CONVERSATION_END_MESSAGE = {

@@ -563,15 +563,15 @@ class ExecutiveAgentChain:
                 chain_logger.info(f"Language locked to '{self._stored_language}' (after {user_message_count} messages)")
                 current_language = self._stored_language
             else:
-                needs_language_clarification = getattr(
-                    self._language_detector,
-                    "needs_language_clarification",
-                    lambda _query: False,
-                )
-                if needs_language_clarification(processed_query):
-                    clarification_language = "de"
-                    clarification_msg = LANGUAGE_CLARIFICATION_MESSAGE[clarification_language]
-                    self._conversation_state['user_language'] = None
+                if self._language_detector.needs_language_clarification(processed_query):
+                    clarification_language = "en"
+                    message_set = (
+                        FIRST_TURN_LANGUAGE_CLARIFICATION_MESSAGE
+                        if user_message_count == 0
+                        else LANGUAGE_CLARIFICATION_MESSAGE
+                    )
+                    clarification_msg = message_set[clarification_language]
+                    self._conversation_state['user_language'] = "ambiguous"
                     self._stored_language = clarification_language
                     self._conversation_history.append(HumanMessage(processed_query))
                     self._conversation_history.append(AIMessage(clarification_msg))
@@ -588,7 +588,7 @@ class ExecutiveAgentChain:
                 self._conversation_state['user_language'] = detected_language
 
                 # Language validation
-                if detected_language in ['de', 'en']:
+                if detected_language in config.get("AVAILABLE_LANGUAGES", ["en", "de"]):
                     self._stored_language = detected_language
                     current_language = detected_language
                 else:

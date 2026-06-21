@@ -1,6 +1,8 @@
 import pytest
+from langchain_core.messages import AIMessage, HumanMessage
 
 from src.const.agent_response_constants import (
+    FIRST_TURN_LANGUAGE_CLARIFICATION_MESSAGE,
     LANGUAGE_CLARIFICATION_MESSAGE,
     LANGUAGE_FALLBACK_MESSAGE,
 )
@@ -96,9 +98,27 @@ def test_mixed_language_query_asks_user_to_choose_language():
 
     response = agent.query("Ich want to know sobre los programs")
 
-    assert response.response == LANGUAGE_CLARIFICATION_MESSAGE["de"]
-    assert response.language == "de"
-    assert "M\u00f6chten Sie auf Deutsch oder Englisch fortfahren?" in response.response
+    assert response.response == FIRST_TURN_LANGUAGE_CLARIFICATION_MESSAGE["en"]
+    assert response.language == "en"
+    assert agent._conversation_state["user_language"] == "ambiguous"
+    assert "Would you like to continue in English or German?" in response.response
+    assert response.appointment_requested is False
+    assert response.show_booking_widget is False
+
+
+def test_mid_conversation_language_clarification_does_not_greet_again():
+    agent = _agent_for_language_preprocessing(language="en")
+    agent._conversation_history = [
+        HumanMessage("How much does the EMBA cost?"),
+        AIMessage("The EMBA tuition is CHF 77,500."),
+    ]
+
+    response = agent.query("Ich want to know sobre los programs")
+
+    assert response.response == LANGUAGE_CLARIFICATION_MESSAGE["en"]
+    assert response.language == "en"
+    assert not response.response.startswith("Hello.")
+    assert agent._conversation_state["user_language"] == "ambiguous"
     assert response.appointment_requested is False
     assert response.show_booking_widget is False
 

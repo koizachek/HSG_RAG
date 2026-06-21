@@ -1,13 +1,11 @@
 import re
 import unicodedata
 
-from langdetect import DetectorFactory, detect_langs
-from langdetect.lang_detect_exception import LangDetectException
-
+from src.config import config
+from src.utils.lang import detect_language_profile
 from src.utils.logging import get_logger
 
 logger = get_logger('lang_detector')
-DetectorFactory.seed = 0
 
 # Common short words for quick language detection (no LLM needed)
 SHORT_WORDS_DE = {
@@ -58,7 +56,6 @@ MIXED_LANGUAGE_AMBIGUOUS_TOKENS = {
     'was',
 }
 
-SUPPORTED_LANGUAGES = {'de', 'en'}
 LANGDETECT_MIN_PROBABILITY = 0.75
 
 # Characters that only occur in German (among the two supported languages)
@@ -158,20 +155,16 @@ class LanguageDetector:
         return normalized in LANGUAGE_NEUTRAL_PROGRAM_PATTERNS
 
     @staticmethod
+    def _supported_languages() -> set[str]:
+        return set(config.get("AVAILABLE_LANGUAGES", ["en", "de"]))
+
+    @staticmethod
     def _profile_detect(query: str) -> tuple[str, float] | None:
-        try:
-            found_langs = detect_langs(query)
-        except LangDetectException:
-            return None
-
-        if not found_langs:
-            return None
-
-        top_lang = found_langs[0]
-        logger.info(
-            f"Profile detection: {top_lang.lang} ({top_lang.prob:.2f})"
-        )
-        return top_lang.lang, top_lang.prob
+        profile = detect_language_profile(query)
+        if profile:
+            profile_lang, probability = profile
+            logger.info(f"Profile detection: {profile_lang} ({probability:.2f})")
+        return profile
 
     @staticmethod
     def _mixed_language_signal_counts(text: str) -> tuple[int, int]:
@@ -272,7 +265,7 @@ class LanguageDetector:
         if profile_result:
             profile_lang, profile_probability = profile_result
             if (
-                profile_lang not in SUPPORTED_LANGUAGES
+                profile_lang not in self._supported_languages()
                 and profile_probability >= LANGDETECT_MIN_PROBABILITY
             ):
                 logger.info(
@@ -312,7 +305,7 @@ class LanguageDetector:
         if profile_result:
             profile_lang, profile_probability = profile_result
             if (
-                profile_lang in SUPPORTED_LANGUAGES
+                profile_lang in self._supported_languages()
                 and profile_probability >= LANGDETECT_MIN_PROBABILITY
             ):
                 logger.info(

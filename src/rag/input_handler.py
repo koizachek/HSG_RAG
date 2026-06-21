@@ -90,7 +90,7 @@ class InputHandler:
         return False
 
     @staticmethod
-    def _has_non_latin_letter(message: str) -> bool:
+    def _contains_unsupported_script_letter(message: str) -> bool:
         for char in message:
             if not char.isalpha():
                 continue
@@ -190,7 +190,8 @@ class InputHandler:
             return False
         if allowlisted in InputHandler.PROGRAMME_REFERENCES:
             return False
-        if InputHandler._has_non_latin_letter(normalized):
+        if InputHandler._contains_unsupported_script_letter(normalized):
+            # Let the language layer explain the supported English/German scope.
             return False
 
         if not re.search(r"[A-Za-zÄÖÜäöü0-9]", normalized):
