@@ -2,7 +2,6 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.const.agent_response_constants import (
-    FIRST_TURN_LANGUAGE_CLARIFICATION_MESSAGE,
     LANGUAGE_CLARIFICATION_MESSAGE,
     LANGUAGE_FALLBACK_MESSAGE,
 )
@@ -98,10 +97,11 @@ def test_mixed_language_query_asks_user_to_choose_language():
 
     response = agent.query("Ich want to know sobre los programs")
 
-    assert response.response == FIRST_TURN_LANGUAGE_CLARIFICATION_MESSAGE["en"]
+    assert response.response == LANGUAGE_CLARIFICATION_MESSAGE["en"]
     assert response.language == "en"
     assert agent._conversation_state["user_language"] == "ambiguous"
     assert "Would you like to continue in English or German?" in response.response
+    assert not response.response.startswith("Hello.")
     assert response.appointment_requested is False
     assert response.show_booking_widget is False
 

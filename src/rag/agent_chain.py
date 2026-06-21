@@ -565,12 +565,7 @@ class ExecutiveAgentChain:
             else:
                 if self._language_detector.needs_language_clarification(processed_query):
                     clarification_language = "en"
-                    message_set = (
-                        FIRST_TURN_LANGUAGE_CLARIFICATION_MESSAGE
-                        if user_message_count == 0
-                        else LANGUAGE_CLARIFICATION_MESSAGE
-                    )
-                    clarification_msg = message_set[clarification_language]
+                    clarification_msg = LANGUAGE_CLARIFICATION_MESSAGE[clarification_language]
                     self._conversation_state['user_language'] = "ambiguous"
                     self._stored_language = clarification_language
                     self._conversation_history.append(HumanMessage(processed_query))

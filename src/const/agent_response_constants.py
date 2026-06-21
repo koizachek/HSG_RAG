@@ -76,11 +76,6 @@ LANGUAGE_CLARIFICATION_MESSAGE = {
     ),
 }
 
-FIRST_TURN_LANGUAGE_CLARIFICATION_MESSAGE = {
-    "en": f"Hello. {LANGUAGE_CLARIFICATION_MESSAGE['en']}",
-    "de": f"Guten Tag. {LANGUAGE_CLARIFICATION_MESSAGE['de']}",
-}
-
 CONVERSATION_END_MESSAGE = {
     "en": (
         "This conversation has reached its maximum length. "
