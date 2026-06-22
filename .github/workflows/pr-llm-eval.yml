@@ -48,6 +48,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
+      - name: Run deterministic language routing tests
+        run: |
+          set -euo pipefail
+          pytest tests/test_language_handling.py -q -o addopts=
+
       - name: Validate UAT secrets
         run: |
           set -euo pipefail
