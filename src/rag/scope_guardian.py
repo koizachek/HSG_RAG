@@ -2,6 +2,8 @@
 Scope guardian for handling out-of-scope queries and providing appropriate redirections.
 Ensures the chatbot stays within its defined boundaries.
 """
+import re
+
 from src.const.agent_response_constants import get_admissions_contact_text
 from src.utils.logging import get_logger
 
@@ -17,12 +19,12 @@ class ScopeGuardian:
     OFF_TOPIC_KEYWORDS = {
         'en': [
             'weather', 'sports', 'politics', 'vacation', 'travel',
-            'restaurant', 'movie', 'entertainment', 'news', 'dating',
-            'recipe', 'cooking'
+            'restaurant', 'restaurants', 'movie', 'movies', 'entertainment',
+            'news', 'dating', 'recipe', 'recipes', 'cooking'
         ],
         'de': [
             'wetter', 'sport', 'politik', 'urlaub', 'reise',
-            'restaurant', 'film', 'unterhaltung', 'nachrichten',
+            'restaurant', 'restaurants', 'film', 'filme', 'unterhaltung', 'nachrichten',
             'rezept', 'kochen'
         ]
     }
@@ -51,11 +53,26 @@ class ScopeGuardian:
     
     @staticmethod
     def _matches_any(message_lower: str, keywords: list[str]) -> bool:
-        """Match each keyword as a substring against the lowercased message."""
+        """Match keywords on word boundaries to avoid substring false positives."""
         for keyword in keywords:
-            if keyword.lower() in message_lower:
+            pattern = rf"(?<!\w){re.escape(keyword.lower())}(?!\w)"
+            if re.search(pattern, message_lower):
                 return True
         return False
+
+    @staticmethod
+    def _is_programme_travel_context(message_lower: str) -> bool:
+        travel_terms = [
+            'travel', 'transport', 'reise', 'reisen', 'anreise',
+        ]
+        programme_context_terms = [
+            'emba', 'iemba', 'programme', 'program', 'module', 'modules',
+            'modul', 'modulen', 'campus',
+        ]
+        return (
+            ScopeGuardian._matches_any(message_lower, travel_terms)
+            and ScopeGuardian._matches_any(message_lower, programme_context_terms)
+        )
 
     @staticmethod
     def check_scope(message: str, language: str = 'en') -> str:
@@ -74,6 +91,9 @@ class ScopeGuardian:
         if ScopeGuardian._matches_any(message_lower, ScopeGuardian.AGGRESSIVE_KEYWORDS):
             logger.warning("Detected aggressive language in message")
             return 'aggressive'
+
+        if ScopeGuardian._is_programme_travel_context(message_lower):
+            return 'on_topic'
 
         off_topic_keywords = (
             ScopeGuardian.OFF_TOPIC_KEYWORDS.get('en', [])
@@ -105,6 +125,13 @@ class ScopeGuardian:
         Returns:
             Redirect message
         """
+        if scope_type == 'off_topic':
+            messages = {
+                'en': "I am specialized in HSG Executive MBA programmes, so I cannot advise on general topics such as restaurants, travel, or local recommendations. I would be happy to discuss programme details, admissions requirements, or help you identify the most suitable option for your goals. What would you like to know about our programmes?",
+                'de': "Ich bin auf HSG Executive MBA-Programme spezialisiert. Zu allgemeinen Themen wie Restaurants, Reisen oder lokalen Empfehlungen kann ich leider nicht beraten. Gerne helfe ich Ihnen bei Programmdetails, Zulassungsvoraussetzungen oder dabei, das richtige Programm f\u00fcr Ihre Ziele zu finden. Was m\u00f6chten Sie \u00fcber unsere Programme wissen?",
+            }
+            return messages.get(language, messages['en'])
+
         messages = {
             'off_topic': {
                 'en': "I am here to help with questions about HSG Executive MBA programmes (EMBA, IEMBA, and emba X). I would be happy to discuss programme details, admissions requirements, or help you identify the most suitable option for your goals. What would you like to know about our programmes?",
