@@ -56,6 +56,12 @@ MIXED_LANGUAGE_AMBIGUOUS_TOKENS = {
     'was',
 }
 
+# Programme names are language-neutral domain tokens. Left in place they corrupt
+# langdetect on short queries (e.g. "Wo findet emba X statt?" gets misread as an
+# unsupported language, which then trips the mixed-language clarification). They
+# are stripped before profiling so detection runs on the real surrounding words.
+PROGRAMME_NAME_TOKENS = {'emba', 'iemba', 'embax', 'hsg', 'mba', 'x'}
+
 LANGDETECT_MIN_PROBABILITY = 0.75
 
 # Characters that only occur in German (among the two supported languages)
@@ -159,8 +165,18 @@ class LanguageDetector:
         return set(config.get("AVAILABLE_LANGUAGES", ["en", "de"]))
 
     @staticmethod
-    def _profile_detect(query: str) -> tuple[str, float] | None:
-        profile = detect_language_profile(query)
+    def _strip_programme_tokens(query: str) -> str:
+        """Drop language-neutral programme names so they cannot mislead langdetect."""
+        kept = [
+            word
+            for word in re.findall(r"[^\W\d_]+", query, flags=re.UNICODE)
+            if word.casefold() not in PROGRAMME_NAME_TOKENS
+        ]
+        return " ".join(kept)
+
+    @classmethod
+    def _profile_detect(cls, query: str) -> tuple[str, float] | None:
+        profile = detect_language_profile(cls._strip_programme_tokens(query))
         if profile:
             profile_lang, probability = profile
             logger.info(f"Profile detection: {profile_lang} ({probability:.2f})")
@@ -213,7 +229,13 @@ class LanguageDetector:
             logger.info("Heuristic detection: German characters found -> de")
             return 'de'
 
-        words = re.findall(r"[a-z']+", text)
+        # Programme names (emba, embax, the standalone "x" in "emba x", ...) carry
+        # no language signal but inflate the word count, pushing min_hits out of
+        # reach for short German questions like "Wo findet emba X statt?".
+        words = [
+            w for w in re.findall(r"[a-z']+", text)
+            if w not in PROGRAMME_NAME_TOKENS
+        ]
         if not words:
             return None
 
