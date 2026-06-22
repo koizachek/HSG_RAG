@@ -175,6 +175,13 @@ def test_scope_guardian_escalation_uses_real_contact_details():
     assert "+41 71 224 27 02" in message
 
 
+def test_escalation_language_fallback_preserves_escalation_type():
+    message = ScopeGuardian.get_escalation_message("escalate_aggressive", "fr")
+
+    assert "language is aggressive" in message
+    assert "questions outside programme information" not in message
+
+
 def test_english_greetings_use_formal_opening():
     for greeting in GREETING_MESSAGES["en"]:
         assert "Hello and welcome." in greeting
