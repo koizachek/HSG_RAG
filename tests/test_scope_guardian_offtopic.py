@@ -67,3 +67,10 @@ def test_financial_planning_queries_keep_their_classification():
 
 def test_aggressive_queries_keep_their_classification():
     assert ScopeGuardian.check_scope("This chatbot is useless") == "aggressive"
+
+
+def test_redirect_language_fallback_preserves_scope_type():
+    message = ScopeGuardian.get_redirect_message("aggressive", "fr")
+
+    assert "remain respectful" in message
+    assert "restaurants" not in message

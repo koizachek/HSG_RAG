@@ -140,7 +140,8 @@ class ScopeGuardian:
             }
         }
         
-        return messages.get(scope_type, {}).get(language, messages['off_topic']['en'])
+        scope_messages = messages.get(scope_type, messages['off_topic'])
+        return scope_messages.get(language, scope_messages['en'])
     
     @staticmethod
     def should_escalate(
