@@ -8,7 +8,9 @@ from src.const.agent_response_constants import (
 from src.rag.agent_chain import ExecutiveAgentChain
 from src.rag.input_handler import InputHandler
 from src.rag.language_detection import LanguageDetector
+from src.rag.prompts import PromptConfigurator
 from src.rag.scope_guardian import ScopeGuardian
+from src.rag.utilclasses import LeadAgentQueryResponse
 
 
 def _agent_for_language_preprocessing(language: str = "en") -> ExecutiveAgentChain:
@@ -83,6 +85,42 @@ class TestQueryLanguageDetection:
             "Buenas tardes, quiero saber sobre el programa EMBA"
         )
 
+    @pytest.mark.parametrize(
+        "query",
+        [
+            "Wo findet emba X statt?",
+            "Wo findet der Unterricht statt?",
+            "Wann findet emba X statt?",
+            "Was kostet emba X?",
+        ],
+    )
+    def test_short_german_questions_use_weighted_local_signals(self, query):
+        detector = LanguageDetector()
+
+        assert not detector.needs_language_clarification(query)
+        assert detector.detect_language(query) == "de"
+
+    @pytest.mark.parametrize(
+        "query",
+        [
+            "Where does emba X take place?",
+            "When does emba X start?",
+            "What does emba X cost?",
+            "Which locations does emba X use?",
+        ],
+    )
+    def test_short_english_questions_use_weighted_local_signals(self, query):
+        detector = LanguageDetector()
+
+        assert not detector.needs_language_clarification(query)
+        assert detector.detect_language(query) == "en"
+
+    def test_ambiguous_tokens_do_not_contribute_local_language_weight(self):
+        detector = LanguageDetector()
+
+        assert detector._weighted_language_signal_counts("was in im") == (0, 0)
+        assert detector._quick_detect_short_words("was in im") is None
+
     def test_standalone_language_choice_is_explicit_switch(self):
         detector = LanguageDetector()
 
@@ -147,6 +185,38 @@ def test_unsupported_non_latin_query_uses_supported_language_fallback():
     assert response.language == "en"
     assert response.appointment_requested is False
     assert response.show_booking_widget is False
+
+
+def test_short_german_embax_query_reaches_lead_agent(monkeypatch):
+    agent = _agent_for_language_preprocessing(language="en")
+    lead_calls = []
+
+    def fake_query_lead(preprocessed_query, on_delta=None):
+        lead_calls.append((preprocessed_query, on_delta))
+        return LeadAgentQueryResponse(
+            response="Das Programm findet in Zürich und St. Gallen statt.",
+            language=agent._stored_language,
+            processed_query=preprocessed_query,
+        )
+
+    monkeypatch.setattr(agent, "_query_lead", fake_query_lead)
+
+    response = agent.query("Wo findet emba X statt?")
+
+    assert lead_calls == [("Wo findet emba X statt?", None)]
+    assert agent._stored_language == "de"
+    assert agent._conversation_state["user_language"] == "de"
+    assert response.language == "de"
+    assert response.response not in LANGUAGE_CLARIFICATION_MESSAGE.values()
+    assert response.response not in LANGUAGE_FALLBACK_MESSAGE.values()
+
+
+def test_lead_prompt_obeys_preprocessed_language_routing():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "Language selection and clarification are handled before this agent is called." in prompt
+    assert "Treat the explicit response-language instruction as authoritative" in prompt
+    assert "proper name of a programme" not in prompt
 
 
 if __name__ == "__main__":

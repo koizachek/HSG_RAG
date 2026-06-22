@@ -18,7 +18,7 @@ SHORT_WORDS_DE = {
 SHORT_WORDS_EN = {
     'yes', 'no', 'thanks', 'please', 'ok', 'okay', 'good', 'hello', 'hi', 'hey',
     'right', 'sure', 'great', 'nice', 'cool', 'fine', 'perfect',
-    'more', 'less', 'what', 'how', 'where', 'when', 'why', 'who',
+    'more', 'less', 'what', 'which', 'how', 'where', 'when', 'why', 'who',
     'and', 'or', 'but', 'yet', 'now', 'here', 'there',
     'maybe', 'probably', 'definitely', 'certainly', 'alright',
 }
@@ -54,6 +54,17 @@ MIXED_LANGUAGE_AMBIGUOUS_TOKENS = {
     # Common in German questions/text but also English stopwords.
     'in',
     'was',
+}
+
+STRONG_LANGUAGE_SIGNALS_DE = {
+    'wo', 'wann', 'warum', 'wer', 'wie',
+    'welche', 'welcher', 'welches',
+    'kostet',
+}
+STRONG_LANGUAGE_SIGNALS_EN = {
+    'where', 'when', 'why', 'who', 'how',
+    'what', 'which',
+    'cost', 'costs',
 }
 
 LANGDETECT_MIN_PROBABILITY = 0.75
@@ -128,13 +139,29 @@ class LanguageDetector:
 
     def _quick_detect_short_words(self, query: str) -> str | None:
         """Quick detection for short inputs using word dictionary. Returns None if not detected."""
-        words = query.lower().strip().split()
+        words = re.findall(r"[a-z']+", query.lower())
         if len(words) > 3:
             return None
 
-        # Check each word against dictionaries
-        de_matches = sum(1 for w in words if w in SHORT_WORDS_DE)
-        en_matches = sum(1 for w in words if w in SHORT_WORDS_EN)
+        shared_de_en = SHORT_WORDS_DE & SHORT_WORDS_EN
+        de_matches = sum(
+            1
+            for word in words
+            if (
+                word in SHORT_WORDS_DE
+                and word not in shared_de_en
+                and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
+            )
+        )
+        en_matches = sum(
+            1
+            for word in words
+            if (
+                word in SHORT_WORDS_EN
+                and word not in shared_de_en
+                and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
+            )
+        )
 
         if de_matches > en_matches:
             logger.info(f"Quick detection: '{query}' -> German (dictionary match)")
@@ -192,6 +219,34 @@ class LanguageDetector:
             de_hits += 1
         return de_hits, en_hits
 
+    @staticmethod
+    def _weighted_language_signal_counts(text: str) -> tuple[int, int]:
+        """
+        Count unambiguous de/en signals, weighting high-confidence question
+        words so short factual queries can be resolved without langdetect.
+        """
+        words = re.findall(r"[a-z']+", text)
+        shared_de_en = STOPWORDS_DE & STOPWORDS_EN
+
+        def score(
+            language_words: set[str],
+            strong_signals: set[str],
+        ) -> int:
+            return sum(
+                2 if word in strong_signals else 1
+                for word in words
+                if (
+                    word in language_words
+                    and word not in shared_de_en
+                    and word not in MIXED_LANGUAGE_AMBIGUOUS_TOKENS
+                )
+            )
+
+        return (
+            score(STOPWORDS_DE, STRONG_LANGUAGE_SIGNALS_DE),
+            score(STOPWORDS_EN, STRONG_LANGUAGE_SIGNALS_EN),
+        )
+
     def _heuristic_detect(self, query: str) -> str | None:
         """
         Full-text heuristic detection for de/en. Returns None when ambiguous
@@ -217,17 +272,16 @@ class LanguageDetector:
         if not words:
             return None
 
-        de_hits = sum(1 for w in words if w in STOPWORDS_DE)
-        en_hits = sum(1 for w in words if w in STOPWORDS_EN)
+        de_hits, en_hits = self._weighted_language_signal_counts(text)
         min_hits = 1 if len(words) <= 3 else 2
 
-        # Require a clear signal: at least one stopword hit and a strict
-        # majority. Ties and zero-hit inputs stay ambiguous.
+        # Require a clear weighted signal and a strict majority. Ties and
+        # zero-hit inputs stay ambiguous.
         if de_hits > en_hits and de_hits >= min_hits:
-            logger.info(f"Heuristic detection: de ({de_hits} vs {en_hits} stopword hits)")
+            logger.info(f"Heuristic detection: de ({de_hits} vs {en_hits} weighted hits)")
             return 'de'
         if en_hits > de_hits and en_hits >= min_hits:
-            logger.info(f"Heuristic detection: en ({en_hits} vs {de_hits} stopword hits)")
+            logger.info(f"Heuristic detection: en ({en_hits} vs {de_hits} weighted hits)")
             return 'en'
 
         return None
