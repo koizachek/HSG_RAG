@@ -203,4 +203,5 @@ class ScopeGuardian:
             }
         }
         
-        return messages.get(escalation_type, {}).get(language, messages['escalate_off_topic']['en'])
+        escalation_messages = messages.get(escalation_type, messages['escalate_off_topic'])
+        return escalation_messages.get(language, escalation_messages['en'])
