@@ -252,12 +252,26 @@ def _hard_facts() -> dict[str, Any]:
 
 
 def _run_chatbot_case(case: UATCase) -> list[dict[str, Any]]:
+    app_language = case.expected_language or "en"
     chain = ExecutiveAgentChain(
-        language=case.expected_language or "en",
+        language=app_language,
         session_id=f"uat-{case.case_id}-{uuid.uuid4()}",
     )
 
-    transcript = []
+    greeting_started = time.perf_counter()
+    transcript = [
+        {
+            "turn": 0,
+            "message_type": "greeting",
+            "user": None,
+            "assistant": chain.generate_greeting(),
+            "additional_details": "",
+            "language": app_language,
+            "appointment_requested": False,
+            "relevant_programs": [],
+            "elapsed_s": round(time.perf_counter() - greeting_started, 3),
+        }
+    ]
     for turn_index, query in enumerate(case.user_turns, start=1):
         started = time.perf_counter()
         result = chain.query(query)
@@ -330,8 +344,9 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
                 "Do not require exact phrasing. Reward helpful, grounded, concise advisory answers. "
                 "For mixed-language clarification scenarios, accept a concise English clarification "
                 "that asks whether to continue in English or German. Do not require the clarification "
-                "itself to be in German, and do not require a greeting: the chat UI already shows a "
-                "separate prewritten greeting before the assistant response. "
+                "itself to be in German. Every transcript starts with a bot-only greeting (turn 0) "
+                "generated for the app language inferred from the workbook. Check that this greeting "
+                "uses the expected language, but do not require later assistant replies to greet again. "
                 "Penalize wrong programme facts, wrong language, unsupported promises, hidden/internal "
                 "architecture talk, missed booking or handover behavior, and rude tone. "
                 "Return only valid JSON."
@@ -465,3 +480,59 @@ def test_uat_average_score_passes_llm_judge():
 
 def test_uat_workbook_contains_cases():
     assert len(parse_uat_excel()) > 0
+
+
+def test_uat_workbook_languages_match_app_selection():
+    languages = {case.case_id: case.expected_language for case in parse_uat_excel()}
+
+    assert languages == {
+        "TC-EMBA-01": "de",
+        "TC-EMBA-02": "de",
+        "TC-EMBA-03": "de",
+        "TC-IEMBA-01": "en",
+        "TC-IEMBA-02": "en",
+        "TC-EMBAX-01": "de",
+        "TC-EDGE-01": "de",
+        "TC-EDGE-02": "de",
+        "TC-EDGE-03": "de",
+        "TC-EDGE-04": "de",
+        "TC-EDGE-05": "de",
+    }
+
+
+def test_uat_transcript_starts_with_bot_greeting(monkeypatch):
+    class FakeResult:
+        response = "Programme answer"
+        additional_details = None
+        language = "de"
+        appointment_requested = False
+        relevant_programs = []
+
+    class FakeChain:
+        def __init__(self, language: str, session_id: str):
+            self.language = language
+
+        def generate_greeting(self) -> str:
+            return f"Greeting in {self.language}"
+
+        def query(self, query: str) -> FakeResult:
+            return FakeResult()
+
+    monkeypatch.setattr(sys.modules[__name__], "ExecutiveAgentChain", FakeChain)
+    case = UATCase(
+        case_id="TC-GREETING",
+        sheet="Example",
+        title="Greeting test",
+        user_turns=["Hallo"],
+        expected_language="de",
+    )
+
+    transcript = _run_chatbot_case(case)
+
+    assert transcript[0]["turn"] == 0
+    assert transcript[0]["message_type"] == "greeting"
+    assert transcript[0]["user"] is None
+    assert transcript[0]["assistant"] == "Greeting in de"
+    assert transcript[0]["language"] == "de"
+    assert transcript[1]["turn"] == 1
+    assert transcript[1]["user"] == "Hallo"
