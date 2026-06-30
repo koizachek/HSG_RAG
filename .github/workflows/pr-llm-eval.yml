@@ -19,7 +19,8 @@ jobs:
       PYTHONPATH: ${{ github.workspace }}
       RUN_UAT_LLM_JUDGE: "1"
       UAT_RESULTS_DIR: uat-results
-      UAT_MIN_SCORE: "7.0"
+      UAT_AVERAGE_MIN_SCORE: "8.5"
+      UAT_CASE_MIN_SCORE: "8.0"
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
       EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY || secrets.OPEN_ROUTER_API_KEY }}
@@ -149,7 +150,10 @@ jobs:
             const average = scores.length
               ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2)
               : 'n/a';
-            const minScore = results[0]?.minimum_score ?? process.env.UAT_MIN_SCORE ?? 'n/a';
+            const averageMinScore =
+              results[0]?.average_min_score ?? process.env.UAT_AVERAGE_MIN_SCORE ?? 'n/a';
+            const caseMinScore =
+              results[0]?.case_min_score ?? results[0]?.minimum_score ?? process.env.UAT_CASE_MIN_SCORE ?? 'n/a';
             const maxScore = 10;
             const status = exitCode === 0 ? 'passed' : 'failed';
             const label = exitCode === 0 ? 'PASS' : 'FAIL';
@@ -224,8 +228,8 @@ jobs:
               `- Cases reported: **${results.length}**`,
               `- Passed: **${passed}**`,
               `- Failed: **${failed.length}**`,
-              `- Average score: **${average}/${maxScore}**`,
-              `- Minimum passing score: **${minScore}/${maxScore}**`,
+              `- Average score: **${average}/${maxScore}** (minimum **${averageMinScore}/${maxScore}**)`,
+              `- Minimum case score: **${caseMinScore}/${maxScore}**`,
               '',
               failed.length ? '### Failing cases' : '### Failing cases\nNone.',
               ...(failed.length ? failureLines : []),

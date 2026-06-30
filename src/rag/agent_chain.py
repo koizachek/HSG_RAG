@@ -487,6 +487,68 @@ class ExecutiveAgentChain:
         greeting_message = random.choice(GREETING_MESSAGES[self._stored_language])
         return greeting_message
 
+    def _looks_like_repeated_invalid_noise(self, query: str) -> bool:
+        """Detect a second noisy message after an already rejected input.
+
+        This is intentionally narrower than InputHandler.is_probably_gibberish:
+        it only runs after a previous invalid turn, so normal first-pass user
+        messages keep the conservative validation rules.
+        """
+        normalized = (query or "").strip()
+        if not normalized:
+            return True
+
+        if self._input_handler.is_probably_gibberish(normalized):
+            return True
+
+        if len(normalized) < 12:
+            return False
+
+        normalized_for_terms = re.sub(r"[^a-z0-9\s]", " ", normalized.casefold())
+        normalized_for_terms = re.sub(r"\s+", " ", normalized_for_terms).strip()
+        meaningful_terms = {
+            "emba", "iemba", "mba", "program", "programme", "programs",
+            "programmes", "executive", "admission", "admissions", "cost",
+            "costs", "tuition", "fee", "fees", "deadline", "application",
+            "apply", "eligible", "eligibility", "experience", "leadership",
+            "management", "advisor", "appointment", "consultation", "visa",
+            "gmat", "toefl", "cv", "hsg", "unisg", "st", "gallen",
+            "kosten", "studiengebuehren", "bewerbung", "bewerbungsfrist",
+            "zulassung", "erfahrung", "fuehrung", "beratung", "termin",
+            "deutsch", "englisch", "sprache", "programm", "programme",
+        }
+        if any(re.search(rf"\b{re.escape(term)}\b", normalized_for_terms) for term in meaningful_terms):
+            return False
+
+        non_space_chars = re.findall(r"\S", normalized)
+        if not non_space_chars:
+            return True
+
+        digits = re.findall(r"\d", normalized)
+        punctuation = re.findall(r"[^A-Za-z0-9\s]", normalized)
+        words = re.findall(r"[A-Za-z]+", normalized)
+        if len(words) < 4 or not (digits or punctuation):
+            return False
+
+        compact_alphanumeric_noise = [
+            token for token in re.findall(r"\S+", normalized)
+            if re.search(r"[A-Za-z]", token) and re.search(r"\d", token)
+        ]
+        short_fragments = [word for word in words if len(word) <= 3]
+
+        def low_vowel_long_word(word: str) -> bool:
+            if len(word) < 8:
+                return False
+            vowels = sum(1 for char in word.casefold() if char in InputHandler.VOWELS)
+            return vowels / len(word) <= 0.25
+
+        noise_ratio = (len(digits) + len(punctuation)) / len(non_space_chars)
+        return (
+            any(low_vowel_long_word(word) for word in words)
+            and noise_ratio >= 0.18
+            and (len(short_fragments) >= 2 or len(compact_alphanumeric_noise) >= 2)
+        )
+
     @traceable
     def query(self, query: str, on_delta=None) -> LeadAgentQueryResponse:
         """
@@ -535,6 +597,18 @@ class ExecutiveAgentChain:
                 processed_query=query
             )
 
+        if self._invalid_input_count and self._looks_like_repeated_invalid_noise(processed_query):
+            chain_logger.warning(f"Repeated invalid-looking input received: '{query}'")
+            self._invalid_input_count += 1
+            invalid_response = get_repeated_not_valid_query_message(self._stored_language)
+            return LeadAgentQueryResponse(
+                response=invalid_response,
+                language=current_language,
+                processed_query=query,
+                appointment_requested=False,
+                show_booking_widget=False,
+            )
+
         self._invalid_input_count = 0
 
         # Log check
@@ -548,9 +622,9 @@ class ExecutiveAgentChain:
             self._stored_language = explicit_switch
             current_language = explicit_switch
             self._conversation_state['user_language'] = explicit_switch
-        elif self._language_detector.is_language_neutral_program_reference(processed_query):
+        elif self._language_detector.is_language_neutral_input(processed_query):
             chain_logger.info(
-                f"Skipping language re-detection for language-neutral programme reference: '{processed_query}'"
+                f"Skipping language re-detection for language-neutral input: '{processed_query}'"
             )
             current_language = self._stored_language
         else:

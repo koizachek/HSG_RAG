@@ -181,6 +181,22 @@ class LanguageDetector:
         normalized = re.sub(r"\s+", " ", normalized).strip()
         return normalized in LANGUAGE_NEUTRAL_PROGRAM_PATTERNS
 
+    def is_language_neutral_input(self, query: str) -> bool:
+        """Return True when the input should keep the conversation language.
+
+        Shared greetings such as ``hi`` and ``hey`` are valid in both English
+        and German. Sending these very short inputs to the statistical language
+        detector produces unreliable results (for example, ``hi`` is commonly
+        classified as Swahili).
+        """
+        normalized = re.sub(r"[^\w\s]", " ", query.casefold())
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        shared_short_words = SHORT_WORDS_DE & SHORT_WORDS_EN
+        return (
+            self.is_language_neutral_program_reference(query)
+            or normalized in shared_short_words
+        )
+
     @staticmethod
     def _supported_languages() -> set[str]:
         return set(config.get("AVAILABLE_LANGUAGES", ["en", "de"]))

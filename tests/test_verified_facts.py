@@ -103,6 +103,13 @@ class TestPromptBlock:
         for prog in _facts_file()["programmes"].values():
             assert prog["advisor"]["name"] in block
 
+    def test_block_instructs_current_deadline_fee_first(self):
+        block = VerifiedFacts.render_prompt_block(language="en")
+
+        assert "fee that applies today first" in block
+        assert "same-day deadlines have not passed" in block
+        assert "expired lower fee" in block
+
     def test_german_labels_in_german_block(self):
         block = VerifiedFacts.render_prompt_block(language="de")
         assert "Studiengebühr" in block and "Bewerbungsfrist" in block
