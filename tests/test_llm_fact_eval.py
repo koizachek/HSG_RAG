@@ -141,12 +141,11 @@ def build_cases() -> list[dict]:
              query="Wie lange dauert der deutschsprachige EMBA HSG?",
              expect_any=[["18"]],
              forbid=[]),
-        # Spec behaviour: "der EMBA" without specification is the defined
-        # ambiguity case — the bot must ask which of the three programmes
-        # is meant instead of guessing.
-        dict(id="de_ambiguous_programme_clarification", lang="de",
+        # "EMBA" is the distinct short name of the German-speaking programme,
+        # just as IEMBA and emba X identify the other two programmes.
+        dict(id="de_duration_emba_short_name", lang="de",
              query="Wie lange dauert der EMBA?",
-             expect_any=[["iemba", "international"], ["emba x", "embax"]],
+             expect_any=[["18"]],
              forbid=[]),
         dict(id="en_duration_embax", lang="en",
              query="How long does the emba X take and how many ECTS is it?",

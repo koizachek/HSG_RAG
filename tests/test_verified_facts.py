@@ -45,11 +45,19 @@ class TestFactsFile:
             assert prog.get("programme_start"), f"{key}: missing programme_start"
             assert isinstance(prog.get("ects_credits"), int), f"{key}: ects_credits must be int"
             assert prog["ects_credits"] > 0, f"{key}: missing ects_credits"
+
             tuition = prog.get("tuition_chf", {})
             for deadline_key in ("first_deadline", "final_deadline"):
                 entry = tuition.get(deadline_key, {})
                 assert entry.get("deadline"), f"{key}: missing {deadline_key}.deadline"
                 assert isinstance(entry.get("fee"), int), f"{key}: {deadline_key}.fee must be int"
+
+    def test_iemba_structure_includes_campus_and_abroad_weeks(self):
+        structure = _facts_file()["programmes"]["iemba"]["structure"]
+        assert "10 Wochen am Campus" in structure["de"]
+        assert "4 Wochen im Ausland" in structure["de"]
+        assert "10 weeks on campus" in structure["en"]
+        assert "4 weeks abroad" in structure["en"]
 
     def test_fees_are_not_cross_contaminated(self):
         """Each programme's fees must be unique values (guards against the
