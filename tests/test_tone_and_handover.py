@@ -66,6 +66,28 @@ def test_lead_prompt_preserves_credibility_and_avoids_hype():
 
     assert 'Avoid hype words ("best", "world-class", "perfect", "guaranteed")' in prompt
     assert "retrieved content explicitly supports them" in prompt
+
+
+def test_lead_prompt_uses_ordered_eligibility_fallbacks():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "assess whether EMBA HSG, IEMBA HSG, or emba X is a better fit" in prompt
+    assert "only when its retrieved requirements and positioning support the fit" in prompt
+    assert "If none of the three Executive MBA programmes fits" in prompt
+    assert "regular HSG MBA" in prompt
+    assert "offer contact with the admissions team" in prompt
+
+
+def test_lead_prompt_handles_frustration_with_acknowledgement_and_handover():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "briefly acknowledge the concern" in prompt
+    assert "without defensiveness or promotional language" in prompt
+    assert "offer contact with an advisor" in prompt
+    assert "If the aggression continues, prioritise human handover" in prompt
+    assert "exception to the no-validation rule" in prompt
+
+
 def test_booking_intent_detector_requires_user_initiative():
     agent = ExecutiveAgentChain.__new__(ExecutiveAgentChain)
     agent._conversation_history = []
