@@ -59,6 +59,12 @@ FALLBACK_REQUEST_HEADERS = {
     **REQUEST_HEADERS,
     'Referer': 'https://emba.unisg.ch/',
 }
+ACCESS_CHALLENGE_MARKERS = (
+    'please wait while your request is being verified',
+    'checking your browser before accessing',
+    'enable javascript and cookies to continue',
+    'verify you are human',
+)
 
 
 # ----------------------------- Extraction schema -----------------------------
@@ -164,15 +170,7 @@ def extract_pdf_text(content: bytes, url: str) -> str:
     """Extract text from a PDF response using available local parsers."""
     if not content.lstrip().startswith(b'%PDF'):
         logger.warning(f"PDF URL did not return PDF bytes: {url}")
-        try:
-            text = content.decode('utf-8', errors='ignore')
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(text, 'html.parser')
-            for tag in soup(['script', 'style', 'noscript']):
-                tag.decompose()
-            return soup.get_text(separator='\n', strip=True)
-        except Exception:
-            return content.decode('utf-8', errors='ignore')
+        return ''
 
     suffix = os.path.splitext(url)[1] or '.pdf'
     with NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
@@ -210,6 +208,11 @@ def _extract_fact_html_snippets(text: str) -> str:
     return "\n".join(matches)
 
 
+def _is_access_challenge(text: str) -> bool:
+    normalized = (text or '').casefold()
+    return any(marker in normalized for marker in ACCESS_CHALLENGE_MARKERS)
+
+
 def fetch_sources() -> dict[str, str]:
     """Fetch all fact source pages. Raises when a page cannot be fetched."""
     pages = {}
@@ -222,7 +225,27 @@ def fetch_sources() -> dict[str, str]:
             resp = session.get(url, timeout=REQUEST_TIMEOUT, headers=FALLBACK_REQUEST_HEADERS)
         resp.raise_for_status()
         content_type = resp.headers.get('Content-Type', '').lower()
+        if _is_access_challenge(resp.text):
+            logger.warning(
+                "Skipping access-challenge response for %s (status=%s, content-type=%s, final-url=%s)",
+                url,
+                resp.status_code,
+                content_type or '<missing>',
+                getattr(resp, 'url', url),
+            )
+            pages[key] = ''
+            continue
         if url.lower().endswith('.pdf') or 'application/pdf' in content_type:
+            if not resp.content.lstrip().startswith(b'%PDF'):
+                logger.warning(
+                    "Skipping non-PDF response for %s (status=%s, content-type=%s, final-url=%s)",
+                    url,
+                    resp.status_code,
+                    content_type or '<missing>',
+                    getattr(resp, 'url', url),
+                )
+                pages[key] = ''
+                continue
             try:
                 pages[key] = extract_pdf_text(resp.content, url)
             except Exception as exc:
@@ -650,6 +673,17 @@ def _comparison_decision(
     )
 
 
+def _is_missing_extracted_value(fact_key: str, value) -> bool:
+    """Return whether a schema value represents unavailable source data."""
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if not isinstance(value, bool) and value == 0:
+        return fact_key.endswith(('.fee', 'ects_credits'))
+    return False
+
+
 def _deterministic_fact_comparison(
     fact_key: str,
     existing_value,
@@ -658,8 +692,24 @@ def _deterministic_fact_comparison(
     if existing_value == observed_value:
         return _comparison_decision(False, 1.0, "Values are identical.", existing_value, True)
 
-    if existing_value in (None, '') or observed_value in (None, ''):
-        return _comparison_decision(True, 1.0, "One value is missing.", observed_value, False)
+    existing_missing = _is_missing_extracted_value(fact_key, existing_value)
+    observed_missing = _is_missing_extracted_value(fact_key, observed_value)
+    if observed_missing:
+        return _comparison_decision(
+            False,
+            1.0,
+            "New extraction is missing; source absence is not evidence that the stored fact was removed.",
+            existing_value,
+            True,
+        )
+    if existing_missing:
+        return _comparison_decision(
+            True,
+            1.0,
+            "A previously missing fact is now available.",
+            observed_value,
+            False,
+        )
 
     if not isinstance(existing_value, str) or not isinstance(observed_value, str):
         return _comparison_decision(True, 1.0, "Structured or numeric value changed.", observed_value, False)
@@ -855,6 +905,13 @@ def preserve_materially_unchanged_extractions(
                 continue
             full_key = f"{prog_key}.{key}"
             source_keys = _source_keys_for_fact(prog_key, key)
+            if not any((pages.get(source_key) or '').strip() for source_key in source_keys):
+                logger.info(
+                    "Preserving existing %s: no usable source content was fetched.",
+                    full_key,
+                )
+                _set_nested_value(new_prog, key, old_flat[key])
+                continue
             source_info = ", ".join(FACT_SOURCES[source_key] for source_key in source_keys if source_key in FACT_SOURCES)
             decision = evaluate_fact_against_existing(
                 existing_value=old_flat[key],

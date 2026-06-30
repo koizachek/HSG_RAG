@@ -113,16 +113,14 @@ class TestPromptBlock:
 # --------------------------- Facts extraction -------------------------------
 
 class TestFactExtractionFallbacks:
-    def test_pdf_extraction_handles_non_pdf_response(self):
+    def test_pdf_extraction_rejects_non_pdf_response(self):
         from src.pipeline.update_programme_facts import extract_pdf_text
 
         content = b"<html><body><h1>Not found</h1><script>ignored()</script><p>PDF moved</p></body></html>"
 
         text = extract_pdf_text(content, "https://example.test/file.pdf")
 
-        assert "Not found" in text
-        assert "PDF moved" in text
-        assert "ignored" not in text
+        assert text == ""
 
     def test_fetch_sources_skips_unreadable_pdf(self, monkeypatch):
         import src.pipeline.update_programme_facts as facts_module
@@ -149,6 +147,28 @@ class TestFactExtractionFallbacks:
         )
 
         assert facts_module.fetch_sources() == {"broken_plan": ""}
+
+    def test_fetch_sources_rejects_access_challenge(self, monkeypatch):
+        import src.pipeline.update_programme_facts as facts_module
+
+        class FakeResponse:
+            status_code = 200
+            headers = {"Content-Type": "text/html"}
+            content = b"<html><body>Please wait while your request is being verified.</body></html>"
+            text = content.decode()
+            url = "https://example.test/challenge"
+
+            def raise_for_status(self):
+                return None
+
+        class FakeSession:
+            def get(self, *args, **kwargs):
+                return FakeResponse()
+
+        monkeypatch.setattr(facts_module.requests, "Session", lambda: FakeSession())
+        monkeypatch.setattr(facts_module, "FACT_SOURCES", {"blocked": "https://example.test/facts"})
+
+        assert facts_module.fetch_sources() == {"blocked": ""}
 
     def test_ects_fallback_reads_es_hsg_label_value(self):
         from src.pipeline.update_programme_facts import _extract_ects_credits
@@ -232,10 +252,89 @@ class TestFactExtractionFallbacks:
             }
         }
 
-        stabilized = preserve_materially_unchanged_extractions(old, new, pages={})
+        stabilized = preserve_materially_unchanged_extractions(
+            old,
+            new,
+            pages={"emba": json.dumps(new)},
+        )
 
         assert diff_facts(old, stabilized) == []
         assert stabilized["programmes"]["emba"]["structure"] == old["programmes"]["emba"]["structure"]
+
+    def test_missing_extraction_does_not_delete_stored_facts(self):
+        from src.pipeline.update_programme_facts import (
+            diff_facts,
+            preserve_materially_unchanged_extractions,
+        )
+
+        old = {
+            "programmes": {
+                "emba": {
+                    "official_name": "Executive MBA HSG",
+                    "ects_credits": 75,
+                    "tuition_chf": {
+                        "first_deadline": {
+                            "deadline": "2026-06-29",
+                            "fee": 72500,
+                        }
+                    },
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "emba": {
+                    "official_name": "",
+                    "ects_credits": 0,
+                    "tuition_chf": {
+                        "first_deadline": {
+                            "deadline": "",
+                            "fee": 0,
+                        }
+                    },
+                }
+            }
+        }
+
+        stabilized = preserve_materially_unchanged_extractions(
+            old,
+            new,
+            pages={
+                "emba": "Programme page loaded, but these fields were not present.",
+                "deadlines": "Deadlines page loaded, but this programme was not present.",
+            },
+        )
+
+        assert stabilized["programmes"]["emba"] == old["programmes"]["emba"]
+        assert diff_facts(old, stabilized) == []
+
+    def test_unavailable_source_preserves_apparent_change(self):
+        from src.pipeline.update_programme_facts import (
+            diff_facts,
+            preserve_materially_unchanged_extractions,
+        )
+
+        old = {"programmes": {"emba": {"official_name": "Executive MBA HSG"}}}
+        new = {"programmes": {"emba": {"official_name": "Unverified replacement"}}}
+
+        stabilized = preserve_materially_unchanged_extractions(old, new, pages={})
+
+        assert diff_facts(old, stabilized) == []
+        assert stabilized == old
+
+    def test_newly_available_fact_replaces_missing_stored_value(self):
+        from src.pipeline.update_programme_facts import evaluate_fact_against_existing
+
+        decision = evaluate_fact_against_existing(
+            existing_value="",
+            observed_value="Executive MBA HSG",
+            page_content="Executive MBA HSG",
+            fact_key="emba.official_name",
+            source_info="test",
+        )
+
+        assert decision.materially_changed is True
+        assert decision.preserve_existing is False
 
     @pytest.mark.parametrize("new_structure,expected_fragment", [
         (
@@ -274,7 +373,11 @@ class TestFactExtractionFallbacks:
             }
         }
 
-        stabilized = preserve_materially_unchanged_extractions(old, new, pages={})
+        stabilized = preserve_materially_unchanged_extractions(
+            old,
+            new,
+            pages={"emba": new_structure},
+        )
         changes = diff_facts(old, stabilized)
 
         assert len(changes) == 1
@@ -306,7 +409,11 @@ class TestFactExtractionFallbacks:
             }
         }
 
-        stabilized = preserve_materially_unchanged_extractions(old, new, pages={})
+        stabilized = preserve_materially_unchanged_extractions(
+            old,
+            new,
+            pages={"deadlines": "Final deadline 2026-08-11, fee CHF 79,500"},
+        )
 
         assert diff_facts(old, stabilized) == [
             "emba.tuition_chf.final_deadline.deadline: 2026-08-10 -> 2026-08-11",
