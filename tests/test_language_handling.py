@@ -50,6 +50,12 @@ class TestQueryLanguageDetection:
         for query in ("EMBA", "IEMBA", "emba X", "EMBA HSG", "IEMBA HSG", "embax"):
             assert detector.is_language_neutral_program_reference(query)
 
+    @pytest.mark.parametrize("query", ["hi", "Hi!", "hey", "OK"])
+    def test_shared_short_greetings_are_language_neutral(self, query):
+        detector = LanguageDetector()
+
+        assert detector.is_language_neutral_input(query)
+
     def test_supported_language_detection_is_local(self):
         queries = {
             "en": "Hello, im interested in the EMBA Program",
@@ -199,6 +205,40 @@ def test_unsupported_non_latin_query_uses_supported_language_fallback():
     assert response.language == "en"
     assert response.appointment_requested is False
     assert response.show_booking_widget is False
+
+
+@pytest.mark.parametrize(
+    ("app_language", "lead_response"),
+    [
+        ("en", "Hello! How can I help you?"),
+        ("de", "Hallo! Wie kann ich Ihnen helfen?"),
+    ],
+)
+def test_hi_keeps_app_language_and_reaches_lead_agent(
+    monkeypatch,
+    app_language,
+    lead_response,
+):
+    agent = _agent_for_language_preprocessing(language=app_language)
+    lead_calls = []
+
+    def fake_query_lead(preprocessed_query, on_delta=None):
+        lead_calls.append((preprocessed_query, on_delta))
+        return LeadAgentQueryResponse(
+            response=lead_response,
+            language=agent._stored_language,
+            processed_query=preprocessed_query,
+        )
+
+    monkeypatch.setattr(agent, "_query_lead", fake_query_lead)
+
+    response = agent.query("hi")
+
+    assert lead_calls == [("hi", None)]
+    assert agent._stored_language == app_language
+    assert response.language == app_language
+    assert response.response == lead_response
+    assert response.response not in LANGUAGE_FALLBACK_MESSAGE.values()
 
 
 def test_short_german_embax_query_reaches_lead_agent(monkeypatch):

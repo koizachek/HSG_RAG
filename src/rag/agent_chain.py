@@ -622,9 +622,9 @@ class ExecutiveAgentChain:
             self._stored_language = explicit_switch
             current_language = explicit_switch
             self._conversation_state['user_language'] = explicit_switch
-        elif self._language_detector.is_language_neutral_program_reference(processed_query):
+        elif self._language_detector.is_language_neutral_input(processed_query):
             chain_logger.info(
-                f"Skipping language re-detection for language-neutral programme reference: '{processed_query}'"
+                f"Skipping language re-detection for language-neutral input: '{processed_query}'"
             )
             current_language = self._stored_language
         else:

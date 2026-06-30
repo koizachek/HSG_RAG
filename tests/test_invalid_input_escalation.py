@@ -19,6 +19,10 @@ class _EnglishLanguageDetector:
         return False
 
     @staticmethod
+    def is_language_neutral_input(message):
+        return False
+
+    @staticmethod
     def needs_language_clarification(message):
         return False
 
