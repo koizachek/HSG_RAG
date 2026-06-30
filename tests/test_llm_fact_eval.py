@@ -141,11 +141,9 @@ def build_cases() -> list[dict]:
              query="Wie lange dauert der deutschsprachige EMBA HSG?",
              expect_any=[["18"]],
              forbid=[]),
-        # "EMBA" is the distinct short name of the German-speaking programme,
-        # just as IEMBA and emba X identify the other two programmes.
         dict(id="de_duration_emba_short_name", lang="de",
              query="Wie lange dauert der EMBA?",
-             expect_any=[["18"]],
+             expect_any=[["iemba", "international"], ["emba x", "embax"]],
              forbid=[]),
         dict(id="en_duration_embax", lang="en",
              query="How long does the emba X take and how many ECTS is it?",
