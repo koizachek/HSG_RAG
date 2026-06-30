@@ -144,6 +144,20 @@ def test_mixed_language_query_asks_user_to_choose_language():
     assert response.show_booking_widget is False
 
 
+def test_mixed_language_query_in_german_app_still_uses_english_clarification():
+    agent = _agent_for_language_preprocessing(language="de")
+
+    response = agent.query("Ich want to know sobre los programs")
+
+    assert response.response == LANGUAGE_CLARIFICATION_MESSAGE["en"]
+    assert response.language == "en"
+    assert agent._conversation_state["user_language"] == "ambiguous"
+    assert "Would you like to continue in English or German?" in response.response
+    assert not response.response.startswith("Guten Tag")
+    assert response.appointment_requested is False
+    assert response.show_booking_widget is False
+
+
 def test_mid_conversation_language_clarification_does_not_greet_again():
     agent = _agent_for_language_preprocessing(language="en")
     agent._conversation_history = [

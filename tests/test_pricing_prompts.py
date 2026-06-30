@@ -138,3 +138,11 @@ def test_lead_prompt_does_not_include_static_programme_snapshot():
     assert "January 2027 to July 2028" not in prompt
     assert "programme starts in **February 2027**" not in prompt
     assert "retrieved context" in prompt
+
+
+def test_lead_prompt_answers_current_deadline_fee_first():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "fee that applies today" in prompt
+    assert "Same-day deadlines have not passed" in prompt
+    assert "current applicable fee first" in prompt

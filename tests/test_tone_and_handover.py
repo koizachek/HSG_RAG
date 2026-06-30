@@ -75,7 +75,8 @@ def test_lead_prompt_uses_ordered_eligibility_fallbacks():
     assert "only when its retrieved requirements and positioning support the fit" in prompt
     assert "If none of the three Executive MBA programmes fits" in prompt
     assert "regular HSG MBA" in prompt
-    assert "offer contact with the admissions team" in prompt
+    assert "clear admissions contact path" in prompt
+    assert "emba@unisg.ch" in prompt
 
 
 def test_lead_prompt_handles_frustration_with_acknowledgement_and_handover():
@@ -83,9 +84,17 @@ def test_lead_prompt_handles_frustration_with_acknowledgement_and_handover():
 
     assert "briefly acknowledge the concern" in prompt
     assert "without defensiveness or promotional language" in prompt
-    assert "offer contact with an advisor" in prompt
+    assert "clear path to discuss the concern with an advisor or admissions contact" in prompt
     assert "If the aggression continues, prioritise human handover" in prompt
     assert "exception to the no-validation rule" in prompt
+
+
+def test_lead_prompt_uses_contact_path_for_soft_handover():
+    prompt = PromptConfigurator.get_configured_agent_prompt("lead", language="en")
+
+    assert "For soft human handover" in prompt
+    assert "emba@unisg.ch" in prompt
+    assert "+41 71 224 27 02" in prompt
 
 
 def test_booking_intent_detector_requires_user_initiative():

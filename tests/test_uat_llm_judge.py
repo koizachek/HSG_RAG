@@ -14,6 +14,7 @@ import sys
 import time
 import uuid
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -46,7 +47,10 @@ SKIPPED_SHEETS = {"About", "TestProtocol", "Reporting"}
 DEFAULT_JUDGE_MODEL = os.getenv("UAT_JUDGE_MODEL") or (
     "openai/gpt-4o-mini" if _use_openrouter() else "gpt-4o-mini"
 )
-MIN_ACCEPTABLE_SCORE = float(os.getenv("UAT_MIN_SCORE", "7.0"))
+AVERAGE_MIN_ACCEPTABLE_SCORE = float(
+    os.getenv("UAT_AVERAGE_MIN_SCORE", os.getenv("UAT_MIN_SCORE", "8.5"))
+)
+CASE_MIN_ACCEPTABLE_SCORE = float(os.getenv("UAT_CASE_MIN_SCORE", "8.0"))
 
 
 @dataclass(frozen=True)
@@ -60,6 +64,8 @@ class UATCase:
     success_criteria: list[str] = field(default_factory=list)
     red_flags: list[str] = field(default_factory=list)
     expected_language: str | None = None
+    greeting_expected: bool = False
+    mixed_language_clarification_expected: bool = False
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -72,6 +78,8 @@ class UATCase:
             "success_criteria": self.success_criteria,
             "red_flags": self.red_flags,
             "expected_language": self.expected_language,
+            "greeting_expected": self.greeting_expected,
+            "mixed_language_clarification_expected": self.mixed_language_clarification_expected,
         }
 
 
@@ -96,6 +104,27 @@ def _infer_expected_language(*texts: str) -> str | None:
     if "englisch" in joined or "english" in joined:
         return "en"
     return None
+
+
+def _is_greeting_expectation(text: str) -> bool:
+    normalized = text.strip().lower()
+    normalized = re.sub(r"^[\s→\-–—>*•]+", "", normalized).strip()
+    return normalized.startswith(("begrüßung", "begruessung", "greeting"))
+
+
+def _expects_mixed_language_clarification(
+    title: str,
+    user_turns: list[str],
+    expected_bot_behaviour: list[str],
+) -> bool:
+    joined = "\n".join([title, *user_turns, *expected_bot_behaviour]).lower()
+    return (
+        "multiple languages" in joined
+        or "mehrere sprachen" in joined
+        or "dominante sprache" in joined
+        or "english or german" in joined
+        or "deutsch oder englisch" in joined
+    )
 
 
 def _case_blocks(ws) -> list[tuple[int, int]]:
@@ -160,6 +189,7 @@ def parse_uat_excel(path: Path = DEFAULT_EXCEL) -> list[UATCase]:
 
             user_turns = []
             expected = []
+            greeting_expected = False
             action_texts = []
             for row_idx in range((flow_row or start) + 1, end + 1):
                 user_text = _cell_text(ws.cell(row_idx, 2).value)
@@ -170,7 +200,10 @@ def parse_uat_excel(path: Path = DEFAULT_EXCEL) -> list[UATCase]:
                     else:
                         user_turns.append(user_text)
                 if bot_text:
-                    expected.append(bot_text)
+                    if _is_greeting_expectation(bot_text):
+                        greeting_expected = True
+                    else:
+                        expected.append(bot_text)
 
             if not user_turns:
                 continue
@@ -208,6 +241,12 @@ def parse_uat_excel(path: Path = DEFAULT_EXCEL) -> list[UATCase]:
                     success_criteria=success,
                     red_flags=red_flags,
                     expected_language=expected_language,
+                    greeting_expected=greeting_expected,
+                    mixed_language_clarification_expected=_expects_mixed_language_clarification(
+                        title,
+                        user_turns,
+                        expected,
+                    ),
                 )
             )
 
@@ -222,11 +261,56 @@ def _selected_cases() -> list[UATCase]:
     return cases
 
 
+def _parse_reference_date(raw: str | None) -> date:
+    if not raw:
+        return date.today()
+    return date.fromisoformat(raw[:10])
+
+
+def _deadline_status(deadline: str | None, reference_date: date) -> str:
+    if not deadline:
+        return "unknown"
+    deadline_date = date.fromisoformat(deadline[:10])
+    if deadline_date < reference_date:
+        return "passed"
+    if deadline_date == reference_date:
+        return "due_today"
+    return "future"
+
+
+def _tuition_with_deadline_status(tuition: dict[str, Any], reference_date: date) -> dict[str, Any]:
+    enriched = {
+        "first_deadline": dict(tuition["first_deadline"]),
+        "final_deadline": dict(tuition["final_deadline"]),
+        "note": tuition.get("note", {}),
+    }
+
+    first = enriched["first_deadline"]
+    final = enriched["final_deadline"]
+    first["deadline_status"] = _deadline_status(first.get("deadline"), reference_date)
+    final["deadline_status"] = _deadline_status(final.get("deadline"), reference_date)
+
+    applicable = first if first["deadline_status"] in {"future", "due_today"} else final
+    applicable_key = (
+        "first_deadline"
+        if first["deadline_status"] in {"future", "due_today"}
+        else "final_deadline"
+    )
+    enriched["applicable_today"] = {
+        "deadline_type": applicable_key,
+        "deadline": applicable.get("deadline"),
+        "deadline_status": applicable.get("deadline_status"),
+        "fee": applicable.get("fee"),
+    }
+    return enriched
+
+
 def _hard_facts() -> dict[str, Any]:
     path = Path(config.paths.DATA) / "database" / "programme_facts.json"
     with path.open(encoding="utf-8") as f:
         facts = json.load(f)
 
+    reference_date = _parse_reference_date(facts.get("generated_at"))
     programmes = {}
     for key, programme in facts["programmes"].items():
         tuition = programme["tuition_chf"]
@@ -238,15 +322,12 @@ def _hard_facts() -> dict[str, Any]:
             "ects_credits": programme["ects_credits"],
             "structure": programme["structure"],
             "locations": programme["locations"],
-            "tuition_chf": {
-                "first_deadline": tuition["first_deadline"],
-                "final_deadline": tuition["final_deadline"],
-                "note": tuition.get("note", {}),
-            },
+            "tuition_chf": _tuition_with_deadline_status(tuition, reference_date),
             "advisor": programme["advisor"],
         }
     return {
         "generated_at": facts.get("generated_at"),
+        "reference_date": reference_date.isoformat(),
         "programmes": programmes,
     }
 
@@ -322,7 +403,8 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
         "scenario": case.to_payload(),
         "hard_facts_current_source_of_truth": _hard_facts(),
         "transcript": transcript,
-        "minimum_acceptable_score": MIN_ACCEPTABLE_SCORE,
+        "minimum_acceptable_average_score": AVERAGE_MIN_ACCEPTABLE_SCORE,
+        "minimum_acceptable_case_score": CASE_MIN_ACCEPTABLE_SCORE,
     }
     messages = [
         {
@@ -331,10 +413,11 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
                 "You are a strict but fair UAT judge for the HSG Executive Education chatbot. "
                 "Evaluate the whole transcript against the scenario, success criteria, red flags, "
                 "and current hard facts. Current hard facts override stale scenario wording. "
-                "Use hard_facts_current_source_of_truth.generated_at as the reference date for "
-                "deadline-sensitive tuition. A first-deadline fee is acceptable only when the "
-                "answer clearly states the deadline and that deadline has not passed by that "
-                "reference date; otherwise expect the final-deadline fee. "
+                "Use hard_facts_current_source_of_truth.reference_date as the reference date for "
+                "deadline-sensitive tuition. The tuition_chf.applicable_today object identifies "
+                "which fee and deadline apply on the reference date; same-day deadlines are still "
+                "available and are marked due_today. Prefer applicable_today over stale scenario "
+                "wording or your own date arithmetic. "
                 "Do not grade any legacy booking-widget visibility flag; that flag is not part "
                 "of the current acceptance criteria. For appointment/booking/Termin scenarios, "
                 "judge only the user-facing behaviour: whether the assistant acknowledges the "
@@ -342,11 +425,13 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
                 "booking section at the bottom of the page or following the correct advisor/contact "
                 "path. Do not fail a case because a hidden widget flag is absent or false. "
                 "Do not require exact phrasing. Reward helpful, grounded, concise advisory answers. "
-                "For mixed-language clarification scenarios, accept a concise English clarification "
-                "that asks whether to continue in English or German. Do not require the clarification "
-                "itself to be in German. Every transcript starts with a bot-only greeting (turn 0) "
-                "generated for the app language inferred from the workbook. Check that this greeting "
-                "uses the expected language, but do not require later assistant replies to greet again. "
+                "For scenarios marked mixed_language_clarification_expected, expect and accept a "
+                "concise English clarification that asks whether to continue in English or German, "
+                "even when the app greeting language is German. Every transcript starts with a "
+                "bot-only greeting (turn 0) generated for the app language inferred from the "
+                "workbook. If scenario.greeting_expected is true, turn 0 satisfies that workbook "
+                "greeting expectation when it uses scenario.expected_language; do not require exact "
+                "greeting wording and do not require later assistant replies to greet again. "
                 "Penalize wrong programme facts, wrong language, unsupported promises, hidden/internal "
                 "architecture talk, missed booking or handover behavior, and rude tone. "
                 "Return only valid JSON."
@@ -392,7 +477,9 @@ def _write_case_result(
         "case_id": case.case_id,
         "title": case.title,
         "score": score,
-        "minimum_score": MIN_ACCEPTABLE_SCORE,
+        "minimum_score": CASE_MIN_ACCEPTABLE_SCORE,
+        "average_min_score": AVERAGE_MIN_ACCEPTABLE_SCORE,
+        "case_min_score": CASE_MIN_ACCEPTABLE_SCORE,
         "passed": passed,
         "verdict": judgement.get("verdict"),
         "issues": judgement.get("issues", []),
@@ -433,7 +520,7 @@ def _run_and_judge_case(case: UATCase) -> dict[str, Any]:
             "error": repr(exc),
         }
 
-    passed = score >= MIN_ACCEPTABLE_SCORE and judgement.get("passed", True)
+    passed = score >= CASE_MIN_ACCEPTABLE_SCORE
     _write_case_result(case, transcript, judgement, score, passed=passed)
     return {
         "case": case,
@@ -457,24 +544,31 @@ def test_uat_average_score_passes_llm_judge():
     results = [_run_and_judge_case(case) for case in UAT_CASES]
     scores = [float(result["score"]) for result in results]
     average_score = sum(scores) / len(scores)
-    below_threshold = [
-        result
-        for result in results
-        if float(result["score"]) < MIN_ACCEPTABLE_SCORE or not result["passed"]
+    errored = [result for result in results if result.get("error")]
+    below_case_floor = [
+        result for result in results if float(result["score"]) < CASE_MIN_ACCEPTABLE_SCORE
     ]
 
     failure_summary = "\n".join(
         (
-            f"- {result['case'].case_id}: score {result['score']:.1f}/{MIN_ACCEPTABLE_SCORE}; "
+            f"- {result['case'].case_id}: score {result['score']:.1f}/{CASE_MIN_ACCEPTABLE_SCORE}; "
             f"{result['judgement'].get('verdict')}"
         )
-        for result in below_threshold
+        for result in below_case_floor
     )
 
-    assert average_score >= MIN_ACCEPTABLE_SCORE, (
-        f"\nUAT average score {average_score:.2f} is below minimum {MIN_ACCEPTABLE_SCORE}."
-        f"\nCases below threshold are allowed only when the average passes."
-        f"\nBelow-threshold cases:\n{failure_summary or 'None'}"
+    error_summary = "\n".join(
+        f"- {result['case'].case_id}: {result.get('error')}" for result in errored
+    )
+
+    assert not errored, f"\nUAT runner or judge errors:\n{error_summary}"
+    assert not below_case_floor, (
+        f"\nUAT cases below minimum case score {CASE_MIN_ACCEPTABLE_SCORE}:"
+        f"\n{failure_summary or 'None'}"
+    )
+    assert average_score >= AVERAGE_MIN_ACCEPTABLE_SCORE, (
+        f"\nUAT average score {average_score:.2f} is below minimum "
+        f"{AVERAGE_MIN_ACCEPTABLE_SCORE}."
     )
 
 
@@ -498,6 +592,33 @@ def test_uat_workbook_languages_match_app_selection():
         "TC-EDGE-04": "de",
         "TC-EDGE-05": "de",
     }
+
+
+def test_uat_expected_behaviour_excludes_greeting_rows():
+    cases = parse_uat_excel()
+
+    assert any(case.greeting_expected for case in cases)
+    assert all(
+        "begrüßung" not in "\n".join(case.expected_bot_behaviour).lower()
+        for case in cases
+    )
+
+
+def test_uat_mixed_language_case_expects_english_clarification():
+    cases = {case.case_id: case for case in parse_uat_excel()}
+
+    assert cases["TC-EDGE-05"].expected_language == "de"
+    assert cases["TC-EDGE-05"].mixed_language_clarification_expected is True
+
+
+def test_hard_facts_include_deadline_status_and_applicable_fee():
+    facts = _hard_facts()
+
+    assert facts["reference_date"] == "2026-06-30"
+    assert facts["programmes"]["iemba"]["tuition_chf"]["first_deadline"]["deadline_status"] == "passed"
+    assert facts["programmes"]["iemba"]["tuition_chf"]["final_deadline"]["deadline_status"] == "due_today"
+    assert facts["programmes"]["iemba"]["tuition_chf"]["applicable_today"]["fee"] == 85000
+    assert facts["programmes"]["emba_x"]["tuition_chf"]["applicable_today"]["fee"] == 99000
 
 
 def test_uat_transcript_starts_with_bot_greeting(monkeypatch):
