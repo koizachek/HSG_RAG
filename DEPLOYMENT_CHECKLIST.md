@@ -90,11 +90,9 @@ Cron auf demselben Host:
 
 ## 6. iframe-Integration ⚠️
 
-- [ ] **CSP im [deploy/Caddyfile](deploy/Caddyfile) korrigieren.** Aktuell:
-      `frame-ancestors https://*.hsg.ch` — das **blockiert** die Einbettung auf
-      `emba.unisg.ch` / `embax.ch` (andere Domains!). Anpassen auf die tatsächlichen
-      Einbettungs-Domains, z. B.:
-      `header Content-Security-Policy "frame-ancestors https://*.unisg.ch https://embax.ch"`
+- [x] **CSP im [deploy/Caddyfile](deploy/Caddyfile) korrigiert** (2026-07-04):
+      `frame-ancestors https://*.unisg.ch https://embax.ch https://*.embax.ch`
+      (vorher `https://*.hsg.ch` — hätte die Einbettung auf den Zielseiten blockiert)
 - [ ] Einbettungs-Domains mit dem EMBA-Webteam final abstimmen
 - [ ] `<iframe src="https://bot.hsg.ch">` auf einer EMBA-Testseite einbauen
 - [ ] Cross-Origin-Test: Bot lädt **auf der Zielseite** (nicht nur standalone)

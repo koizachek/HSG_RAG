@@ -2,5 +2,5 @@ bot.hsg.ch {
     reverse_proxy localhost:7860
 
     header -X-Frame-Options
-    header Content-Security-Policy "frame-ancestors https://*.hsg.ch"
+    header Content-Security-Policy "frame-ancestors https://*.unisg.ch https://embax.ch https://*.embax.ch"
 }
