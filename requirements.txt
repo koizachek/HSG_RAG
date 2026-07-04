@@ -1,14 +1,12 @@
 # Core dependencies
+# NOTE: only the OpenRouter/OpenAI provider is used at runtime (config.py).
+# The lazy imports in src/rag/models.py for groq/deepseek/ollama/huggingface
+# raise a clear error if one of those providers gets configured again -
+# re-add the matching langchain-* package in that case.
 langchain>=1.0.2
 langchain-core>=1.0.1
-langchain-deepseek>=1.0.0
-langchain-groq>=1.0.0
-langchain-huggingface>=1.0.0
-langchain-ollama>=0.3.10
 langchain-openai>=1.0.1
 langsmith>=0.4.0
-
-pytest
 
 requests>=2.31.0
 openai>=1.3.0

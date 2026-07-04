@@ -60,12 +60,8 @@ pyrightconfig.json
 .idea/
 
 # OS junk
-.Trashes.env
-.env
+.Trashes
 
-#idk
---source-branch
---source-repo
 /.gradio/certificate.pem
 
 #feedback I just uploaded into the same file to check for accuracy
