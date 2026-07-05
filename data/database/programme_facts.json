@@ -76,12 +76,12 @@
         "en": "10 core courses, including 4 weeks abroad, + 4 electives"
       },
       "locations": {
-        "de": "Schweiz (St.Gallen), China, USA, Japan, Spanien, Südafrika, Italien",
-        "en": "Switzerland (St.Gallen), China, U.S., Japan, Spain, South Africa, Italy"
+        "de": "Costa Rica (Wahlkurs), Japan (Tokio), New York City (Wahlkurs), Schweiz (St. Gallen), China (Peking), USA (UC Berkeley), USA (UC Irvine), Italien (Wahlkurs), Südafrika (Wahlkurs), Spanien (Wahlkurs)",
+        "en": "Costa Rica (elective), Japan (Tokyo), New York City (elective), Switzerland (St. Gallen), China (Beijing), USA (UC Berkeley), USA (UC Irvine), Italy (elective), South Africa (elective), Spain (elective)"
       },
       "tuition_chf": {
         "first_deadline": {
-          "deadline": "2025-03-31",
+          "deadline": "2026-03-31",
           "fee": 80000
         },
         "final_deadline": {
