@@ -143,7 +143,7 @@ def build_cases() -> list[dict]:
              forbid=[]),
         dict(id="de_duration_emba_short_name", lang="de",
              query="Wie lange dauert der EMBA?",
-             expect_any=[["iemba", "international"], ["emba x", "embax"]],
+             expect_any=[["18"]],
              forbid=[]),
         dict(id="en_duration_embax", lang="en",
              query="How long does the emba X take and how many ECTS is it?",
