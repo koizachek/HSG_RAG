@@ -51,6 +51,11 @@ AVERAGE_MIN_ACCEPTABLE_SCORE = float(
     os.getenv("UAT_AVERAGE_MIN_SCORE", os.getenv("UAT_MIN_SCORE", "8.5"))
 )
 CASE_MIN_ACCEPTABLE_SCORE = float(os.getenv("UAT_CASE_MIN_SCORE", "8.0"))
+# The judge model can return truncated/malformed JSON (observed 2026-07-06 via
+# OpenRouter, 1 of 11 cases). Without retries that infrastructure hiccup was
+# scored as 0/10 against the bot. Scoring criteria are unaffected by retries:
+# every attempt is a full judgement by the same judge with the same rules.
+JUDGE_PARSE_ATTEMPTS = int(os.getenv("UAT_JUDGE_PARSE_ATTEMPTS", "3"))
 
 
 @dataclass(frozen=True)
@@ -449,14 +454,20 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
     ]
 
     client = _openai_client()
-    completion = client.chat.completions.create(
-        model=DEFAULT_JUDGE_MODEL,
-        messages=messages,
-        temperature=0,
-        response_format={"type": "json_object"},
-    )
-    content = completion.choices[0].message.content or "{}"
-    return json.loads(content)
+    last_error: json.JSONDecodeError | None = None
+    for _ in range(JUDGE_PARSE_ATTEMPTS):
+        completion = client.chat.completions.create(
+            model=DEFAULT_JUDGE_MODEL,
+            messages=messages,
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+        content = completion.choices[0].message.content or "{}"
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError as exc:
+            last_error = exc
+    raise last_error
 
 
 def _result_dir() -> Path:
@@ -661,6 +672,59 @@ def test_hard_facts_include_deadline_status_and_applicable_fee():
             assert applicable["deadline_type"] == "first_deadline"
         else:
             assert applicable["deadline_type"] == "final_deadline"
+
+
+def _fake_judge_client(responses: list[str], calls: dict):
+    from types import SimpleNamespace
+
+    def create(**kwargs):
+        index = min(calls["count"], len(responses) - 1)
+        calls["count"] += 1
+        content = responses[index]
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
+        )
+
+    return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+
+def test_judge_retries_malformed_judge_json(monkeypatch):
+    calls = {"count": 0}
+    client = _fake_judge_client(
+        ['{"overall_score": 9', '{"overall_score": 9', '{"overall_score": 9, "passed": true}'],
+        calls,
+    )
+    monkeypatch.setattr(sys.modules[__name__], "_openai_client", lambda: client)
+    case = UATCase(
+        case_id="TC-JUDGE-RETRY",
+        sheet="Example",
+        title="Judge retry",
+        user_turns=["Hallo"],
+        expected_language="de",
+    )
+
+    judgement = _judge_case(case, transcript=[])
+
+    assert judgement == {"overall_score": 9, "passed": True}
+    assert calls["count"] == 3
+
+
+def test_judge_raises_after_persistent_malformed_json(monkeypatch):
+    calls = {"count": 0}
+    client = _fake_judge_client(['{"overall_score": 9'], calls)
+    monkeypatch.setattr(sys.modules[__name__], "_openai_client", lambda: client)
+    case = UATCase(
+        case_id="TC-JUDGE-BROKEN",
+        sheet="Example",
+        title="Judge broken",
+        user_turns=["Hallo"],
+        expected_language="de",
+    )
+
+    with pytest.raises(json.JSONDecodeError):
+        _judge_case(case, transcript=[])
+
+    assert calls["count"] == JUDGE_PARSE_ATTEMPTS
 
 
 def test_uat_transcript_starts_with_bot_greeting(monkeypatch):
