@@ -12,7 +12,7 @@ Ziel: Single-Host-Deployment des Bots, eingebettet per `<iframe>` in die EMBA-We
 
 ```
 Browser auf emba.unisg.ch / embax.ch
-   └─ <iframe src="https://bot.hsg.ch">
+   └─ <iframe src="https://chatbot.emba.unisg.ch">
         └─ Caddy (TLS, reverse proxy, CSP)        deploy/Caddyfile
              └─ Container: python main.py --app de   →  0.0.0.0:7860  (Gradio/FastAPI, /health)
                   ├─ Weaviate Cloud (EU-Region)                 Retrieval
@@ -29,15 +29,13 @@ GitHub Actions (kein Host-Cron nötig):
 
 ## 1. Host & Infrastruktur (BLOCKER — mit HSG-IT klären)
 
-- [ ] **Host-Eigentümer von `bot.hsg.ch` geklärt** — wer betreibt die Domain/DNS?
-- [ ] **Linux-Host in EU/CH bereitgestellt** (DSGVO) — entweder HSG-IT-VM oder eigener EU-Cloud-VM (Hetzner/Exoscale/Swisscom …)
-- [ ] **Docker + Caddy + Cron auf dem Host erlaubt** (von HSG-IT bestätigt)
-- [ ] **DNS:** `bot.hsg.ch` zeigt auf den Ziel-Host
-- [ ] Port **7860** intern auf dem Host erreichbar (nur lokal; nach außen nur via Caddy/443)
-- [ ] Ausgehender Netzzugang zu: Weaviate Cloud, `api.openai.com`, `openrouter.ai`, SMTP/Slack
-
-> **Entscheidungsfrage an HSG-IT:** "Wer betreibt `bot.hsg.ch`, stellt ihr uns einen Linux-Host
-> in EU/CH, und dürfen wir dort Docker + Caddy + Cron betreiben?" Davon hängt der Rest ab.
+- [x] **Linux-Host in EU/CH bereitgestellt** (2026-07-06): Hetzner CPX32, Falkenstein (fsn1),
+      Ubuntu 24.04, `hsg-rag-prod-fsn1-1` (178.105.196.130) — Docker + Caddy installiert,
+      SSH gehärtet, unattended-upgrades + Backups aktiv, Cloud-Firewall (nur 22/80/443 offen)
+- [ ] **DNS:** `chatbot.emba.unisg.ch` → `178.105.196.130` (A) + `2a01:4f8:c014:9702::1` (AAAA)
+      — **bei HSG-IT angefragt**; CAA-Record muss `letsencrypt.org` erlauben
+- [x] Port **7860** nur auf 127.0.0.1 gebunden (nach außen nur via Caddy/443) — geprüft 2026-07-06
+- [x] Ausgehender Netzzugang zu Weaviate Cloud + `openrouter.ai` verifiziert (Bot antwortet live)
 
 ---
 
@@ -96,7 +94,7 @@ GitHub Actions (kein Host-Cron nötig):
       `frame-ancestors https://*.unisg.ch https://embax.ch https://*.embax.ch`
       (vorher `https://*.hsg.ch` — hätte die Einbettung auf den Zielseiten blockiert)
 - [ ] Einbettungs-Domains mit dem EMBA-Webteam final abstimmen
-- [ ] `<iframe src="https://bot.hsg.ch">` auf einer EMBA-Testseite einbauen
+- [ ] `<iframe src="https://chatbot.emba.unisg.ch">` auf einer EMBA-Testseite einbauen
 - [ ] Cross-Origin-Test: Bot lädt **auf der Zielseite** (nicht nur standalone)
 
 ---
@@ -121,17 +119,23 @@ GitHub Actions (kein Host-Cron nötig):
 
 ## 8. Build & Rollout
 
-- [ ] Image bauen aus gemergetem `main`
-- [ ] Image-Vulnerability-Scan gegen neues Digest
-- [ ] Schreibbare Runtime-Pfade auf dem Host: `logs/`, `data/`, `backups/`
-- [ ] Container starten (`0.0.0.0:7860`), Caddy mit `deploy/Caddyfile` davor
-- [ ] `python main.py --weaviate checkhealth` auf dem Host
+- [x] Image gebaut auf dem Host (2026-07-06, `hsg-rag:latest`, 2.86 GB) — Code per rsync,
+      `.env` mit nur 3 Runtime-Variablen (chmod 600)
+- [x] Image-Vulnerability-Scan (Trivy, 2026-07-06): ein runtime-relevanter Befund —
+      **gradio Cookie-Injection (CVE-2026-48545)** → Pin auf 6.15.0 angehoben;
+      **nach dem nächsten Rebuild erneut scannen**. Rest: Base-Image-Grundrauschen
+      (Debian will_not_fix/deferred) + Build-Tools ohne Runtime-Exposition
+- [x] Schreibbare Runtime-Pfade: `logs/` als Host-Volume gemountet (persistiert Nutzerprofile)
+- [x] Container läuft (Port nur 127.0.0.1:7860, `--restart unless-stopped`), Caddy aktiv
+      mit [deploy/Caddyfile](deploy/Caddyfile) — TLS folgt automatisch, sobald DNS gesetzt ist
+- [x] Health auf dem Host geprüft: `/health` → `status: ok, weaviate: true`
+- [ ] **Nach Gradio-Bump:** Image neu bauen + deployen, `/health` + UI kurz verifizieren
 
 ---
 
 ## 9. Funktions-Smoke-Tests (über die öffentliche Domain)
 
-- [ ] Bot über `https://bot.hsg.ch` und **als iframe** auf der EMBA-Seite erreichbar
+- [ ] Bot über `https://chatbot.emba.unisg.ch` und **als iframe** auf der EMBA-Seite erreichbar
 - [ ] Consent-Flow
 - [ ] DE- und EN-Antworten
 - [ ] Retrieval aus Weaviate (Programm-/USP-Fragen liefern echte Inhalte)

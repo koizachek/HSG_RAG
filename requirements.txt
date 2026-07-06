@@ -20,7 +20,7 @@ langdetect>=1.0.9
 tiktoken>=0.12.0
 
 # Web applications
-gradio==6.14.0
+gradio==6.15.0
 
 # Processing pipeline
 docling>=2.55.0
