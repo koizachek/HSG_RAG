@@ -137,6 +137,65 @@ class TestFactExtractionFallbacks:
 
         assert text == ""
 
+    def test_near_empty_docling_result_falls_back_to_pypdf(self, monkeypatch):
+        """Docling 'succeeds' on image-heavy PDFs with only <!-- image -->
+        placeholders; that must count as a failed parse, not as the result."""
+        import sys as _sys
+        from types import SimpleNamespace
+
+        from src.pipeline.update_programme_facts import extract_pdf_text
+
+        fake_document = SimpleNamespace(
+            export_to_markdown=lambda: "<!-- image -->\n\n<!-- image -->"
+        )
+
+        class FakeConverter:
+            def convert(self, path):
+                return SimpleNamespace(document=fake_document)
+
+        monkeypatch.setitem(
+            _sys.modules,
+            "docling.document_converter",
+            SimpleNamespace(DocumentConverter=FakeConverter),
+        )
+
+        class FakePage:
+            def extract_text(self):
+                return "Tuition fee CHF 85 000"
+
+        monkeypatch.setitem(
+            _sys.modules,
+            "pypdf",
+            SimpleNamespace(PdfReader=lambda path: SimpleNamespace(pages=[FakePage()])),
+        )
+
+        text = extract_pdf_text(b"%PDF-1.4 fake", "https://example.test/plan.pdf")
+
+        assert text == "Tuition fee CHF 85 000"
+
+    def test_substantial_docling_result_is_kept(self, monkeypatch):
+        import sys as _sys
+        from types import SimpleNamespace
+
+        from src.pipeline.update_programme_facts import extract_pdf_text
+
+        long_markdown = "Tuition fee CHF 85 000. " * 20
+        fake_document = SimpleNamespace(export_to_markdown=lambda: long_markdown)
+
+        class FakeConverter:
+            def convert(self, path):
+                return SimpleNamespace(document=fake_document)
+
+        monkeypatch.setitem(
+            _sys.modules,
+            "docling.document_converter",
+            SimpleNamespace(DocumentConverter=FakeConverter),
+        )
+
+        text = extract_pdf_text(b"%PDF-1.4 fake", "https://example.test/plan.pdf")
+
+        assert text == long_markdown
+
     def test_fetch_sources_skips_unreadable_pdf(self, monkeypatch):
         import src.pipeline.update_programme_facts as facts_module
 
