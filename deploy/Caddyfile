@@ -1,4 +1,4 @@
-bot.hsg.ch {
+chatbot.emba.unisg.ch {
     reverse_proxy localhost:7860
 
     header -X-Frame-Options
