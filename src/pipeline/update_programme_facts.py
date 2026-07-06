@@ -1059,6 +1059,7 @@ def notify_changes(changes: list[str]) -> None:
             body="The fact checker detected changes:\n\n" + "\n".join(changes),
             channel="all",
         )
+        logger.warning("Change notification dispatched (email + slack).")
     except Exception as e:
         logger.warning(f"Could not send change notification: {e}")
 
