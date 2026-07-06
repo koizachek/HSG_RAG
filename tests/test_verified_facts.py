@@ -654,13 +654,82 @@ class TestFactExtractionFallbacks:
                 <li>St. Gallen, Schweiz</li>
               </ul>
             </div>
-            """,
+            """ + IEMBA_STRUCTURE_PAGE_HTML,
         }
 
         result = apply_deterministic_source_facts(extracted, pages)
 
         assert "Costa Rica (Wahlkurs)" in result.iemba.locations.de
         assert "New York City (elective)" in result.iemba.locations.en
+        assert result.iemba.structure.de == (
+            "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, "
+            "4 Wochen im Ausland, Diplomarbeit"
+        )
+        assert result.emba.structure.de == "Struktur"  # no page block -> LLM value kept
+
+
+IEMBA_STRUCTURE_PAGE_HTML = """
+<table>
+  <tr><td class="obligatory">
+    <div class="number"><span class="underline">10</span><span class="asterisk">*</span></div>
+    <small>Pflichtkurse</small>
+  </td></tr>
+  <tr><td class="plus">+</td></tr>
+  <tr><td class="optional">
+    <div class="number"><span class="underline">4</span><span class="asterisk">*</span></div>
+    <small>Wahlkurse</small>
+  </td></tr>
+</table>
+<table class="attendance">
+  <tr><td class="on-campus">10 Wochen <small>Am Campus</small></td></tr>
+  <tr><td class="outside-campus">+ 4 Wochen<small>im Ausland</small></td></tr>
+  <tr><td class="outside-campus">+ <small>Diplomarbeit</small></td></tr>
+</table>
+"""
+
+
+class TestStructurePageParsing:
+    """The 2026-07-05 facts run silently dropped the IEMBA on-campus weeks:
+    the LLM only sees the attendance table as fragmented visible text. The
+    deterministic parser reads the page block directly."""
+
+    def test_parses_full_structure_bilingually(self):
+        from src.pipeline.update_programme_facts import _extract_structure_from_programme_page
+
+        result = _extract_structure_from_programme_page(IEMBA_STRUCTURE_PAGE_HTML)
+
+        assert result.de == (
+            "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, "
+            "4 Wochen im Ausland, Diplomarbeit"
+        )
+        assert result.en == (
+            "10 core courses, 4 electives, 10 weeks on campus, "
+            "4 weeks abroad, thesis"
+        )
+
+    def test_parses_emba_block_without_abroad_weeks(self):
+        from src.pipeline.update_programme_facts import _extract_structure_from_programme_page
+
+        html = """
+        <table><tr><td class="obligatory"><div class="number">9</div><small>Pflichtkurse</small></td></tr>
+        <tr><td class="optional"><div class="number">5</div><small>Wahlkurse</small></td></tr></table>
+        <table class="attendance">
+          <tr><td class="on-campus">14 Wochen <small>Am Campus</small></td></tr>
+          <tr><td class="outside-campus"></td></tr>
+          <tr><td class="outside-campus">+ <small>Capstone-Projekt</small></td></tr>
+        </table>
+        """
+
+        result = _extract_structure_from_programme_page(html)
+
+        assert result.de == "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus, Capstone-Projekt"
+        assert result.en == "9 core courses, 5 electives, 14 weeks on campus, capstone project"
+
+    def test_returns_none_without_attendance_block(self):
+        from src.pipeline.update_programme_facts import _extract_structure_from_programme_page
+
+        assert _extract_structure_from_programme_page("") is None
+        assert _extract_structure_from_programme_page("<p>10 Wochen am Campus</p>") is None
 
 
 # --------------------------- Language detection -----------------------------

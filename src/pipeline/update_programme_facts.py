@@ -205,6 +205,13 @@ def _extract_fact_html_snippets(text: str) -> str:
         text or '',
         flags=re.IGNORECASE | re.DOTALL,
     )
+    matches += [
+        table
+        for table in re.findall(
+            r'<table[^>]*>.*?</table>', text or '', flags=re.IGNORECASE | re.DOTALL
+        )
+        if re.search(r'\battendance\b|Pflichtkurse', table, flags=re.IGNORECASE)
+    ]
     return "\n".join(matches)
 
 
@@ -471,6 +478,70 @@ def _extract_locations_from_programme_page(text: str) -> BilingualText | None:
     return _extract_locations_from_html(text) or _extract_locations_from_text(text)
 
 
+STRUCTURE_EXTRA_TRANSLATIONS = {
+    'Diplomarbeit': 'thesis',
+    'Capstone-Projekt': 'capstone project',
+    'Selbststudium': 'self-study',
+}
+
+
+def _extract_structure_from_programme_page(text: str) -> BilingualText | None:
+    """Deterministically parse the programme-page course/attendance fact tables.
+
+    The LLM extraction sees these tables only as fragmented visible text and
+    has produced lossy structure values (e.g. dropped the on-campus weeks), so
+    the parsed page block takes precedence. Returns None when the page does
+    not expose the attendance block, leaving the LLM value untouched.
+    """
+    text = text or ''
+    campus = re.search(
+        r'class=["\']on-campus["\'][^>]*>\s*(\d+)\s*Wochen\s*<small>\s*Am\s+Campus',
+        text, flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not campus:
+        return None
+
+    de_parts: list[str] = []
+    en_parts: list[str] = []
+
+    core = re.search(
+        r'class=["\']obligatory["\'].*?(\d+).*?Pflichtkurse',
+        text, flags=re.IGNORECASE | re.DOTALL,
+    )
+    if core:
+        de_parts.append(f"{core.group(1)} Pflichtkurse")
+        en_parts.append(f"{core.group(1)} core courses")
+
+    electives = re.search(
+        r'class=["\']optional["\'].*?(\d+).*?Wahlkurse',
+        text, flags=re.IGNORECASE | re.DOTALL,
+    )
+    if electives:
+        de_parts.append(f"{electives.group(1)} Wahlkurse")
+        en_parts.append(f"{electives.group(1)} electives")
+
+    de_parts.append(f"{campus.group(1)} Wochen am Campus")
+    en_parts.append(f"{campus.group(1)} weeks on campus")
+
+    abroad = re.search(
+        r'class=["\']outside-campus["\'][^>]*>\s*\+?\s*(\d+)\s*Wochen\s*<small>\s*im\s+Ausland',
+        text, flags=re.IGNORECASE | re.DOTALL,
+    )
+    if abroad:
+        de_parts.append(f"{abroad.group(1)} Wochen im Ausland")
+        en_parts.append(f"{abroad.group(1)} weeks abroad")
+
+    for extra in re.finditer(
+        r'class=["\']outside-campus["\'][^>]*>\s*\+?\s*<small>\s*([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß -]*?)\s*</small>',
+        text, flags=re.IGNORECASE | re.DOTALL,
+    ):
+        component_de = extra.group(1).strip()
+        de_parts.append(component_de)
+        en_parts.append(STRUCTURE_EXTRA_TRANSLATIONS.get(component_de, component_de))
+
+    return BilingualText(de=", ".join(de_parts), en=", ".join(en_parts))
+
+
 def apply_deterministic_source_facts(extracted: AllProgrammesSchema, pages: dict[str, str]) -> AllProgrammesSchema:
     """Override LLM prose where the official page exposes a structured fact block."""
     source_keys_by_programme = {
@@ -482,6 +553,11 @@ def apply_deterministic_source_facts(extracted: AllProgrammesSchema, pages: dict
             locations = _extract_locations_from_programme_page(pages.get(source_key, ''))
             if locations:
                 getattr(extracted, programme_key).locations = locations
+                break
+        for source_key in source_keys:
+            structure = _extract_structure_from_programme_page(pages.get(source_key, ''))
+            if structure:
+                getattr(extracted, programme_key).structure = structure
                 break
     return extracted
 
