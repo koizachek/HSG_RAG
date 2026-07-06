@@ -39,6 +39,11 @@ from src.config import config
 
 chain_logger = get_logger('agent_chain')
 
+
+def _redact_user_text(text: str) -> str:
+    """GDPR: raw user input may contain personal data — log only its shape."""
+    return f"<redacted user input, {len(text or '')} chars>"
+
 class ExecutiveAgentChain:
     def __init__(self, language: str = 'en', session_id: str | None = None) -> None:
         self._initial_language  = language
@@ -584,7 +589,7 @@ class ExecutiveAgentChain:
         )
 
         if not is_valid or not processed_query:
-            chain_logger.warning(f"Invalid input received: '{query}'")
+            chain_logger.warning(f"Invalid input received: {_redact_user_text(query)}")
             self._invalid_input_count += 1
             invalid_response = (
                 get_repeated_not_valid_query_message(self._stored_language)
@@ -598,7 +603,7 @@ class ExecutiveAgentChain:
             )
 
         if self._invalid_input_count and self._looks_like_repeated_invalid_noise(processed_query):
-            chain_logger.warning(f"Repeated invalid-looking input received: '{query}'")
+            chain_logger.warning(f"Repeated invalid-looking input received: {_redact_user_text(query)}")
             self._invalid_input_count += 1
             invalid_response = get_repeated_not_valid_query_message(self._stored_language)
             return LeadAgentQueryResponse(
@@ -613,7 +618,9 @@ class ExecutiveAgentChain:
 
         # Log check
         if processed_query != query:
-            chain_logger.info(f"Interpreted input '{query}' as '{processed_query}'")
+            chain_logger.info(
+                f"Interpreted input {_redact_user_text(query)} as {_redact_user_text(processed_query)}"
+            )
 
         # 3. Language Detection
         # First: Check for explicit language switch request (overrides lock)
