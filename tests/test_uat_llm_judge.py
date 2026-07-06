@@ -611,14 +611,56 @@ def test_uat_mixed_language_case_expects_english_clarification():
     assert cases["TC-EDGE-05"].mixed_language_clarification_expected is True
 
 
+def test_tuition_deadline_status_enrichment_is_deterministic():
+    tuition = {
+        "first_deadline": {"deadline": "2026-03-31", "fee": 80000},
+        "final_deadline": {"deadline": "2026-06-30", "fee": 85000},
+    }
+
+    enriched = _tuition_with_deadline_status(tuition, date(2026, 6, 30))
+
+    assert enriched["first_deadline"]["deadline_status"] == "passed"
+    assert enriched["final_deadline"]["deadline_status"] == "due_today"
+    assert enriched["applicable_today"] == {
+        "deadline_type": "final_deadline",
+        "deadline": "2026-06-30",
+        "deadline_status": "due_today",
+        "fee": 85000,
+    }
+
+    all_passed = _tuition_with_deadline_status(tuition, date(2026, 7, 1))
+    assert all_passed["applicable_today"]["deadline_type"] == "final_deadline"
+
+    all_future = _tuition_with_deadline_status(tuition, date(2026, 1, 1))
+    assert all_future["applicable_today"]["deadline_type"] == "first_deadline"
+    assert all_future["applicable_today"]["fee"] == 80000
+
+
 def test_hard_facts_include_deadline_status_and_applicable_fee():
     facts = _hard_facts()
 
-    assert facts["reference_date"] == "2026-06-30"
-    assert facts["programmes"]["iemba"]["tuition_chf"]["first_deadline"]["deadline_status"] == "passed"
-    assert facts["programmes"]["iemba"]["tuition_chf"]["final_deadline"]["deadline_status"] == "due_today"
-    assert facts["programmes"]["iemba"]["tuition_chf"]["applicable_today"]["fee"] == 85000
-    assert facts["programmes"]["emba_x"]["tuition_chf"]["applicable_today"]["fee"] == 99000
+    # generated_at moves with every daily facts refresh, so assert consistency
+    # against the file instead of hardcoding a snapshot date.
+    assert facts["reference_date"] == (facts["generated_at"] or "")[:10]
+    reference_date = date.fromisoformat(facts["reference_date"])
+
+    for programme in facts["programmes"].values():
+        tuition = programme["tuition_chf"]
+        for key in ("first_deadline", "final_deadline"):
+            entry = tuition[key]
+            assert entry["deadline_status"] == _deadline_status(
+                entry.get("deadline"), reference_date
+            )
+
+        applicable = tuition["applicable_today"]
+        chosen = tuition[applicable["deadline_type"]]
+        assert applicable["fee"] == chosen["fee"]
+        assert applicable["deadline"] == chosen["deadline"]
+        assert applicable["deadline_status"] == chosen["deadline_status"]
+        if tuition["first_deadline"]["deadline_status"] in {"future", "due_today"}:
+            assert applicable["deadline_type"] == "first_deadline"
+        else:
+            assert applicable["deadline_type"] == "final_deadline"
 
 
 def test_uat_transcript_starts_with_bot_greeting(monkeypatch):
