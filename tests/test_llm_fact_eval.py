@@ -223,8 +223,8 @@ CASES = build_cases() if os.getenv("RUN_LLM_EVAL") else []
 def make_chain():
     from src.rag.agent_chain import ExecutiveAgentChain
 
-    def _factory(lang: str):
-        return ExecutiveAgentChain(language=lang, session_id=f"eval_{lang}")
+    def _factory(lang: str, attempt: int = 0):
+        return ExecutiveAgentChain(language=lang, session_id=f"eval_{lang}_{attempt}")
 
     return _factory
 
@@ -233,12 +233,16 @@ def make_chain():
 # catches gross regressions such as switching back to a reasoning model).
 MAX_TURN_SECONDS = 25.0
 
+# LLM answers are sampled, so a single case can flake even though the facts are
+# in the prompt (observed on main: a different case failed on each smoke run).
+# One retry with a fresh chain/session filters sampling noise; a real
+# regression (wrong facts, cross-contamination, latency) still fails twice.
+FLAKE_RETRIES = 1
 
-@pytest.mark.parametrize("case", CASES, ids=[c["id"] for c in CASES])
-def test_fact_eval(case, make_chain):
+
+def _assert_case(case, chain):
     from time import perf_counter
 
-    chain = make_chain(case["lang"])
     turn_start = perf_counter()
     result = chain.query(case["query"])
     elapsed = perf_counter() - turn_start
@@ -266,3 +270,14 @@ def test_fact_eval(case, make_chain):
             f"\nFORBIDDEN token found (cross-programme contamination): {forbidden}"
             f"\nAnswer:   {answer[:600]}"
         )
+
+
+@pytest.mark.parametrize("case", CASES, ids=[c["id"] for c in CASES])
+def test_fact_eval(case, make_chain):
+    for attempt in range(FLAKE_RETRIES + 1):
+        try:
+            _assert_case(case, make_chain(case["lang"], attempt))
+            return
+        except AssertionError:
+            if attempt == FLAKE_RETRIES:
+                raise
