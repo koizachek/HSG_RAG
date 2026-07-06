@@ -45,8 +45,9 @@ GitHub Actions (kein Host-Cron nötig):
 - [ ] **Bewusste Entscheidung dokumentiert**, dass **OpenAI (US)** und **OpenRouter (US)** Nutzer-Eingaben
       verarbeiten — bei echtem EU-Konformitätsanspruch auf EU-Hosting umstellen
       (z. B. Azure OpenAI EU-Region + No-Training-DPA, EU-gehostetes Embedding-Modell)
-- [ ] **Nutzerprofile** (`logs/user_profiles/`) liegen lokal auf dem Host — Aufbewahrung/Löschung
-      (GDPR-Withdrawal-Pfad `wipe_session_data` existiert) und Backup-Policy geklärt
+- [x] **Nutzerprofile** (`logs/user_profiles/`): Aufbewahrung geregelt (2026-07-06) —
+      30-Tage-Löschfrist per Host-Cron, Logs rotieren nach 30 Tagen, Nutzereingaben in Logs
+      maskiert, Backup-Rotation 7 Tage. Details: [docs/datenschutz_deployment.md](docs/datenschutz_deployment.md)
 - [ ] Consent-Flow im UI vor Go-Live verifiziert
 - [ ] Sign-off durch Datenschutzbeauftragte:n
 
