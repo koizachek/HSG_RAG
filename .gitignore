@@ -12,8 +12,19 @@ ENV/
 env.bak/
 venv.bak/
 
-# Environment variables
+# Environment variables (all variants, e.g. .env.production) — only the
+# template stays in the repo
 .env
+.env.*
+!.env.example
+deploy/.env*
+
+# Deployment secrets: private keys and certificates must never be committed
+id_ed25519*
+id_rsa*
+*.pem
+*.key
+*.crt
 
 # VS Code settings
 .vscode/
