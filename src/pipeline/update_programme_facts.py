@@ -44,6 +44,11 @@ FACT_SOURCES = {
 }
 
 REQUEST_TIMEOUT = 30
+# Docling can "succeed" on scanned/image-heavy PDFs while returning only
+# <!-- image --> placeholders (observed 2026-07-06 on the fee-sheet PDFs).
+# Below this many real characters the result counts as a failed parse and
+# the pypdf fallback takes over.
+MIN_PDF_TEXT_CHARS = 200
 REQUEST_HEADERS = {
     'User-Agent': (
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -180,7 +185,14 @@ def extract_pdf_text(content: bytes, url: str) -> str:
         try:
             from docling.document_converter import DocumentConverter
             result = DocumentConverter().convert(tmp_path)
-            return result.document.export_to_markdown()
+            markdown = result.document.export_to_markdown()
+            visible = re.sub(r'<!--[^>]*-->', '', markdown).strip()
+            if len(visible) >= MIN_PDF_TEXT_CHARS:
+                return markdown
+            logger.warning(
+                f"Docling returned near-empty text ({len(visible)} chars) for {url}; "
+                "trying fallback parser"
+            )
         except Exception as docling_error:
             logger.warning(f"Docling could not parse PDF {url}; trying fallback parser: {docling_error}")
 

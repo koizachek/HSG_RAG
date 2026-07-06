@@ -109,8 +109,11 @@ GitHub Actions (kein Host-Cron nötig):
 - [ ] **Alert-Chain einmal end-to-end testen:** Preis in `data/database/programme_facts.json` ändern →
       Workflow manuell triggern (`gh workflow run update_programme_facts.yml`) →
       E-Mail/Slack muss ankommen → Änderung zurücknehmen
-- [ ] `HUGGING_FACE_API_KEY` erneuern — Docling-Remote-Parsing der Fee-Sheet-PDFs liefert
-      aktuell **401** und fällt auf pypdf zurück (Qualität der Ratenplan-PDFs prüfen)
+- [x] ~~`HUGGING_FACE_API_KEY` erneuern~~ — **entfällt** (geprüft 2026-07-06): Der Key wird
+      nirgends gebraucht. Der 401 kam von einem abgelaufenen lokalen HF-Login; ohne Token laden
+      die Docling-Modelle anonym. Für die Fee-Sheet-PDFs liefert ohnehin pypdf den echten Text
+      (Docling sieht nur Bilder); `extract_pdf_text` fällt bei Docling-Leerergebnis jetzt
+      automatisch auf pypdf zurück. GitHub-Secret + `.env`-Eintrag können gelöscht werden.
 - [ ] Veralteten Cron auf dem Dev-Mac entfernen (`crontab -e`) — crasht täglich an macOS-TCC
       (`failed to make path absolute`) und ist durch die GitHub Action ersetzt
 
