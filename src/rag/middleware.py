@@ -74,7 +74,9 @@ class AgentChainMiddleware:
                         if 'JSONDecodeError' in fail_reason:
                             model_logger.error(f"Model does not support current tool call architecture! Switching to the fallback model...")
                             raise Exception("Unsupported model") 
-                elif not result.content and finish_reason != 'tool_calls':
+                # finish_reason is unreliable under streaming: chunk aggregation can
+                # concatenate it (e.g. 'tool_callstool_calls'), so check tool_calls directly
+                elif not result.content and not getattr(result, 'tool_calls', None):
                     if finish_reason == 'length':
                         errormsg = (
                             f"Model '{model_name}' exhausted completion tokens "
