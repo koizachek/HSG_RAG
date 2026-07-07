@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-06",
+  "generated_at": "2026-07-07",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -40,7 +40,7 @@
         },
         "final_deadline": {
           "deadline": "2026-08-10",
-          "fee": 77000
+          "fee": 77500
         },
         "note": {
           "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
