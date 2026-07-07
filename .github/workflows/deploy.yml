@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - chore/auto-deploy-workflow # TEMP: E2E-Test, vor Merge entfernen
     paths-ignore:
       - "**.md"
       - "docs/**"
