@@ -61,11 +61,13 @@ GitHub Actions (kein Host-Cron nötig):
 ## 3. Repo-Stand & Code (vor Build)
 
 - [x] **PR #41 (Caching-Entfernung) gemergt** — `src/cache/` existiert nicht mehr in `main`.
-- [ ] `requirements.txt` entspricht dem tatsächlichen Runtime-Bedarf
+- [x] `requirements.txt` entspricht dem tatsächlichen Runtime-Bedarf (Audit 2026-07-07:
+      alle Third-Party-Imports gedeckt — direkt, transitiv via gradio/langchain oder als
+      dokumentierte Lazy-Imports in `src/rag/models.py`)
 - [ ] Dockerfile-Base-Image aktuell ([Dockerfile](Dockerfile): `python:3.11.14-slim-bookworm` ✓)
 - [x] Offline-Tests grün: `pytest tests/test_verified_facts.py tests/test_stream_parser.py`
       (2026-07-07: 73/73, inkl. Streaming-Fix PR #67)
-- [ ] Vor Release: `RUN_LLM_EVAL=1 pytest tests/test_llm_fact_eval.py -v` → **31/31**
+- [x] Vor Release: `RUN_LLM_EVAL=1 pytest tests/test_llm_fact_eval.py -v` → **31/31** (2026-07-07, 160 s)
 
 ---
 
@@ -74,10 +76,13 @@ GitHub Actions (kein Host-Cron nötig):
 - [x] EU-Cluster bereitgestellt, `.env`: `WEAVIATE_CLUSTER_URL` + `WEAVIATE_API_KEY` gesetzt
 - [x] `python main.py --weaviate checkhealth` → Connection ✓ OK
 - [x] `python main.py --weaviate init` → Collections `hsg_rag_content_de`/`_en` angelegt
-- [ ] **Datenimport abgeschlossen:** `python main.py --scrape full`
-      (läuft; danach Objekt-Counts in beiden Collections plausibel prüfen — EN/embax nicht unterrepräsentiert)
-- [ ] `python main.py --weaviate checkhealth` → beide Collections ✓ OK
-- [ ] Stichprobe: Query "Was macht die HSG besonders?" liefert echte Chunks (keine `QUERY_EXCEPTION_MESSAGE`)
+- [x] **Datenimport abgeschlossen** (verifiziert 2026-07-07): `hsg_rag_content_de` 227 Objekte,
+      `hsg_rag_content_en` 144 Objekte. embax.ch: 12 EN-Objekte, 0 DE — plausibel, da
+      embax.ch englischsprachig ist; deutschsprachiger emba-X-Content kommt über
+      `emba.unisg.ch`-Artikel in die DE-Collection
+- [x] `python main.py --weaviate checkhealth` → beide Collections ✓ OK (2026-07-07)
+- [x] Stichprobe: "Was macht die HSG besonders?" liefert echte Chunks — über die
+      öffentliche Prod-Domain verifiziert (Smoke-Tests, Abschnitt 9)
 
 ---
 
@@ -112,16 +117,17 @@ GitHub Actions (kein Host-Cron nötig):
 - [x] **Verifizierte Fakten**: `.github/workflows/update_programme_facts.yml`, täglich 06:23 UTC —
       läuft und ist grün (geprüft 2026-07-04; NOTIFY_*-Secrets im Repo hinterlegt)
 - [x] **Scraping-Refresh**: `.github/workflows/scrape.yml`, wöchentlich So 05:17 UTC — läuft
-- [ ] **Alert-Chain einmal end-to-end testen:** Preis in `data/database/programme_facts.json` ändern →
-      Workflow manuell triggern (`gh workflow run update_programme_facts.yml`) →
-      E-Mail/Slack muss ankommen → Änderung zurücknehmen
+- [x] **Alert-Chain end-to-end getestet (2026-07-07):** EMBA-Gebühr testweise auf 77'000 gesetzt →
+      Workflow-Run 28864823526: Diff erkannt (`fee: 77000 -> 77500`),
+      `Change notification dispatched (email + slack)`, korrigierte Datei automatisch
+      zurückcommittet (`be9cc80`), anschließend `workflow_run`-Auto-Deploy gelaufen,
+      Prod antwortet wieder mit CHF 77'500. Sichtprüfung Posteingang/Slack: DK
 - [x] ~~`HUGGING_FACE_API_KEY` erneuern~~ — **entfällt** (2026-07-06): Pipeline/Runtime brauchen
       keinen HF-Key (Docling-Modelle laden anonym; bei Docling-Leerergebnis greift der
       pypdf-Fallback in `extract_pdf_text`). Der einzige Verbraucher war der
       HF-Space-Sync-Workflow (`sync_to_huggingface.yml`) — dieser wurde mitsamt Space-Deployment
       **entfernt**, da das Produktiv-Deployment auf dem eigenen EU-Host läuft. Secret gelöscht.
-- [ ] Veralteten Cron auf dem Dev-Mac entfernen (`crontab -e`) — crasht täglich an macOS-TCC
-      (`failed to make path absolute`) und ist durch die GitHub Action ersetzt
+- [x] Veralteten Cron auf dem Dev-Mac entfernen — erledigt: `crontab -l` ist leer (geprüft 2026-07-07)
 
 ---
 
