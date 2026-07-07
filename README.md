@@ -2,9 +2,11 @@
 
 A retrieval-augmented chatbot for the University of St.Gallen Executive Education programmes. The current system covers **EMBA HSG**, **IEMBA HSG**, and **emba X**, supports **English and German**, and combines scraping, document import, vector retrieval, and a Gradio-based chat interface.
 
+**Production:** live at `https://chatbot.emba.unisg.ch` — see [Production Deployment](#production-deployment).
+
 ## What The Repository Contains
 
-- A multi-agent RAG chat application for programme information and admissions guidance
+- A RAG chat application for programme information and admissions guidance
 - A scraping and import pipeline for keeping programme content up to date
 - Weaviate-based retrieval across language-specific collections
 - A Gradio chat UI plus a separate database management UI
@@ -14,8 +16,8 @@ A retrieval-augmented chatbot for the University of St.Gallen Executive Educatio
 
 - Programme-specific support for **EMBA HSG**, **IEMBA HSG**, and **emba X**
 - Language handling for **English** and **German**
-- Lead-agent routing with programme-specific sub-agents
-- Response formatting, ambiguity checks, scope guarding, and quality fallback handling
+- Single lead-agent pipeline (gpt-4.1 via OpenRouter) with token streaming and a verified, auto-updated programme facts base
+- Response formatting, ambiguity checks, and scope guarding
 - Booking / handover flow with advisor-specific widgets
 - Consent handling and user-profile tracking
 - Scraping, chunking, import, and Weaviate collection management
@@ -52,7 +54,6 @@ See `.env.example` and [docs/configuration_system_documentation.md](docs/configu
 Following variables are required for every mode to run:
 
 ```bash
-OPENAI_API_KEY=...
 OPEN_ROUTER_API_KEY=...
 WEAVIATE_API_KEY=...
 WEAVIATE_CLUSTER_URL=...
@@ -66,8 +67,39 @@ LANGSMITH_API_KEY=...
 LANGSMITH_PROJECT=...
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
 
-GROQ_API_KEY=...
+# Only needed for the opt-in LLM test suites (RUN_LLM_EVAL, RUN_UAT_LLM_JUDGE)
+OPENAI_API_KEY=...
 ```
+
+## Production Deployment
+
+The bot runs on a dedicated EU host (Hetzner Falkenstein, `hsg-rag-prod-fsn1-1`) and is
+publicly reachable at **`https://chatbot.emba.unisg.ch`**, intended to be embedded as an
+`<iframe>` on `emba.unisg.ch` / `embax.ch`.
+
+```text
+Browser → Caddy (TLS via Let's Encrypt, reverse proxy, CSP)   deploy/Caddyfile
+            └─ Docker container hsg-rag (127.0.0.1:7860)      python main.py --app de
+                 ├─ Weaviate Cloud (EU)                        retrieval
+                 └─ OpenRouter                                 LLM + embeddings
+```
+
+**Deployments are automated** via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+(rsync → image build → container recreate → health checks). It runs on:
+
+1. every push to `main` (doc-only changes excluded) — **merging a PR deploys it**,
+2. every successful nightly *Update Programme Facts* run, so updated prices/deadlines
+   reach production the same morning (the facts action pushes with `GITHUB_TOKEN`,
+   which does not fire push workflows — hence the explicit `workflow_run` trigger),
+3. manual dispatch from the Actions tab.
+
+The previous image is kept as `hsg-rag:previous` for manual rollback. Caddy runs
+directly on the host (systemd) and is untouched by app deploys; changes to
+`deploy/Caddyfile` are applied with `systemctl reload caddy`.
+
+Operational details, GDPR notes, and the go-live status live in
+[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) and
+[docs/datenschutz_deployment.md](docs/datenschutz_deployment.md).
 
 ## Docker Deployment 
 This application can be run locally or on a cloud VM using Docker.
