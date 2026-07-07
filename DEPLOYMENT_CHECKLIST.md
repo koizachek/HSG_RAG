@@ -1,6 +1,6 @@
 # Deployment Checklist — EMBA HSG RAG Chatbot
 
-**Stand:** 2026-07-04 (Abschnitte 0/3/5/7 an den Ist-Zustand angepasst; ursprünglich 2026-06-16 @ `b0f8038`)
+**Stand:** 2026-07-07 (DNS/TLS live, Smoke-Tests grün, Streaming-Fix deployt, Auto-Deploy eingerichtet; ursprünglich 2026-06-16 @ `b0f8038`)
 **Ablöst:** [docs/deploy_readiness_checklist.md](docs/deploy_readiness_checklist.md) (vom 10.04., in Teilen veraltet — siehe Abschnitt 7)
 
 Ziel: Single-Host-Deployment des Bots, eingebettet per `<iframe>` in die EMBA-Website
@@ -22,6 +22,9 @@ Browser auf emba.unisg.ch / embax.ch
 GitHub Actions (kein Host-Cron nötig):
    update_programme_facts.yml   täglich 06:23 UTC   (verifizierte Fakten + Diff-Alerts)
    scrape.yml                   wöchentlich So 05:17 UTC
+   deploy.yml                   Auto-Deploy: Push auf main, nach jedem Facts-Lauf,
+                                manuell (rsync → Build → Container neu → Health-Checks;
+                                Rollback-Anker: Image-Tag hsg-rag:previous)
    NOTIFY_*-Secrets sind im Repo hinterlegt (Alerts laufen aus der Action)
 ```
 
@@ -32,8 +35,10 @@ GitHub Actions (kein Host-Cron nötig):
 - [x] **Linux-Host in EU/CH bereitgestellt** (2026-07-06): Hetzner CPX32, Falkenstein (fsn1),
       Ubuntu 24.04, `hsg-rag-prod-fsn1-1` (178.105.196.130) — Docker + Caddy installiert,
       SSH gehärtet, unattended-upgrades + Backups aktiv, Cloud-Firewall (nur 22/80/443 offen)
-- [ ] **DNS:** `chatbot.emba.unisg.ch` → `178.105.196.130` (A) + `2a01:4f8:c014:9702::1` (AAAA)
-      — **bei HSG-IT angefragt**; CAA-Record muss `letsencrypt.org` erlauben
+- [x] **DNS:** `chatbot.emba.unisg.ch` → `178.105.196.130` (A) + `2a01:4f8:c014:9702::1` (AAAA)
+      — **von HSG-IT gesetzt (2026-07-07)**, löst extern auf (IPv4 + IPv6). Kein CAA-Record
+      auf der Zone = unkritisch (ohne CAA darf jede CA ausstellen). Let's-Encrypt-Zertifikat
+      wurde von Caddy automatisch bezogen (gültig bis 2026-10-05, Auto-Renewal)
 - [x] Port **7860** nur auf 127.0.0.1 gebunden (nach außen nur via Caddy/443) — geprüft 2026-07-06
 - [x] Ausgehender Netzzugang zu Weaviate Cloud + `openrouter.ai` verifiziert (Bot antwortet live)
 
@@ -58,7 +63,8 @@ GitHub Actions (kein Host-Cron nötig):
 - [x] **PR #41 (Caching-Entfernung) gemergt** — `src/cache/` existiert nicht mehr in `main`.
 - [ ] `requirements.txt` entspricht dem tatsächlichen Runtime-Bedarf
 - [ ] Dockerfile-Base-Image aktuell ([Dockerfile](Dockerfile): `python:3.11.14-slim-bookworm` ✓)
-- [ ] Offline-Tests grün: `pytest tests/test_verified_facts.py tests/test_stream_parser.py`
+- [x] Offline-Tests grün: `pytest tests/test_verified_facts.py tests/test_stream_parser.py`
+      (2026-07-07: 73/73, inkl. Streaming-Fix PR #67)
 - [ ] Vor Release: `RUN_LLM_EVAL=1 pytest tests/test_llm_fact_eval.py -v` → **31/31**
 
 ---
@@ -77,8 +83,9 @@ GitHub Actions (kein Host-Cron nötig):
 
 ## 5. Umgebungsvariablen (Prod-`.env`)
 
-- [ ] `OPEN_ROUTER_API_KEY` (**alle** LLM-Rollen + Embeddings — seit PR #49 läuft nichts mehr direkt über OpenAI)
-- [ ] `WEAVIATE_CLUSTER_URL`, `WEAVIATE_API_KEY` (EU-Cluster)
+- [x] `OPEN_ROUTER_API_KEY` (**alle** LLM-Rollen + Embeddings — seit PR #49 läuft nichts mehr direkt über OpenAI)
+      — auf dem Host in `/opt/hsg-rag/.env` (chmod 600), Bot antwortet live damit
+- [x] `WEAVIATE_CLUSTER_URL`, `WEAVIATE_API_KEY` (EU-Cluster) — gesetzt, `/health` meldet `weaviate: true`
 - [ ] Optional `LANGSMITH_*` (Tracing)
 - [ ] Werte gegen `src/config/configs.py` verifiziert (Vorlage: `.env.example`)
 
@@ -124,24 +131,45 @@ GitHub Actions (kein Host-Cron nötig):
       `.env` mit nur 3 Runtime-Variablen (chmod 600)
 - [x] Image-Vulnerability-Scan (Trivy, 2026-07-06): ein runtime-relevanter Befund —
       **gradio Cookie-Injection (CVE-2026-48545)** → Pin auf 6.15.0 angehoben;
-      **nach dem nächsten Rebuild erneut scannen**. Rest: Base-Image-Grundrauschen
-      (Debian will_not_fix/deferred) + Build-Tools ohne Runtime-Exposition
+      **Rescan nach Rebuild (2026-07-07): gradio 0 Findings** ✓. Neu im Base-Image:
+      OpenSSL/GnuTLS/libcap2 mit verfügbaren Debian-Fixes (u. a. CVE-2026-31789) —
+      geringe Exposition (nur ausgehende Verbindungen, Container hinter Caddy);
+      erledigt sich über die täglichen Rebuilds, sobald die Patches im
+      `python:3.11-slim`-Image ankommen
 - [x] Schreibbare Runtime-Pfade: `logs/` als Host-Volume gemountet (persistiert Nutzerprofile)
 - [x] Container läuft (Port nur 127.0.0.1:7860, `--restart unless-stopped`), Caddy aktiv
       mit [deploy/Caddyfile](deploy/Caddyfile) — TLS folgt automatisch, sobald DNS gesetzt ist
 - [x] Health auf dem Host geprüft: `/health` → `status: ok, weaviate: true`
-- [ ] **Nach Gradio-Bump:** Image neu bauen + deployen, `/health` + UI kurz verifizieren
+- [x] **Nach Gradio-Bump:** Image neu gebaut + deployt (2026-07-07), `/health` ✓,
+      Gradio 6.15.0 im Container verifiziert
+- [x] **Auto-Deploy eingerichtet (2026-07-07, PR #68):** `.github/workflows/deploy.yml` —
+      Merge auf `main` = Deploy; zusätzlich nach jedem erfolgreichen Facts-Lauf
+      (schließt die Lücke, dass `programme_facts.json` im Image eingebacken ist und
+      Preisänderungen die Produktion sonst nie erreichen). Dedizierter Deploy-Key
+      als Secret `DEPLOY_SSH_KEY`, Host-Key im Workflow gepinnt. Manuelle
+      rsync-Deploys sind damit obsolet
+- [x] **Streaming-Fix deployt (2026-07-07, PR #67):** `finish_reason`-Konkatenation
+      unter Streaming ließ jeden Retrieval-Turn in den Blocking-Fallback laufen
+      (12–14 s ohne sichtbare Tokens, 2 verworfene LLM-Calls). Jetzt: erstes Token
+      ~4 s, gesamt ~6 s — Latenzziel wieder erreicht
 
 ---
 
 ## 9. Funktions-Smoke-Tests (über die öffentliche Domain)
 
-- [ ] Bot über `https://chatbot.emba.unisg.ch` und **als iframe** auf der EMBA-Seite erreichbar
-- [ ] Consent-Flow
-- [ ] DE- und EN-Antworten
-- [ ] Retrieval aus Weaviate (Programm-/USP-Fragen liefern echte Inhalte)
-- [ ] Admissions-Handover-Pfad
-- [ ] Booking-Widget erscheint korrekt
+Durchgeführt 2026-07-07 per Gradio-API gegen `https://chatbot.emba.unisg.ch` (echte Prod-Sessions):
+
+- [x] Bot über `https://chatbot.emba.unisg.ch` erreichbar (IPv4 + IPv6, TLS ✓)
+- [ ] **Als iframe auf der EMBA-Seite** — CSP-Header wird korrekt ausgeliefert
+      (`frame-ancestors https://*.unisg.ch https://embax.ch https://*.embax.ch`),
+      der Cross-Origin-Test braucht aber eine Testseite vom EMBA-Webteam (Abschnitt 6);
+      Einbau-Anleitung wurde an das Webteam verschickt (2026-07-07)
+- [x] Consent-Flow (Accept + Decline; Decline zeigt Hinweis mit `emba@unisg.ch`)
+- [x] DE- und EN-Antworten (inkl. Sprachwechsel im UI)
+- [x] Retrieval aus Weaviate (USP-Frage liefert echte Chunks; Preisantwort exakt
+      gegen `programme_facts.json` verifiziert, abgelaufene Frühbucher-Frist korrekt erkannt)
+- [x] Admissions-Handover-Pfad (Beratungsanfrage → korrekte Advisorin Cyra von Müller)
+- [x] Booking-Widget erscheint korrekt (nach Accept und bei Terminanfrage)
 
 ---
 
@@ -149,7 +177,9 @@ GitHub Actions (kein Host-Cron nötig):
 
 - [ ] Facts-Action wöchentlich prüfen (`gh run list --workflow=update_programme_facts.yml`) —
       laufen die Runs durch, sind Diffs plausibel?
-- [ ] `grep "\[timing\]" logs/logs.log` — Latenz im Blick (Ziel ~6 s end-to-end)
+- [ ] `grep "\[timing\]" logs/logs.log` — Latenz im Blick (Ziel ~6 s end-to-end;
+      Stand 2026-07-07 nach Streaming-Fix: Retrieval-Turns ~6 s, Fakten-Turns 2–3 s,
+      erstes Token ~4 s. Warnzeichen im Log: `empty response` / `falling back to blocking`)
 - [ ] Weaviate-Cluster-Status (läuft, nicht abgelaufen — Lehre aus dem 404-Ausfall)
 - [ ] Health-Check `GET /health` in Host-Monitoring eingebunden
 
