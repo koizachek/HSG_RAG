@@ -1,0 +1,103 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+      - chore/auto-deploy-workflow # TEMP: E2E-Test, vor Merge entfernen
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "uat-results/**"
+  # Die Facts-Action pusht mit dem Standard-GITHUB_TOKEN; solche Commits lösen
+  # keine push-Workflows aus. Deshalb zusätzlich nach jedem erfolgreichen
+  # Facts-Lauf deployen, damit aktualisierte Preise/Fristen die Produktion
+  # am selben Morgen erreichen (Nebeneffekt: tägliche Debian-Patches im Image).
+  workflow_run:
+    workflows: ["Update Programme Facts"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  DEPLOY_HOST: 178.105.196.130
+  DEPLOY_USER: root
+  APP_DIR: /opt/hsg-rag
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Bei workflow_run nur deployen, wenn der Facts-Lauf erfolgreich war
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout (main)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.ref }}
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Host-Key gepinnt (kein blindes ssh-keyscan zur Laufzeit)
+          echo "178.105.196.130 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKfdpvAj7J7o5SHAv39czuaM+u1/870xPmSiuCc8WnLC" >> ~/.ssh/known_hosts
+
+      - name: Sync code to host
+        # .env und logs/ liegen nur auf dem Host und sind durch die Excludes
+        # auch vor --delete geschützt
+        run: |
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude '.env' \
+            --exclude 'logs' \
+            --exclude 'venv' \
+            --exclude '__pycache__' \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" \
+            ./ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/"
+
+      - name: Build image and recreate container
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$DEPLOY_USER@$DEPLOY_HOST" bash -s <<'EOF'
+          set -euo pipefail
+          cd /opt/hsg-rag
+          # Rollback-Anker: vorheriges Image behalten
+          docker tag hsg-rag:latest hsg-rag:previous 2>/dev/null || true
+          docker build -t hsg-rag:latest .
+          docker rm -f hsg-rag 2>/dev/null || true
+          docker run -d --name hsg-rag \
+            --restart unless-stopped \
+            -p 127.0.0.1:7860:7860 \
+            --env-file /opt/hsg-rag/.env \
+            -v /opt/hsg-rag/logs:/app/logs \
+            hsg-rag:latest
+          EOF
+
+      - name: Health check
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$DEPLOY_USER@$DEPLOY_HOST" bash -s <<'EOF'
+          set -uo pipefail
+          for i in $(seq 1 24); do
+            sleep 10
+            if response=$(curl -sf http://127.0.0.1:7860/health); then
+              echo "Health OK after $((i * 10))s: $response"
+              exit 0
+            fi
+          done
+          echo "::error::Health check failed after 240s — container logs:"
+          docker logs hsg-rag --tail 60
+          echo "Rollback: docker tag hsg-rag:previous hsg-rag:latest && Container neu erstellen"
+          exit 1
+          EOF
+
+      - name: Verify public endpoint
+        run: |
+          response=$(curl -sf --max-time 20 https://chatbot.emba.unisg.ch/health)
+          echo "Public health: $response"
+          echo "$response" | grep -q '"status":"ok"'
