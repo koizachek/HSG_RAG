@@ -663,8 +663,12 @@ def test_tuition_deadline_status_enrichment_is_deterministic():
         "fee": 85000,
     }
 
+    # All deadlines passed: cohort is closed, no fee is applicable/bookable
     all_passed = _tuition_with_deadline_status(tuition, date(2026, 7, 1))
-    assert all_passed["applicable_today"]["deadline_type"] == "final_deadline"
+    assert all_passed["applicable_today"]["deadline_status"] == "closed"
+    assert all_passed["applicable_today"]["deadline_type"] is None
+    assert all_passed["applicable_today"]["fee"] is None
+    assert "closed" in all_passed["applicable_today"]["note"]
 
     all_future = _tuition_with_deadline_status(tuition, date(2026, 1, 1))
     assert all_future["applicable_today"]["deadline_type"] == "first_deadline"
@@ -688,11 +692,19 @@ def test_hard_facts_include_deadline_status_and_applicable_fee():
             )
 
         applicable = tuition["applicable_today"]
+        first_open = tuition["first_deadline"]["deadline_status"] in {"future", "due_today"}
+        final_open = tuition["final_deadline"]["deadline_status"] in {"future", "due_today"}
+        if not first_open and not final_open:
+            # Cohort closed: nothing is applicable/bookable today
+            assert applicable["deadline_status"] == "closed"
+            assert applicable["deadline_type"] is None
+            assert applicable["fee"] is None
+            continue
         chosen = tuition[applicable["deadline_type"]]
         assert applicable["fee"] == chosen["fee"]
         assert applicable["deadline"] == chosen["deadline"]
         assert applicable["deadline_status"] == chosen["deadline_status"]
-        if tuition["first_deadline"]["deadline_status"] in {"future", "due_today"}:
+        if first_open:
             assert applicable["deadline_type"] == "first_deadline"
         else:
             assert applicable["deadline_type"] == "final_deadline"
