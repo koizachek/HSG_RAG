@@ -295,12 +295,26 @@ def _tuition_with_deadline_status(tuition: dict[str, Any], reference_date: date)
     first["deadline_status"] = _deadline_status(first.get("deadline"), reference_date)
     final["deadline_status"] = _deadline_status(final.get("deadline"), reference_date)
 
-    applicable = first if first["deadline_status"] in {"future", "due_today"} else final
-    applicable_key = (
-        "first_deadline"
-        if first["deadline_status"] in {"future", "due_today"}
-        else "final_deadline"
-    )
+    if first["deadline_status"] in {"future", "due_today"}:
+        applicable, applicable_key = first, "first_deadline"
+    elif final["deadline_status"] in {"future", "due_today"}:
+        applicable, applicable_key = final, "final_deadline"
+    else:
+        # All deadlines have passed: nothing is applicable today. Without this
+        # branch the judge payload offered the final fee as applicable_today
+        # and the judge graded closed-cohort answers inconsistently.
+        enriched["applicable_today"] = {
+            "deadline_type": None,
+            "deadline": None,
+            "deadline_status": "closed",
+            "fee": None,
+            "note": (
+                "The final application deadline has passed — applications for "
+                "the current cohort are closed. No fee is currently bookable."
+            ),
+        }
+        return enriched
+
     enriched["applicable_today"] = {
         "deadline_type": applicable_key,
         "deadline": applicable.get("deadline"),
@@ -423,6 +437,16 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
                 "which fee and deadline apply on the reference date; same-day deadlines are still "
                 "available and are marked due_today. Prefer applicable_today over stale scenario "
                 "wording or your own date arithmetic. "
+                "If applicable_today.deadline_status is 'closed', the correct assistant behaviour "
+                "is to state that applications for the current cohort are no longer possible and "
+                "refer to the programme's advisor for the next cohort; do NOT expect a fee to be "
+                "quoted as bookable, and do not penalize the assistant for declining to sell a "
+                "closed cohort. Mentioning the last fee as historical context is acceptable but "
+                "not required. "
+                "Booking is user-led by product decision: for informational or eligibility turns "
+                "where the user has not asked for an appointment, referring the user to the named "
+                "advisor or contact path is a fully valid handover. Do not deduct points for the "
+                "absence of unsolicited appointment offers, slot proposals, or data capture. "
                 "Do not grade any legacy booking-widget visibility flag; that flag is not part "
                 "of the current acceptance criteria. For appointment/booking/Termin scenarios, "
                 "judge only the user-facing behaviour: whether the assistant acknowledges the "
