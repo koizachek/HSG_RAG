@@ -21,6 +21,10 @@ jobs:
       UAT_RESULTS_DIR: uat-results
       UAT_AVERAGE_MIN_SCORE: "8.5"
       UAT_CASE_MIN_SCORE: "8.0"
+      # gpt-4o-mini ignored the provided hard facts on 2026-07-08 (judged the
+      # correct emba X fee as wrong using the EMBA fee from its own priors,
+      # PR #70 run 28910810971) — use a stronger judge for reliable grading
+      UAT_JUDGE_MODEL: openai/gpt-4.1
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
       EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY || secrets.OPEN_ROUTER_API_KEY }}

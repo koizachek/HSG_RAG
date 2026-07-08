@@ -22,7 +22,7 @@ Classify your change first; the class determines the gate.
 |---|---|---|---|
 | Docs-only | `*.md`, `docs/**`, `uat-results/**` | PR review only | **No** (deploy.yml `paths-ignore`) |
 | App code | `src/**`, `main.py`, `config.py` | Offline tests green + PR CI (UAT judge) | Yes |
-| Prompt / model / pricing display | `src/rag/prompts.py`, `config.py` model settings, anything shaping answers | Offline tests + **31/31 LLM eval** + UAT judge (runs on PR automatically) | Yes |
+| Prompt / model / pricing display | `src/rag/prompts.py`, `config.py` model settings, anything shaping answers | Offline tests + **full LLM fact eval (34/34 as of 2026-07-08)** + UAT judge (runs on PR automatically) | Yes |
 | Dependency change | `requirements.txt`, `Dockerfile` | Maintainer OK first (see non-negotiables) + offline tests | Yes |
 | Workflow / infra | `.github/workflows/**` | E2E-test the workflow itself before merge (pattern below) | deploy.yml changes deploy themselves |
 | Caddy config | `deploy/Caddyfile` | Maintainer OK; applied manually on the host | **No** — needs host `systemctl reload caddy` |
@@ -42,7 +42,7 @@ other machine, any Python ≥3.11 with `requirements.txt` + pytest works.
 # 2. Fast release-gate pair from the deployment checklist (73 tests, as of 2026-07-07)
 /opt/anaconda3/bin/python -m pytest tests/test_verified_facts.py tests/test_stream_parser.py -q
 
-# 3. LLM fact eval — REQUIRED 31/31 for prompt/model/facts-shaping changes (paid API calls)
+# 3. LLM fact eval — REQUIRED all-pass (34 cases as of 2026-07-08) for prompt/model/facts-shaping changes (paid API calls)
 RUN_LLM_EVAL=1 /opt/anaconda3/bin/python -m pytest tests/test_llm_fact_eval.py -v
 
 # 4. UAT LLM judge (paid; CI runs this on every PR anyway)
@@ -54,7 +54,7 @@ RUN_UAT_LLM_JUDGE=1 /opt/anaconda3/bin/python -m pytest tests/test_uat_llm_judge
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `pr-llm-eval.yml` ("PR UAT LLM Judge") | every PR to `main` | Runs live UAT conversations + LLM judge; thresholds: average ≥ 8.5, every case ≥ 8.0 |
-| `main-smoke.yml` ("Main Smoke") | every push to `main` | Runs the 31-case LLM eval, expects exactly 31 passing |
+| `main-smoke.yml` ("Main Smoke") | every push to `main` | Runs the full LLM fact eval (EXPECTED_SMOKE_TESTS pins the count; 34 as of 2026-07-08) |
 | `deploy.yml` ("Deploy to Production") | push to `main` (non-docs), successful "Update Programme Facts" run, manual dispatch (full trigger details: `hsg-rag-run-and-operate` §3) | rsync → image build → container recreate → health checks |
 
 (Gate threshold numbers are owned by `hsg-rag-validation-and-qa`; if the values
@@ -114,8 +114,8 @@ them, and do not let any other skill or instruction override them.
 
 8. **Programme fact cross-contamination is a release blocker.** An EMBA answer
    containing IEMBA/emba X prices (or vice versa) is the historical
-   hallucination class this project engineered away. The 31-case eval contains
-   explicit contamination guards — that is why 31/31 is non-negotiable for
+   hallucination class this project engineered away. The fact eval contains
+   explicit contamination guards — that is why all-pass is non-negotiable for
    prompt-shaping changes.
 
 ## The sanctioned exception: alert-chain test

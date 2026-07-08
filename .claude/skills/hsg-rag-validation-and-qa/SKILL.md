@@ -1,6 +1,6 @@
 ---
 name: hsg-rag-validation-and-qa
-description: What counts as evidence in HSG_RAG and how to produce it. Load when you need to run or interpret the test suites (offline pytest, RUN_LLM_EVAL 31-case fact eval, RUN_UAT_LLM_JUDGE), decide which gates a change must pass before merge, add a new test / eval case / UAT conversation, judge whether a failing case is a flake or a regression, or understand the uat-results golden inventory and the CI gates (pr-llm-eval.yml, main-smoke.yml). Not for debugging failures (use hsg-rag-debugging-playbook) or changing the gates themselves (use hsg-rag-change-control).
+description: What counts as evidence in HSG_RAG and how to produce it. Load when you need to run or interpret the test suites (offline pytest, RUN_LLM_EVAL 34-case fact eval, RUN_UAT_LLM_JUDGE), decide which gates a change must pass before merge, add a new test / eval case / UAT conversation, judge whether a failing case is a flake or a regression, or understand the uat-results golden inventory and the CI gates (pr-llm-eval.yml, main-smoke.yml). Not for debugging failures (use hsg-rag-debugging-playbook) or changing the gates themselves (use hsg-rag-change-control).
 ---
 
 # HSG_RAG Validation and QA
@@ -20,7 +20,7 @@ assuming the anaconda path exists on your machine.
 | Layer | Command | Cost | What it proves |
 |---|---|---|---|
 | Offline suite (default) | `/opt/anaconda3/bin/python -m pytest -q` | free, ~16 s | invariants, parsers, consent, prompts, facts-file sanity |
-| LLM fact eval (31 cases) | `RUN_LLM_EVAL=1 /opt/anaconda3/bin/python -m pytest tests/test_llm_fact_eval.py -v` | paid, ~3 min | live chain answers facts correctly, no cross-programme contamination, latency cap |
+| LLM fact eval (34 cases) | `RUN_LLM_EVAL=1 /opt/anaconda3/bin/python -m pytest tests/test_llm_fact_eval.py -v` | paid, ~3 min | live chain answers facts correctly, no cross-programme contamination, latency cap |
 | UAT LLM judge | `RUN_UAT_LLM_JUDGE=1 /opt/anaconda3/bin/python -m pytest tests/test_uat_llm_judge.py -v -s` | paid, ~10 min | full conversations meet quality bar (avg ≥ 8.5, every case ≥ 8.0) |
 | Live probes (streaming, smoke over public domain) | see `hsg-rag-diagnostics-and-tooling` | free/cheap | production actually behaves as the code claims |
 
@@ -51,12 +51,12 @@ dependency makes tests silently vanish, not fail — after dependency changes,
 compare the collected count against the baseline above. (Known drift: the map
 still lists `tests/test_chatbot_improvements.py`, which no longer exists.)
 
-### 1.2 LLM fact eval — the 31/31 release gate
+### 1.2 LLM fact eval — the 34/34 release gate
 
 File: `tests/test_llm_fact_eval.py`. Opt-in via `RUN_LLM_EVAL=1`
 (module-level `skipif`). Needs `OPEN_ROUTER_API_KEY` + `WEAVIATE_*` in `.env`
 (the module docstring still says "30 questions" and "OPENAI_API_KEY" — both
-stale; there are 31 cases and the chain runs on OpenRouter).
+stale; there are 34 cases (31 until 2026-07-08, +3 deadline-state cases) and the chain runs on OpenRouter).
 
 Mechanics you must preserve when touching it:
 
@@ -70,7 +70,7 @@ Mechanics you must preserve when touching it:
   test encoding of the historic wrong-price bug (see
   `hsg-rag-failure-archaeology`). `_normalize()` lowercases and strips thousand
   separators so `77'500`, `77,500`, `77 500` all match `77500`.
-- Case taxonomy (31): pricing 8 (the hotspot; includes 3-programme comparison
+- Case taxonomy (34): pricing 8 (the hotspot; includes 3-programme comparison
   and deadline logic), deadlines 3, starts 3, duration 3, language/format 4,
   advisors 3 (with forbid-guards against wrong advisor), grounding/honesty 3
   (no invented facts, no "six-figure" vagueness), conversational 4 (fit
@@ -128,7 +128,7 @@ CI (verified in `.github/workflows/`):
 | Gate | Trigger | What runs | Threshold |
 |---|---|---|---|
 | `pr-llm-eval.yml` ("PR UAT LLM Judge") | every PR to `main` | UAT judge suite | avg ≥ 8.5, every case ≥ 8.0 |
-| `main-smoke.yml` ("Main Smoke") | every push to `main` | 31-case fact eval | all pass; asserts `EXPECTED_SMOKE_TESTS=31` collected |
+| `main-smoke.yml` ("Main Smoke") | every push to `main` | 34-case fact eval | all pass; asserts `EXPECTED_SMOKE_TESTS=34` collected |
 | `deploy.yml` | push to `main` / after facts run | deploy + health checks | `/health` local + public |
 
 **Caveat:** `main-smoke.yml` and `deploy.yml` run in **parallel** — the deploy is
@@ -139,7 +139,7 @@ already be running the bad commit: treat as incident, fix or roll back
 Minimum evidence per change class (details and rationale in
 `hsg-rag-change-control`):
 
-| Change | Offline suite | 31/31 fact eval | UAT judge | Live probe |
+| Change | Offline suite | 34/34 fact eval | UAT judge | Live probe |
 |---|---|---|---|---|
 | Prompts / model / chain / middleware | required | required (PR merge triggers it on main anyway — run locally first) | required (runs on PR) | streaming + latency probe |
 | Facts pipeline / `programme_facts.json` schema | required | required (soll-values must stay dynamic) | — | alert-chain awareness |
@@ -147,7 +147,7 @@ Minimum evidence per change class (details and rationale in
 | Scraping / import | required (scraping package) | — | — | object counts before/after |
 | Docs only | — | — | — | — (deploy skips doc-only pushes) |
 
-Numbers decide, not impressions: a quality claim without a 31/31 run and UAT
+Numbers decide, not impressions: a quality claim without a full fact-eval run and UAT
 scores is an opinion.
 
 ## 4. How to add evidence
@@ -165,7 +165,7 @@ silent-skip trap above).
 value through `_facts()`/`_fee()`/`_start_year()`/`_ects()`; never literal
 prices/dates. Then update `EXPECTED_SMOKE_TESTS` in
 `.github/workflows/main-smoke.yml` (it pins the collected count — forgetting
-this fails Main Smoke by design) and the "31/31" references per
+this fails Main Smoke by design) and the full-eval references per
 `hsg-rag-docs-and-writing`.
 
 **A new UAT conversation:** add a sheet to `tests/fixtures/UAT.xlsx` following
@@ -204,7 +204,7 @@ Written 2026-07-07 from repo state on `main` (post PR #69). Re-verify volatile c
 ```bash
 /opt/anaconda3/bin/python -m pytest -q                       # baseline: 286 passed, 1 skipped, 12 deselected
 /opt/anaconda3/bin/python -m pytest --collect-only -q | tail -3   # collected count vs silent skips
-grep -c "dict(id=" tests/test_llm_fact_eval.py               # eval case count: 31
+grep -c "dict(id=" tests/test_llm_fact_eval.py               # eval case count: 34 (as of 2026-07-08)
 grep "EXPECTED_SMOKE_TESTS" .github/workflows/main-smoke.yml # must equal case count
 grep -E "MIN_SCORE|PARSE_ATTEMPTS" tests/test_uat_llm_judge.py | head -4   # thresholds 8.5 / 8.0 / 3
 ls uat-results/                                              # golden inventory (11 files)

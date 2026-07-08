@@ -106,9 +106,63 @@ class TestPromptBlock:
     def test_block_instructs_current_deadline_fee_first(self):
         block = VerifiedFacts.render_prompt_block(language="en")
 
-        assert "fee that applies today first" in block
-        assert "same-day deadlines have not passed" in block
-        assert "expired lower fee" in block
+        assert "fee marked as applying today" in block
+        assert "programme comparisons and multi-programme overviews" in block
+        assert "APPLICATIONS CLOSED" in block
+
+    def test_block_marks_deadline_status_deterministically(self):
+        """The renderer, not the model, decides which deadline applies today."""
+        from datetime import date
+
+        prog = {
+            "official_name": "Test Programme",
+            "tuition_chf": {
+                "first_deadline": {"deadline": "2026-06-01", "fee": 1000},
+                "final_deadline": {"deadline": "2026-09-01", "fee": 2000},
+            },
+        }
+        # Between the deadlines: first expired, final applies
+        block = VerifiedFacts._render_programme(prog, "en", date(2026, 7, 1))
+        assert "CHF 1'000 [EXPIRED]" in block
+        assert "CHF 2'000 [applies today]" in block
+        assert "APPLICATIONS CLOSED" not in block
+
+        # Before both: first applies, nothing expired
+        block = VerifiedFacts._render_programme(prog, "en", date(2026, 5, 1))
+        assert "CHF 1'000 [applies today]" in block
+        assert "EXPIRED" not in block
+
+        # Same-day final deadline has not passed
+        block = VerifiedFacts._render_programme(prog, "en", date(2026, 9, 1))
+        assert "CHF 2'000 [applies today]" in block
+        assert "APPLICATIONS CLOSED" not in block
+
+    def test_block_marks_cohort_closed_after_final_deadline(self):
+        from datetime import date
+
+        prog = {
+            "official_name": "Test Programme",
+            "tuition_chf": {
+                "first_deadline": {"deadline": "2026-06-01", "fee": 1000},
+                "final_deadline": {"deadline": "2026-09-01", "fee": 2000},
+            },
+        }
+        block = VerifiedFacts._render_programme(prog, "en", date(2026, 9, 2))
+        assert "APPLICATIONS CLOSED" in block
+        assert "[EXPIRED]" in block
+        block_de = VerifiedFacts._render_programme(prog, "de", date(2026, 9, 2))
+        assert "BEWERBUNG GESCHLOSSEN" in block_de
+
+    def test_malformed_deadline_gets_no_status_marker(self):
+        from datetime import date
+
+        prog = {
+            "official_name": "Test Programme",
+            "tuition_chf": {"final_deadline": {"deadline": "TBD", "fee": 2000}},
+        }
+        block = VerifiedFacts._render_programme(prog, "en", date(2026, 7, 1))
+        assert "CHF 2'000" in block
+        assert "EXPIRED" not in block and "applies today" not in block
 
     def test_german_labels_in_german_block(self):
         block = VerifiedFacts.render_prompt_block(language="de")

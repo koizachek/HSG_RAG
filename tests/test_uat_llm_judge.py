@@ -295,12 +295,26 @@ def _tuition_with_deadline_status(tuition: dict[str, Any], reference_date: date)
     first["deadline_status"] = _deadline_status(first.get("deadline"), reference_date)
     final["deadline_status"] = _deadline_status(final.get("deadline"), reference_date)
 
-    applicable = first if first["deadline_status"] in {"future", "due_today"} else final
-    applicable_key = (
-        "first_deadline"
-        if first["deadline_status"] in {"future", "due_today"}
-        else "final_deadline"
-    )
+    if first["deadline_status"] in {"future", "due_today"}:
+        applicable, applicable_key = first, "first_deadline"
+    elif final["deadline_status"] in {"future", "due_today"}:
+        applicable, applicable_key = final, "final_deadline"
+    else:
+        # All deadlines have passed: nothing is applicable today. Without this
+        # branch the judge payload offered the final fee as applicable_today
+        # and the judge graded closed-cohort answers inconsistently.
+        enriched["applicable_today"] = {
+            "deadline_type": None,
+            "deadline": None,
+            "deadline_status": "closed",
+            "fee": None,
+            "note": (
+                "The final application deadline has passed — applications for "
+                "the current cohort are closed. No fee is currently bookable."
+            ),
+        }
+        return enriched
+
     enriched["applicable_today"] = {
         "deadline_type": applicable_key,
         "deadline": applicable.get("deadline"),
@@ -423,6 +437,16 @@ def _judge_case(case: UATCase, transcript: list[dict[str, Any]]) -> dict[str, An
                 "which fee and deadline apply on the reference date; same-day deadlines are still "
                 "available and are marked due_today. Prefer applicable_today over stale scenario "
                 "wording or your own date arithmetic. "
+                "If applicable_today.deadline_status is 'closed', the correct assistant behaviour "
+                "is to state that applications for the current cohort are no longer possible and "
+                "refer to the programme's advisor for the next cohort; do NOT expect a fee to be "
+                "quoted as bookable, and do not penalize the assistant for declining to sell a "
+                "closed cohort. Mentioning the last fee as historical context is acceptable but "
+                "not required. "
+                "Booking is user-led by product decision: for informational or eligibility turns "
+                "where the user has not asked for an appointment, referring the user to the named "
+                "advisor or contact path is a fully valid handover. Do not deduct points for the "
+                "absence of unsolicited appointment offers, slot proposals, or data capture. "
                 "Do not grade any legacy booking-widget visibility flag; that flag is not part "
                 "of the current acceptance criteria. For appointment/booking/Termin scenarios, "
                 "judge only the user-facing behaviour: whether the assistant acknowledges the "
@@ -639,8 +663,12 @@ def test_tuition_deadline_status_enrichment_is_deterministic():
         "fee": 85000,
     }
 
+    # All deadlines passed: cohort is closed, no fee is applicable/bookable
     all_passed = _tuition_with_deadline_status(tuition, date(2026, 7, 1))
-    assert all_passed["applicable_today"]["deadline_type"] == "final_deadline"
+    assert all_passed["applicable_today"]["deadline_status"] == "closed"
+    assert all_passed["applicable_today"]["deadline_type"] is None
+    assert all_passed["applicable_today"]["fee"] is None
+    assert "closed" in all_passed["applicable_today"]["note"]
 
     all_future = _tuition_with_deadline_status(tuition, date(2026, 1, 1))
     assert all_future["applicable_today"]["deadline_type"] == "first_deadline"
@@ -664,11 +692,19 @@ def test_hard_facts_include_deadline_status_and_applicable_fee():
             )
 
         applicable = tuition["applicable_today"]
+        first_open = tuition["first_deadline"]["deadline_status"] in {"future", "due_today"}
+        final_open = tuition["final_deadline"]["deadline_status"] in {"future", "due_today"}
+        if not first_open and not final_open:
+            # Cohort closed: nothing is applicable/bookable today
+            assert applicable["deadline_status"] == "closed"
+            assert applicable["deadline_type"] is None
+            assert applicable["fee"] is None
+            continue
         chosen = tuition[applicable["deadline_type"]]
         assert applicable["fee"] == chosen["fee"]
         assert applicable["deadline"] == chosen["deadline"]
         assert applicable["deadline_status"] == chosen["deadline_status"]
-        if tuition["first_deadline"]["deadline_status"] in {"future", "due_today"}:
+        if first_open:
             assert applicable["deadline_type"] == "first_deadline"
         else:
             assert applicable["deadline_type"] == "final_deadline"

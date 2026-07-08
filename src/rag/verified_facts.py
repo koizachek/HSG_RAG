@@ -34,6 +34,11 @@ _LABELS = {
         'final_deadline': 'Finale Bewerbungsfrist',
         'advisor': 'Ansprechpartner/in',
         'cohort': 'Aktuelle Kohorte',
+        'expired': 'ABGELAUFEN',
+        'applies_today': 'gilt heute',
+        'closed': ('BEWERBUNG GESCHLOSSEN: Die finale Bewerbungsfrist für die aktuelle '
+                   'Kohorte ist abgelaufen. Keine Gebühr als aktuell verfügbar nennen; '
+                   'Interessierte für die nächste Kohorte an die Ansprechperson verweisen.'),
     },
     'en': {
         'language': 'Language',
@@ -47,6 +52,11 @@ _LABELS = {
         'final_deadline': 'Final application deadline',
         'advisor': 'Advisor',
         'cohort': 'Current cohort',
+        'expired': 'EXPIRED',
+        'applies_today': 'applies today',
+        'closed': ('APPLICATIONS CLOSED: the final application deadline for the current '
+                   'cohort has passed. Do not present any fee as currently available; '
+                   'refer interested users to the advisor for the next cohort.'),
     },
 }
 
@@ -98,8 +108,16 @@ class VerifiedFacts:
         except (TypeError, ValueError):
             return f"CHF {fee}"
 
+    @staticmethod
+    def _deadline_passed(deadline: str | None, today: date) -> bool | None:
+        """True/False if the ISO deadline is parseable (same-day = not passed), None otherwise."""
+        try:
+            return date.fromisoformat(str(deadline)) < today
+        except (TypeError, ValueError):
+            return None
+
     @classmethod
-    def _render_programme(cls, prog: dict, language: str) -> str:
+    def _render_programme(cls, prog: dict, language: str, today: date) -> str:
         labels = _LABELS.get(language, _LABELS['en'])
         lines = [f"### {prog.get('official_name', 'Unknown programme')}"]
 
@@ -122,21 +140,37 @@ class VerifiedFacts:
         first = tuition.get('first_deadline') or {}
         final = tuition.get('final_deadline') or {}
         if first or final:
+            # Deterministic deadline status: the model gets the state served,
+            # instead of having to do date arithmetic from a prompt rule.
+            first_passed = cls._deadline_passed(first.get('deadline'), today) if first else None
+            final_passed = cls._deadline_passed(final.get('deadline'), today) if final else None
+
+            def _status(passed: bool | None, applicable: bool) -> str:
+                if passed:
+                    return f" [{labels['expired']}]"
+                if passed is False and applicable:
+                    return f" [{labels['applies_today']}]"
+                return ""
+
             parts = []
             if first:
                 parts.append(
                     f"{labels['first_deadline']} {first.get('deadline', '?')}: "
                     f"{cls._format_fee(first.get('fee'))}"
+                    + _status(first_passed, applicable=True)
                 )
             if final:
                 parts.append(
                     f"{labels['final_deadline']} {final.get('deadline', '?')}: "
                     f"{cls._format_fee(final.get('fee'))}"
+                    + _status(final_passed, applicable=bool(first_passed) or not first)
                 )
             lines.append(f"- {labels['tuition']}: " + " | ".join(parts))
             note = tuition.get('note')
             if note:
                 lines.append(f"  ({cls._lang_value(note, language)})")
+            if final_passed:
+                lines.append(f"- {labels['closed']}")
 
         advisor = prog.get('advisor') or {}
         if advisor.get('name'):
@@ -161,17 +195,17 @@ class VerifiedFacts:
 
         language = language if language in _LABELS else 'en'
         generated_at = data.get('generated_at', 'unknown')
-        today = date.today().isoformat()
+        today = date.today()
 
         sections = [
-            cls._render_programme(prog, language)
+            cls._render_programme(prog, language, today)
             for prog in data['programmes'].values()
         ]
 
         return (
             "\n\nVERIFIED PROGRAMME FACTS "
             f"(auto-generated from the official programme websites on {generated_at}; "
-            f"today is {today}):\n\n"
+            f"today is {today.isoformat()}):\n\n"
             + "\n\n".join(sections)
             + "\n\nRULES FOR THESE FACTS:\n"
             "- These verified facts are the AUTHORITATIVE source for tuition fees, "
@@ -179,10 +213,14 @@ class VerifiedFacts:
             "programme language, and advisor contacts.\n"
             "- Prefer them over retrieved context for these categories. If retrieved "
             "chunks conflict with these facts, use these facts and do not mention the conflict.\n"
-            "- For deadline-based tuition, answer with the fee that applies today first. "
-            "Deadlines earlier than today's date have passed; same-day deadlines have not "
-            "passed. Mention an expired lower fee only as expired context when useful, then "
-            "point to the next applicable deadline and fee.\n"
+            "- For deadline-based tuition, answer with the fee marked as applying today "
+            "first — this also holds in programme comparisons and multi-programme "
+            "overviews. Mention a fee marked EXPIRED only as expired context when useful, "
+            "then point to the applicable deadline and fee.\n"
+            "- If a programme is marked APPLICATIONS CLOSED / BEWERBUNG GESCHLOSSEN, state "
+            "that applications for the current cohort are no longer possible and refer to "
+            "the programme's advisor for the next cohort. Never quote its fees as "
+            "currently bookable.\n"
             "- For topics NOT covered here (curriculum details, admission requirements, "
             "rankings, USPs, alumni network), use the retrieval tool as before.\n"
             "- Never combine fees from different programmes into a range."

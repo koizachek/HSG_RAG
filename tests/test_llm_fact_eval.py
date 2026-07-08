@@ -1,12 +1,12 @@
 """
-LLM eval set: 30 fact questions (DE/EN) against the live agent chain.
+LLM eval set: 34 fact questions (DE/EN) against the live agent chain.
 
 Expected values are read dynamically from data/database/programme_facts.json, so the
 eval stays valid after every facts regeneration. The core assertion per case:
 the answer must contain the correct programme's value AND must NOT contain
 another programme's value (cross-contamination guard — the historic bug).
 
-Opt-in (costs API credits, needs OPENAI_API_KEY + Weaviate):
+Opt-in (costs API credits, needs OPEN_ROUTER_API_KEY + Weaviate):
     RUN_LLM_EVAL=1 pytest tests/test_llm_fact_eval.py -v
 
 Single case:
@@ -213,7 +213,47 @@ def build_cases() -> list[dict]:
              query="Give me a short overview of all three executive MBA programmes.",
              expect_any=[["emba"], ["iemba", "international"], ["emba x", "embax"]],
              forbid=[]),
-    ]
+    ] + _deadline_state_cases(f)
+
+
+def _deadline_state_cases(f: dict) -> list[dict]:
+    """One case per programme asserting deadline-state-correct pricing.
+
+    The expectation adapts to today's date so the case count stays fixed while
+    the asserted behaviour follows the facts: closed cohort -> say closed
+    (never sell the fee as bookable); first deadline open -> lead with the
+    lower first-deadline fee; only final open -> final fee.
+    Guards the 2026-07-08 finding where the bot sold the closed IEMBA cohort
+    and quoted emba X at the final fee while the first deadline was open.
+    """
+    from datetime import date
+
+    today = date.today()
+    names = {"emba": "EMBA", "iemba": "IEMBA", "emba_x": "emba X"}
+    others = lambda p: [k for k in names if k != p]
+    cases = []
+    for prog, name in names.items():
+        first = f[prog]["tuition_chf"]["first_deadline"]
+        final = f[prog]["tuition_chf"]["final_deadline"]
+        first_passed = date.fromisoformat(first["deadline"]) < today
+        final_passed = date.fromisoformat(final["deadline"]) < today
+
+        if final_passed:
+            # Cohort closed: bot must say so, not sell any fee
+            expect = [["geschlossen", "abgelaufen", "nicht mehr", "vorbei",
+                       "nächste", "closed", "no longer"]]
+        elif first_passed:
+            expect = [[str(final["fee"])]]
+        else:
+            expect = [[str(first["fee"])]]
+
+        cases.append(dict(
+            id=f"de_price_state_{prog}", lang="de",
+            query=f"Kann ich mich aktuell noch für den {name} bewerben und was kostet er?",
+            expect_any=expect,
+            forbid=[_fee(o) for o in others(prog)] + [_fee(o, "first_deadline") for o in others(prog)],
+        ))
+    return cases
 
 
 CASES = build_cases() if os.getenv("RUN_LLM_EVAL") else []
