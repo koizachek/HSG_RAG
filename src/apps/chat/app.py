@@ -6,7 +6,7 @@ from datetime import datetime
 
 from src.const.agent_response_constants import *
 from src.const.data_consent_constants import *
-from src.rag.agent_chain import ExecutiveAgentChain
+from src.rag.agent_chain import ExecutiveAgentChain, _redact_user_text
 from src.utils.logging import get_logger, ConsentLogger
 
 logger = get_logger("chatbot_app")
@@ -282,7 +282,7 @@ class ChatbotApplication:
                 )
                 agent.reset_conversation_state()
 
-            logger.info(f"Processing user query: {message[:100]}...")
+            logger.info(f"Processing user query: {_redact_user_text(message)}")
 
             # Run the agent in a worker thread; consume streamed deltas here.
             import threading

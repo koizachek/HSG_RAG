@@ -17,7 +17,7 @@ jobs:
       PYTHONPATH: ${{ github.workspace }}
       RUN_LLM_EVAL: "1"
       SMOKE_TEST_PATH: tests/test_llm_fact_eval.py
-      EXPECTED_SMOKE_TESTS: "31"
+      EXPECTED_SMOKE_TESTS: "34"
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY || secrets.OPENROUTER_API_KEY }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
