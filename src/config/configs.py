@@ -259,6 +259,16 @@ class LLMConfig(ConfigBase):
         }.get(provider_base)
 
 
+class UsageConfig(ConfigBase):
+    # Anonymous per-turn usage events (no free text) — see UsageEventLogger.
+    EVENT_LOGGING_ENABLED: bool = _get_bool('USAGE_EVENT_LOGGING_ENABLED', True)
+    # Pseudonymized transcripts for offline rubric scoring. Default OFF;
+    # env-overridable on the host because config.py leaves the value None
+    # (DSB sign-off required before enabling — see docs/datenschutz_deployment.md).
+    STORE_TRANSCRIPTS: bool = _get_bool('USAGE_STORE_TRANSCRIPTS', False)
+    RUBRIC_SAMPLE_SIZE: int = _get('USAGE_RUBRIC_SAMPLE_SIZE', 10, type_=int)
+
+
 class NotificationCenterConfig(ConfigBase):
     ENABLE_EMAIL_ALERTS: bool = _get('NOTIFY_ENABLE_EMAIL_ALERTS', True, bool)
 

@@ -14,6 +14,7 @@ class AppConfig:
     paths:      PathsConfig             = PathsConfig()
     dbapp:      DatabaseAppConfig       = DatabaseAppConfig()
     llm:        LLMConfig               = LLMConfig()
+    usage:      UsageConfig             = UsageConfig()
     
     # ===========================================================================
 

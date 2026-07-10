@@ -33,7 +33,7 @@ from src.rag.scope_guardian import ScopeGuardian
 from src.rag.language_detection import LanguageDetector
 from src.rag.tool_schemas import RetrieveContextInput
 
-from src.utils.logging import get_logger
+from src.utils.logging import get_logger, UsageEventLogger, TranscriptLogger
 from src.utils.lang import get_language_name
 from src.config import config
 
@@ -91,6 +91,13 @@ class ExecutiveAgentChain:
         # chatbot-decoupling branch) to keep this class a thin orchestrator.
         self._state_manager = ConversationStateManager(self)
 
+        # Usage analytics: one anonymous structured event per turn (and,
+        # config-gated, a pseudonymized transcript) — see _emit_turn_event.
+        self._usage_logger = UsageEventLogger()
+        self._transcript_logger = TranscriptLogger()
+        self._turn_index = 0
+        self._turn_flags: dict = {}
+
         chain_logger.info(f"Initialized new Agent Chain for language '{language}' with user_id: {self._user_id}")
 
     def _state_tracker(self) -> ConversationStateManager:
@@ -111,6 +118,7 @@ class ExecutiveAgentChain:
             language: Optional parameter (either 'en' for English language or 'de' for German language). This parameter selects the language of the database to query from. The input query must be written in the same language as the selected language. Use this parameter only if there's not enough information in your main language.
         """
         lang = language if language in ['en', 'de'] else self._initial_language
+        self._bump_turn('retrieval_calls')
         # Adopted from chatbot-decoupling: normalise the programme id before
         # filtering. The DB tags chunks with canonical programme ids.
         normalized = self._normalise_programme_id(program)
@@ -144,6 +152,7 @@ class ExecutiveAgentChain:
                 chain_logger.warning(
                     f"retrieve_context returned no documents (program='{program}', lang='{lang}', query='{query}')"
                 )
+                self._tag_turn('retrieval_empty', True)
                 return (
                     "NO_CONTEXT_FOUND: The knowledge base returned no documents for this "
                     "query. Do NOT answer from memory or general knowledge. Tell the user "
@@ -465,28 +474,29 @@ class ExecutiveAgentChain:
         self._state_tracker().update(user_query, agent_response)
 
     def wipe_session_data(self) -> None:
-        """Delete in-memory session data and on-disk profile files (GDPR withdrawal)."""
+        """Delete in-memory session data and on-disk per-session files (GDPR withdrawal)."""
 
         # --- 1) In-memory wipe ---
         self.reset_conversation_state()
 
-        # --- 2) On-disk wipe (delete profile_<user_id>_*.json) ---
+        # --- 2) On-disk wipe (profiles, usage events, transcripts) ---
         if not self._user_id:
             chain_logger.warning("wipe_session_data called without user_id – skipping file deletion")
             return
 
-        pattern = os.path.join(
-            "logs",
-            "user_profiles",
-            f"profile_{self._user_id}_*.json"
-        )
+        patterns = [
+            os.path.join("logs", "user_profiles", f"profile_{self._user_id}_*.json"),
+            os.path.join("logs", "usage", f"usage_{self._user_id}.jsonl"),
+            os.path.join("logs", "transcripts", f"transcript_{self._user_id}.jsonl"),
+        ]
 
-        for path in glob.glob(pattern):
-            try:
-                os.remove(path)
-                chain_logger.info(f"Deleted profile file: {path}")
-            except OSError as e:
-                chain_logger.error(f"Failed to delete {path}: {e}")
+        for pattern in patterns:
+            for path in glob.glob(pattern):
+                try:
+                    os.remove(path)
+                    chain_logger.info(f"Deleted session data file: {path}")
+                except OSError as e:
+                    chain_logger.error(f"Failed to delete {path}: {e}")
 
     def generate_greeting(self) -> str:
         greeting_message = random.choice(GREETING_MESSAGES[self._stored_language])
@@ -554,17 +564,145 @@ class ExecutiveAgentChain:
             and (len(short_fragments) >= 2 or len(compact_alphanumeric_noise) >= 2)
         )
 
+    # ------------------------- Usage-analytics telemetry -------------------------
+    # Anonymous per-turn instrumentation. All helpers are defensive: tests that
+    # bypass __init__ have no _turn_flags/_usage_logger and must not break.
+
+    def _begin_turn_telemetry(self) -> None:
+        self._turn_index = getattr(self, '_turn_index', 0) + 1
+        self._turn_flags = {
+            'outcome': 'answered',
+            'scope_type': None,
+            'pre_gate': None,
+            'streaming_fallback': False,
+            'agent_invoke_failed': False,
+            'retrieval_calls': 0,
+            'retrieval_empty': False,
+            'preprocess_s': None,
+            'first_token_s': None,
+        }
+
+    def _tag_turn(self, key: str, value) -> None:
+        flags = getattr(self, '_turn_flags', None)
+        if flags is not None:
+            flags[key] = value
+
+    def _bump_turn(self, key: str) -> None:
+        flags = getattr(self, '_turn_flags', None)
+        if flags is not None:
+            flags[key] = flags.get(key, 0) + 1
+
+    def _wrap_first_token_probe(self, on_delta):
+        """Record time-to-first-token via the existing delta callback."""
+        if on_delta is None:
+            return None
+
+        def probed(delta):
+            if self._turn_flags.get('first_token_s') is None:
+                started = getattr(self, '_turn_start_time', None)
+                if started is not None:
+                    self._turn_flags['first_token_s'] = round(perf_counter() - started, 3)
+            on_delta(delta)
+
+        return probed
+
+    def _emit_turn_event(self, raw_query: str, response: LeadAgentQueryResponse | None) -> None:
+        """
+        Emit one anonymous usage event for the finished turn (and, when the
+        config-gated transcript store is enabled, one transcript entry).
+        The event carries NO free text — only enumerated/numeric fields.
+        Must never raise into the request path.
+        """
+        usage_logger = getattr(self, '_usage_logger', None)
+        if usage_logger is None:
+            return
+        try:
+            flags = getattr(self, '_turn_flags', None) or {}
+            started = getattr(self, '_turn_start_time', None)
+            total_s = round(perf_counter() - started, 3) if started is not None else None
+            final = None
+            if response is not None:
+                final = {
+                    'appointment_requested': bool(response.appointment_requested),
+                    'show_booking_widget': bool(response.show_booking_widget),
+                    'relevant_programs': list(response.relevant_programs or []),
+                    'confidence_fallback': bool(response.confidence_fallback),
+                    'max_turns_reached': bool(response.max_turns_reached),
+                }
+            event = {
+                'session_id': self._user_id,
+                'turn_index': getattr(self, '_turn_index', 0),
+                'language': response.language if response is not None else self._stored_language,
+                'outcome': flags.get('outcome', 'answered'),
+                'scope_type': flags.get('scope_type'),
+                'query_len_chars': len(raw_query or ''),
+                'pre_gate': flags.get('pre_gate'),
+                'final': final,
+                'suggested_program': self._conversation_state.get('suggested_program'),
+                'handover_requested': self._conversation_state.get('handover_requested'),
+                'streaming_fallback': flags.get('streaming_fallback', False),
+                'agent_invoke_failed': flags.get('agent_invoke_failed', False),
+                'retrieval_calls': flags.get('retrieval_calls', 0),
+                'retrieval_empty': flags.get('retrieval_empty', False),
+                'timing': {
+                    'total_s': total_s,
+                    'preprocess_s': flags.get('preprocess_s'),
+                    'first_token_s': flags.get('first_token_s'),
+                },
+            }
+            usage_logger.log_turn(event)
+
+            transcript_logger = getattr(self, '_transcript_logger', None)
+            if (
+                transcript_logger is not None
+                and transcript_logger.enabled
+                and response is not None
+            ):
+                transcript_logger.log_turn(
+                    session_id=self._user_id,
+                    turn_index=getattr(self, '_turn_index', 0),
+                    user_text=raw_query,
+                    assistant_text=response.response,
+                    meta={
+                        'language': response.language,
+                        'outcome': flags.get('outcome', 'answered'),
+                        'final': final,
+                    },
+                )
+        except Exception as e:
+            chain_logger.warning(f"Failed to emit usage turn event: {e}")
+
+    # ------------------------------------------------------------------------------
+
     @traceable
     def query(self, query: str, on_delta=None) -> LeadAgentQueryResponse:
         """
-        Phase 1: Validation, Scope-Check and language detection.
-        Does not call the agent directly.
+        Public entry point per user turn: runs the query pipeline and emits
+        exactly one anonymous usage event per turn — including early returns
+        and exceptions (usage analytics; the event write never raises).
 
         Args:
             on_delta: Optional callback receiving displayable text deltas while
                 the lead agent streams its answer. Early-return paths (scope
                 check, invalid input) skip streaming and only return the final
                 response.
+        """
+        self._begin_turn_telemetry()
+        on_delta = self._wrap_first_token_probe(on_delta)
+        response: LeadAgentQueryResponse | None = None
+        try:
+            response = self._run_query_pipeline(query, on_delta=on_delta)
+            return response
+        except Exception:
+            self._tag_turn('outcome', 'exception')
+            raise
+        finally:
+            self._emit_turn_event(query, response)
+
+    def _run_query_pipeline(self, query: str, on_delta=None) -> LeadAgentQueryResponse:
+        """
+        Phase 1: Validation, Scope-Check and language detection.
+        Does not call the agent directly.
         """
         # Latency monitoring: per-step timings are logged so regressions
         # show up immediately instead of being guessed at later.
@@ -574,6 +712,7 @@ class ExecutiveAgentChain:
         current_language = self._stored_language
 
         if len(self._conversation_history) >= config.convstate.MAX_CONVERSATION_TURNS:
+            self._tag_turn('outcome', 'max_turns')
             return LeadAgentQueryResponse(
                 response = CONVERSATION_END_MESSAGE[current_language],
                 language = current_language,
@@ -596,6 +735,7 @@ class ExecutiveAgentChain:
                 if self._invalid_input_count >= 2
                 else NOT_VALID_QUERY_MESSAGE[self._stored_language]
             )
+            self._tag_turn('outcome', 'invalid_input')
             return LeadAgentQueryResponse(
                 response=invalid_response,
                 language=current_language,
@@ -606,6 +746,7 @@ class ExecutiveAgentChain:
             chain_logger.warning(f"Repeated invalid-looking input received: {_redact_user_text(query)}")
             self._invalid_input_count += 1
             invalid_response = get_repeated_not_valid_query_message(self._stored_language)
+            self._tag_turn('outcome', 'repeated_invalid_input')
             return LeadAgentQueryResponse(
                 response=invalid_response,
                 language=current_language,
@@ -652,6 +793,7 @@ class ExecutiveAgentChain:
                     self._conversation_history.append(HumanMessage(processed_query))
                     self._conversation_history.append(AIMessage(clarification_msg))
 
+                    self._tag_turn('outcome', 'language_clarification')
                     return LeadAgentQueryResponse(
                         response=clarification_msg,
                         language=clarification_language,
@@ -669,6 +811,7 @@ class ExecutiveAgentChain:
                     current_language = detected_language
                 else:
                     chain_logger.info("Invalid language detected.")
+                    self._tag_turn('outcome', 'language_fallback')
                     return LeadAgentQueryResponse(
                         response=LANGUAGE_FALLBACK_MESSAGE[current_language],
                         language=current_language,
@@ -676,6 +819,7 @@ class ExecutiveAgentChain:
                     )
 
         if self._pending_continuation and self._is_continuation_request(processed_query):
+            self._tag_turn('outcome', 'continuation_served')
             return self._serve_pending_continuation(
                 processed_query=processed_query,
                 response_language=current_language,
@@ -709,6 +853,8 @@ class ExecutiveAgentChain:
             self._conversation_history.append(HumanMessage(processed_query))
             self._conversation_history.append(AIMessage(redirect_msg))
 
+            self._tag_turn('outcome', 'scope_redirect')
+            self._tag_turn('scope_type', scope_type)
             return LeadAgentQueryResponse(
                 response=redirect_msg,
                 language=current_language,
@@ -720,6 +866,7 @@ class ExecutiveAgentChain:
         # 5. Preprocessing is finished - the agent has to answer the query
         preprocess_elapsed = perf_counter() - self._turn_start_time
         chain_logger.info(f"[timing] preprocessing: {preprocess_elapsed:.2f}s")
+        self._tag_turn('preprocess_s', round(preprocess_elapsed, 3))
 
         response = self._query_lead(query, on_delta=on_delta)
 
@@ -773,6 +920,13 @@ class ExecutiveAgentChain:
         chain_logger.info(f"Appointment Requested: {structured_response.appointment_requested}")
         chain_logger.info(f"Show Booking Widget: {structured_response.show_booking_widget}")
         chain_logger.info(f"Relevant Programs: {structured_response.relevant_programs}")
+        # Usage analytics: raw model flags BEFORE the booking gate below, so the
+        # report can measure gate corrections (pre-gate vs final).
+        self._tag_turn('pre_gate', {
+            'appointment_requested': bool(structured_response.appointment_requested),
+            'show_booking_widget': bool(structured_response.show_booking_widget),
+            'relevant_programs': list(structured_response.relevant_programs or []),
+        })
 
         # Keep the complete answer in internal memory even when the UI only
         # shows the first chunk. Otherwise follow-up turns only "remember" the
@@ -1036,6 +1190,7 @@ class ExecutiveAgentChain:
             chain_logger.warning(
                 f"Streaming failed for {agent.name} ({e}); falling back to blocking invoke."
             )
+            self._tag_turn('streaming_fallback', True)
             return None
         return last_values
 
@@ -1067,6 +1222,8 @@ class ExecutiveAgentChain:
         except Exception as e:
             error_msg = e.body['message'] if hasattr(e, 'body') else str(e)
             chain_logger.error(f"Failed to invoke the agent: {error_msg}")
+            self._tag_turn('agent_invoke_failed', True)
+            self._tag_turn('outcome', 'agent_error')
             return StructuredAgentResponse(
                 response=QUERY_EXCEPTION_MESSAGE[self._stored_language],
             )
