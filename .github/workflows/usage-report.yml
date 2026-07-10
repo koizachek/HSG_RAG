@@ -1,0 +1,100 @@
+name: Weekly Usage Report
+
+# Generates the anonymous usage report ON the prod host (raw logs and
+# transcripts never leave it) and commits only the aggregate markdown to
+# docs/usage-reports/. docs/** is in deploy.yml paths-ignore, so the report
+# commit does NOT trigger a redeploy.
+
+on:
+  schedule:
+    - cron: "17 5 * * 1" # Mondays at 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: usage-report
+  cancel-in-progress: false
+
+env:
+  DEPLOY_HOST: 178.105.196.130
+  DEPLOY_USER: root
+  APP_DIR: /opt/hsg-rag
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Host-Key gepinnt (kein blindes ssh-keyscan zur Laufzeit)
+          echo "178.105.196.130 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKfdpvAj7J7o5SHAv39czuaM+u1/870xPmSiuCc8WnLC" >> ~/.ssh/known_hosts
+
+      - name: Push current scripts to host
+        # The image may be older than the repo; always run the freshest scripts.
+        run: |
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+            scripts/usage_report.py scripts/rubric_judge.py \
+            "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/scripts/"
+
+      - name: Generate report on host
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$DEPLOY_USER@$DEPLOY_HOST" bash -s <<'EOF'
+          set -euo pipefail
+          cd /opt/hsg-rag
+          mkdir -p logs/usage_reports
+
+          # 1) Rubric judging INSIDE the container: transcripts and the
+          #    OPEN_ROUTER_API_KEY stay on the host. No-op (sampled=0) while
+          #    transcript storage is disabled.
+          docker cp scripts/rubric_judge.py hsg-rag:/app/scripts/rubric_judge.py
+          docker exec hsg-rag python scripts/rubric_judge.py \
+            --transcripts-dir logs/transcripts \
+            --out logs/usage_reports/rubric_scores.json \
+            --window-days 7
+
+          # 2) Anonymous aggregation with the host python3 (stdlib only).
+          python3 scripts/usage_report.py \
+            --logs-dir /opt/hsg-rag/logs \
+            --window-days 7 \
+            --out /opt/hsg-rag/logs/usage_reports/latest.md \
+            --rubric-scores /opt/hsg-rag/logs/usage_reports/rubric_scores.json
+
+          # Keep ~26 weeks of on-host report history
+          ls -t logs/usage_reports/*.md 2>/dev/null | tail -n +27 | xargs -r rm --
+          EOF
+
+      - name: Fetch the anonymous markdown report
+        # ONLY the aggregate markdown crosses to the runner — never raw logs,
+        # transcripts, or rubric_scores.json (contains session ids).
+        run: |
+          mkdir -p docs/usage-reports
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/logs/usage_reports/latest.md" \
+            "docs/usage-reports/$(date +%G-W%V).md"
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add docs/usage-reports/
+
+          if git diff --cached --quiet; then
+            echo "No changes detected"
+            exit 0
+          fi
+
+          git commit -m "docs: weekly usage report $(date +%G-W%V)"
+          git push origin HEAD:main

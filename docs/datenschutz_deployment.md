@@ -19,6 +19,9 @@ Registrierung und keine Zahlungsdaten.
 | Nutzerprofile (Feature-Flag `TRACK_USER_PROFILE`) | `logs/user_profiles/*.json` | Session-/User-ID, ggf. Name (falls genannt), Berufs-/Führungsjahre, Branche, Interessen, vorgeschlagenes Programm, Handover-Wunsch, Sprache | **30 Tage** (täglicher Lösch-Cron auf dem Host) |
 | Consent-Einträge | `logs/consent/` | Einwilligungsnachweis mit Zeitstempel | unbefristet (Nachweiszweck) |
 | Technische Logs | `logs/*.log` | System-/Fehlermeldungen; **Nutzereingaben werden seit 2026-07-06 maskiert** (nur Länge geloggt, kein Wortlaut) | **30 Tage** (logrotate, komprimiert, dann gelöscht) |
+| Nutzungs-Events (Flag `USAGE_EVENT_LOGGING_ENABLED`) | `logs/usage/*.jsonl` | Pseudonyme Metadaten pro Chat-Turn: Session-ID, Ergebnis-Typ, Booking-Flags, Programm-Zuordnung, Fehler-Marker, Antwortzeiten. **Keine Gesprächsinhalte** (nur Zeichenanzahl der Eingabe) | **30 Tage** (Lösch-Cron auf dem Host, siehe §4) |
+| Gesprächsprotokolle (Flag `USAGE_STORE_TRANSCRIPTS`, **standardmäßig AUS**) | `logs/transcripts/*.jsonl` | Pseudonymisierte Transkripte (Nutzereingabe + Bot-Antwort) zur Offline-Qualitätsbewertung. **Aktivierung erst nach DSB-Sign-off und Consent-Text v1.1** | **30 Tage** (Lösch-Cron auf dem Host, siehe §4) |
+| Wochenberichte | `logs/usage_reports/`, Repo `docs/usage-reports/` | Ausschließlich anonyme Aggregate (Zählwerte, Raten, Perzentile) — keine Session-IDs, keine Inhalte | Host: ~26 Wochen; Repo: unbefristet (anonym) |
 
 ## 3. Verarbeitung durch Dritte (keine Speicherung durch uns)
 
@@ -31,8 +34,13 @@ Registrierung und keine Zahlungsdaten.
 
 ## 4. Löschung / Betroffenenrechte
 
-- **Aktiver Löschpfad:** `wipe_session_data` entfernt Sitzungsdaten (GDPR-Withdrawal im UI).
-- **Automatische Fristen:** Nutzerprofile und Logs werden nach 30 Tagen serverseitig gelöscht.
+- **Aktiver Löschpfad:** `wipe_session_data` (API in `src/rag/agent_chain.py`) entfernt
+  Sitzungsdaten inkl. Profil-, Nutzungs-Event- und Transkript-Dateien der Session.
+  **Hinweis:** Ein UI-Auslöser dafür existiert derzeit nicht — Löschanfragen laufen
+  über den Kontaktweg (E-Mail) und werden manuell auf dem Host ausgeführt.
+- **Automatische Fristen:** Nutzerprofile und Logs werden nach 30 Tagen serverseitig
+  gelöscht. Der Lösch-Cron auf dem Host muss um die neuen Verzeichnisse erweitert werden:
+  `find /opt/hsg-rag/logs/usage /opt/hsg-rag/logs/transcripts -name '*.jsonl' -mtime +30 -delete`
 - **Backups:** Hetzner-Snapshots rotieren nach **7 Tagen**. Eine aktive Löschung wirkt in
   Backups nicht rückwirkend; faktische maximale Aufbewahrung nach Löschung: 7 Tage.
 
@@ -52,4 +60,8 @@ Registrierung und keine Zahlungsdaten.
 - [ ] AVV/DPA mit Weaviate Cloud abschließen und ablegen
 - [ ] Hetzner-AVV im Account bestätigen/ablegen
 - [ ] Consent-Flow im UI auf der Zielseite verifizieren (nach DNS/iframe-Einbindung)
+- [ ] **Transkript-Speicherung freigeben** (`USAGE_STORE_TRANSCRIPTS`): pseudonymisierte
+      Gesprächsprotokolle (30 Tage, Host-only) zur Offline-Qualitätsbewertung; dabei werden
+      stichprobenartig Transkripte zur Bewertung an OpenRouter (USA) übermittelt — gleiche
+      Verarbeitungsgrundlage wie der Live-Chat (§3). Voraussetzung: Consent-Text v1.1
 - [ ] Prüfung und Sign-off durch Datenschutzbeauftragte:n
