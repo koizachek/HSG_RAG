@@ -54,6 +54,15 @@ GitHub Actions (kein Host-Cron nötig):
       30-Tage-Löschfrist per Host-Cron, Logs rotieren nach 30 Tagen, Nutzereingaben in Logs
       maskiert, Backup-Rotation 7 Tage. Details: [docs/datenschutz_deployment.md](docs/datenschutz_deployment.md)
 - [ ] Consent-Flow im UI vor Go-Live verifiziert
+- [ ] **Usage-Analytics-Retention auf dem Host eingerichtet**: Lösch-Cron um die neuen
+      Verzeichnisse erweitern —
+      `find /opt/hsg-rag/logs/usage /opt/hsg-rag/logs/transcripts -name '*.jsonl' -mtime +30 -delete`
+      (Details: [docs/datenschutz_deployment.md](docs/datenschutz_deployment.md) §4)
+- [ ] **Transkript-Speicherung erst nach DSB-Sign-off aktivieren**: `USAGE_STORE_TRANSCRIPTS=true`
+      in der Prod-`.env` + Container-Neustart — Voraussetzung ist Consent-Text v1.1
+- [ ] **Ersten Wochenbericht verifiziert**: "Weekly Usage Report"-Workflow einmal manuell
+      auslösen (`gh workflow run usage-report.yml`); der committete Report in `docs/usage-reports/`
+      enthält nur Aggregate (keine Session-IDs) und löst keinen Deploy aus
 - [ ] Sign-off durch Datenschutzbeauftragte:n
 
 ---
