@@ -1,4 +1,28 @@
 chatbot.emba.unisg.ch {
+    # --- PILOT PHASE: IP allowlist (inactive draft — uncomment to activate) ---
+    # Blocks all requests except /health for clients outside the allowlist.
+    # /health MUST stay public: deploy.yml verifies it from GitHub runners,
+    # and blocking it would fail every deployment's verification step.
+    #
+    # TODO: insert the allowed addresses on the remote_ip line, space-separated.
+    # Accepted formats (mix freely):
+    #   single IPv4:  130.82.1.2
+    #   IPv4 range:   130.82.0.0/16
+    #   single IPv6:  2001:db8::1
+    #   IPv6 range:   2001:db8::/32
+    # Remember IPv6: pilot users on the university network may connect over it.
+    #
+    # @blocked {
+    #     not remote_ip <IP-OR-CIDR> <IP-OR-CIDR>
+    #     not path /health
+    # }
+    # respond @blocked "Zugriff nur während der Pilotphase für registrierte Teilnehmende. / Access restricted during the pilot phase." 403
+    #
+    # Removal after go-live: see .claude/skills/hsg-rag-run-and-operate
+    # ("Pilot-phase IP allowlist"). Short version: delete this whole block
+    # via PR, then scp to the host and `systemctl reload caddy`.
+    # --- END PILOT PHASE ------------------------------------------------------
+
     reverse_proxy localhost:7860
 
     header -X-Frame-Options
