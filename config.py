@@ -194,6 +194,23 @@ MAX_RESPONSE_WORDS_SUBAGENT = 200
 # budgets keep answers short; secondary material belongs in additional_details.
 ENABLE_RESPONSE_CHUNKING = False
 
+# ======================================= Usage Analytics Configuration =====================================
+
+# A boolean; either True or False. Writes one anonymous structured JSON event per user
+# turn to logs/usage/usage_<session_id>.jsonl (funnel flags, outcome, timings — never
+# free text). Basis for the automated weekly usage report.
+USAGE_EVENT_LOGGING_ENABLED = True
+
+# A boolean or None. Stores pseudonymized conversation transcripts (user message +
+# final answer) to logs/transcripts/ for offline quality scoring. MUST stay disabled
+# until DSB sign-off and consent policy v1.1 are live. Deliberately left as None so
+# the env var USAGE_STORE_TRANSCRIPTS can enable it on the host without a redeploy
+# (_get only falls through to the env var when the value here is None).
+USAGE_STORE_TRANSCRIPTS = None
+
+# An integer. Maximum number of transcripts sampled per offline rubric-judging run.
+USAGE_RUBRIC_SAMPLE_SIZE = 10
+
 # ========================================== Notification Configuration =====================================
 
 NOTIFY_ENABLE_EMAIL_ALERTS= True

@@ -294,3 +294,82 @@ class ConsentLogger:
                 
         except Exception as e:
             print(f"Error logging consent decision: {e}")
+
+
+class UsageEventLogger:
+    """
+    Anonymous per-turn usage events for the automated usage report.
+
+    One strict one-line-JSONL file per session (logs/usage/usage_<session_id>.jsonl)
+    so GDPR wipe/retention work like the profile snapshots (glob-and-unlink).
+    Events carry ONLY enumerated/numeric/boolean fields — never user or model
+    text. Writes must never raise into the request path.
+    """
+
+    SCHEMA_VERSION = 1
+
+    def __init__(self, base_dir: str | None = None):
+        self._base_dir = base_dir or os.path.join('logs', 'usage')
+
+    def log_turn(self, event: dict) -> None:
+        if not config.usage.EVENT_LOGGING_ENABLED:
+            return
+        try:
+            entry = {
+                "schema_version": self.SCHEMA_VERSION,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                **event,
+            }
+            session_id = entry.get("session_id") or "unknown"
+            # Lazy dir creation keeps startup side-effect free
+            os.makedirs(self._base_dir, exist_ok=True)
+            log_path = os.path.join(self._base_dir, f"usage_{session_id}.jsonl")
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception as e:
+            print(f"Error logging usage event: {e}")
+
+
+class TranscriptLogger:
+    """
+    Pseudonymized conversation transcripts for offline quality scoring.
+
+    A deliberate, config-gated personal-data flow (separate from the logs.log
+    redaction rule): host-only files under logs/transcripts/, 30-day retention.
+    MUST stay disabled until DSB sign-off and consent policy v1.1 are live
+    (config.usage.STORE_TRANSCRIPTS, default OFF). Never raises into the
+    request path; creates no directory while disabled.
+    """
+
+    def __init__(self, base_dir: str | None = None):
+        self._base_dir = base_dir or os.path.join('logs', 'transcripts')
+
+    @property
+    def enabled(self) -> bool:
+        return bool(config.usage.STORE_TRANSCRIPTS)
+
+    def log_turn(
+        self,
+        session_id: str,
+        turn_index: int,
+        user_text: str,
+        assistant_text: str,
+        meta: dict | None = None,
+    ) -> None:
+        if not self.enabled:
+            return
+        try:
+            entry = {
+                "session_id": session_id,
+                "turn_index": turn_index,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "user": user_text,
+                "assistant": assistant_text,
+                "meta": meta or {},
+            }
+            os.makedirs(self._base_dir, exist_ok=True)
+            log_path = os.path.join(self._base_dir, f"transcript_{session_id}.jsonl")
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception as e:
+            print(f"Error logging transcript turn: {e}")
