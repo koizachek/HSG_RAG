@@ -62,7 +62,10 @@ class ChatbotApplication:
             agent_state = gr.State(None)
             lang_state = gr.State(language)
             consent_state = gr.State(False)
-            session_id_state = gr.State(str(uuid.uuid4()))  # for consent logging later
+            # NOTE: gr.State defaults are evaluated once at Blocks construction and
+            # copied into every browser session — a uuid here would be shared by all
+            # visitors. The id is assigned per session in assign_session_id (on load).
+            session_id_state = gr.State(None)  # for consent logging later
 
             with gr.Row():
                 lang_selector = gr.Radio(
@@ -147,6 +150,7 @@ class ChatbotApplication:
                 )
 
             def on_accept(lang: str, session_id: str):
+                session_id = session_id or str(uuid.uuid4())  # fallback if load event did not fire
                 agent, greeting = initialize_agent(lang, session_id=session_id)
                 self._consentLogger.log(session_id, "accepted", policy_version="1.0")
                 self._language = lang
@@ -159,9 +163,11 @@ class ChatbotApplication:
                     gr.update(visible=False, value=""),  # decline_info hide
                     gr.update(visible=True),         # show reset_button
                     gr.update(value=BOOKING_WIDGET_HTML[lang], visible=True),
+                    session_id,                      # persist (possibly fallback) session id
                 )
 
             def on_decline(lang: str, session_id: str):
+                session_id = session_id or str(uuid.uuid4())  # fallback if load event did not fire
                 self._language = lang
                 self._consentLogger.log(session_id, "declined", policy_version="1.0")
                 return (
@@ -173,6 +179,7 @@ class ChatbotApplication:
                     gr.update(visible=True, value=DECLINE_MESSAGE[lang]),
                     gr.update(visible=False),  # hide reset_button
                     gr.update(value=BOOKING_WIDGET_HTML[lang], visible=False),
+                    session_id,                # persist (possibly fallback) session id
                 )
 
             def on_reset_chat(lang: str, session_id: str):
@@ -189,6 +196,20 @@ class ChatbotApplication:
                     agent.reset_conversation_state()
                     logger.info("Cleared agent state after Gradio chat clear event")
                 return agent
+
+            def assign_session_id(session_id):
+                # Runs on page load: gives every browser session its own uuid
+                # (the gr.State default above is shared across sessions).
+                return session_id or str(uuid.uuid4())
+
+            # Assign a fresh session id when a browser session starts
+            self._gradio_app.load(
+                fn=assign_session_id,
+                inputs=[session_id_state],
+                outputs=[session_id_state],
+                queue=False,
+            )
+
             # Language switch updates consent UI if consent not given
             lang_selector.change(
                 fn=on_language_change,
@@ -218,6 +239,7 @@ class ChatbotApplication:
                     decline_info,
                     reset_button,
                     booking_widget,
+                    session_id_state,
                 ],
                 queue=True,
             )
@@ -234,6 +256,7 @@ class ChatbotApplication:
                     decline_info,
                     reset_button,
                     booking_widget,
+                    session_id_state,
                 ],
                 queue=True,
             )
