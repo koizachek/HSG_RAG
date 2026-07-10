@@ -13,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
 TEST_DEPENDENCIES = {
     "tests/consent/test_agent_chain_session.py": {"langchain_core", "langchain", "langsmith"},
     "tests/consent/test_consent_logger.py": {"colorama"},
+    "tests/consent/test_session_id_assignment.py": {"gradio", "fastapi", "langchain_core", "langchain", "langsmith", "colorama"},
     "tests/scraping/test_happy_path.py": {"colorama", "docling", "docling_core", "usp", "fake_useragent", "tiktoken"},
     "tests/scraping/test_page_chunking.py": {"colorama", "docling", "docling_core", "tiktoken"},
     "tests/scraping/test_scraping.py": {"colorama", "docling_core", "usp", "fake_useragent", "tiktoken"},
