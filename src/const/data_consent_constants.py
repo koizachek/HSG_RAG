@@ -1,5 +1,7 @@
 PRIVACY_NOTICE = {
     "de": """
+**Pilotphase bis 31.08.26**
+
 ### Datenschutzhinweis
 
 Wir verwenden Ihre Angaben, um Sie zu **Executive MBA Programmen der Universität St.Gallen** zu beraten.  
@@ -16,6 +18,8 @@ Sie können Ihre Einwilligung **jederzeit widerrufen**, indem Sie uns kontaktier
 """,
 
     "en": """
+**Pilot phase until 31 August 2026**
+
 ### Privacy Notice
 
 We use your information to advise you on **Executive MBA programmes at the University of St.Gallen**.  
@@ -76,7 +80,16 @@ ADVISOR_CONTACTS = [
     },
 ]
 
-BASE_BOOKING_PARAMS = "?hide_gdpr_banner=1&embed_type=Inline&embed_domain=1"
+# hide_event_type_details removes Calendly's photo/title/description header —
+# advisor and programme are already on the button the user just clicked.
+# Do NOT set primary_color: ANY custom value (even Calendly's own default
+# blue) switches available days to filled circles with tone-on-tone digits —
+# unreadable. Verified 2026-07-12 via headless-Chrome renders; only the
+# parameterless default (pale chips, dark digits) is legible.
+BASE_BOOKING_PARAMS = (
+    "?hide_gdpr_banner=1&embed_type=Inline"
+    "&embed_domain=chatbot.emba.unisg.ch&hide_event_type_details=1"
+)
 
 EMBA = next(a for a in ADVISOR_CONTACTS if a["program"] == "emba")
 IEMBA = next(a for a in ADVISOR_CONTACTS if a["program"] == "iemba")
@@ -88,34 +101,34 @@ EMBAX_URL = EMBAX["url"] + BASE_BOOKING_PARAMS
 
 BOOKING_WIDGET_HTML = {
     "en": f"""
-<div style="width:100%; box-sizing:border-box; background:#1f2937; border:1px solid #374151; border-radius:12px; padding:16px; margin-top:12px; font-family:sans-serif;">
+<div style="width:100%; box-sizing:border-box; background:#f8f8f8; border:1px solid #d8d8d8; border-radius:8px; padding:12px; margin-top:10px; font-family:sans-serif;">
     <details>
-        <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#f9fafb;">
+        <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#404040;">
             {BOOK_TEXT["en"]}
         </summary>
-        <p style="color:#d1d5db; margin:12px 0 16px 0;">Choose an advisor:</p>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
-            <button onclick="document.getElementById('booking-frame-en').src='{EMBA_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:10px 16px; border:none; border-radius:8px; background:#2563eb; color:white; font-weight:600;">{EMBA["name"]}</button>
-            <button onclick="document.getElementById('booking-frame-en').src='{IEMBA_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:10px 16px; border:none; border-radius:8px; background:#2563eb; color:white; font-weight:600;">{IEMBA["name"]}</button>
-            <button onclick="document.getElementById('booking-frame-en').src='{EMBAX_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:10px 16px; border:none; border-radius:8px; background:#2563eb; color:white; font-weight:600;">{EMBAX["name"]}</button>
+        <p style="color:#666666; margin:10px 0 12px 0;">Choose an advisor:</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            <button onclick="document.getElementById('booking-frame-en').src='{EMBA_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{EMBA["name"]}</button>
+            <button onclick="document.getElementById('booking-frame-en').src='{IEMBA_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{IEMBA["name"]}</button>
+            <button onclick="document.getElementById('booking-frame-en').src='{EMBAX_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{EMBAX["name"]}</button>
         </div>
-        <iframe id="booking-frame-en" src="" width="100%" height="650" frameborder="0" style="display:none; width:100%; border:none; border-radius:10px; background:white;"></iframe>
+        <iframe id="booking-frame-en" src="" width="100%" height="520" frameborder="0" style="display:none; width:100%; border:none; border-radius:6px; background:white;"></iframe>
     </details>
 </div>
 """,
     "de": f"""
-<div style="width:100%; box-sizing:border-box; background:#1f2937; border:1px solid #374151; border-radius:12px; padding:16px; margin-top:12px; font-family:sans-serif;">
+<div style="width:100%; box-sizing:border-box; background:#f8f8f8; border:1px solid #d8d8d8; border-radius:8px; padding:12px; margin-top:10px; font-family:sans-serif;">
     <details>
-        <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#f9fafb;">
+        <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#404040;">
             {BOOK_TEXT["de"]}
         </summary>
-        <p style="color:#d1d5db; margin:12px 0 16px 0;">Wählen Sie einen Berater:</p>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
-            <button onclick="document.getElementById('booking-frame-de').src='{EMBA_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:10px 16px; border:none; border-radius:8px; background:#2563eb; color:white; font-weight:600;">{EMBA["name"]}</button>
-            <button onclick="document.getElementById('booking-frame-de').src='{IEMBA_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:10px 16px; border:none; border-radius:8px; background:#2563eb; color:white; font-weight:600;">{IEMBA["name"]}</button>
-            <button onclick="document.getElementById('booking-frame-de').src='{EMBAX_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:10px 16px; border:none; border-radius:8px; background:#2563eb; color:white; font-weight:600;">{EMBAX["name"]}</button>
+        <p style="color:#666666; margin:10px 0 12px 0;">Wählen Sie einen Berater:</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            <button onclick="document.getElementById('booking-frame-de').src='{EMBA_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{EMBA["name"]}</button>
+            <button onclick="document.getElementById('booking-frame-de').src='{IEMBA_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{IEMBA["name"]}</button>
+            <button onclick="document.getElementById('booking-frame-de').src='{EMBAX_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{EMBAX["name"]}</button>
         </div>
-        <iframe id="booking-frame-de" src="" width="100%" height="650" frameborder="0" style="display:none; width:100%; border:none; border-radius:10px; background:white;"></iframe>
+        <iframe id="booking-frame-de" src="" width="100%" height="520" frameborder="0" style="display:none; width:100%; border:none; border-radius:6px; background:white;"></iframe>
     </details>
 </div>
 """,

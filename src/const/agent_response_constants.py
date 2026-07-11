@@ -217,11 +217,11 @@ def get_disclaimer_widget(language: str = "en"):
 
     content = disclaimers.get(language, disclaimers["en"])
 
-    # Yellow styling constants
-    bg_color = "#fffbeb"  # Light yellow
-    border_color = "#f59e0b"  # Amber/Yellow border
-    icon_color = "#d97706"  # Darker amber for the icon
-    text_color = "#92400e"  # Dark brown/yellow for readability
+    # HSG green styling (matches the Gradio primary hue / emba.unisg.ch CI)
+    bg_color = "#e6f3ec"  # Light green surface
+    border_color = "#99cfb3"  # Soft green border
+    icon_color = "#008435"  # HSG brand green for the icon
+    text_color = "#005c25"  # Dark green for readability
 
     html_content = f"""
     <div style="display: flex; align-items: flex-start; background-color: {bg_color}; border: 1px solid {border_color}; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-family: sans-serif;">

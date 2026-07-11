@@ -54,7 +54,22 @@ class ChatbotApplication:
     def __init__(self, language: str = "de") -> None:
         self._fastapi_app = init_fastapi_app(language) 
         self._gradio_app  = gr.Blocks()
-        self._app         = gr.mount_gradio_app(self._fastapi_app, self._gradio_app,  path='/')
+        # HSG green from emba.unisg.ch (c500 = brand #008435, c600 = hover
+        # #00702d); used as Gradio primary hue so buttons match the site CI.
+        hsg_green = gr.themes.Color(
+            c50="#e6f3ec", c100="#cce7d9", c200="#99cfb3", c300="#66b78d",
+            c400="#339f67", c500="#008435", c600="#00702d", c700="#005c25",
+            c800="#00481d", c900="#003415", c950="#002a11", name="hsg-green",
+        )
+        # Cap content width so the bot stays readable when embedded full-width
+        # (Gradio's own container grows up to ~1920px otherwise). At this width
+        # Calendly renders its compact phone layout, which works well since the
+        # event-details header is hidden (see BASE_BOOKING_PARAMS).
+        self._app         = gr.mount_gradio_app(
+            self._fastapi_app, self._gradio_app, path='/',
+            theme=gr.themes.Default(primary_hue=hsg_green),
+            css=".app { max-width: 640px !important; margin: 0 auto; }",
+        )
         self._language = language
         self._consentLogger = ConsentLogger()
         
@@ -354,20 +369,20 @@ class ChatbotApplication:
                 <details style="
                     margin-top:10px;
                     padding:12px;
-                    border:1px solid #374151;
+                    border:1px solid #d8d8d8;
                     border-radius:8px;
-                    background:#1f2937;
-                    color:#f9fafb;
+                    background:#f8f8f8;
+                    color:#404040;
                 ">
                     <summary style="
                         cursor:pointer;
                         font-weight:600;
-                        color:#93c5fd;
+                        color:#008435;
                         list-style:none;
                     ">{details_label}</summary>
                     <div style="
                         margin-top:8px;
-                        color:#e5e7eb;
+                        color:#404040;
                         line-height:1.6;
                     ">{formatted_details}</div>
                 </details>
