@@ -1,8 +1,15 @@
 chatbot.emba.unisg.ch {
-    # --- PILOT PHASE: IP allowlist (inactive draft — uncomment to activate) ---
-    # Blocks all requests except /health for clients outside the allowlist.
-    # /health MUST stay public: deploy.yml verifies it from GitHub runners,
-    # and blocking it would fail every deployment's verification step.
+    # --- PILOT PHASE (until 2026-08-31): IP allowlist (inactive draft) -------
+    # Uncomment to activate. Blocks all requests except /health for clients
+    # outside the allowlist. /health MUST stay public: deploy.yml verifies it
+    # from GitHub runners, and blocking it would fail every deployment's
+    # verification step.
+    #
+    # NOTE for the embed demo: the bot is iframed into a page on
+    # emba.unisg.ch (see CSP frame-ancestors below). The iframe request comes
+    # from the VISITOR's IP, not the web server's — so everyone who should see
+    # the embedded demo (web team, advisors, DSB, supervisors) needs their
+    # network in this list.
     #
     # TODO: insert the allowed addresses on the remote_ip line, space-separated.
     # Accepted formats (mix freely):
@@ -16,7 +23,7 @@ chatbot.emba.unisg.ch {
     #     not remote_ip <IP-OR-CIDR> <IP-OR-CIDR>
     #     not path /health
     # }
-    # respond @blocked "Zugriff nur während der Pilotphase für registrierte Teilnehmende. / Access restricted during the pilot phase." 403
+    # respond @blocked "Zugriff während der Pilotphase (bis 31.08.2026) nur für registrierte Teilnehmende. / Access restricted to registered participants during the pilot phase (until 31 August 2026)." 403
     #
     # Removal after go-live: see .claude/skills/hsg-rag-run-and-operate
     # ("Pilot-phase IP allowlist"). Short version: delete this whole block

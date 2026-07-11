@@ -160,11 +160,16 @@ iframe on a domain not listed there is silently blocked by browsers.
 ### 5a. Pilot-phase IP allowlist (activation and removal)
 
 `deploy/Caddyfile` contains a commented-out `@blocked` matcher block that
-restricts the bot to an IP allowlist during the pilot phase (added July 2026,
-inactive by default). It blocks everything **except `/health`** — that path
-must stay public because `deploy.yml` verifies
+restricts the bot to an IP allowlist during the pilot phase (runs until
+2026-08-31; block added July 2026, inactive by default). It blocks everything
+**except `/health`** — that path must stay public because `deploy.yml` verifies
 `https://chatbot.emba.unisg.ch/health` from GitHub runners; blocking it fails
 every subsequent deploy.
+
+The allowlist applies to the **embedded** bot too: the iframe on
+emba.unisg.ch is fetched by the visitor's browser, so it is the visitor's IP
+that must be allowlisted — everyone who should see the embed demo (web team,
+advisors, DSB, supervisors) needs their network in the list.
 
 **Activate for the pilot:**
 
