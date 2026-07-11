@@ -114,8 +114,15 @@ Three preconditions — if any is violated the frame stays blank:
    not a bug. Testing must happen on the real domain.
 2. **No `sandbox` attribute** on the iframe. The bot loads a nested Calendly
    iframe for booking and needs JavaScript; sandbox breaks both.
-3. **Height ≥ 650 px (recommend 800 px).** Consent screen + chat + a ~650 px
-   booking widget unfold inside the frame; scrolling happens inside it.
+3. **Height ≥ 650 px (recommend 800 px).** Consent screen + chat + a ~630 px
+   expanded booking widget (520 px Calendly iframe, PR #76) unfold inside the
+   frame; scrolling happens inside it.
+
+Width needs no precondition since PR #76 (2026-07-12): the bot caps itself at
+**640 px content width and centers** inside whatever container it gets
+(`mount_gradio_app(css=...)`, `src/apps/chat/app.py`). `width:100%` in any
+content column is safe — cite this when a web team worries about the bot
+"looking too wide" or ballooning on wide pages.
 
 Functional test script to include (they can self-verify):
 1. Load the page (also once in a private window).
