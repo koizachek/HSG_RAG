@@ -202,6 +202,17 @@ description: The chronicle of every major HSG_RAG failure, dead end, rejected fi
 
 ---
 
+## 16a. Calendly `primary_color` theming — tried, empirically dead (2026-07-12)
+
+| | |
+|---|---|
+| **Symptom** | (Experiment, not incident.) Attempt to brand the booking calendar HSG-green via Calendly's `primary_color` embed param. Available days rendered as green filled circles with green digits — unreadable. |
+| **Root cause of retirement** | Calendly derives ALL accents (day-chip fill, digit, month arrows, slot buttons) as tone-on-tone variants of the one `primary_color`; there is no separate text color for day chips, and CSS injection into their cross-origin iframe is impossible. Setting ANY custom value — including Calendly's own default blue `0069ff` as control — switches available days from the legible default (pale chip, dark digit) to filled circles with tone-on-tone digits. |
+| **Evidence** | Six headless-Chrome renders of the live booking page (2026-07-12): `008435`, `00702d`, `003415`, `99cfb3`, `cce7d9`, `0069ff`, plus parameterless default. Only the default is readable. Documented in the code comment at `BASE_BOOKING_PARAMS` (`src/const/data_consent_constants.py`). |
+| **Status** | **retired** — do not re-add `primary_color` (any value). If a green calendar is ever wanted: account-level branding in the advisors' Calendly accounts renders through a different path (`custom_theme_allowed` in their bundle) — that is a stakeholder request (`hsg-rag-stakeholder-comms`), not an embed param. |
+
+---
+
 ## 17. Dead and dormant branches — what's in them, why they stalled
 
 61 branches exist; these are the notable unmerged ones (checked with `git merge-base --is-ancestor <b> main`, 2026-07-07):

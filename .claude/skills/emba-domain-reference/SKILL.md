@@ -155,8 +155,11 @@ the measurement caveat.
 
 - The widget is Gradio HTML (`BOOKING_WIDGET_HTML` in
   `src/const/data_consent_constants.py`): a collapsible section with one button
-  per advisor that loads their **Calendly inline embed** in a nested iframe,
-  with params `?hide_gdpr_banner=1&embed_type=Inline&embed_domain=1`.
+  per advisor that loads their **Calendly inline embed** in a nested 520 px
+  iframe, with params `?hide_gdpr_banner=1&embed_type=Inline&embed_domain=chatbot.emba.unisg.ch&hide_event_type_details=1`
+  (as of PR #76, 2026-07-12). Do NOT add `primary_color` — any custom value
+  makes Calendly's available days unreadable; see
+  `hsg-rag-failure-archaeology` ("Calendly primary_color theming").
 - Advisors (also in `programmes.<key>.advisor` and `ADVISOR_CONTACTS`):
 
 | Programme | Advisor | Email | Phone | Calendly (as of 2026-07-07) |

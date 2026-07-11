@@ -6,6 +6,12 @@ and the sign-off (sign with the maintainer's name, never as an AI). If the
 snippet or the allowed embedding domains change, update `deploy/Caddyfile`
 first (via `hsg-rag-change-control`) and mirror the change here in the same PR.
 
+Update 2026-07-12 (PR #76): the snippet and minimum height below are still
+correct, but the bot now caps itself at 640 px content width (centered) and
+the booking widget is ~630 px expanded (520 px Calendly iframe). When a web
+team raises width concerns, say the bot self-limits — `width:100%` is safe in
+any content column.
+
 The full e-mail text (verbatim):
 
 ```text
