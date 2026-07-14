@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-13",
+  "generated_at": "2026-07-14",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -72,8 +72,8 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland, Diplomarbeit",
-        "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, thesis"
+        "de": "10 Pflichtkurse, 4 Wahlkurse, 4 Wochen im Ausland",
+        "en": "10 core courses, including 4 weeks abroad, + 4 electives"
       },
       "locations": {
         "de": "Schweiz (St.Gallen), China, USA, Japan, Spanien, Südafrika, Italien",
@@ -119,8 +119,8 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "13 Essential Kurse, 13 Wochen am Campus, 2 Tage Online, 2 Impact-Projekte",
-        "en": "13 essential courses, 13 weeks on campus, 2 days online, 2 impact projects"
+        "de": "Blended: Präsenz in Zürich und St.Gallen (Schweiz) und Online, 56 Tage am Campus, 2 Tage Online",
+        "en": "Blended: In-person in Zurich and St.Gallen (Switzerland) and Online, 56 days on campus, 2 days online"
       },
       "locations": {
         "de": "Zürich, St. Gallen, Online",
