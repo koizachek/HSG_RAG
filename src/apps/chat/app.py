@@ -65,10 +65,24 @@ class ChatbotApplication:
         # (Gradio's own container grows up to ~1920px otherwise). At this width
         # Calendly renders its compact phone layout, which works well since the
         # event-details header is hidden (see BASE_BOOKING_PARAMS).
+        # The chatbot toolbar (trash) and per-message buttons (retry/undo) hang
+        # on events ChatInterface always registers, so they can only be hidden
+        # via CSS, not via component parameters.
         self._app         = gr.mount_gradio_app(
             self._fastapi_app, self._gradio_app, path='/',
-            theme=gr.themes.Default(primary_hue=hsg_green),
-            css=".app { max-width: 640px !important; margin: 0 auto; }",
+            theme=gr.themes.Default(
+                primary_hue=hsg_green,
+                text_size=gr.themes.sizes.text_sm,
+            ),
+            css=(
+                ".app { max-width: 560px !important; margin: 0 auto; }"
+                " .app h1 { font-size: 1.25rem; }"
+                " .advisor-chat .icon-button-wrapper.top-panel { display: none !important; }"
+                " .advisor-chat .message-buttons-left,"
+                " .advisor-chat .message-buttons-right,"
+                " .advisor-chat .message-buttons { display: none !important; }"
+            ),
+            footer_links=[],
         )
         self._language = language
         self._consentLogger = ConsentLogger()
@@ -84,9 +98,9 @@ class ChatbotApplication:
 
             with gr.Row():
                 lang_selector = gr.Radio(
-                    choices=["Deutsch", "English"],
-                    value="English" if language == "en" else "Deutsch",
-                    label="Selected Language",
+                    choices=["DE", "EN"],
+                    value="EN" if language == "en" else "DE",
+                    show_label=False,
                     interactive=True,
                 )
                 reset_button = gr.Button("Reset Conversation", visible=False)
@@ -107,6 +121,11 @@ class ChatbotApplication:
                     additional_inputs=[agent_state],
                     additional_outputs=[agent_state],
                     title="Executive Education Adviser",
+                    chatbot=gr.Chatbot(
+                        show_label=False,
+                        buttons=[],
+                        elem_classes=["advisor-chat"],
+                    ),
                 )
 
             booking_widget = gr.HTML(
@@ -126,7 +145,7 @@ class ChatbotApplication:
                 ]
 
             def label_to_lang_code(label: str) -> str:
-                return "en" if label == "English" else "de"
+                return "en" if label == "EN" else "de"
 
             # Language change: before consent => only update consent UI text.
             # After consent: keep chat running (or optionally re-init agent on language change).
