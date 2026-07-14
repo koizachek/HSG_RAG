@@ -75,7 +75,7 @@ class ChatbotApplication:
                 text_size=gr.themes.sizes.text_sm,
             ),
             css=(
-                ".app { max-width: 560px !important; margin: 0 auto; }"
+                ".app { max-width: 560px !important; margin: 0 auto; padding: 8px !important; }"
                 " .app h1 { font-size: 1.25rem; }"
                 " .advisor-chat .icon-button-wrapper.top-panel { display: none !important; }"
                 " .advisor-chat .message-buttons-left,"
