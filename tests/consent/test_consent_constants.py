@@ -44,18 +44,26 @@ class TestConsentConstants:
         
         # Required by GDPR Art. 13
         assert "St.Gallen" in notice, "Missing controller name"
-        assert "Gesprächsinhalte" in notice or "Daten" in notice, "Missing data processing info"
+        assert "Chat-Eingaben" in notice or "Daten" in notice, "Missing data processing info"
         assert "widerrufen" in notice, "Missing withdrawal notice"
-        assert "nicht an Dritte" in notice, "Missing third-party disclosure info"
+        # Third-party recipients must be disclosed by name (US transfer is
+        # what the Art. 49 GDPR consent relies on)
+        assert "OpenRouter" in notice, "Missing US LLM provider disclosure"
+        assert "Calendly" in notice, "Missing booking provider disclosure"
+        assert "USA" in notice, "Missing third-country transfer disclosure"
+        assert "30 Tagen" in notice, "Missing retention period"
 
     def test_privacy_notice_en_content(self):
         """English privacy notice contains required elements"""
         notice = PRIVACY_NOTICE["en"]
         
         assert "St.Gallen" in notice, "Missing controller name"
-        assert "conversation" in notice.lower() or "data" in notice.lower(), "Missing data processing info"
+        assert "chat input" in notice.lower() or "data" in notice.lower(), "Missing data processing info"
         assert "withdraw" in notice.lower(), "Missing withdrawal notice"
-        assert "not shared" in notice.lower() or "third" in notice.lower(), "Missing third-party disclosure"
+        assert "OpenRouter" in notice, "Missing US LLM provider disclosure"
+        assert "Calendly" in notice, "Missing booking provider disclosure"
+        assert "USA" in notice, "Missing third-country transfer disclosure"
+        assert "30 days" in notice, "Missing retention period"
 
     def test_privacy_policy_link_valid(self):
         """Privacy policy links must be valid URLs"""
