@@ -78,13 +78,15 @@ Every programme has two application deadlines with two fees in
 Dated example (2026-07-07): EMBA 72'500→77'500 CHF, IEMBA 80'000→85'000 CHF,
 emba X 99'000→110'000 CHF. **Re-read the JSON before asserting any number.**
 
-The load-bearing rule — injected into the system prompt by
-`src/rag/verified_facts.py` (see the prompt block around line 182):
+The load-bearing rule — since `413dd1f` (2026-07-08), `src/rag/verified_facts.py`
+serves the model a **precomputed deadline state** instead of a prose date rule
+(`_deadline_passed`, `_render_programme`; same-day = not passed):
 
-> "For deadline-based tuition, answer with the fee that applies **today**
-> first. Deadlines earlier than today's date have passed; **same-day deadlines
-> have not passed**. Mention an expired lower fee only as expired context when
-> useful, then point to the next applicable deadline and fee."
+- each deadline line is tagged `[EXPIRED]`/`[ABGELAUFEN]` or
+  `[applies today]`/`[gilt heute]`, so the model never does date arithmetic;
+- when the **final** deadline has passed, the block appends `APPLICATIONS
+  CLOSED` / `BEWERBUNG GESCHLOSSEN`: no fee may be presented as currently
+  available; interested users are referred to the advisor for the next cohort.
 
 Implications for engineers:
 
@@ -147,9 +149,11 @@ recommendation). Routine pricing/comparison/fit questions keep both flags
 
 Note: those prompt rules govern the model's RAW flags. The runtime
 post-processes them before the UI sees them (suppression / proactive-offer /
-text-commitment gate, `src/rag/agent_chain.py:833-872`); the per-turn log lines
-at `:773-775` show the pre-gate values — see `hsg-rag-conversion-campaign` for
-the measurement caveat.
+text-commitment gate, `src/rag/agent_chain.py` around `:960-1035`; locate with
+`grep -n "booking_flow_requested" src/rag/agent_chain.py`); the per-turn log
+lines (`Appointment Requested:` / `Show Booking Widget:`, around `:920`) show
+the pre-gate values — see `hsg-rag-conversion-campaign` for the measurement
+caveat.
 
 ### Booking surface
 
@@ -229,12 +233,12 @@ as of 2026-07-07). What an engineer must know:
 - **User profiles** (`logs/user_profiles/*.json`, flag `TRACK_USER_PROFILE`):
   session ID, optionally name, experience/leadership years, field, interests,
   programme interest, language. Deleted after **30 days** by a host cron.
-- **Log masking:** user inputs are redacted in the `agent_chain` logs since
-  2026-07-06 (length only, no wording). **Known open gap:**
-  `src/apps/chat/app.py:285` still logs the first 100 chars of each raw query
-  (see `hsg-rag-architecture-contract` I5) — masking is NOT complete; never
-  claim it is (DSB memo: `hsg-rag-stakeholder-comms` §3). Do not add any new
-  raw-text logging.
+- **Log masking:** user inputs are redacted in application logs (length only,
+  no wording) since 2026-07-06; the last known gap — `src/apps/chat/app.py`
+  logging the first 100 chars of each raw query — was closed in `413dd1f`
+  (2026-07-08). Masking is complete as of that commit (see
+  `hsg-rag-architecture-contract` I5 for the re-verify command). Do not add
+  any new raw-text logging.
 - **Third parties:** OpenRouter (**US** — user messages are sent there for LLM
   processing; conscious-decision documentation still open), Weaviate Cloud
   (EU; only search queries, no profiles), LangSmith (disabled in production),
@@ -258,8 +262,8 @@ grep -A6 "ADVISOR_CONTACTS" src/const/data_consent_constants.py | head -30
 # Structured-response flag semantics:
 sed -n '/class StructuredAgentResponse/,/^class /p' src/rag/utilclasses.py
 
-# Expired-deadline rule wording:
-grep -n "Deadlines earlier than today" src/rag/verified_facts.py
+# Deadline-state labels (expired / applies today / closed):
+grep -n "applies_today\|APPLICATIONS CLOSED" src/rag/verified_facts.py
 
 # Bare-EMBA ambiguity rule:
 grep -n 'der EMBA' src/rag/prompts.py

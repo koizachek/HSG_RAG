@@ -195,8 +195,9 @@ Logger names are truncated to 17 chars. Key lines to grep for:
 | `is calling tool: retrieve_context` | The turn used retrieval (vs. answered from injected facts) |
 
 GDPR: user input is redacted in `agent_chain.py` logs (`<redacted user input, N
-chars>`), **but** `src/apps/chat/app.py:285` still logs the first 100 chars of
-each query (`Processing user query: ...`). Treat log excerpts as personal data.
+chars>`); the former gap — `src/apps/chat/app.py` logging the first 100 chars of
+each query — was closed in `413dd1f` (2026-07-08), `Processing user query:` now
+goes through `_redact_user_text` too. Do not add new raw-text logging.
 Retention: 30 days (host logrotate).
 
 ## Provenance and maintenance
