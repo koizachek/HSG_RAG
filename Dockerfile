@@ -34,4 +34,4 @@ EXPOSE 7860
 HEALTHCHECK --interval=60s --timeout=10s --retries=3 \
   CMD curl -f http://localhost:7860/health || exit 1
 
-CMD ["python", "main.py", "--app", "de"]
+CMD ["python", "main.py", "--app", "en"]
