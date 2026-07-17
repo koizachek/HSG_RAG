@@ -101,13 +101,13 @@ otherwise scores.
   2026-07-07, fixed in PR #67 — full mechanism and story:
   `hsg-rag-failure-archaeology` #8). Watch for it after any langchain/
   OpenRouter/model change.
-- **I5 — User text in logs must be redacted (rule) — with one known open
-  gap.** The rule: every log statement touching user text goes through
-  `_redact_user_text` (src/rag/agent_chain.py:43); never add new raw-text
-  logging. The gap: `src/apps/chat/app.py:285` still logs the first 100 chars
-  of each raw user query (`Processing user query: ...`). Until that line is
-  fixed, treat `logs.log` as personal data, and any GDPR statement to the DSB
-  must disclose this gap instead of claiming complete masking (see
+- **I5 — User text in logs must be redacted.** Every log statement touching
+  user text goes through `_redact_user_text` (src/rag/agent_chain.py:43);
+  never add new raw-text logging. The last known gap — `src/apps/chat/app.py`
+  logging the first 100 chars of each raw query — was closed in `413dd1f`
+  (2026-07-08); `Processing user query:` is redacted too. Masking is complete
+  as of that commit; re-verify with
+  `grep -rn "message\[:" src/` before repeating that claim to the DSB (see
   `hsg-rag-stakeholder-comms` §3, `hsg-rag-run-and-operate` §7).
 - **I6 — Empty retrieval is explicit.** `retrieve_context` returns
   `NO_CONTEXT_FOUND: ...` sentinel text, never an empty string

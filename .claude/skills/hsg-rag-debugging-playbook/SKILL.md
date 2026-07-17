@@ -31,9 +31,11 @@ grep "\[timing\]" logs/logs.log | tail -20          # per-turn latency
 
 Log line anatomy: `(YYYY.MM.DD HH:MM:SS) <logger> LEVEL: message`. Loggers you
 will grep for: `agent_chain`, `chain_model_call`, `chain_tool_call`,
-`weaviate_service`, `chatbot_app`. User queries appear truncated to 100 chars at
-INFO (`Processing user query: ...`); invalid inputs are redacted to
-`<redacted user input, N chars>` (GDPR, commit `7d76603`).
+`weaviate_service`, `chatbot_app`. User queries never appear in the wording:
+all user text is redacted to `<redacted user input, N chars>` (GDPR, commits
+`7d76603` and `413dd1f` — the latter closed the former 100-char
+`Processing user query:` leak, so log wording cannot be used to reproduce a
+user's exact input; work from the `N chars` lengths and timestamps instead).
 
 ## Healthy baselines (measured in production 2026-07-07)
 

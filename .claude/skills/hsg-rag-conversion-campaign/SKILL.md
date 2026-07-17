@@ -61,8 +61,9 @@ first add an unconditional post-gate log line (a code change via
   analysis beyond 30 days is impossible by design; snapshot aggregates weekly.
 - Log/profile content is personal data. Aggregate on the host or locally; never paste
   raw profiles or query text into PRs, issues, or external tools. Report only counts/rates.
-- `chatbot_app` logs the first 100 chars of each user query (src/apps/chat/app.py:285);
-  treat `logs.log` itself as personal data.
+- Query wording no longer appears in logs (`chatbot_app`'s 100-char leak was
+  closed in `413dd1f`); still treat `logs.log` conservatively as personal data
+  when excerpting.
 
 ---
 

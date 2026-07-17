@@ -148,13 +148,12 @@ come from [docs/datenschutz_deployment.md](../../../docs/datenschutz_deployment.
 What already exists (verified in repo):
 - Consent gate before any chat (`src/apps/chat/app.py`; decline path points
   users to `emba@unisg.ch`).
-- User inputs redacted in the `agent_chain` log lines (only lengths logged;
-  `_redact_user_text`, `src/rag/agent_chain.py`). **KNOWN OPEN GAP — do not
-  present masking as complete:** `src/apps/chat/app.py:285` still logs the
-  first 100 characters of each raw user query. Before sign-off this must be
-  either fixed in code or explicitly disclosed to the DSB; a memo claiming
-  "only lengths logged" would be false. (Same gap documented in
-  `hsg-rag-architecture-contract` invariant I5 and `hsg-rag-run-and-operate` §7.)
+- User inputs redacted in application logs (only lengths logged;
+  `_redact_user_text`, `src/rag/agent_chain.py`). The formerly documented gap
+  — `src/apps/chat/app.py` logging the first 100 characters of each raw query
+  — was closed in `413dd1f` (2026-07-08). A memo stating "only lengths logged"
+  is accurate as of that commit; re-verify against the code before sending
+  (see `hsg-rag-architecture-contract` invariant I5).
 - User profiles (`logs/user_profiles/`) deleted after 30 days (host cron);
   logs rotate after 30 days; Hetzner backups rotate after 7 days.
 - Active deletion path `wipe_session_data` (`src/rag/agent_chain.py:467`).
