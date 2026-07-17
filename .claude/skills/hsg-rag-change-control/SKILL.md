@@ -66,6 +66,12 @@ result. A bad merge can reach production before the smoke run fails. That is
 why the pre-merge gates above are the real protection; the smoke run is
 detection, not prevention.
 
+Besides the gates, three **scheduled non-gate workflows** exist (details:
+`hsg-rag-run-and-operate`): `update_programme_facts.yml` (daily 06:23 UTC),
+`scrape.yml` (weekly), and `usage-report.yml` (Mondays 05:17 UTC, since PR #74
+— builds the anonymous weekly report on the prod host and commits only the
+aggregate markdown to `docs/usage-reports/`; docs-only, so no redeploy).
+
 ## Non-negotiables, with the incident behind each
 
 These are maintainer policy (also stated in `AGENTS.md`). Do not route around
