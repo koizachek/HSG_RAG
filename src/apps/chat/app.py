@@ -186,7 +186,7 @@ class ChatbotApplication:
             def on_accept(lang: str, session_id: str):
                 session_id = session_id or str(uuid.uuid4())  # fallback if load event did not fire
                 agent, greeting = initialize_agent(lang, session_id=session_id)
-                self._consentLogger.log(session_id, "accepted", policy_version="1.0")
+                self._consentLogger.log(session_id, "accepted", policy_version="1.1")
                 self._language = lang
                 return (
                     gr.update(visible=False),        # consent_screen hide
@@ -203,7 +203,7 @@ class ChatbotApplication:
             def on_decline(lang: str, session_id: str):
                 session_id = session_id or str(uuid.uuid4())  # fallback if load event did not fire
                 self._language = lang
-                self._consentLogger.log(session_id, "declined", policy_version="1.0")
+                self._consentLogger.log(session_id, "declined", policy_version="1.1")
                 return (
                     gr.update(visible=True),   # consent_screen stays
                     gr.update(visible=False),  # chat_screen stays hidden

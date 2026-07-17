@@ -1,38 +1,38 @@
+# Consent short text v1.1 (2026-07-17). Full consent statement lives on the
+# linked subpage; the German version is authoritative.
 PRIVACY_NOTICE = {
     "de": """
-**Pilotphase bis 31.08.26**
+**Pilotphase bis 31.08.2026**
 
-### Datenschutzhinweis
+### Einwilligung zur Datenverarbeitung
 
-Wir verwenden Ihre Angaben, um Sie zu **Executive MBA Programmen der Universität St.Gallen** zu beraten.  
-Dabei verarbeiten wir insbesondere:
+Dieser Chatbot berät Sie zu den **Executive-MBA-Programmen der Universität St.Gallen**. Wenn Sie zustimmen, verarbeiten wir:
 
-- Ihre Gesprächsinhalte und Anfragen  
-- Kontaktdaten (Name, E-Mail) bei Terminbuchung  
-- Informationen zu Ihrer Berufserfahrung und Ausbildung  
+- Ihre **Chat-Eingaben** — sie werden zur Antworterzeugung an einen KI-Dienstleister in den **USA** (OpenRouter) übermittelt und bei uns nicht im Wortlaut gespeichert
+- ein **Beratungsprofil** aus Ihren Angaben (z. B. Berufserfahrung, Interessen) — Speicherung in Deutschland, Löschung nach **30 Tagen**
+- bei Terminbuchung: Name und E-Mail direkt beim Buchungsdienst **Calendly** (USA)
 
-Ihre Daten werden **ausschließlich für die Studienberatung** verwendet und **nicht an Dritte weitergegeben**.  
-Sie können Ihre Einwilligung **jederzeit widerrufen**, indem Sie uns kontaktieren.
+Ihre Daten dienen ausschliesslich der Studienberatung — kein Tracking, keine Werbung, kein KI-Training.
+Die Einwilligung ist freiwillig; Sie können sie **jederzeit widerrufen** (emba@unisg.ch). Bitte geben Sie keine sensiblen Daten ein.
 
-[Weitere Informationen zur Datenschutzerklärung](https://www.unisg.ch/en/data-protection-declaration/)
+[Vollständige Einwilligungserklärung und Ihre Rechte](https://emba.unisg.ch/chatbot-test-consent-de)
 """,
 
     "en": """
 **Pilot phase until 31 August 2026**
 
-### Privacy Notice
+### Consent to data processing
 
-We use your information to advise you on **Executive MBA programmes at the University of St.Gallen**.  
-We process in particular:
+This chatbot advises you on the **Executive MBA programmes at the University of St.Gallen**. If you accept, we process:
 
-- Your conversation content and inquiries  
-- Contact details (name, email) for appointment booking  
-- Information about your professional experience and education  
+- your **chat input** — transmitted to an AI service provider in the **USA** (OpenRouter) to generate answers; we do not store its wording
+- an **advisory profile** derived from your input (e.g. professional experience, interests) — stored in Germany, deleted after **30 days**
+- if you book an appointment: name and email directly with the booking service **Calendly** (USA)
 
-Your data is used **solely for study advisory purposes** and **is not shared with third parties**.  
-You may **withdraw your consent at any time** by contacting us.
+Your data is used solely for study advisory purposes — no tracking, no advertising, no AI training.
+Consent is voluntary and can be **withdrawn at any time** (emba@unisg.ch). Please do not enter sensitive personal data.
 
-[More information in the Privacy Policy](https://www.unisg.ch/en/data-protection-declaration/)
+[Full consent statement and your rights](https://emba.unisg.ch/chatbot-test-consent-en)
 """
 }
 
