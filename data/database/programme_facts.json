@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-22",
+  "generated_at": "2026-07-24",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -72,7 +72,7 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "10 Pflichtkurse, 4 Wahlkurse, 4 Wochen im Ausland",
+        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland, Diplomarbeit",
         "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, thesis"
       },
       "locations": {

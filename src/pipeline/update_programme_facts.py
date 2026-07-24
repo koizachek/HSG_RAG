@@ -554,24 +554,41 @@ def _extract_structure_from_programme_page(text: str) -> BilingualText | None:
     return BilingualText(de=", ".join(de_parts), en=", ".join(en_parts))
 
 
-def apply_deterministic_source_facts(extracted: AllProgrammesSchema, pages: dict[str, str]) -> AllProgrammesSchema:
-    """Override LLM prose where the official page exposes a structured fact block."""
+def apply_deterministic_source_facts(
+    extracted: AllProgrammesSchema, pages: dict[str, str]
+) -> tuple[AllProgrammesSchema, set[str]]:
+    """Override LLM prose where the official page exposes a structured fact block.
+
+    Returns the schema plus the set of '<programme>.<fact>' keys that were
+    deterministically parsed, so downstream comparison can distinguish
+    table-parsed values from LLM prose.
+    """
     source_keys_by_programme = {
         'emba': ['emba'],
         'iemba': ['iemba', 'iemba_es'],
     }
+    deterministic_facts: set[str] = set()
     for programme_key, source_keys in source_keys_by_programme.items():
         for source_key in source_keys:
             locations = _extract_locations_from_programme_page(pages.get(source_key, ''))
             if locations:
                 getattr(extracted, programme_key).locations = locations
+                deterministic_facts.add(f'{programme_key}.locations')
                 break
         for source_key in source_keys:
             structure = _extract_structure_from_programme_page(pages.get(source_key, ''))
             if structure:
                 getattr(extracted, programme_key).structure = structure
+                deterministic_facts.add(f'{programme_key}.structure')
                 break
-    return extracted
+        if f'{programme_key}.structure' not in deterministic_facts:
+            logger.warning(
+                "Deterministic structure parse found no attendance table for %s "
+                "(page chars: %s); falling back to the LLM structure value.",
+                programme_key,
+                {key: len(pages.get(key) or '') for key in source_keys},
+            )
+    return extracted, deterministic_facts
 
 
 def to_facts_document(extracted: AllProgrammesSchema) -> dict:
@@ -776,6 +793,7 @@ def _deterministic_fact_comparison(
     fact_key: str,
     existing_value,
     observed_value,
+    observed_is_deterministic: bool = False,
 ) -> FactComparisonDecision | None:
     if existing_value == observed_value:
         return _comparison_decision(False, 1.0, "Values are identical.", existing_value, True)
@@ -812,6 +830,30 @@ def _deterministic_fact_comparison(
             existing_value,
             True,
         )
+
+    if fact_key.endswith(('structure.de', 'structure.en')) and not observed_is_deterministic:
+        lost_components = (
+            _structure_component_signature(existing_value)
+            - _structure_component_signature(observed_value)
+        )
+        gained_components = (
+            _structure_component_signature(observed_value)
+            - _structure_component_signature(existing_value)
+        )
+        if lost_components and not gained_components:
+            # The June/July 2026 incident: the LLM extraction sees the
+            # attendance table only as fragmented text and intermittently drops
+            # components (e.g. the on-campus weeks). Only the deterministic
+            # table parse may remove components from a stored structure value.
+            return _comparison_decision(
+                False,
+                0.95,
+                "LLM structure re-extraction lost components "
+                f"({', '.join(sorted(lost_components))}) without adding any; "
+                "a lossy re-read is not evidence the programme changed.",
+                existing_value,
+                True,
+            )
 
     old_numbers = _number_signature(existing_value)
     new_numbers = _number_signature(observed_value)
@@ -875,6 +917,17 @@ def _is_non_material_text_change(key: str, old_value, new_value) -> bool:
     if not _is_descriptive_fact(key):
         return False
 
+    if key.endswith(('structure.de', 'structure.en')):
+        # Structure values are component lists, not prose. A wording superset
+        # that adds components or numbers (e.g. on-campus weeks reappearing
+        # after a lossy extraction) is a real change, not verbose drift —
+        # otherwise a degraded stored value can never heal, because every
+        # correct re-read looks like "added explanatory detail".
+        if _structure_component_signature(old_value) != _structure_component_signature(new_value):
+            return False
+        if _number_signature(old_value) != _number_signature(new_value):
+            return False
+
     old_tokens = _meaningful_tokens(old_value)
     new_tokens = _meaningful_tokens(new_value)
     if old_tokens and old_tokens.issubset(new_tokens):
@@ -933,12 +986,15 @@ def evaluate_fact_against_existing(
     source_info: str,
     language: str = '',
     observed_value=None,
+    observed_is_deterministic: bool = False,
 ) -> FactComparisonDecision:
     """Decide whether an extracted value is a material change from storage."""
     if observed_value is None:
         observed_value = page_content
 
-    deterministic = _deterministic_fact_comparison(fact_key, existing_value, observed_value)
+    deterministic = _deterministic_fact_comparison(
+        fact_key, existing_value, observed_value, observed_is_deterministic
+    )
     if deterministic is not None:
         return deterministic
 
@@ -981,10 +1037,12 @@ def preserve_materially_unchanged_extractions(
     old: dict,
     new: dict,
     pages: dict[str, str] | None = None,
+    deterministic_facts: set[str] | None = None,
 ) -> dict:
     """Compare extracted facts against stored facts before final diffing."""
     old_programmes = (old or {}).get('programmes', {})
     pages = pages or {}
+    deterministic_facts = deterministic_facts or set()
     for prog_key, new_prog in new.get('programmes', {}).items():
         old_prog = old_programmes.get(prog_key, {})
         old_flat, new_flat = _flat_facts(old_prog), _flat_facts(new_prog)
@@ -1008,6 +1066,9 @@ def preserve_materially_unchanged_extractions(
                 fact_key=full_key,
                 source_info=source_info,
                 language='de' if key.endswith('.de') else 'en' if key.endswith('.en') else '',
+                observed_is_deterministic=(
+                    f"{prog_key}.{key.rsplit('.', 1)[0]}" in deterministic_facts
+                ),
             )
             if decision.preserve_existing or not decision.materially_changed:
                 logger.info(
@@ -1084,11 +1145,13 @@ def main() -> int:
         return 1
 
     extracted = apply_deterministic_fallbacks(extracted, pages)
-    extracted = apply_deterministic_source_facts(extracted, pages)
+    extracted, deterministic_facts = apply_deterministic_source_facts(extracted, pages)
     new_facts = to_facts_document(extracted)
 
     if old_facts:
-        new_facts = preserve_materially_unchanged_extractions(old_facts, new_facts, pages)
+        new_facts = preserve_materially_unchanged_extractions(
+            old_facts, new_facts, pages, deterministic_facts=deterministic_facts
+        )
         new_facts = preserve_non_material_changes(old_facts, new_facts)
 
     changes = diff_facts(old_facts, new_facts)
