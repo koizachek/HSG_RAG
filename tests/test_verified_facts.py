@@ -389,6 +389,92 @@ class TestFactExtractionFallbacks:
         assert diff_facts(old, stabilized) == []
         assert stabilized["programmes"]["emba"]["structure"] == old["programmes"]["emba"]["structure"]
 
+    def test_llm_structure_extraction_losing_components_is_preserved(self):
+        # Regression guard for the 2026-07-14 incident: the nightly CI run
+        # replaced the stored IEMBA structure with an LLM re-extraction that
+        # had silently dropped the on-campus weeks and the thesis.
+        from src.pipeline.update_programme_facts import (
+            preserve_materially_unchanged_extractions,
+        )
+
+        old = {
+            "programmes": {
+                "iemba": {
+                    "structure": {
+                        "de": (
+                            "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, "
+                            "4 Wochen im Ausland, Diplomarbeit"
+                        ),
+                        "en": (
+                            "10 core courses, 4 electives, 10 weeks on campus, "
+                            "4 weeks abroad, thesis"
+                        ),
+                    }
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "iemba": {
+                    "structure": {
+                        "de": "10 Pflichtkurse, 4 Wahlkurse, 4 Wochen im Ausland",
+                        "en": "10 core courses, including 4 weeks abroad, + 4 electives",
+                    }
+                }
+            }
+        }
+
+        stabilized = preserve_materially_unchanged_extractions(
+            old,
+            new,
+            pages={"iemba": "usable page text"},
+        )
+
+        assert stabilized["programmes"]["iemba"]["structure"] == old["programmes"]["iemba"]["structure"]
+
+    def test_deterministically_parsed_structure_change_is_accepted(self):
+        # When the value comes from the parsed attendance table (not LLM
+        # prose), a component removal reflects the official page and must win.
+        from src.pipeline.update_programme_facts import (
+            preserve_materially_unchanged_extractions,
+        )
+
+        old = {
+            "programmes": {
+                "iemba": {
+                    "structure": {
+                        "de": (
+                            "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, "
+                            "4 Wochen im Ausland, Diplomarbeit"
+                        ),
+                        "en": (
+                            "10 core courses, 4 electives, 10 weeks on campus, "
+                            "4 weeks abroad, thesis"
+                        ),
+                    }
+                }
+            }
+        }
+        new = {
+            "programmes": {
+                "iemba": {
+                    "structure": {
+                        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus",
+                        "en": "10 core courses, 4 electives, 10 weeks on campus",
+                    }
+                }
+            }
+        }
+
+        stabilized = preserve_materially_unchanged_extractions(
+            old,
+            new,
+            pages={"iemba": "usable page text"},
+            deterministic_facts={"iemba.structure"},
+        )
+
+        assert stabilized["programmes"]["iemba"]["structure"] == new["programmes"]["iemba"]["structure"]
+
     def test_missing_extraction_does_not_delete_stored_facts(self):
         from src.pipeline.update_programme_facts import (
             diff_facts,
@@ -464,21 +550,27 @@ class TestFactExtractionFallbacks:
         assert decision.materially_changed is True
         assert decision.preserve_existing is False
 
-    @pytest.mark.parametrize("new_structure,expected_fragment", [
+    @pytest.mark.parametrize("new_structure,expected_fragment,deterministic", [
         (
             "9 core courses, 6 electives, 14 weeks on campus, capstone project, self-study",
             "5 electives, 14 weeks on campus",
+            False,
         ),
         (
             "9 core courses, 5 electives, 15 weeks on campus, capstone project, self-study",
             "14 weeks on campus",
+            False,
         ),
+        # A pure component removal is only trusted when it comes from the
+        # parsed attendance table; an LLM re-read dropping a component is
+        # preserved instead (see the lossy-extraction regression tests).
         (
             "9 core courses, 5 electives, 14 weeks on campus, self-study",
             "capstone project",
+            True,
         ),
     ])
-    def test_extraction_comparison_keeps_material_structure_changes(self, new_structure, expected_fragment):
+    def test_extraction_comparison_keeps_material_structure_changes(self, new_structure, expected_fragment, deterministic):
         from src.pipeline.update_programme_facts import (
             diff_facts,
             preserve_materially_unchanged_extractions,
@@ -505,6 +597,7 @@ class TestFactExtractionFallbacks:
             old,
             new,
             pages={"emba": new_structure},
+            deterministic_facts={"emba.structure"} if deterministic else set(),
         )
         changes = diff_facts(old, stabilized)
 
@@ -770,7 +863,7 @@ class TestFactExtractionFallbacks:
             """ + IEMBA_STRUCTURE_PAGE_HTML,
         }
 
-        result = apply_deterministic_source_facts(extracted, pages)
+        result, deterministic_facts = apply_deterministic_source_facts(extracted, pages)
 
         assert "Costa Rica (Wahlkurs)" in result.iemba.locations.de
         assert "New York City (elective)" in result.iemba.locations.en
@@ -779,6 +872,8 @@ class TestFactExtractionFallbacks:
             "4 Wochen im Ausland, Diplomarbeit"
         )
         assert result.emba.structure.de == "Struktur"  # no page block -> LLM value kept
+        assert "iemba.structure" in deterministic_facts
+        assert "emba.structure" not in deterministic_facts
 
 
 IEMBA_STRUCTURE_PAGE_HTML = """
