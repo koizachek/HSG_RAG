@@ -35,6 +35,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Push über den Deploy Key statt GITHUB_TOKEN: nur Deploy Keys und
+          # Admin passieren das main-Ruleset (freeze-main-pilot).
+          ssh-key: ${{ secrets.FACTS_DEPLOY_KEY }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
