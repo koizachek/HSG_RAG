@@ -313,6 +313,14 @@ class ChatbotApplication:
                 outputs=[agent_state],
                 queue=False,
             )
+
+        # Gradio's default_concurrency_limit is 1: queued events (chat,
+        # consent, language switch) would run strictly one-at-a-time across
+        # ALL sessions. The pilot requires up to 40 concurrent users.
+        # max_threads must be set BEFORE queue() — queue() snapshots it.
+        self._gradio_app.max_threads = 80
+        self._gradio_app.queue(default_concurrency_limit=40)
+
     @property
     def app(self) -> gr.Blocks:
         """Expose underlying Gradio Blocks for external runners (e.g., HF Spaces)."""
