@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-11",
+  "generated_at": "2026-08-31",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -76,12 +76,12 @@
         "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, thesis"
       },
       "locations": {
-        "de": "Costa Rica (Wahlkurs), Japan (Tokio), New York City (Wahlkurs), Schweiz (St. Gallen), China (Peking), USA (UC Berkeley), USA (UC Irvine), Italien (Wahlkurs), Südafrika (Wahlkurs), Spanien (Wahlkurs)",
-        "en": "Costa Rica (elective), Japan (Tokyo), New York City (elective), Switzerland (St. Gallen), China (Beijing), USA (UC Berkeley), USA (UC Irvine), Italy (elective), South Africa (elective), Spain (elective)"
+        "de": "Schweiz (St.Gallen), China, USA, Japan, Spanien, Südafrika, Italien",
+        "en": "Switzerland (St.Gallen), China, U.S., Japan, Spain, South Africa, Italy"
       },
       "tuition_chf": {
         "first_deadline": {
-          "deadline": "2026-03-31",
+          "deadline": "2025-03-31",
           "fee": 80000
         },
         "final_deadline": {
