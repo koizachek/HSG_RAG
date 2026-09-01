@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-31",
+  "generated_at": "2026-09-01",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -19,7 +19,7 @@
         "de": "Deutsch",
         "en": "German"
       },
-      "programme_start": "2026-09-14",
+      "programme_start": "2027-03-08",
       "duration": {
         "de": "18 Monate (bis max. 48 Monate)",
         "en": "18 months (up to max. 48 months)"
@@ -35,11 +35,11 @@
       },
       "tuition_chf": {
         "first_deadline": {
-          "deadline": "2026-06-29",
+          "deadline": "2026-11-23",
           "fee": 72500
         },
         "final_deadline": {
-          "deadline": "2026-08-10",
+          "deadline": "2027-02-01",
           "fee": 77500
         },
         "note": {
@@ -76,12 +76,12 @@
         "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, thesis"
       },
       "locations": {
-        "de": "Schweiz (St.Gallen), China, USA, Japan, Spanien, Südafrika, Italien",
-        "en": "Switzerland (St.Gallen), China, U.S., Japan, Spain, South Africa, Italy"
+        "de": "Schweiz (St. Gallen), China, USA, Japan, Spanien, Südafrika, Italien, Costa Rica (Wahlkurs), New York City (Wahlkurs), UC Berkeley, UC Irvine",
+        "en": "Switzerland (St. Gallen), China, USA, Japan, Spain, South Africa, Italy, Costa Rica (elective), New York City (elective), UC Berkeley, UC Irvine"
       },
       "tuition_chf": {
         "first_deadline": {
-          "deadline": "2025-03-31",
+          "deadline": "2026-03-31",
           "fee": 80000
         },
         "final_deadline": {
