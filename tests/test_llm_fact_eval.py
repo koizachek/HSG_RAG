@@ -50,6 +50,36 @@ def _start_year(prog: str) -> str:
     return _facts()[prog]["programme_start"][:4]
 
 
+_MONTHS_DE = ["januar", "februar", "märz", "april", "mai", "juni", "juli",
+              "august", "september", "oktober", "november", "dezember"]
+_MONTHS_EN = ["january", "february", "march", "april", "may", "june", "july",
+              "august", "september", "october", "november", "december"]
+
+
+def _start_month(prog: str) -> list[str]:
+    """Accepted spellings of the start month (DE name, EN name, zero-padded
+    number) derived from programme_start, so a cohort moving from September
+    to March does not silently stale the eval."""
+    month = int(_facts()[prog]["programme_start"][5:7])
+    return [_MONTHS_DE[month - 1], _MONTHS_EN[month - 1], f"{month:02d}"]
+
+
+_CLOSED_TOKENS = ["geschlossen", "abgelaufen", "nicht mehr", "vorbei",
+                  "nächste", "closed", "no longer"]
+
+
+def _price_or_closed(prog: str) -> list[str]:
+    """Tokens a price answer must contain for `prog`: one of its fees while a
+    deadline is open, or a closed-cohort phrasing once the final deadline has
+    passed (the bot must not sell a closed cohort's fee as bookable)."""
+    from datetime import date
+
+    final = _facts()[prog]["tuition_chf"]["final_deadline"]
+    if date.fromisoformat(final["deadline"]) < date.today():
+        return _CLOSED_TOKENS
+    return [_fee(prog), _fee(prog, "first_deadline")]
+
+
 def _ects(prog: str) -> str:
     return str(_facts()[prog]["ects_credits"])
 
@@ -101,7 +131,7 @@ def build_cases() -> list[dict]:
              forbid=[emba_fee, iemba_fee]),
         dict(id="de_price_comparison", lang="de",
              query="Vergleiche bitte die Kosten aller drei Programme.",
-             expect_any=[[emba_fee, emba_fee1], [iemba_fee, iemba_fee1], [embax_fee, embax_fee1]],
+             expect_any=[_price_or_closed("emba"), _price_or_closed("iemba"), _price_or_closed("emba_x")],
              forbid=[]),
         dict(id="en_price_deadline_logic", lang="en",
              query="If I apply for the EMBA now, which fee applies?",
@@ -125,15 +155,15 @@ def build_cases() -> list[dict]:
         # ------------------------------ Starts -----------------------------
         dict(id="de_start_emba", lang="de",
              query="Wann startet der nächste EMBA?",
-             expect_any=[[_start_year("emba")], ["september", "09"]],
+             expect_any=[[_start_year("emba")], _start_month("emba")],
              forbid=[]),
         dict(id="de_start_iemba", lang="de",
              query="Wann beginnt der IEMBA?",
-             expect_any=[[_start_year("iemba")], ["august", "08"]],
+             expect_any=[[_start_year("iemba")], _start_month("iemba")],
              forbid=[]),
         dict(id="en_start_embax", lang="en",
              query="When does the next emba X cohort start?",
-             expect_any=[[_start_year("emba_x")], ["february", "02"]],
+             expect_any=[[_start_year("emba_x")], _start_month("emba_x")],
              forbid=[]),
 
         # ----------------------------- Duration ----------------------------
@@ -240,8 +270,7 @@ def _deadline_state_cases(f: dict) -> list[dict]:
 
         if final_passed:
             # Cohort closed: bot must say so, not sell any fee
-            expect = [["geschlossen", "abgelaufen", "nicht mehr", "vorbei",
-                       "nächste", "closed", "no longer"]]
+            expect = [_CLOSED_TOKENS]
         elif first_passed:
             expect = [[str(final["fee"])]]
         else:
