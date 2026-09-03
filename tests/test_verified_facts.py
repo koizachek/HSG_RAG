@@ -554,12 +554,12 @@ class TestFactExtractionFallbacks:
         (
             "9 core courses, 6 electives, 14 weeks on campus, capstone project, self-study",
             "5 electives, 14 weeks on campus",
-            False,
+            True,
         ),
         (
             "9 core courses, 5 electives, 15 weeks on campus, capstone project, self-study",
             "14 weeks on campus",
-            False,
+            True,
         ),
         # A pure component removal is only trusted when it comes from the
         # parsed attendance table; an LLM re-read dropping a component is
@@ -604,6 +604,32 @@ class TestFactExtractionFallbacks:
         assert len(changes) == 1
         assert "emba.structure.en:" in changes[0]
         assert expected_fragment in changes[0]
+
+    @pytest.mark.parametrize("new_structure", [
+        "9 core courses, 6 electives, 14 weeks on campus, capstone project, self-study",
+        "9 core courses, 5 electives, 15 weeks on campus, capstone project, self-study",
+    ])
+    def test_extraction_comparison_preserves_llm_number_changes_for_table_backed_programmes(self, new_structure):
+        # September 2026: the IEMBA page relaunch removed the attendance block,
+        # the deterministic parse found nothing, and the LLM re-read replaced
+        # "10 weeks on campus" with the info sheet's total "14 weeks on campus".
+        # Numeric structure changes for emba/iemba are only trusted when the
+        # page parse produced them (deterministic=True above).
+        from src.pipeline.update_programme_facts import (
+            diff_facts,
+            preserve_materially_unchanged_extractions,
+        )
+
+        old_structure = "9 core courses, 5 electives, 14 weeks on campus, capstone project, self-study"
+        old = {"programmes": {"emba": {"structure": {"en": old_structure}}}}
+        new = {"programmes": {"emba": {"structure": {"en": new_structure}}}}
+
+        stabilized = preserve_materially_unchanged_extractions(
+            old, new, pages={"emba": new_structure}, deterministic_facts=set()
+        )
+
+        assert diff_facts(old, stabilized) == []
+        assert stabilized["programmes"]["emba"]["structure"]["en"] == old_structure
 
     def test_extraction_comparison_keeps_fee_and_deadline_changes(self):
         from src.pipeline.update_programme_facts import (
@@ -992,3 +1018,202 @@ class TestConfigDefaults:
 
     def test_history_cap_active(self):
         assert config.chain.MAX_HISTORY_MESSAGES > 0
+
+
+# Compact replica of the IEMBA 14 programme page (September 2026 relaunch):
+# one div.module per core course with location + duration, div.optional for
+# the electives, the course counts in the intro sentence, no attendance block.
+IEMBA_MODULE_TABLE_HTML = """
+<section id="structure">
+  <div class="description structure">
+    <h2><span>Die Programmstruktur</span></h2>
+    <small> IEMBA 14 &ndash; Start Herbst 2026 </small>
+    <p>Der 18-monatige IEMBA HSG-Studiengang umfasst zehn Pflicht- und vier Wahlkurse.</p>
+  </div>
+  <div class="modules old"><div class="columns">
+    <div class="column"><div class="module m1 c1 st-gallen-schweiz"><h3> Kurs 1 </h3>
+      <small class="location">St. Gallen, Schweiz</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div>
+      <div class="title"><span>Fundamentals of Strategy</span></div></div></div>
+      <div class="optional placeholder"></div></div>
+    <div class="column"><div class="module m2 c1 st-gallen-schweiz"><h3> Kurs 2 </h3>
+      <small class="location">St. Gallen, Schweiz</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div>
+      <div class="title"><span>Start with you</span></div></div></div>
+      <div class="optional"><div class="meta"><span class="label">Wahlkurs</span>
+      <small class="duration">5 Tage</small></div>
+      <div class="choose"> Wählen Sie 5 Kurse aus dem <a class="elective">Angebot an Wahlkursen</a> aus. </div></div></div>
+    <div class="column"><div class="module m3 c1 st-gallen-schweiz"><h3> Kurs 3 </h3>
+      <small class="location">St. Gallen, Schweiz</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div></div></div></div>
+    <div class="column"><div class="module m4 c1 st-gallen-schweiz"><h3> Kurs 4 </h3>
+      <small class="location">St. Gallen, Schweiz</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div></div></div></div>
+    <div class="column"><div class="module m5 c1 st-gallen-schweiz"><h3> Kurs 5 </h3>
+      <small class="location">St. Gallen, Schweiz</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div></div></div>
+      <div class="optional"><div class="meta"><span class="label">Wahlkurs</span>
+      <small class="duration">5 Tage</small></div></div></div>
+    <div class="column"><div class="module m6 c1 japan-2"><h3> Kurs 6 </h3>
+      <small class="location">Tokyo, Japan</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div></div></div></div>
+    <div class="column"><div class="module m7 c1 peking-china"><h3> Kurs 7 </h3>
+      <small class="location">Peking, China</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div></div></div></div>
+    <div class="column"><div class="module m8 c1 uc-berkeley-usa"><h3> Kurs 8 </h3>
+      <small class="location">UC Berkeley, USA</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div></div></div></div>
+    <div class="column"><div class="module m9 c1 uc-irvine-usa"><h3> Kurs 9 </h3>
+      <small class="location">UC Irvine, USA</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div></div></div></div>
+    <div class="column"><div class="module m10 c1 st-gallen-schweiz"><h3> Kurs 10 </h3>
+      <small class="location">St. Gallen, Schweiz</small>
+      <div class="course c1 d5"><div class="meta"><small class="duration">5 Tage</small></div>
+      <div class="title"><span>Capstone</span></div></div></div></div>
+  </div></div>
+  <small class="hint">4–6 Wochen Off Campus Zeit zwischen den Kursen</small>
+</section>
+<section id="thesis"><h3>Diplomarbeit</h3><p>Die Diplomarbeit im Rahmen des EMBA HSG Studiums ...</p></section>
+"""
+
+# The pre-relaunch layout that the attendance-block parser still handles.
+EMBA_ATTENDANCE_BLOCK_HTML = """
+<div class="obligatory"><strong>9</strong> Pflichtkurse</div>
+<div class="optional"><strong>5</strong> Wahlkurse</div>
+<div class="on-campus">14 Wochen <small>Am Campus</small></div>
+"""
+
+
+class TestProgrammeStructureParsing:
+    """Deterministic structure parsing for both programme-page layouts."""
+
+    def test_module_table_parse_counts_home_and_abroad_weeks(self):
+        from src.pipeline.update_programme_facts import _extract_structure_from_module_table
+
+        structure = _extract_structure_from_module_table(IEMBA_MODULE_TABLE_HTML)
+        assert structure is not None
+        assert structure.de == (
+            "10 Pflichtkurse, 4 Wahlkurse, 14 Kurswochen "
+            "(10 Wochen am Campus in St. Gallen, 4 Wochen im Ausland), Diplomarbeit"
+        )
+        assert structure.en == (
+            "10 core courses, 4 electives, 14 course weeks "
+            "(10 weeks on campus in St. Gallen, 4 weeks abroad), thesis"
+        )
+
+    def test_fact_html_snippets_keep_module_table_and_thesis_heading(self):
+        from src.pipeline.update_programme_facts import (
+            _extract_fact_html_snippets,
+            _extract_structure_from_module_table,
+        )
+
+        page = "<html><body><h1>IEMBA</h1>" + IEMBA_MODULE_TABLE_HTML + "<p>footer</p></body></html>"
+        snippets = _extract_fact_html_snippets(page)
+
+        assert snippets.count('class="module ') == 10
+        assert snippets.count('class="optional">') == 2
+        assert "<h3>Diplomarbeit</h3>" in snippets
+        assert "footer" not in snippets
+        assert "Fundamentals of Strategy" not in snippets or len(snippets) < 8000
+        # fetch_sources stores the snippets followed by the page's visible text;
+        # that combination must be enough for the deterministic parse.
+        visible = "Der 18-monatige IEMBA HSG-Studiengang umfasst zehn Pflicht- und vier Wahlkurse."
+        structure = _extract_structure_from_module_table(snippets + "\n\n" + visible)
+        assert structure is not None
+        assert "10 Wochen am Campus" in structure.de
+        assert "4 Wochen im Ausland" in structure.de
+
+    def test_module_table_parse_rejects_intro_table_mismatch(self):
+        from src.pipeline.update_programme_facts import _extract_structure_from_module_table
+
+        mismatched = IEMBA_MODULE_TABLE_HTML.replace("zehn Pflicht- und vier Wahlkurse", "neun Pflicht- und vier Wahlkurse")
+        assert _extract_structure_from_module_table(mismatched) is None
+
+    def test_module_table_parse_needs_elective_duration(self):
+        from src.pipeline.update_programme_facts import _extract_structure_from_module_table
+
+        without_electives = IEMBA_MODULE_TABLE_HTML.replace('<div class="optional">', '<div class="optional placeholder">')
+        assert _extract_structure_from_module_table(without_electives) is None
+
+    def test_module_table_parse_ignores_attendance_block_layout(self):
+        from src.pipeline.update_programme_facts import _extract_structure_from_module_table
+
+        assert _extract_structure_from_module_table(EMBA_ATTENDANCE_BLOCK_HTML) is None
+
+    def test_deterministic_source_facts_fall_back_to_module_table(self):
+        from src.pipeline.update_programme_facts import (
+            AllProgrammesSchema,
+            BilingualText,
+            apply_deterministic_source_facts,
+        )
+
+        extracted = AllProgrammesSchema.model_validate(_llm_shaped_facts())
+        extracted.iemba.structure = BilingualText(
+            de="10 Pflichtkurse, 4 Wahlkurse, 14 Wochen am Campus, ca. 4 Wochen im Ausland, Diplomarbeit",
+            en="10 core courses, 4 electives, 14 weeks on campus, approx. 4 weeks abroad, thesis",
+        )
+        pages = {"emba": EMBA_ATTENDANCE_BLOCK_HTML, "iemba": IEMBA_MODULE_TABLE_HTML, "iemba_es": ""}
+
+        extracted, deterministic = apply_deterministic_source_facts(extracted, pages)
+
+        assert "iemba.structure" in deterministic
+        assert "10 Wochen am Campus" in extracted.iemba.structure.de
+        assert "4 Wochen im Ausland" in extracted.iemba.structure.de
+        assert extracted.emba.structure.de == "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus"
+
+
+class TestStructureNumberGuard:
+    """LLM re-reads must not change structure numbers for table-backed programmes."""
+
+    OLD = "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland, Diplomarbeit"
+    LLM = "10 Pflichtkurse, 4 Wahlkurse, 14 Wochen am Campus, ca. 4 Wochen im Ausland, Diplomarbeit"
+
+    def test_llm_number_change_is_preserved_as_existing(self):
+        from src.pipeline.update_programme_facts import _deterministic_fact_comparison
+
+        decision = _deterministic_fact_comparison("iemba.structure.de", self.OLD, self.LLM)
+        assert decision.materially_changed is False
+        assert decision.preserve_existing is True
+        assert "deterministic parse" in decision.reason
+
+    def test_deterministic_number_change_is_accepted(self):
+        from src.pipeline.update_programme_facts import _deterministic_fact_comparison
+
+        decision = _deterministic_fact_comparison(
+            "iemba.structure.de", self.OLD, self.LLM, observed_is_deterministic=True
+        )
+        assert decision.materially_changed is True
+
+    def test_programmes_without_table_keep_llm_behaviour(self):
+        from src.pipeline.update_programme_facts import _deterministic_fact_comparison
+
+        decision = _deterministic_fact_comparison(
+            "emba_x.structure.de",
+            "56 Tage am Campus, 2 Tage Online",
+            "56 Tage am Campus, 2 Tage Online, 2 Impact-Projekte",
+        )
+        assert decision.materially_changed is True
+
+
+def _llm_shaped_facts() -> dict:
+    """Minimal AllProgrammesSchema payload built from the committed facts file."""
+    facts = _facts_file()["programmes"]
+
+    def programme(p: dict) -> dict:
+        return {
+            "official_name": p["official_name"],
+            "current_cohort": p["current_cohort"],
+            "language": p["language"],
+            "programme_start": p["programme_start"],
+            "duration": p["duration"],
+            "ects_credits": p["ects_credits"],
+            "structure": p["structure"],
+            "locations": p["locations"],
+            "first_deadline": p["tuition_chf"]["first_deadline"],
+            "final_deadline": p["tuition_chf"]["final_deadline"],
+            "advisor_name": p["advisor"]["name"],
+            "advisor_email": p["advisor"]["email"],
+            "advisor_phone": p["advisor"]["phone"],
+        }
+
+    return {"emba": programme(facts["emba"]), "iemba": programme(facts["iemba"]), "emba_x": programme(facts["emba_x"])}

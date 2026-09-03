@@ -210,6 +210,28 @@ def extract_pdf_text(content: bytes, url: str) -> str:
             pass
 
 
+MODULE_BLOCK_START = re.compile(
+    r'<div[^>]*class=["\'](?:module\b[^"\']*|optional)["\']', flags=re.IGNORECASE
+)
+MODULE_BLOCK_END = re.compile(
+    r'<div[^>]*class=["\'](?:module\b|optional\b|column\b|cta\b)|<small[^>]*class=["\']hint|</section>',
+    flags=re.IGNORECASE,
+)
+MODULE_BLOCK_MAX_CHARS = 1500
+
+
+def _extract_module_blocks(text: str) -> list[str]:
+    """Return the compact div.module / div.optional blocks of a module table."""
+    text = text or ''
+    blocks: list[str] = []
+    for start in MODULE_BLOCK_START.finditer(text):
+        window = text[start.end():start.end() + MODULE_BLOCK_MAX_CHARS]
+        end = MODULE_BLOCK_END.search(window)
+        block = text[start.start():start.end() + (end.start() if end else len(window))]
+        blocks.append(re.sub(r'\s+', ' ', block).strip())
+    return blocks
+
+
 def _extract_fact_html_snippets(text: str) -> str:
     """Keep structured fact blocks before converting the page to visible text."""
     matches = re.findall(
@@ -224,6 +246,17 @@ def _extract_fact_html_snippets(text: str) -> str:
         )
         if re.search(r'\battendance\b|Pflichtkurse', table, flags=re.IGNORECASE)
     ]
+    # Module-table layout (IEMBA 14 relaunch, September 2026): one div.module
+    # per core course plus div.optional blocks for the electives. Only these
+    # compact blocks are kept (not the whole structure section, which is
+    # ~40 KB and would push the visible text past the LLM's 20k window) so
+    # the deterministic structure parser can read locations and durations.
+    matches += _extract_module_blocks(text)
+    # Thesis heading, so the structure parser can keep the thesis component.
+    matches += re.findall(
+        r'<h\d[^>]*>\s*(?:Diplomarbeit|(?:Master(?:\'|’)?s?\s+)?Thesis)\s*</h\d>',
+        text or '', flags=re.IGNORECASE,
+    )
     return "\n".join(matches)
 
 
@@ -554,6 +587,135 @@ def _extract_structure_from_programme_page(text: str) -> BilingualText | None:
     return BilingualText(de=", ".join(de_parts), en=", ".join(en_parts))
 
 
+# Programme pages whose structure fact is backed by a parseable HTML table.
+# Their structure numbers may only change through a deterministic parse.
+STRUCTURE_SOURCE_KEYS_BY_PROGRAMME = {
+    'emba': ['emba'],
+    'iemba': ['iemba', 'iemba_es'],
+}
+TABLE_BACKED_STRUCTURE_PROGRAMMES = frozenset(STRUCTURE_SOURCE_KEYS_BY_PROGRAMME)
+
+COUNT_WORDS = {
+    'ein': 1, 'eine': 1, 'einen': 1, 'zwei': 2, 'drei': 3, 'vier': 4,
+    'fünf': 5, 'fuenf': 5, 'sechs': 6, 'sieben': 7, 'acht': 8, 'neun': 9,
+    'zehn': 10, 'elf': 11, 'zwölf': 12, 'zwoelf': 12,
+    'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6,
+    'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10, 'eleven': 11, 'twelve': 12,
+}
+HOME_CAMPUS_MARKERS = ('st. gallen', 'st.gallen', 'schweiz', 'switzerland', 'zürich', 'zurich')
+COURSE_DAYS_PER_WEEK = 5
+
+
+def _parse_count(token: str) -> int | None:
+    token = (token or '').strip().lower()
+    if token.isdigit():
+        return int(token)
+    return COUNT_WORDS.get(token)
+
+
+def _extract_structure_from_module_table(text: str) -> BilingualText | None:
+    """Deterministically parse the module-table programme layout.
+
+    The IEMBA page relaunch for IEMBA 14 (September 2026) replaced the
+    attendance block ("10 Wochen am Campus / +4 Wochen im Ausland") with one
+    ``div.module`` per core course carrying ``small.location`` and
+    ``small.duration`` ("5 Tage"), one ``div.optional`` block for the electives,
+    and an intro sentence stating the course counts ("zehn Pflicht- und vier
+    Wahlkurse"). Without this parser the LLM read the info sheet's total
+    ("14 weeks on campus", which counts the partner campuses abroad) as the
+    home-campus weeks. Returns None whenever any component is missing or the
+    intro count disagrees with the table, so the caller falls back to the
+    guarded LLM value instead of storing a half-parsed fact.
+    """
+    text = text or ''
+    module_starts = [m.start() for m in re.finditer(r'<div[^>]*class=["\']module\b', text)]
+    if not module_starts:
+        return None
+
+    campus_days = 0
+    abroad_days = 0
+    home_cities: list[str] = []
+    for idx, start in enumerate(module_starts):
+        end = module_starts[idx + 1] if idx + 1 < len(module_starts) else len(text)
+        chunk = text[start:end]
+        optional = re.search(r'<div[^>]*class=["\']optional\b', chunk)
+        if optional:
+            chunk = chunk[:optional.start()]
+        location = re.search(r'class=["\']location["\'][^>]*>(.*?)</small>', chunk, flags=re.IGNORECASE | re.DOTALL)
+        days = sum(
+            int(d) for d in re.findall(
+                r'class=["\']duration["\'][^>]*>\s*(\d+)\s*(?:Tage?|days?)\b', chunk, flags=re.IGNORECASE
+            )
+        )
+        if not location or not days:
+            return None
+        location_text = re.sub(r'\s+', ' ', html.unescape(location.group(1))).strip()
+        if any(marker in location_text.lower() for marker in HOME_CAMPUS_MARKERS):
+            campus_days += days
+            city = location_text.split(',')[0].strip()
+            if city and city not in home_cities:
+                home_cities.append(city)
+        else:
+            abroad_days += days
+
+    visible = re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', text)))
+    counts = re.search(
+        r'(\w+)\s+(?:Pflicht-?\s*(?:kurse)?|core\s+courses)\s+(?:und|and)\s+(\w+)\s+(?:Wahlkurse|electives)',
+        visible, flags=re.IGNORECASE,
+    )
+    if not counts:
+        return None
+    core_count = _parse_count(counts.group(1))
+    elective_count = _parse_count(counts.group(2))
+    if core_count is None or elective_count is None:
+        return None
+    if core_count != len(module_starts):
+        logger.warning(
+            "Module table lists %d core modules but the intro states %d; not trusting the table parse.",
+            len(module_starts), core_count,
+        )
+        return None
+
+    elective_days = None
+    for optional in re.finditer(r'<div[^>]*class=["\']optional["\'][^>]*>', text):
+        window = text[optional.end():optional.end() + 800]
+        next_module = re.search(r'<div[^>]*class=["\']module\b', window)
+        if next_module:
+            window = window[:next_module.start()]
+        duration = re.search(r'class=["\']duration["\'][^>]*>\s*(\d+)\s*(?:Tage?|days?)\b', window, flags=re.IGNORECASE)
+        if duration:
+            elective_days = int(duration.group(1))
+            break
+    if elective_days is None:
+        return None
+
+    campus_weeks = round((campus_days + elective_count * elective_days) / COURSE_DAYS_PER_WEEK)
+    abroad_weeks = round(abroad_days / COURSE_DAYS_PER_WEEK)
+    total_weeks = campus_weeks + abroad_weeks
+    if campus_weeks <= 0:
+        return None
+    home = " / ".join(home_cities) or "St. Gallen"
+
+    de_parts = [f"{core_count} Pflichtkurse", f"{elective_count} Wahlkurse"]
+    en_parts = [f"{core_count} core courses", f"{elective_count} electives"]
+    if abroad_weeks:
+        de_parts.append(
+            f"{total_weeks} Kurswochen ({campus_weeks} Wochen am Campus in {home}, {abroad_weeks} Wochen im Ausland)"
+        )
+        en_parts.append(
+            f"{total_weeks} course weeks ({campus_weeks} weeks on campus in {home}, {abroad_weeks} weeks abroad)"
+        )
+    else:
+        de_parts.append(f"{campus_weeks} Wochen am Campus")
+        en_parts.append(f"{campus_weeks} weeks on campus")
+
+    if re.search(r'<h\d[^>]*>\s*(?:Diplomarbeit|(?:Master(?:\'|’)?s?\s+)?Thesis)\s*</h\d>', text, flags=re.IGNORECASE):
+        de_parts.append("Diplomarbeit")
+        en_parts.append("thesis")
+
+    return BilingualText(de=", ".join(de_parts), en=", ".join(en_parts))
+
+
 def apply_deterministic_source_facts(
     extracted: AllProgrammesSchema, pages: dict[str, str]
 ) -> tuple[AllProgrammesSchema, set[str]]:
@@ -563,12 +725,8 @@ def apply_deterministic_source_facts(
     deterministically parsed, so downstream comparison can distinguish
     table-parsed values from LLM prose.
     """
-    source_keys_by_programme = {
-        'emba': ['emba'],
-        'iemba': ['iemba', 'iemba_es'],
-    }
     deterministic_facts: set[str] = set()
-    for programme_key, source_keys in source_keys_by_programme.items():
+    for programme_key, source_keys in STRUCTURE_SOURCE_KEYS_BY_PROGRAMME.items():
         for source_key in source_keys:
             locations = _extract_locations_from_programme_page(pages.get(source_key, ''))
             if locations:
@@ -576,14 +734,18 @@ def apply_deterministic_source_facts(
                 deterministic_facts.add(f'{programme_key}.locations')
                 break
         for source_key in source_keys:
-            structure = _extract_structure_from_programme_page(pages.get(source_key, ''))
+            page = pages.get(source_key, '')
+            structure = (
+                _extract_structure_from_programme_page(page)
+                or _extract_structure_from_module_table(page)
+            )
             if structure:
                 getattr(extracted, programme_key).structure = structure
                 deterministic_facts.add(f'{programme_key}.structure')
                 break
         if f'{programme_key}.structure' not in deterministic_facts:
             logger.warning(
-                "Deterministic structure parse found no attendance table for %s "
+                "Deterministic structure parse found no attendance block or module table for %s "
                 "(page chars: %s); falling back to the LLM structure value.",
                 programme_key,
                 {key: len(pages.get(key) or '') for key in source_keys},
@@ -851,6 +1013,28 @@ def _deterministic_fact_comparison(
                 "LLM structure re-extraction lost components "
                 f"({', '.join(sorted(lost_components))}) without adding any; "
                 "a lossy re-read is not evidence the programme changed.",
+                existing_value,
+                True,
+            )
+        programme_key = fact_key.split('.', 1)[0]
+        if (
+            programme_key in TABLE_BACKED_STRUCTURE_PROGRAMMES
+            and _number_signature(existing_value) != _number_signature(observed_value)
+        ):
+            # The September 2026 incident: the IEMBA page relaunch removed the
+            # attendance block, the deterministic parse found nothing, and the
+            # LLM re-read turned "10 weeks on campus, 4 weeks abroad" into
+            # "14 weeks on campus, approx. 4 weeks abroad" (the info sheet's
+            # total). For table-backed programmes, structure numbers may only
+            # change through a successful deterministic parse.
+            return _comparison_decision(
+                False,
+                0.95,
+                "LLM structure re-extraction changed numbers "
+                f"({' '.join(_number_signature(existing_value))} -> "
+                f"{' '.join(_number_signature(observed_value))}) while the programme page "
+                "exposed no parseable course table; numeric structure changes for "
+                "table-backed programmes must come from the deterministic parse.",
                 existing_value,
                 True,
             )
