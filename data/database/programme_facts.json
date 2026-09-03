@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02",
+  "generated_at": "2026-09-03",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -14,7 +14,7 @@
   "programmes": {
     "emba": {
       "official_name": "Executive MBA HSG",
-      "current_cohort": "EMBA 71",
+      "current_cohort": "EMBA 72",
       "language": {
         "de": "Deutsch",
         "en": "German"
@@ -26,8 +26,8 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus, Capstone-Projekt",
-        "en": "9 core courses + 5 electives, 14 weeks on campus, capstone project, self-study"
+        "de": "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus",
+        "en": "9 core courses, 5 electives, 14 weeks on campus"
       },
       "locations": {
         "de": "Schweiz (St. Gallen), Belgien (Wahlkurs)",
@@ -72,16 +72,16 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland, Diplomarbeit",
-        "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad, thesis"
+        "de": "10 Pflichtkurse, 4 Wahlkurse, 14 Wochen am Campus, ca. 4 Wochen im Ausland, Diplomarbeit",
+        "en": "10 core courses, 4 electives, 14 weeks on campus, approx. 4 weeks abroad, thesis"
       },
       "locations": {
-        "de": "Schweiz (St.Gallen), China, USA, Japan, Spanien, Südafrika, Italien",
-        "en": "Switzerland (St.Gallen), China, U.S., Japan, Spain, South Africa, Italy"
+        "de": "Schweiz (St. Gallen), Japan (Tokio), China (Peking), USA (UC Berkeley, UC Irvine, New York City), Costa Rica, Südafrika, Italien, Spanien",
+        "en": "Switzerland (St. Gallen), Japan (Tokyo), China (Beijing), USA (UC Berkeley, UC Irvine, New York City), Costa Rica, South Africa, Italy, Spain"
       },
       "tuition_chf": {
         "first_deadline": {
-          "deadline": "2025-03-31",
+          "deadline": "2026-03-31",
           "fee": 80000
         },
         "final_deadline": {
@@ -119,8 +119,8 @@
       },
       "ects_credits": 75,
       "structure": {
-        "de": "Blended: Präsenz in Zürich und St.Gallen (Schweiz) und Online, 56 Tage am Campus, 2 Tage Online",
-        "en": "Blended: In-person in Zurich and St.Gallen (Switzerland) and Online, 56 days on campus, 2 days online"
+        "de": "Blended: Präsenz in Zürich und St.Gallen (Schweiz) und Online, 56 Tage am Campus, 2 Tage Online, 2 Impact-Projekte",
+        "en": "Blended: In-person in Zurich and St.Gallen (Switzerland) and Online, 56 days on campus, 2 days online, 2 impact projects"
       },
       "locations": {
         "de": "Zürich, St. Gallen, Online",
