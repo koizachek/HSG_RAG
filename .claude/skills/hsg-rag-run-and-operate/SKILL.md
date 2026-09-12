@@ -157,6 +157,45 @@ Caddy is NOT part of the container or the deploy pipeline. Procedure:
 Typical reason: adding an allowed embedding domain to `frame-ancestors`. An
 iframe on a domain not listed there is silently blocked by browsers.
 
+### 5a. Pilot-phase IP allowlist (activation and removal)
+
+`deploy/Caddyfile` contains a commented-out `@blocked` matcher block that
+restricts the bot to an IP allowlist during the pilot phase (runs until
+2026-08-31; block added July 2026, inactive by default). It blocks everything
+**except `/health`** — that path must stay public because `deploy.yml` verifies
+`https://chatbot.emba.unisg.ch/health` from GitHub runners; blocking it fails
+every subsequent deploy.
+
+The allowlist applies to the **embedded** bot too: the iframe on
+emba.unisg.ch is fetched by the visitor's browser, so it is the visitor's IP
+that must be allowlisted — everyone who should see the embed demo (web team,
+advisors, DSB, supervisors) needs their network in the list.
+
+**Activate for the pilot:**
+
+1. In `deploy/Caddyfile`, uncomment the `@blocked { ... }` and
+   `respond @blocked ... 403` lines and replace the `<IP-OR-CIDR>` placeholders
+   with the allowed addresses, space-separated (IPv4 and/or IPv6, single IPs or
+   CIDR ranges — include the IPv6 ranges, campus users may connect over IPv6).
+2. Land via PR + host apply per the §5 procedure above.
+3. Verify: from an allowlisted IP `curl -s -o /dev/null -w "%{http_code}"
+   https://chatbot.emba.unisg.ch/` → `200`; from any other network (e.g. mobile
+   hotspot) → `403`; `/health` → `200` from everywhere.
+
+**Remove after go-live (bot public for everyone):**
+
+1. Delete the entire block between the `--- PILOT PHASE ...` and
+   `--- END PILOT PHASE ...` marker comments in `deploy/Caddyfile` (matcher,
+   `respond`, and all comment lines). Nothing else references it — no app code,
+   env var, or workflow needs touching.
+2. Land via PR + host apply per §5 (maintainer OK gate applies as always).
+3. Verify from a non-allowlisted network (e.g. mobile hotspot):
+   `curl -s -o /dev/null -w "%{http_code}" https://chatbot.emba.unisg.ch/` →
+   `200` (was `403` during the pilot), and the chat UI loads in a browser.
+4. If the `403` persists, the host is still running the old config — re-run the
+   `scp` + `systemctl reload caddy` step and check `systemctl status caddy` for
+   a config parse error (a malformed Caddyfile makes `reload` keep the old one).
+
 ## 6. Scheduled operations (GitHub Actions — no host cron for these)
 
 | Workflow | Schedule | Purpose |
