@@ -275,7 +275,31 @@ Vorgabe für den Pilot: keine neuen Features, Wünsche werden nur dokumentiert.
   Programmleitung EMBA HSG klären. Falls ja, gehört sie auf die Website, dann
   landet sie über den Scrape im Index.
 
-## 5. Verifikation
+## 5. Deployment-Checkliste: durch den Pilot erledigte Punkte
+
+Drei Einträge aus `DEPLOYMENT_CHECKLIST.md` (Abschnitt Datenschutz) sind
+durch den Pilot faktisch abgearbeitet, dort aber noch offen markiert. Beleg
+und Stand hier, damit die Checkliste nachgezogen werden kann:
+
+- [x] **Consent-Flow im UI vor Go-Live verifiziert.** Im Pilot wurden 47
+  Consent-Entscheidungen geloggt (W33: 9/9 akzeptiert, W34: 31/32, W35: 4/4,
+  W36: 2/2), alle unter Policy v1.1; jede Session hat eine eigene
+  Consent-Datei (`logs/consent/<session_id>.jsonl`), auch im WordPress-Iframe
+  (Fix aus PR #72).
+- [x] **Transkript-Speicherung aktiviert.** `USAGE_STORE_TRANSCRIPTS=true`
+  steht in der Prod-`.env`, Consent-Text v1.1 ist live (Commit `f46fd06`);
+  35 pseudonymisierte Transkripte aus dem Pilot liegen unter
+  `/opt/hsg-rag/logs/transcripts/` und waren die Grundlage dieser Auswertung.
+- [x] **Ersten Wochenbericht verifiziert.** Der Workflow `usage-report.yml`
+  läuft seit W29 wöchentlich; zehn Reports liegen in `docs/usage-reports/`
+  (W29 bis W38), enthalten nur Aggregate ohne Session-IDs und haben keinen
+  Deploy ausgelöst (`docs/**` steht in `paths-ignore`).
+
+Weiterhin offen aus derselben Liste und nicht Gegenstand des Pilots:
+Lösch-Cron für `logs/usage` und `logs/transcripts`, Sign-off durch die
+Datenschutzbeauftragte:n, Weaviate-AVV.
+
+## 6. Verifikation
 
 | Gate | Ergebnis |
 |---|---|
@@ -296,3 +320,4 @@ Replay vor und nach dem Fix (Defekt vorhanden, von 3 Wiederholungen):
 | Darlehens-Link nach Stipendienfrage → Finanz-Schleife | 5/5 Redirects im Pilot | 0/3 (Finanzierungsseite verlinkt) |
 | „welches programm passt zu mir?“ → Übersicht statt Rückfragen | Pilot | 0/3 (drei Rückfragen) |
 | IEMBA „Kann ich mich noch bewerben?“ → hartes „Nein“ | Pilot | 0/3 (Frist abgelaufen, Advisor genannt; Kohorte ist inzwischen gestartet) |
+
