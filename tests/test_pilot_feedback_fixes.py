@@ -172,7 +172,8 @@ def test_lead_prompt_contains_pilot_conduct_rules():
     assert "Do not name model providers" in prompt
     assert "Experience-based estimates presented as facts" in prompt
     assert "ask two or three short clarifying questions first" in prompt
-    assert 'do not answer "can I still apply?" with a flat "no"' in prompt
+    assert 'Do not answer "can I still apply?" with a flat "no"' in prompt
+    assert "Never turn a price question into a refusal" in prompt
     assert "sur dossier" in prompt
 
 

@@ -185,6 +185,31 @@ statt hartes Nein; bei fehlendem Abschluss Sur-Dossier + Open Programmes
 nennen; bei dünnem Profil zuerst 2–3 Rückfragen. Test:
 `::test_lead_prompt_contains_pilot_conduct_rules`. LLM-Verifikation: siehe §5.
 
+### 3.5 Preisfrage bei geschlossener Bewerbung → Turn-down (Session 11.08. abends, W34 „aggressive: 1“)
+
+**Befund.** Auf „whats the price?“ nannte der Bot für EMBA HSG und IEMBA HSG
+keine Gebühr („applications closed, no tuition fee currently available for
+booking“), nur für emba X. Die Testperson reagierte mit „i wont book if i
+dont know the fee, worst then imd!!“ und bekam dafür die Aggressiv-Ermahnung
+(2.1). Gemeint war die Studiengebühr, nicht das kostenlose Beratungsgespräch.
+
+**Ursache.** Zwei Stellen erzwangen den Turn-down: der Facts-Block
+(`src/rag/verified_facts.py`, Label `closed`: „Keine Gebühr als aktuell
+verfügbar nennen“) und die GENERAL-Regel im Lead-Prompt („never quote its
+fees as currently bookable“). Beides diente dem Schutz vor veralteten Preisen,
+verhinderte aber jede Preisauskunft.
+
+**Fix.** Beide Stellen umformuliert: Gebühr der Kohorte als Referenzwert
+nennen, Bewerbungsfenster (erste bis finale Frist) mit Daten als geschlossen
+benennen, sagen, wann man sich wieder bewerben kann (nächste Kohorte, sonst
+Ansprechperson gibt das nächste Fenster bekannt). Replay 2026-09-14, je 2×
+EN/DE, inklusive der Original-Nachricht aus dem Pilot: 6/6 mit Gebühr,
+Fenster-Daten und Hinweis auf das nächste Fenster; die Original-Nachricht
+löst keinen Redirect mehr aus. Fact Eval 34/34.
+
+**Grenze.** Die Facts-Pipeline kennt keine Daten der *nächsten* Kohorte; bis
+die Website sie publiziert, verweist der Bot auf die Ansprechperson.
+
 ## 4. Offen: was aus dem Feedback nicht oder noch nicht umgesetzt ist
 
 ### 4.1 Bewusst nicht umgesetzt — Backlog für die Übergabe
@@ -230,7 +255,7 @@ Vorgabe für den Pilot: keine neuen Features, Wünsche werden nur dokumentiert.
 |---|---|
 | Offline-Suite `pytest -q` | 383 passed, 1 skipped |
 | Neue Regressionstests `tests/test_pilot_feedback_fixes.py` | 44 passed |
-| LLM Fact Eval (`RUN_LLM_EVAL=1`) | 34/34 passed (2026-09-14) |
+| LLM Fact Eval (`RUN_LLM_EVAL=1`) | 34/34 passed (2026-09-14, nach jeder Prompt-Änderung wiederholt) |
 | Replay der Pilot-Fragen (3× je Fall, echte Chain, 2026-09-14) | 0/24 Defekte, Tabelle unten |
 
 Replay vor und nach dem Fix (Defekt vorhanden, von 3 Wiederholungen):
