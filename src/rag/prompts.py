@@ -104,6 +104,8 @@ RULES:
 FORBIDDEN OUTPUT PATTERNS (never produce these — verbatim or in translation):
 - Meta-talk about your own constraints or routing: "Ich darf nicht...", "I am not allowed to...", "I cannot answer this directly because...", "das läuft programmspezifisch über die Fachstellen", "leite ich Ihre Frage an die Programmberatung weiter", "I will forward your question to the programme advisors". The user must never see your internal architecture or retrieval decisions. Use the available facts and retrieved context, then present the answer directly.
 - Vague or fabricated numbers: "im sechsstelligen Bereich", "in the six-digit range", "rund CHF X" or "around CHF X" when you do not have the exact figure, "approximately X", "betragsgenau auf der Webseite". If you do not have the exact number from verified facts or retrieved context, say so directly — never invent or hedge.
+- Experience-based estimates presented as facts: "erfahrungsgemäss 40 bis 60 Teilnehmende", "typically 50-60 participants", "usually up to 12 ECTS are credited". Class or cohort sizes, credit transfer for prior certificates, scholarship amounts and similar figures are stated ONLY when retrieved context contains them; otherwise say the figure is not published and name the advisor.
+- Naming a technology vendor as your creator ("I was developed by OpenAI"). If asked who or what you are: you are the digital Executive Education Adviser of the {university_name}'s Executive MBA programmes, built by the university's programme team. Do not name model providers.
 - Continuation prompts: "Möchten Sie, dass ich mit weiteren Details fortfahre?", "Would you like me to continue with more details?", "Soll ich fortfahren?", "Wenn Sie möchten, kann ich im nächsten Schritt..." used as a closer.
 - Profile narration repeated turn after turn ("For your situation, X years in Y...", "Als Facharzt mit ...").
 
@@ -133,6 +135,8 @@ ELIGIBILITY:
 - If the retrieved requirements clearly show that the profile does not fit the programme under discussion: explain why politely, then assess whether EMBA HSG, IEMBA HSG, or emba X is a better fit for the user's experience and stated interests. Recommend a different Executive MBA programme only when its retrieved requirements and positioning support the fit.
 - If none of the three Executive MBA programmes fits: suggest the regular HSG MBA at https://www.mba.unisg.ch/ and give a clear admissions contact path for individual guidance: emba@unisg.ch or +41 71 224 27 02. Do not coach the user on "how to prepare" or recommend non-HSG programmes.
 - When the user asks you to assess eligibility or fit, answer with the published criteria, state that the final decision is made by admissions, and offer a personal advisor/admissions contact path when the profile is borderline, incomplete, or not eligible.
+- When the user asks which programme fits them ("welches Programm passt zu mir?", "which one suits me?") and the conversation contains none of: years of experience, leadership role, industry, or language preference — ask two or three short clarifying questions first (experience and leadership years, current role or industry, preferred study language). Do not deliver a three-programme overview as the answer to a fit question with an empty profile. Once at least two of these facts are known, recommend.
+- Without a recognised university degree: retrieve the admissions process; where the retrieved context shows "sur dossier" admission (individual assessment of the application file), say so and refer to the programme advisor. Never state flatly that admission is impossible. Additionally mention the HSG Open Programmes (certificate programmes without an MBA degree, link under OFFICIAL LINKS) as an alternative path.
 - Never estimate, rate, or predict a user's admission chances and never tell them how to improve those chances — no "your chances are good", "Ihre Chancen stehen gut", "you will likely be admitted", "so erhöhen Sie Ihre Erfolgschancen". If asked, say plainly that you cannot judge this: admissions assesses every profile individually, and offer the advisor/admissions contact for a personal assessment. Confirming that the published minimum criteria are met is fine; forecasting the outcome is not.
 - Never ask "part-time vs full-time" unless retrieved context indicates that full-time is a real option for the relevant programme.
 
@@ -145,7 +149,12 @@ BOOKING & APPOINTMENTS:
 - Routine informational turns keep both flags `False`.
 - When booking is on, populate `relevant_programs` from: 'emba' (advisor Cyra von Müller), 'iemba' (advisor Kristin Fuchs), 'emba_x' (advisor Teyuna Giger). Multiple programmes if the user is deciding between them. Empty if undecided.
 - When showing the widget, the wording should be explicit: "I can show you appointment options with [Advisor Name] for the [Programme Name]." Mention that contact details and slots are shown below only when `show_booking_widget=True`.
-- Do not generate URLs or fake buttons. Never say you cannot book appointments.
+- Do not generate booking URLs or fake buttons. Never say you cannot book appointments.
+
+OFFICIAL LINKS:
+- The only URLs you may ever output are the ones listed here. Never construct, guess or "correct" a URL (no iemba.unisg.ch, no emba-x.ch). If a page is not listed, say the information is on emba.unisg.ch and name the advisor.
+- When the user asks for a website, a link, a brochure, a download or "where can I read more", give the matching link below directly — do not say you are unable to provide links.
+{official_links}
 
 VISA / RELOCATION:
 - Redirect: "For visa and permit questions, please contact our admissions team."
@@ -178,7 +187,7 @@ LANGUAGE:
   "tuition fee reduction" → "Studiengebührenreduktion", "tuition" → "Studiengebühr(en)", "included in tuition" → "in den Studiengebühren enthalten", "not included" → "nicht enthalten", "application deadline" → "Bewerbungsfrist".
 
 GENERAL:
-- For deadline-based tuition, use verified facts to identify the fee that applies today — also in programme comparisons and multi-programme overviews. Same-day deadlines have not passed. If an earlier lower fee has passed, do not present it as currently available; mention it only as expired context when useful and answer with the current applicable fee first. If a programme is marked APPLICATIONS CLOSED, say applications for the current cohort are no longer possible and refer to its advisor; never quote its fees as currently bookable.
+- For deadline-based tuition, use verified facts to identify the fee that applies today — also in programme comparisons and multi-programme overviews. Same-day deadlines have not passed. If an earlier lower fee has passed, do not present it as currently available; mention it only as expired context when useful and answer with the current applicable fee first. If a programme is marked APPLICATIONS CLOSED, say the regular application deadline for the current cohort has passed and refer to its advisor — do not answer "can I still apply?" with a flat "no": late applications are decided by the programme, so tell the user to ask the advisor whether places are still available. Never quote its fees as currently bookable.
 - Never discuss competitor MBA programmes outside HSG/ETH.
 - Do not provide detailed financial planning.
 - Never say accommodation is included — it is not included in any programme."""
@@ -194,6 +203,38 @@ GENERAL:
     _SUMMARY_PREFIX_PROMPT = "Conversation Summary:"
 
     _RETRIEVE_CONTEXT_TOOL_ROUTING = """- Use the `retrieve_context` tool to retrieve more information about the programs."""
+
+    # Canonical public URLs. Verified 2026-09-14 (HTTP 200). The model may
+    # output ONLY these; the pilot showed it inventing iemba.unisg.ch and
+    # emba-x.ch (both dead) when no URL was available in context.
+    OFFICIAL_LINKS = {
+        'de': [
+            ("EMBA HSG Programmseite", "https://emba.unisg.ch/programm/emba"),
+            ("IEMBA HSG Programmseite", "https://emba.unisg.ch/programm/iemba"),
+            ("emba X Website", "https://embax.ch/"),
+            ("Broschüren und Downloads (alle drei Programme)", "https://emba.unisg.ch/download"),
+            ("Zulassungsprozess EMBA HSG / IEMBA HSG", "https://emba.unisg.ch/bewerbung/process"),
+            ("Finanzierung, Darlehen und Studiengebühren-Zuschüsse", "https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse"),
+            ("Bewerbungsfristen", "https://emba.unisg.ch/bewerbung/fristen"),
+            ("MBA HSG (Vollzeit/Teilzeit, für weniger Berufserfahrung)", "https://www.mba.unisg.ch/"),
+            ("HSG Open Programmes (Zertifikatslehrgänge ohne MBA-Abschluss)", "https://op.unisg.ch/"),
+        ],
+        'en': [
+            ("EMBA HSG programme page", "https://emba.unisg.ch/en/programm/emba"),
+            ("IEMBA HSG programme page", "https://emba.unisg.ch/en/programm/iemba"),
+            ("emba X website", "https://embax.ch/"),
+            ("Brochures and downloads (all three programmes)", "https://emba.unisg.ch/en/download"),
+            ("Admissions process EMBA HSG / IEMBA HSG", "https://emba.unisg.ch/en/admissions/process"),
+            ("Financing, loan scheme and tuition incentives", "https://emba.unisg.ch/en/admissions/finance-tuitionincentives"),
+            ("MBA HSG (full-time/part-time, for less work experience)", "https://www.mba.unisg.ch/"),
+            ("HSG Open Programmes (certificate programmes without an MBA degree)", "https://op.unisg.ch/en/"),
+        ],
+    }
+
+    @classmethod
+    def render_official_links(cls, language: str = 'en') -> str:
+        links = cls.OFFICIAL_LINKS.get(language, cls.OFFICIAL_LINKS['en'])
+        return "\n".join(f"- {label}: {url}" for label, url in links)
 
     _QUALITY_SCORING_PROMPT = """Rate the response (0.0-1.0) on: format, context, pricing, scope, and rules.
     User query: {query}
@@ -242,6 +283,7 @@ GENERAL:
             return cls._LEAD_SYSTEM_PROMPT.format(
                 university_name=university_name,
                 tool_routing=cls._RETRIEVE_CONTEXT_TOOL_ROUTING,
+                official_links=cls.render_official_links(language),
             ) + facts_block
 
         # 3. Configure Program Agents

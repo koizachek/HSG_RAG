@@ -30,25 +30,30 @@ class ScopeGuardian:
     }
     
     # Keywords indicating financial planning requests (out of scope)
+    # Only PERSONAL financial planning is out of scope. Questions about the
+    # programme's own loan scheme, tuition incentives, financing options or a
+    # user's budget are programme facts the retrieval corpus answers
+    # (emba.unisg.ch/bewerbung/finanzierung-zuschuesse). Pilot August 2026:
+    # 'loan' and 'budget' produced five identical canned redirects in one
+    # session and blocked a "budget of 40'000" question in another.
     FINANCIAL_KEYWORDS = {
         'en': [
-            'loan', 'payment plan', 'installment', 'financing options',
-            'budget', 'savings plan', 'personal finance', 'credit',
-            'bank loan', 'mortgage', 'scholarship application',
-            'detailed funding'
+            'payment plan', 'installment', 'savings plan', 'personal finance',
+            'bank loan', 'mortgage', 'detailed funding', 'tax deduction',
         ],
         'de': [
-            'kredit', 'ratenzahlung', 'finanzierung', 'zahlungsplan',
-            'budget', 'sparplan', 'persönliche finanzen', 'darlehen',
-            'bankkredit', 'stipendium antrag', 'detaillierte finanzierung'
+            'ratenzahlung', 'zahlungsplan', 'sparplan', 'persönliche finanzen',
+            'bankkredit', 'hypothek', 'detaillierte finanzierung', 'steuerabzug',
         ]
     }
-    
-    # Keywords indicating aggressive or inappropriate behavior
+
+    # Keywords indicating aggressive or inappropriate behavior.
+    # Ordinary comparatives ('worst', 'terrible') are NOT listed: "worst than
+    # IMD" in the pilot was frustration about a missing fee, not abuse.
     AGGRESSIVE_KEYWORDS = [
-        'stupid', 'idiot', 'useless', 'terrible', 'worst', 'hate',
+        'stupid', 'idiot', 'useless', 'hate',
         'dumb', 'incompetent', 'pathetic', 'worthless',
-        'dumm', 'idiot', 'nutzlos', 'schrecklich', 'hasse'
+        'dumm', 'idiot', 'nutzlos', 'hasse'
     ]
     
     @staticmethod

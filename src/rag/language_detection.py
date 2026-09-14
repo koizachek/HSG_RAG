@@ -10,6 +10,7 @@ logger = get_logger('lang_detector')
 # Common short words for quick language detection (no LLM needed)
 SHORT_WORDS_DE = {
     'ja', 'nein', 'danke', 'bitte', 'ok', 'gut', 'hallo', 'hi', 'hey',
+    'guten', 'morgen', 'abend', 'grüezi', 'servus',
     'genau', 'stimmt', 'klar', 'super', 'prima', 'toll', 'schön',
     'mehr', 'weniger', 'was', 'wie', 'wo', 'wann', 'warum', 'wer',
     'und', 'oder', 'aber', 'doch', 'noch', 'schon', 'jetzt', 'hier',
@@ -54,6 +55,10 @@ MIXED_LANGUAGE_AMBIGUOUS_TOKENS = {
     # Common in German questions/text but also English stopwords.
     'in',
     'was',
+    # German "am" ("am Montag") is also the English verb in "I am". Pilot
+    # August 2026: every English message containing "I am" (7 turns in 6
+    # sessions) was rejected as mixed-language because of this token.
+    'am',
 }
 
 STRONG_LANGUAGE_SIGNALS_DE = {
@@ -344,6 +349,38 @@ class LanguageDetector:
                 )
                 return True
 
+        return False
+
+    def is_confidently_unsupported(self, query: str) -> bool:
+        """
+        Return True only when the input carries a positive signal for a language
+        the bot does not support: non-Latin script, non-German Latin diacritics,
+        or a confident statistical profile for an unsupported language.
+
+        Inputs that merely carry no signal at all ("test", "hii", "halooo")
+        are NOT unsupported — they are undecidable, and the chain keeps the
+        current conversation language for them instead of refusing. Pilot
+        August 2026: 9 turns in 5 sessions got the "only English or German"
+        refusal for such inputs, including the German greeting "guten Tag".
+        """
+        text = query.lower()
+        if NON_LATIN_SCRIPT_RE.search(text) or self._has_non_german_latin_diacritic(text):
+            return True
+        words = re.findall(r"[a-z']+", text)
+        de_hits, en_hits = self._mixed_language_signal_counts(text)
+        if len(words) >= 3 and de_hits + en_hits == 0:
+            # A full sentence without a single German or English function
+            # word is either another language or noise — not a supported one.
+            return True
+        profile_result = self._profile_detect(query)
+        if profile_result:
+            profile_lang, profile_probability = profile_result
+            return (
+                profile_lang not in self._supported_languages()
+                and profile_probability >= LANGDETECT_MIN_PROBABILITY
+                # langdetect is unreliable on very short inputs ("hi" -> Swahili).
+                and len(re.findall(r"[a-z']+", text)) >= 3
+            )
         return False
 
     @staticmethod

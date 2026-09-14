@@ -99,37 +99,54 @@ EMBA_URL = EMBA["url"] + BASE_BOOKING_PARAMS
 IEMBA_URL = IEMBA["url"] + BASE_BOOKING_PARAMS
 EMBAX_URL = EMBAX["url"] + BASE_BOOKING_PARAMS
 
+# Advisor buttons: the clicked button turns into the "selected" style and the
+# others reset, so the user can see which advisor's calendar is open. Pilot
+# feedback August 2026: "man sieht nicht, auf welchem Profil man sich
+# befindet" and re-clicking the same advisor appeared to do nothing.
+_BTN_BASE = "cursor:pointer; padding:6px 12px; border:2px solid #008435; border-radius:4px; font-weight:600;"
+_BTN_IDLE = "background:#008435; color:white;"
+_BTN_ACTIVE = "background:white; color:#008435;"
+
+
+def _advisor_button(lang: str, advisor: dict, url: str) -> str:
+    frame = f"booking-frame-{lang}"
+    onclick = (
+        "var b=this.parentNode.children;"
+        f"for(var i=0;i<b.length;i++){{b[i].style.background='#008435';b[i].style.color='white';}}"
+        "this.style.background='white';this.style.color='#008435';"
+        f"var f=document.getElementById('{frame}');"
+        f"if(f.src!=='{url}'){{f.src='{url}';}}"
+        "f.style.display='block';"
+        "f.scrollIntoView({behavior:'smooth',block:'nearest'});"
+    )
+    return (
+        f'<button onclick="{onclick}" style="{_BTN_BASE} {_BTN_IDLE}">'
+        f'{advisor["name"]}</button>'
+    )
+
+
+def _booking_widget_html(lang: str, choose_text: str) -> str:
+    buttons = "\n            ".join(
+        _advisor_button(lang, advisor, url)
+        for advisor, url in ((EMBA, EMBA_URL), (IEMBA, IEMBA_URL), (EMBAX, EMBAX_URL))
+    )
+    return f"""
+<div style="width:100%; box-sizing:border-box; background:#f8f8f8; border:1px solid #d8d8d8; border-radius:8px; padding:12px; margin-top:10px; font-family:sans-serif;">
+    <details>
+        <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#404040;">
+            {BOOK_TEXT[lang]}
+        </summary>
+        <p style="color:#666666; margin:10px 0 12px 0;">{choose_text}</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            {buttons}
+        </div>
+        <iframe id="booking-frame-{lang}" src="" width="100%" height="520" frameborder="0" style="display:none; width:100%; border:none; border-radius:6px; background:white;"></iframe>
+    </details>
+</div>
+"""
+
+
 BOOKING_WIDGET_HTML = {
-    "en": f"""
-<div style="width:100%; box-sizing:border-box; background:#f8f8f8; border:1px solid #d8d8d8; border-radius:8px; padding:12px; margin-top:10px; font-family:sans-serif;">
-    <details>
-        <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#404040;">
-            {BOOK_TEXT["en"]}
-        </summary>
-        <p style="color:#666666; margin:10px 0 12px 0;">Choose an advisor:</p>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-            <button onclick="document.getElementById('booking-frame-en').src='{EMBA_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{EMBA["name"]}</button>
-            <button onclick="document.getElementById('booking-frame-en').src='{IEMBA_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{IEMBA["name"]}</button>
-            <button onclick="document.getElementById('booking-frame-en').src='{EMBAX_URL}'; document.getElementById('booking-frame-en').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{EMBAX["name"]}</button>
-        </div>
-        <iframe id="booking-frame-en" src="" width="100%" height="520" frameborder="0" style="display:none; width:100%; border:none; border-radius:6px; background:white;"></iframe>
-    </details>
-</div>
-""",
-    "de": f"""
-<div style="width:100%; box-sizing:border-box; background:#f8f8f8; border:1px solid #d8d8d8; border-radius:8px; padding:12px; margin-top:10px; font-family:sans-serif;">
-    <details>
-        <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#404040;">
-            {BOOK_TEXT["de"]}
-        </summary>
-        <p style="color:#666666; margin:10px 0 12px 0;">Wählen Sie einen Berater:</p>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-            <button onclick="document.getElementById('booking-frame-de').src='{EMBA_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{EMBA["name"]}</button>
-            <button onclick="document.getElementById('booking-frame-de').src='{IEMBA_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{IEMBA["name"]}</button>
-            <button onclick="document.getElementById('booking-frame-de').src='{EMBAX_URL}'; document.getElementById('booking-frame-de').style.display='block';" style="cursor:pointer; padding:6px 12px; border:none; border-radius:4px; background:#008435; color:white; font-weight:600;">{EMBAX["name"]}</button>
-        </div>
-        <iframe id="booking-frame-de" src="" width="100%" height="520" frameborder="0" style="display:none; width:100%; border:none; border-radius:6px; background:white;"></iframe>
-    </details>
-</div>
-""",
+    "en": _booking_widget_html("en", "Choose an advisor:"),
+    "de": _booking_widget_html("de", "Wählen Sie eine Beraterin:"),
 }
