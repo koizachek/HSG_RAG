@@ -226,3 +226,109 @@ def test_usage_report_counts_language_outcomes(tmp_path):
     assert metrics["risks"]["language_fallback_turns"] == 1
     assert "Language clarification turns" in markdown
     assert "Language fallback turns" in markdown
+
+
+# --- Follow-up 1: booking section shows only the advisor being booked --------
+
+def test_booking_widget_for_single_programme_preselects_the_advisor():
+    from src.const.data_consent_constants import booking_widget_for
+
+    html = booking_widget_for("de", ["emba"])
+
+    assert html.count("<button") == 1
+    assert "Cyra von Müller" in html
+    assert "<details open>" in html
+    assert 'src="https://calendly.com/cyra-vonmueller' in html
+    assert "display:block" in html
+
+
+def test_booking_widget_for_two_programmes_offers_both_without_preselection():
+    from src.const.data_consent_constants import booking_widget_for
+
+    html = booking_widget_for("en", ["emba", "iemba"])
+
+    assert html.count("<button") == 2
+    assert "Teyuna Giger" not in html
+    assert "<details open>" not in html
+    assert 'src=""' in html
+
+
+def test_booking_widget_for_unknown_programmes_falls_back_to_all_three():
+    from src.const.data_consent_constants import booking_widget_for
+
+    assert booking_widget_for("en", []).count("<button") == 3
+    assert booking_widget_for("en", None).count("<button") == 3
+
+
+def test_chat_handler_updates_widget_only_on_booking_turns():
+    import gradio as gr
+    from src.apps.chat.app import ChatbotApplication
+
+    class FakeAgent:
+        def __init__(self, show, programs):
+            self._show, self._programs = show, programs
+
+        def query(self, message, on_delta=None):
+            on_delta("Hallo")
+            return LeadAgentQueryResponse(
+                response="Hallo", language="de", processed_query=message,
+                show_booking_widget=self._show, relevant_programs=self._programs,
+            )
+
+    app = object.__new__(ChatbotApplication)
+    app._language = "de"
+
+    booking = list(app._chat("Termin", [], FakeAgent(True, ["iemba"])))
+    final = booking[-1]
+    assert len(final) == 3
+    assert final[2]["visible"] is True
+    assert "Kristin Fuchs" in final[2]["value"] and "Cyra" not in final[2]["value"]
+    for partial in booking[:-1]:
+        assert partial[2] == gr.update()
+
+    plain = list(app._chat("Was kostet der EMBA?", [], FakeAgent(False, [])))
+    assert plain[-1][2] == gr.update()
+
+
+# --- Follow-up 3: greeting opens with a question -----------------------------
+
+@pytest.mark.parametrize("lang", ["en", "de"])
+def test_every_greeting_ends_with_the_opening_question(lang):
+    from src.const.agent_response_constants import GREETING_MESSAGES
+
+    for greeting in GREETING_MESSAGES[lang]:
+        assert greeting.rstrip().endswith("?")
+        assert ("beruflich verändern" if lang == "de" else "change in your career") in greeting
+
+
+# --- Follow-up 4: rubric flags carry turn + reason ---------------------------
+
+def test_rubric_judge_keeps_flag_evidence():
+    import json
+    import os
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
+    import rubric_judge
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            payload = {
+                "scores": {d: 8 for d in rubric_judge.RUBRIC_DIMENSIONS},
+                "flags": ["rude_tone", "not_in_vocabulary"],
+                "flag_evidence": [
+                    {"flag": "rude_tone", "turn": 2, "reason": "warned the user about aggressive language"},
+                    {"flag": "not_in_vocabulary", "turn": 1, "reason": "ignored"},
+                ],
+            }
+            msg = type("M", (), {"content": json.dumps(payload)})
+            choice = type("C", (), {"message": msg})
+            return type("R", (), {"choices": [choice]})
+
+    client = type("Client", (), {"chat": type("Chat", (), {"completions": FakeCompletions()})})
+
+    verdict = rubric_judge.judge_transcript(client, "model", [{"turn_index": 1, "user": "u", "assistant": "a"}])
+
+    assert verdict["flags"] == ["rude_tone"]
+    assert verdict["flag_evidence"] == [
+        {"flag": "rude_tone", "turn": 2, "reason": "warned the user about aggressive language"}
+    ]

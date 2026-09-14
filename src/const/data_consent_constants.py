@@ -108,7 +108,7 @@ _BTN_IDLE = "background:#008435; color:white;"
 _BTN_ACTIVE = "background:white; color:#008435;"
 
 
-def _advisor_button(lang: str, advisor: dict, url: str) -> str:
+def _advisor_button(lang: str, advisor: dict, url: str, active: bool = False) -> str:
     frame = f"booking-frame-{lang}"
     onclick = (
         "var b=this.parentNode.children;"
@@ -119,20 +119,41 @@ def _advisor_button(lang: str, advisor: dict, url: str) -> str:
         "f.style.display='block';"
         "f.scrollIntoView({behavior:'smooth',block:'nearest'});"
     )
+    style = _BTN_ACTIVE if active else _BTN_IDLE
     return (
-        f'<button onclick="{onclick}" style="{_BTN_BASE} {_BTN_IDLE}">'
+        f'<button onclick="{onclick}" style="{_BTN_BASE} {style}">'
         f'{advisor["name"]}</button>'
     )
 
 
-def _booking_widget_html(lang: str, choose_text: str) -> str:
+_ADVISORS_BY_PROGRAM = {
+    "emba": (EMBA, EMBA_URL),
+    "iemba": (IEMBA, IEMBA_URL),
+    "emba_x": (EMBAX, EMBAX_URL),
+}
+
+
+def _booking_widget_html(lang: str, choose_text: str, programs: list[str] | None = None) -> str:
+    """
+    Render the booking section. With ``programs`` (canonical ids) only the
+    matching advisors are offered; a single advisor is pre-selected, the
+    section is expanded and her calendar is loaded straight away. Without
+    ``programs`` all three advisors are offered (static default after consent).
+    """
+    selected = [
+        _ADVISORS_BY_PROGRAM[p] for p in (programs or []) if p in _ADVISORS_BY_PROGRAM
+    ] or list(_ADVISORS_BY_PROGRAM.values())
+    single = len(selected) == 1
     buttons = "\n            ".join(
-        _advisor_button(lang, advisor, url)
-        for advisor, url in ((EMBA, EMBA_URL), (IEMBA, IEMBA_URL), (EMBAX, EMBAX_URL))
+        _advisor_button(lang, advisor, url, active=single)
+        for advisor, url in selected
     )
+    details_open = " open" if single else ""
+    frame_src = selected[0][1] if single else ""
+    frame_display = "block" if single else "none"
     return f"""
 <div style="width:100%; box-sizing:border-box; background:#f8f8f8; border:1px solid #d8d8d8; border-radius:8px; padding:12px; margin-top:10px; font-family:sans-serif;">
-    <details>
+    <details{details_open}>
         <summary style="cursor:pointer; font-weight:700; font-size:1.05rem; color:#404040;">
             {BOOK_TEXT[lang]}
         </summary>
@@ -140,13 +161,22 @@ def _booking_widget_html(lang: str, choose_text: str) -> str:
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
             {buttons}
         </div>
-        <iframe id="booking-frame-{lang}" src="" width="100%" height="520" frameborder="0" style="display:none; width:100%; border:none; border-radius:6px; background:white;"></iframe>
+        <iframe id="booking-frame-{lang}" src="{frame_src}" width="100%" height="520" frameborder="0" style="display:{frame_display}; width:100%; border:none; border-radius:6px; background:white;"></iframe>
     </details>
 </div>
 """
 
 
+_CHOOSE_TEXT = {"en": "Choose an advisor:", "de": "Wählen Sie eine Beraterin:"}
+
+
+def booking_widget_for(lang: str, programs: list[str] | None) -> str:
+    """Booking section for a booking turn: only the advisor(s) of ``programs``."""
+    lang = lang if lang in _CHOOSE_TEXT else "en"
+    return _booking_widget_html(lang, _CHOOSE_TEXT[lang], programs)
+
+
 BOOKING_WIDGET_HTML = {
-    "en": _booking_widget_html("en", "Choose an advisor:"),
-    "de": _booking_widget_html("de", "Wählen Sie eine Beraterin:"),
+    "en": _booking_widget_html("en", _CHOOSE_TEXT["en"]),
+    "de": _booking_widget_html("de", _CHOOSE_TEXT["de"]),
 }

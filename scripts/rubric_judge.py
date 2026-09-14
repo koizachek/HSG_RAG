@@ -71,8 +71,13 @@ unless the user switches.
 Also return "flags": a list drawn ONLY from this closed vocabulary (empty list \
 if none apply): {json.dumps(FLAG_VOCABULARY)}.
 
+For every flag also return one entry in "flag_evidence": the turn number where \
+it occurred and a reason of at most 20 words that names what the assistant did \
+(quote at most a few words). This is what makes a flag actionable in triage.
+
 Return ONLY valid JSON: {{"scores": {{"helpfulness": n, "grounding": n, "tone": n, \
-"conversion_support": n, "language_consistency": n}}, "flags": [...]}}"""
+"conversion_support": n, "language_consistency": n}}, "flags": [...], \
+"flag_evidence": [{{"flag": "...", "turn": n, "reason": "..."}}]}}"""
 
 
 def _client():
@@ -117,9 +122,26 @@ def judge_transcript(client, model: str, turns: list[dict]) -> dict | None:
             scores = verdict.get("scores") or {}
             if all(dim in scores for dim in RUBRIC_DIMENSIONS):
                 flags = [f for f in (verdict.get("flags") or []) if f in FLAG_VOCABULARY]
+                evidence = []
+                for item in verdict.get("flag_evidence") or []:
+                    if not isinstance(item, dict) or item.get("flag") not in FLAG_VOCABULARY:
+                        continue
+                    try:
+                        turn = int(item.get("turn"))
+                    except (TypeError, ValueError):
+                        turn = None
+                    evidence.append({
+                        "flag": item["flag"],
+                        "turn": turn,
+                        "reason": str(item.get("reason") or "")[:200],
+                    })
                 return {
                     "scores": {dim: float(scores[dim]) for dim in RUBRIC_DIMENSIONS},
                     "flags": flags,
+                    # host-only: turn + reason per flag, so a report flag can be
+                    # traced to the exact assistant turn (pilot August 2026:
+                    # "rude_tone: 1" could only be guessed at).
+                    "flag_evidence": evidence,
                 }
         except (json.JSONDecodeError, TypeError, ValueError):
             continue

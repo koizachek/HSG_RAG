@@ -1,3 +1,4 @@
+import gradio as gr
 from src.apps.chat.app import ChatbotApplication
 from src.rag.utilclasses import LeadAgentQueryResponse
 
@@ -38,8 +39,10 @@ def test_user_can_ask_programme_price_and_receive_streamed_chat_answer():
         agent=agent,
     ))
 
-    streamed_text = [value for value, returned_agent in outputs[:-1]]
-    final_answer, returned_agent = outputs[-1]
+    # third output: booking-widget update (unchanged on informational turns)
+    streamed_text = [value for value, returned_agent, _widget in outputs[:-1]]
+    final_answer, returned_agent, widget_update = outputs[-1]
+    assert widget_update == gr.update()
 
     assert streamed_text == [
         "The IEMBA HSG ",

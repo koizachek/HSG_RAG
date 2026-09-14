@@ -114,12 +114,21 @@ class ChatbotApplication:
 
                 decline_info = gr.Markdown("", visible=False)
 
+            # Booking section. Created before the ChatInterface so the chat
+            # handler can update it (only the advisor of the programme the
+            # user is booking for), rendered below the chat further down.
+            booking_widget = gr.HTML(
+                value=BOOKING_WIDGET_HTML[language],
+                visible=False,
+                render=False,
+            )
+
             # ---- Chat Screen (Page 2) ----
             with gr.Column(visible=False) as chat_screen:
                 chat = gr.ChatInterface(
                     fn=self._chat,
                     additional_inputs=[agent_state],
-                    additional_outputs=[agent_state],
+                    additional_outputs=[agent_state, booking_widget],
                     title="Executive Education Adviser",
                     chatbot=gr.Chatbot(
                         show_label=False,
@@ -128,10 +137,7 @@ class ChatbotApplication:
                     ),
                 )
 
-            booking_widget = gr.HTML(
-                value=BOOKING_WIDGET_HTML[language],
-                visible=False,
-            )
+            booking_widget.render()
 
             def initialize_agent(lang: str, session_id: str):
                 agent = ExecutiveAgentChain(language=lang, session_id=session_id)
@@ -335,10 +341,11 @@ class ChatbotApplication:
         """
         if agent is None:
             logger.error("Agent not initialized")
-            yield ["I apologize, but the chatbot is not properly initialized."], agent
+            yield ["I apologize, but the chatbot is not properly initialized."], agent, gr.update()
             return
 
         answers = []
+        widget_update = gr.update()  # unchanged unless this turn shows the widget
         try:
             if self._visible_history_is_empty(history) and self._agent_has_conversation(agent):
                 logger.warning(
@@ -373,7 +380,7 @@ class ChatbotApplication:
                 if item is None:
                     break
                 partial += item
-                yield partial, agent
+                yield partial, agent, gr.update()
 
             worker.join()
             if 'error' in outcome:
@@ -384,6 +391,15 @@ class ChatbotApplication:
             # replacing the raw streamed preview.
             answers.append(response.response)
             self._language = response.language
+
+            # Pilot feedback ("falsche Ansprechperson"): on a booking turn show
+            # only the advisor of the programme in question, pre-selected with
+            # her calendar open. Without a programme the full section stays.
+            if response.show_booking_widget:
+                widget_update = gr.update(
+                    value=booking_widget_for(response.language, response.relevant_programs),
+                    visible=True,
+                )
 
             if response.additional_details:
                 details_label = (
@@ -423,7 +439,7 @@ class ChatbotApplication:
             )
             answers.append(error_message)
 
-        yield answers, agent
+        yield answers, agent, widget_update
 
     @staticmethod
     def _visible_history_is_empty(history: list[dict] | None) -> bool:

@@ -96,10 +96,17 @@ Test: `::test_chatbot_pages_are_blacklisted`.
 
 ### 2.4 `2026-W34.md` §2 Rubrik-Flags „unresolved_user_need: 4, rude_tone: 1, missed_booking_opportunity: 1“
 
-Nicht auf Sessions zurückführbar: `rubric_scores.json` liegt nur auf dem
-Host und enthält keine Session-Zuordnung im Report. Die vier
+Im Report nicht auf Sessions zurückführbar. Die Host-Datei
+`rubric_scores.json` enthält zwar pro bewerteter Session die Flags, aber
+weder den Turn noch den Grund — eine Triage bleibt Raten. Die vier
 `unresolved_user_need` decken sich plausibel mit der Finanz-Schleife (2.1),
-den Max-Turns-Abbrüchen (2.2) und den Sprachfehlern (3.1). Kein eigener Fix.
+den Max-Turns-Abbrüchen (2.2) und den Sprachfehlern (3.1); `rude_tone` ist
+mit hoher Wahrscheinlichkeit die Aggressiv-Ermahnung aus 2.1.
+
+**Fix.** `scripts/rubric_judge.py` verlangt vom Judge pro Flag jetzt
+`flag_evidence` (Turn-Nummer + Grund ≤ 20 Wörter) und speichert sie in der
+Host-Datei; der Markdown-Report bleibt anonym. Test:
+`::test_rubric_judge_keeps_flag_evidence`.
 
 ## 3. Was die Reports NICHT gemeldet haben
 
@@ -148,8 +155,17 @@ passiert“. In 3 von 15 Widget-Turns ließ das Modell zudem
 der geklickte Button wechselt in den „aktiv“-Stil (weiß mit grünem Rahmen),
 die anderen zurück, das Iframe scrollt ins Bild. `src/rag/agent_chain.py`:
 leere `relevant_programs` bei gezeigtem Widget werden aus
-`suggested_program` gefüllt (Report-Metrik „Programme distribution“). Tests:
-`::test_booking_widget_buttons_mark_the_selected_advisor`.
+`suggested_program` gefüllt. `src/apps/chat/app.py`: das Buchungs-Widget ist
+jetzt dritter Output des Chat-Handlers; auf einem Buchungs-Turn wird es nur
+mit der Beraterin des betroffenen Programms gerendert, vorausgewählt und mit
+geöffnetem Kalender (`booking_widget_for()`), bei zwei Programmen mit beiden,
+ohne Programm weiterhin mit allen drei. Informationsturns lassen es
+unverändert. Tests: `::test_booking_widget_buttons_mark_the_selected_advisor`,
+`::test_booking_widget_for_single_programme_preselects_the_advisor`,
+`::test_chat_handler_updates_widget_only_on_booking_turns`. Verifiziert per
+Unit-Test und Gradio-Build; ein Klicktest im Browser stand in dieser Session
+nicht zur Verfügung und sollte vor dem Merge auf der Testseite gemacht
+werden.
 
 ### 3.3 Erfundene oder tote Links, „unable to provide download links“ (Feedback 2)
 
@@ -210,6 +226,18 @@ löst keinen Redirect mehr aus. Fact Eval 34/34.
 **Grenze.** Die Facts-Pipeline kennt keine Daten der *nächsten* Kohorte; bis
 die Website sie publiziert, verweist der Bot auf die Ansprechperson.
 
+### 3.6 „Zu wenig interaktiv, Suchmaschinen-Charakter“ (Feedback 5, 14)
+
+**Befund.** Der Bot begrüßt und wartet; Tester mussten selbst „Stelle mir
+Fragen“ schreiben. Feedback 5 wünscht sich eine Einstiegsfrage nach dem
+beruflichen Ziel.
+
+**Fix.** `src/const/agent_response_constants.py`: jede Begrüßung (DE/EN)
+endet mit einer Einstiegsfrage nach dem beruflichen Veränderungswunsch und
+der bevorzugten Studiensprache. Zusammen mit den Rückfragen bei Fit-Fragen
+(3.4) startet das Gespräch vom Ziel der Person aus. Test:
+`::test_every_greeting_ends_with_the_opening_question`.
+
 ## 4. Offen: was aus dem Feedback nicht oder noch nicht umgesetzt ist
 
 ### 4.1 Bewusst nicht umgesetzt — Backlog für die Übergabe
@@ -219,7 +247,6 @@ Vorgabe für den Pilot: keine neuen Features, Wünsche werden nur dokumentiert.
 | Feedback | Wunsch | Stand |
 |---|---|---|
 | 5 | Bot-Identität: Name, Avatar/Illustration, Rollenbeschreibung, konsistente Persönlichkeit | Der Bot benennt jetzt korrekt, was er ist (§3.4); Name und Avatar fehlen |
-| 5 | Proaktive Einstiegsfrage („Was möchten Sie beruflich verändern?“) | Rückfragen gibt es nur bei einer konkreten Fit-Frage, nicht als Gesprächsöffner |
 | 14 | Kenntnis anderer HSG-Programme (MBA HSG Business Engineering, Executive Master in Management & Law) | Nicht im Index; der Bot kann nur auf mba.unisg.ch und op.unisg.ch verlinken, Vergleiche bleiben vage |
 | 2 | Broschüre direkt im Chat herunterladen | Link auf die Download-Seite (§3.3), kein Datei-Download im Chat |
 | 2 | Weniger Neutralität gegenüber IMD | Positionierungsentscheidung für die Programmleitung; der Prompt verbietet Konkurrenzbewertungen weiterhin |
@@ -230,14 +257,13 @@ Vorgabe für den Pilot: keine neuen Features, Wünsche werden nur dokumentiert.
 |---|---|---|
 | Feedback 3, Reports W33/W34 | Latenz: 14 Turns über 15 s, Treiber Retrieval-Pfad (§2.3) | Eigene Untersuchung nötig, siehe `hsg-rag-failure-archaeology` |
 | Feedback 12 | Antworten zu lang fürs schmale Iframe-Feld, Scrollen nötig | UI-Thema für `RUNBOOK_UI_ALTERNATIVEN.md`; ein kleineres Wortbudget im Prompt würde die Dreier-Übersichten beschneiden |
-| Feedback 3, 4 | Widget zeigt alle drei Beraterinnen statt nur die passende | Teilweise gelöst (gewählter Advisor sichtbar, §3.2); ein dynamisches Widget bräuchte einen Umbau des Gradio-Streaming-Handlers |
 
 ### 4.3 Nicht überprüfbar
 
 - Rubrik-Flags in W34 (4 `unresolved_user_need`, 1 `rude_tone`, 1
-  `missed_booking_opportunity`): Rohbewertung liegt ohne Session-Bezug nur auf
-  dem Host. Ob `rude_tone` den Aggressiv-Redirect oder eine Bot-Antwort meint,
-  ist nicht feststellbar.
+  `missed_booking_opportunity`): für den Pilot nachträglich nicht mehr auf
+  Turns zurückführbar; ab dem nächsten Report liefert der Judge Turn und
+  Grund pro Flag (2.4).
 - Feedback 13 (17.08., 16:13) hat keine passende Session; Feedback 6 ist leer.
 
 ### 4.4 Operativ nach dem Merge
@@ -253,8 +279,8 @@ Vorgabe für den Pilot: keine neuen Features, Wünsche werden nur dokumentiert.
 
 | Gate | Ergebnis |
 |---|---|
-| Offline-Suite `pytest -q` | 383 passed, 1 skipped |
-| Neue Regressionstests `tests/test_pilot_feedback_fixes.py` | 44 passed |
+| Offline-Suite `pytest -q` | 390 passed, 1 skipped |
+| Neue Regressionstests `tests/test_pilot_feedback_fixes.py` | 51 passed |
 | LLM Fact Eval (`RUN_LLM_EVAL=1`) | 34/34 passed (2026-09-14, nach jeder Prompt-Änderung wiederholt) |
 | Replay der Pilot-Fragen (3× je Fall, echte Chain, 2026-09-14) | 0/24 Defekte, Tabelle unten |
 
