@@ -275,13 +275,64 @@ Vorgabe für den Pilot: keine neuen Features, Wünsche werden nur dokumentiert.
   Programmleitung EMBA HSG klären. Falls ja, gehört sie auf die Website, dann
   landet sie über den Scrape im Index.
 
-## 5. Abgleich mit `DEPLOYMENT_CHECKLIST.md`
+## 5. Status je Feedback-Eintrag
+
+Was aus jeder der 15 Umfrage-Antworten geworden ist. ✔ = im PR #89
+umgesetzt, ◐ = teilweise, ✗ = offen (mit Grund), – = nichts zu tun.
+
+| # | Datum, Sprache, Fokus | Bewertung hilfreich / freigeben | Was gesagt wurde | Status |
+|---|---|---|---|---|
+| 1 | 06.08., DE, keines | 5 / 2 | Hinweis auf Ansprechpersonen „sehr schlicht“, nur E-Mail; Link oder Session-Buchung gewünscht | ✔ Offizielle Links im Prompt (§3.3); ✔ Widget mit vorausgewählter Beraterin (§3.2). Ein Buchungsangebot ohne Nachfrage bleibt bewusst aus (Booking ist user-led, Conversion-Regel) |
+| 2 | 10.08., EN, mehrere | 4 / 5 | Bot kannte die Programm-Websites nicht, fehlerhafte Links; Broschüre herunterladen; ohne Studium auf Open Programmes verweisen; bei IMD weniger neutral | ✔ Links (§3.3); ◐ Broschüre: Link auf die Download-Seite, kein Datei-Download im Chat; ✔ Open Programmes (§3.4); ✗ IMD-Positionierung: Entscheidung der Programmleitung (§4.1) |
+| 3 | 10.08., DE, mehrere | 3 / 3 | Antworten zu langsam; falsche Info zur IEMBA-Bewerbung (Start 24.08.); alle drei Beraterinnen sichtbar, kein aktiver Zustand nach Klick; Max-Turns-Meldung unpassend | ✗ Latenz (§2.3, kein Quick-Fix); ✔ Fristablauf → Advisor statt hartes Nein (§3.4, §3.5); ✔ Widget zeigt nur die passende Beraterin, aktiv markiert (§3.2); ✔ Turn-Limit 40 (§2.2) |
+| 4 | 10.08., DE, EMBA | 5 / 5 | Widget erschienen, aber falsche Ansprechperson | ✔ Widget (§3.2) |
+| 5 | 10.08., DE, mehrere | 4 / 3 | Inhaltlich gut, zu wenig interaktiv („Suchmaschinen-Charakter“); Einstiegsfrage nach dem beruflichen Ziel; Bot-Identität mit Avatar, Name, Rollenbeschreibung | ✔ Einstiegsfrage in der Begrüßung (§3.6); ✔ Rückfragen bei Fit-Fragen (§3.4); ✔ Rollenbeschreibung auf Nachfrage (§3.4); ✗ Name und Avatar: Backlog (§4.1) |
+| 6 | 10.08. | – | leer | – |
+| 7 | 10.08., DE, mehrere | 4 / 3 | Unterschied EMBA vs. Executive Master in Management & Law „mässig und nicht ganz korrekt“; Frage, woher die Informationen stammen | ✗ EM ML ist nicht im Index, der Bot kennt nur die drei EMBA-Programme (§4.1); – Datenbasis: emba.unisg.ch und embax.ch (wöchentlicher Scrape) plus täglich geprüfte Programmfakten |
+| 8 | 11.08., EN, keines | 2 / 1 | Finanzierungsfrage lief in einer Schleife auf denselben Standardsatz, kein Link zur Finanzierungsseite; „would harm credibility“ | ✔ Finanz-Redirect entfernt (§2.1); ✔ Finanzierungsseite als offizieller Link (§3.3); Replay: Link wird jetzt direkt gegeben |
+| 9 | 11.08., EN, mehrere | 5 / 5 | kein Freitext | ✔ In der zugehörigen Session trat der Sprachmix-Fehler auf (§3.1), behoben |
+| 10 | 11.08., DE, mehrere | 5 / 5 | kein Freitext | – Session sauber |
+| 11 | 11.08., EN, keines | 5 / 1 (widersprüchlich) | kein Freitext | ✔ Sprachmix-Fehler in der Session behoben (§3.1); ✗ ein Turn mit 33 s Latenz (§2.3) |
+| 12 | 17.08., EN, emba X | 5 / 5 | Antworten lang, Antwortfeld kurz, ständiges Scrollen; Screenshot ließ sich in Forms nicht anhängen | ✗ Feldhöhe: UI-Thema, bewusst zurückgestellt (§4.2); – Forms-Einstellung, nichts im Bot |
+| 13 | 17.08., EN, keines | 4 / 4 | kein Freitext | – keine zugehörige Session |
+| 14 | 19.08., DE, EMBA | 4 / 4 | Vergleich mit MBA HSG Business Engineering nicht möglich; Alumni-Netzwerk stärker betonen; Bedürfnis erst abfragen (Branche, KMU) | ✗ MBA HSG Business Engineering nicht im Index (§4.1); ✔ Rückfragen vor der Empfehlung (§3.4); – Alumni-Netzwerk ist bereits Positionierungsregel im Prompt, nicht zusätzlich geändert |
+| 15 | 24.08., DE, EMBA | 4 / 5 | „Nichts.“ | – |
+
+Bilanz: 9 Einträge mit konkreter Kritik. Davon sind die Punkte zu Links,
+Finanzierung, Widget, Turn-Limit, Sprache, Fristen, Einstiegsfrage und
+Rückfragen umgesetzt. Offen bleiben Latenz (3, 11), Feldhöhe (12), Programme
+außerhalb der drei EMBA (7, 14), Bot-Name und Avatar (5) und die
+IMD-Positionierung (2).
+
+## 6. Verifikation
+
+| Gate | Ergebnis |
+|---|---|
+| Offline-Suite `pytest -q` | 390 passed, 1 skipped |
+| Neue Regressionstests `tests/test_pilot_feedback_fixes.py` | 51 passed |
+| LLM Fact Eval (`RUN_LLM_EVAL=1`) | 34/34 passed (2026-09-14, nach jeder Prompt-Änderung wiederholt) |
+| Replay der Pilot-Fragen (3× je Fall, echte Chain, 2026-09-14) | 0/24 Defekte, Tabelle unten |
+
+Replay vor und nach dem Fix (Defekt vorhanden, von 3 Wiederholungen):
+
+| Fall (Original-Frage aus dem Pilot) | vorher | nachher |
+|---|---|---|
+| „how made you?“ → nennt OpenAI | 3/3 | 0/3 |
+| „What is the website of iemba?“ → tote URL | 3/3 | 0/3 (emba.unisg.ch/en/programm/iemba) |
+| „wie gross sind die Klassen je Programm?“ → erfundene Spanne | 2/3 | 0/3 („wird nicht veröffentlicht“) |
+| Broschüren-Link emba X → „unable to provide“ | 3/3 | 0/3 (Download-Seite) |
+| ohne Studium → keine Alternative genannt | 3/3 | 0/3 (Sur-Dossier + Open Programmes) |
+| Darlehens-Link nach Stipendienfrage → Finanz-Schleife | 5/5 Redirects im Pilot | 0/3 (Finanzierungsseite verlinkt) |
+| „welches programm passt zu mir?“ → Übersicht statt Rückfragen | Pilot | 0/3 (drei Rückfragen) |
+| IEMBA „Kann ich mich noch bewerben?“ → hartes „Nein“ | Pilot | 0/3 (Frist abgelaufen, Advisor genannt; Kohorte ist inzwischen gestartet) |
+
+## Anhang A. Abgleich mit `DEPLOYMENT_CHECKLIST.md`
 
 Alle dort noch offenen Einträge, geprüft gegen Pilotdaten, Repo und Host
 (Stand 2026-09-14). Die Checkliste selbst wurde nicht verändert; dieser
 Abschnitt ist die Grundlage zum Nachziehen.
 
-### 5.1 Durch den Pilot erledigt
+### A.1 Durch den Pilot erledigt
 
 - [x] **Consent-Flow im UI vor Go-Live verifiziert.** 47 Consent-Entscheidungen
   im Pilot (W33: 9/9 akzeptiert, W34: 31/32, W35: 4/4, W36: 2/2), alle unter
@@ -306,7 +357,7 @@ Abschnitt ist die Grundlage zum Nachziehen.
 - [x] **Weaviate-Cluster-Status**: Cluster erreichbar, Retrieval funktioniert
   (Replays am 14.09.2026).
 
-### 5.2 Weiterhin offen, nicht Gegenstand des Pilots
+### A.2 Weiterhin offen, nicht Gegenstand des Pilots
 
 - [ ] **Weaviate Cloud in EU-Region + AVV/DPA**: laut `entwurf_dse_v3.md` ist
   die Weaviate-DPA offen.
@@ -326,26 +377,3 @@ Abschnitt ist die Grundlage zum Nachziehen.
   14 Turns über 15 s. Ziel bei p50 erreicht, bei p90 nicht (§2.3).
 - [ ] **Health-Check in Host-Monitoring eingebunden**: `GET /health`
   antwortet, ein Monitoring dahinter ist nicht dokumentiert.
-
-## 6. Verifikation
-
-| Gate | Ergebnis |
-|---|---|
-| Offline-Suite `pytest -q` | 390 passed, 1 skipped |
-| Neue Regressionstests `tests/test_pilot_feedback_fixes.py` | 51 passed |
-| LLM Fact Eval (`RUN_LLM_EVAL=1`) | 34/34 passed (2026-09-14, nach jeder Prompt-Änderung wiederholt) |
-| Replay der Pilot-Fragen (3× je Fall, echte Chain, 2026-09-14) | 0/24 Defekte, Tabelle unten |
-
-Replay vor und nach dem Fix (Defekt vorhanden, von 3 Wiederholungen):
-
-| Fall (Original-Frage aus dem Pilot) | vorher | nachher |
-|---|---|---|
-| „how made you?“ → nennt OpenAI | 3/3 | 0/3 |
-| „What is the website of iemba?“ → tote URL | 3/3 | 0/3 (emba.unisg.ch/en/programm/iemba) |
-| „wie gross sind die Klassen je Programm?“ → erfundene Spanne | 2/3 | 0/3 („wird nicht veröffentlicht“) |
-| Broschüren-Link emba X → „unable to provide“ | 3/3 | 0/3 (Download-Seite) |
-| ohne Studium → keine Alternative genannt | 3/3 | 0/3 (Sur-Dossier + Open Programmes) |
-| Darlehens-Link nach Stipendienfrage → Finanz-Schleife | 5/5 Redirects im Pilot | 0/3 (Finanzierungsseite verlinkt) |
-| „welches programm passt zu mir?“ → Übersicht statt Rückfragen | Pilot | 0/3 (drei Rückfragen) |
-| IEMBA „Kann ich mich noch bewerben?“ → hartes „Nein“ | Pilot | 0/3 (Frist abgelaufen, Advisor genannt; Kohorte ist inzwischen gestartet) |
-
