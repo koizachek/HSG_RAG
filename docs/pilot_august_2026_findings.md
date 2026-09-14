@@ -185,14 +185,44 @@ statt hartes Nein; bei fehlendem Abschluss Sur-Dossier + Open Programmes
 nennen; bei dünnem Profil zuerst 2–3 Rückfragen. Test:
 `::test_lead_prompt_contains_pilot_conduct_rules`. LLM-Verifikation: siehe §5.
 
-## 4. Feedback-Einträge, die keinen Code-Fix bekommen
+## 4. Offen: was aus dem Feedback nicht oder noch nicht umgesetzt ist
 
-| Feedback | Grund |
-|---|---|
-| 12: Antworten zu lang fürs schmale Iframe-Feld | UI-Thema, siehe `RUNBOOK_UI_ALTERNATIVEN.md` |
-| 2: „weniger neutral gegenüber IMD“ | Replay 3/3 nennt heute nur HSG-Stärken; der ausführliche IMD-Vergleich war ein Einzelfall |
-| 5, 14: Bot-Identität mit Name/Avatar, Kenntnis anderer HSG-Programme (MBA Business Engineering) | Backlog für die Übergabe |
-| 2: Broschüre im Chat herunterladen | über OFFICIAL LINKS (Download-Seite) abgedeckt, kein Datei-Download im Chat |
+### 4.1 Bewusst nicht umgesetzt — Backlog für die Übergabe
+
+Vorgabe für den Pilot: keine neuen Features, Wünsche werden nur dokumentiert.
+
+| Feedback | Wunsch | Stand |
+|---|---|---|
+| 5 | Bot-Identität: Name, Avatar/Illustration, Rollenbeschreibung, konsistente Persönlichkeit | Der Bot benennt jetzt korrekt, was er ist (§3.4); Name und Avatar fehlen |
+| 5 | Proaktive Einstiegsfrage („Was möchten Sie beruflich verändern?“) | Rückfragen gibt es nur bei einer konkreten Fit-Frage, nicht als Gesprächsöffner |
+| 14 | Kenntnis anderer HSG-Programme (MBA HSG Business Engineering, Executive Master in Management & Law) | Nicht im Index; der Bot kann nur auf mba.unisg.ch und op.unisg.ch verlinken, Vergleiche bleiben vage |
+| 2 | Broschüre direkt im Chat herunterladen | Link auf die Download-Seite (§3.3), kein Datei-Download im Chat |
+| 2 | Weniger Neutralität gegenüber IMD | Positionierungsentscheidung für die Programmleitung; der Prompt verbietet Konkurrenzbewertungen weiterhin |
+
+### 4.2 Bekannt, kein Quick-Fix
+
+| Quelle | Problem | Stand |
+|---|---|---|
+| Feedback 3, Reports W33/W34 | Latenz: 14 Turns über 15 s, Treiber Retrieval-Pfad (§2.3) | Eigene Untersuchung nötig, siehe `hsg-rag-failure-archaeology` |
+| Feedback 12 | Antworten zu lang fürs schmale Iframe-Feld, Scrollen nötig | UI-Thema für `RUNBOOK_UI_ALTERNATIVEN.md`; ein kleineres Wortbudget im Prompt würde die Dreier-Übersichten beschneiden |
+| Feedback 3, 4 | Widget zeigt alle drei Beraterinnen statt nur die passende | Teilweise gelöst (gewählter Advisor sichtbar, §3.2); ein dynamisches Widget bräuchte einen Umbau des Gradio-Streaming-Handlers |
+
+### 4.3 Nicht überprüfbar
+
+- Rubrik-Flags in W34 (4 `unresolved_user_need`, 1 `rude_tone`, 1
+  `missed_booking_opportunity`): Rohbewertung liegt ohne Session-Bezug nur auf
+  dem Host. Ob `rude_tone` den Aggressiv-Redirect oder eine Bot-Antwort meint,
+  ist nicht feststellbar.
+- Feedback 13 (17.08., 16:13) hat keine passende Session; Feedback 6 ist leer.
+
+### 4.4 Operativ nach dem Merge
+
+- Scrape und Re-Import auslösen, sonst bleiben die Consent-Seiten im Index
+  (§2.3).
+- CAS-Anrechnung (Session 10.08., „sind es denn nicht 12 ECTS?“): der Bot
+  nennt jetzt keine Zahl mehr; ob es eine Anrechnungsregel gibt, muss die
+  Programmleitung EMBA HSG klären. Falls ja, gehört sie auf die Website, dann
+  landet sie über den Scrape im Index.
 
 ## 5. Verifikation
 
@@ -215,10 +245,3 @@ Replay vor und nach dem Fix (Defekt vorhanden, von 3 Wiederholungen):
 | Darlehens-Link nach Stipendienfrage → Finanz-Schleife | 5/5 Redirects im Pilot | 0/3 (Finanzierungsseite verlinkt) |
 | „welches programm passt zu mir?“ → Übersicht statt Rückfragen | Pilot | 0/3 (drei Rückfragen) |
 | IEMBA „Kann ich mich noch bewerben?“ → hartes „Nein“ | Pilot | 0/3 (Frist abgelaufen, Advisor genannt; Kohorte ist inzwischen gestartet) |
-
-## 6. Offen nach diesem PR
-
-- Re-Import nach dem nächsten Scrape, damit die Blacklist greift
-  (`main.py --scrape` / Import-Pipeline, siehe `hsg-rag-run-and-operate`).
-- Retrieval-Latenz (2.3): kein Quick-Fix.
-- `rubric_scores.json` ohne Session-Bezug: Flags bleiben nicht zuordenbar.
