@@ -298,11 +298,38 @@ umgesetzt, ◐ = teilweise, ✗ = offen (mit Grund), – = nichts zu tun.
 | 14 | 19.08., DE, EMBA | 4 / 4 | Vergleich mit MBA HSG Business Engineering nicht möglich; Alumni-Netzwerk stärker betonen; Bedürfnis erst abfragen (Branche, KMU) | ✗ MBA HSG Business Engineering nicht im Index (§4.1); ✔ Rückfragen vor der Empfehlung (§3.4); – Alumni-Netzwerk ist bereits Positionierungsregel im Prompt, nicht zusätzlich geändert |
 | 15 | 24.08., DE, EMBA | 4 / 5 | „Nichts.“ | – |
 
-Bilanz: 9 Einträge mit konkreter Kritik. Davon sind die Punkte zu Links,
-Finanzierung, Widget, Turn-Limit, Sprache, Fristen, Einstiegsfrage und
-Rückfragen umgesetzt. Offen bleiben Latenz (3, 11), Feldhöhe (12), Programme
-außerhalb der drei EMBA (7, 14), Bot-Name und Avatar (5) und die
-IMD-Positionierung (2).
+### 5.1 Zählung: 17 Kritikpunkte aus 9 Einträgen
+
+Die 9 Einträge mit Freitext enthalten 17 unterscheidbare Punkte (Mehrfach-
+nennungen zusammengefasst):
+
+| Status | Anzahl | Punkte |
+|---|---|---|
+| ✔ umgesetzt | 8 | Links/Websites (1, 2) · Open Programmes ohne Studium (2) · Fristablauf nicht als hartes Nein (3) · Widget nur passende Beraterin, aktiv markiert (1, 3, 4) · Turn-Limit (3) · Einstiegsfrage / Interaktivität (5) · Finanzierungs-Schleife (8) · Rückfragen vor Empfehlung (5, 14) |
+| ◐ teilweise | 2 | Broschüre nur als Link auf die Download-Seite (2) · Bot-Identität: Rollenbeschreibung ja, Name und Avatar nein (5) |
+| ✗ offen | 5 | IMD-Positionierung (2) · Latenz (3, 11) · EM ML nicht im Index (7) · Antwortfeld-Höhe, zurückgestellt (12) · MBA HSG Business Engineering nicht im Index (14) |
+| – nichts zu tun | 2 | „Woher stammen die Infos“ ist eine Frage, keine Kritik (7) · Alumni-Netzwerk ist bereits Positionierungsregel (14) |
+
+### 5.2 Zusätzlich umgesetzt: Befunde aus Transkripten und Reports ohne Feedback-Eintrag
+
+Diese Fehler hat niemand in der Umfrage genannt; sie kamen erst durch die
+Transkripte und den Report-Abgleich ans Licht und sind im selben PR behoben:
+
+| Befund | Betroffen | Fix |
+|---|---|---|
+| Sprachmix-Fehlalarm durch das Wort „am“ | 7 Turns, 6 Sessions | §3.1 |
+| „Nur EN/DE“-Ablehnung bei „guten Tag“, „test“, „hii“ | 9 Turns, 5 Sessions | §3.1 |
+| Aggressiv-Ermahnung durch das Wort „worst“ | 1 Session | §2.1 |
+| Preisfrage bei geschlossener Kohorte als Turn-down („no fee available“) | 1 Session, Auslöser der Ermahnung | §3.5 |
+| „I was developed by OpenAI“ | 1 Session, Replay 3/3 | §3.4 |
+| Erfundene Klassengrößen „erfahrungsgemäss 40–60“ | 1 Session, Replay 2/3 | §3.4 |
+| Consent-/Testseiten des Chatbots im Retrieval-Index | fast jedes Retrieval | §2.3 (Blacklist, wirksam nach Re-Import) |
+| Leere `relevant_programs` auf Buchungs-Turns | 3 von 15 Widget-Turns | §3.2 |
+| Wochenreport zählte Sprachfehler nicht | 16 Turns unsichtbar | §3.1 |
+| Rubrik-Flags ohne Turn und Grund | alle Reports | §2.4 |
+
+Zusammen: 8 Feedback-Punkte ganz und 2 teilweise umgesetzt, dazu 10 Befunde
+außerhalb des Feedbacks. Alle Änderungen liegen in PR #89.
 
 ## 6. Verifikation
 
