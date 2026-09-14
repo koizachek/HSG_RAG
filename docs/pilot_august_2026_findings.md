@@ -275,29 +275,57 @@ Vorgabe für den Pilot: keine neuen Features, Wünsche werden nur dokumentiert.
   Programmleitung EMBA HSG klären. Falls ja, gehört sie auf die Website, dann
   landet sie über den Scrape im Index.
 
-## 5. Deployment-Checkliste: durch den Pilot erledigte Punkte
+## 5. Abgleich mit `DEPLOYMENT_CHECKLIST.md`
 
-Drei Einträge aus `DEPLOYMENT_CHECKLIST.md` (Abschnitt Datenschutz) sind
-durch den Pilot faktisch abgearbeitet, dort aber noch offen markiert. Beleg
-und Stand hier, damit die Checkliste nachgezogen werden kann:
+Alle dort noch offenen Einträge, geprüft gegen Pilotdaten, Repo und Host
+(Stand 2026-09-14). Die Checkliste selbst wurde nicht verändert; dieser
+Abschnitt ist die Grundlage zum Nachziehen.
 
-- [x] **Consent-Flow im UI vor Go-Live verifiziert.** Im Pilot wurden 47
-  Consent-Entscheidungen geloggt (W33: 9/9 akzeptiert, W34: 31/32, W35: 4/4,
-  W36: 2/2), alle unter Policy v1.1; jede Session hat eine eigene
-  Consent-Datei (`logs/consent/<session_id>.jsonl`), auch im WordPress-Iframe
-  (Fix aus PR #72).
-- [x] **Transkript-Speicherung aktiviert.** `USAGE_STORE_TRANSCRIPTS=true`
-  steht in der Prod-`.env`, Consent-Text v1.1 ist live (Commit `f46fd06`);
-  35 pseudonymisierte Transkripte aus dem Pilot liegen unter
-  `/opt/hsg-rag/logs/transcripts/` und waren die Grundlage dieser Auswertung.
-- [x] **Ersten Wochenbericht verifiziert.** Der Workflow `usage-report.yml`
-  läuft seit W29 wöchentlich; zehn Reports liegen in `docs/usage-reports/`
-  (W29 bis W38), enthalten nur Aggregate ohne Session-IDs und haben keinen
-  Deploy ausgelöst (`docs/**` steht in `paths-ignore`).
+### 5.1 Durch den Pilot erledigt
 
-Weiterhin offen aus derselben Liste und nicht Gegenstand des Pilots:
-Lösch-Cron für `logs/usage` und `logs/transcripts`, Sign-off durch die
-Datenschutzbeauftragte:n, Weaviate-AVV.
+- [x] **Consent-Flow im UI vor Go-Live verifiziert.** 47 Consent-Entscheidungen
+  im Pilot (W33: 9/9 akzeptiert, W34: 31/32, W35: 4/4, W36: 2/2), alle unter
+  Policy v1.1; eigene Consent-Datei pro Session, auch im WordPress-Iframe
+  (PR #72).
+- [x] **Transkript-Speicherung aktiviert.** `USAGE_STORE_TRANSCRIPTS=true` in
+  der Prod-`.env`, Consent-Text v1.1 live (Commit `f46fd06`); 35
+  pseudonymisierte Transkripte waren die Grundlage dieser Auswertung.
+- [x] **Ersten Wochenbericht verifiziert.** `usage-report.yml` läuft seit W29
+  wöchentlich; zehn Reports (W29–W38) in `docs/usage-reports/`, nur
+  Aggregate, kein Deploy ausgelöst.
+- [x] **Iframe auf einer EMBA-Testseite eingebaut** und **Cross-Origin-Test**:
+  die Pilot-Sessions liefen über `emba.unisg.ch/chatbot-test` (DE/EN); die
+  Seiten waren sogar im Retrieval-Index (§2.3).
+- [x] **CSP-Header als Iframe korrekt ausgeliefert**: `deploy/Caddyfile` setzt
+  `frame-ancestors https://*.unisg.ch https://embax.ch https://*.embax.ch`,
+  der Bot lud im Pilot auf der Zielseite.
+- [x] **Dockerfile-Base-Image aktuell**: `python:3.11.14-slim-bookworm` in
+  beiden Stages (war in der Checkliste bereits mit ✓ markiert).
+- [x] **Facts-Action läuft**: `update_programme_facts.yml` täglich erfolgreich
+  (zuletzt 13./14.09.2026).
+- [x] **Weaviate-Cluster-Status**: Cluster erreichbar, Retrieval funktioniert
+  (Replays am 14.09.2026).
+
+### 5.2 Weiterhin offen, nicht Gegenstand des Pilots
+
+- [ ] **Weaviate Cloud in EU-Region + AVV/DPA**: laut `entwurf_dse_v3.md` ist
+  die Weaviate-DPA offen.
+- [ ] **Bewusste Entscheidung zu OpenAI/OpenRouter (US) dokumentiert**:
+  `datenschutz_deployment.md` §2 führt sie als „erforderlich“, nicht als
+  getroffen.
+- [ ] **Usage-Analytics-Retention (Lösch-Cron)**: die Pilot-Transkripte vom
+  05.08. lagen am 14.09. noch auf dem Host, der Cron aus
+  `datenschutz_deployment.md` §4 ist demnach nicht aktiv.
+- [ ] **Sign-off durch Datenschutzbeauftragte:n**: offen.
+- [ ] **Einbettungs-Domains mit dem EMBA-Webteam final abstimmen**: Caddyfile
+  erlaubt `*.unisg.ch` und `embax.ch`; ob das mit dem Webteam final bestätigt
+  ist, ist nicht dokumentiert.
+- [ ] **Optional `LANGSMITH_*`**: nicht gesetzt, optional.
+- [ ] **Prod-`.env` gegen `configs.py` verifiziert**: nicht Teil des Pilots.
+- [ ] **Latenz im Blick (Ziel ~6 s end-to-end)**: Pilot p50 4,7 s, p90 14,2 s,
+  14 Turns über 15 s. Ziel bei p50 erreicht, bei p90 nicht (§2.3).
+- [ ] **Health-Check in Host-Monitoring eingebunden**: `GET /health`
+  antwortet, ein Monitoring dahinter ist nicht dokumentiert.
 
 ## 6. Verifikation
 
