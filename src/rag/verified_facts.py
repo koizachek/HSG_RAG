@@ -37,8 +37,10 @@ _LABELS = {
         'expired': 'ABGELAUFEN',
         'applies_today': 'gilt heute',
         'closed': ('BEWERBUNG GESCHLOSSEN: Die finale Bewerbungsfrist für die aktuelle '
-                   'Kohorte ist abgelaufen. Keine Gebühr als aktuell verfügbar nennen; '
-                   'Interessierte für die nächste Kohorte an die Ansprechperson verweisen.'),
+                   'Kohorte ist abgelaufen. Bei Preisfragen die Studiengebühr dieser Kohorte '
+                   'als Referenzwert nennen, das Bewerbungsfenster (erste bis finale Frist) '
+                   'als geschlossen benennen und sagen, dass die Ansprechperson das nächste '
+                   'Bewerbungsfenster bekannt gibt.'),
     },
     'en': {
         'language': 'Language',
@@ -55,8 +57,10 @@ _LABELS = {
         'expired': 'EXPIRED',
         'applies_today': 'applies today',
         'closed': ('APPLICATIONS CLOSED: the final application deadline for the current '
-                   'cohort has passed. Do not present any fee as currently available; '
-                   'refer interested users to the advisor for the next cohort.'),
+                   'cohort has passed. For price questions state this cohort\'s tuition fee '
+                   'as the reference value, name the application window (first to final '
+                   'deadline) as closed, and say that the advisor announces the next '
+                   'application window.'),
     },
 }
 
@@ -217,10 +221,12 @@ class VerifiedFacts:
             "first — this also holds in programme comparisons and multi-programme "
             "overviews. Mention a fee marked EXPIRED only as expired context when useful, "
             "then point to the applicable deadline and fee.\n"
-            "- If a programme is marked APPLICATIONS CLOSED / BEWERBUNG GESCHLOSSEN, state "
-            "that applications for the current cohort are no longer possible and refer to "
-            "the programme's advisor for the next cohort. Never quote its fees as "
-            "currently bookable.\n"
+            "- If a programme is marked APPLICATIONS CLOSED / BEWERBUNG GESCHLOSSEN, still "
+            "answer price questions with that cohort's fee as the reference value, state "
+            "the application window (first and final deadline) and that it is closed, and "
+            "say when applications reopen (next cohort if listed, otherwise the advisor "
+            "announces the next window). Do not present the fee as bookable today, and "
+            "never answer a price question with only 'applications are closed'.\n"
             "- For topics NOT covered here (curriculum details, admission requirements, "
             "rankings, USPs, alumni network), use the retrieval tool as before.\n"
             "- Never combine fees from different programmes into a range."

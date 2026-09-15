@@ -809,6 +809,14 @@ class ExecutiveAgentChain:
                 if detected_language in config.get("AVAILABLE_LANGUAGES", ["en", "de"]):
                     self._stored_language = detected_language
                     current_language = detected_language
+                elif not self._language_detector.is_confidently_unsupported(processed_query):
+                    # Undecidable input ("test", "hii", "guten Tag"): keep the
+                    # conversation language and let the agent answer instead
+                    # of refusing with the unsupported-language message.
+                    chain_logger.info(
+                        f"Language undecidable, keeping '{current_language}'."
+                    )
+                    self._conversation_state['user_language'] = current_language
                 else:
                     chain_logger.info("Invalid language detected.")
                     self._tag_turn('outcome', 'language_fallback')
@@ -1024,7 +1032,20 @@ class ExecutiveAgentChain:
             chain_logger.info("Suppressed booking state because no programme match or booking intent was detected.")
         elif booking_preference_follow_up and show_booking_widget:
             chain_logger.info("Continuing active booking flow and showing booking widget for a preference follow-up.")
-        
+
+        # When the widget is shown but the model left relevant_programs empty,
+        # fall back to the programme the conversation already converged on so
+        # the booking event names one advisor instead of "all three". Pilot
+        # August 2026: 3 of 15 widget turns had an empty list and testers
+        # reported "wrong advisor".
+        relevant_programs = list(structured_response.relevant_programs or [])
+        suggested_program = self._conversation_state.get('suggested_program')
+        if show_booking_widget and not relevant_programs and suggested_program:
+            relevant_programs = [suggested_program]
+            chain_logger.info(
+                f"relevant_programs empty on booking turn; using suggested_program='{suggested_program}'."
+            )
+
         return LeadAgentQueryResponse(
             response = formatted_response,
             additional_details = additional_details,
@@ -1033,7 +1054,7 @@ class ExecutiveAgentChain:
             processed_query = preprocessed_query,
             appointment_requested = appointment_requested,
             show_booking_widget = show_booking_widget,
-            relevant_programs = structured_response.relevant_programs
+            relevant_programs = relevant_programs
         )
 
     def _is_continuation_request(self, query: str) -> bool:

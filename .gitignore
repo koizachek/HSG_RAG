@@ -82,6 +82,12 @@ IEBMA Test Cards 1_2.docx
 # Internal audit notes (not for the public repo)
 AUDIT_LATENCY_HALLUCINATIONS.md
 
+# Internal planning docs (not for the public repo)
+docs/RUNBOOK_UI_ALTERNATIVEN.md
+
+# Pilot feedback survey export (raw responses, not for the public repo)
+docs/usage-reports/Feedback*.xlsx
+
 # GDPR/consent drafts pending DSB sign-off (not for the public repo)
 docs/entwurf_consent_kurztext.md
 docs/draft_consent_short_text_EN.md

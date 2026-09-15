@@ -1,19 +1,33 @@
 """ Constants for Gradio app """
 
+# Pilot feedback August 2026 ("zu wenig interaktiv, Suchmaschinen-Charakter"):
+# every greeting ends with one opening question so the conversation starts
+# from the user's goal instead of a blank prompt.
+_OPENING_QUESTION = {
+    "en": (
+        "To point you to the right programme, tell me briefly: what would you like "
+        "to change in your career, and would you prefer to study in German or English?"
+    ),
+    "de": (
+        "Damit ich Ihnen das passende Programm zeigen kann: Was möchten Sie beruflich "
+        "verändern, und möchten Sie lieber auf Deutsch oder auf Englisch studieren?"
+    ),
+}
+
 GREETING_MESSAGES = {
     "en": [
-        "Hello and welcome. I am your Executive Education Advisor for the HSG Executive MBA programmes (**IEMBA**, **emba X**, and **EMBA**). How may I support your MBA planning today?",
-        "Hello and welcome. I am your Executive Education Advisor for the University of St.Gallen Executive MBA programmes (**IEMBA**, **emba X**, and **EMBA**). How may I assist you with your programme search?",
-        "Hello and welcome. I am here to help you explore the University of St.Gallen Executive MBA programmes (**EMBA**, **IEMBA**, and **emba X**). What would you like to discuss today?",
-        "Hello and welcome. I am your Executive Education Advisor for the University of St.Gallen’s Executive MBA programmes, and I am here to help you assess fit across **EMBA**, **IEMBA**, and **emba X**.",
-        "Hello and welcome. I am here to support you with questions about the University of St.Gallen Executive MBA programmes and to help you evaluate the **EMBA**, **IEMBA**, and **emba X** options.",
+        "Hello and welcome. I am your Executive Education Advisor for the HSG Executive MBA programmes (**IEMBA**, **emba X**, and **EMBA**). " + _OPENING_QUESTION["en"],
+        "Hello and welcome. I am your Executive Education Advisor for the University of St.Gallen Executive MBA programmes (**IEMBA**, **emba X**, and **EMBA**). " + _OPENING_QUESTION["en"],
+        "Hello and welcome. I am here to help you explore the University of St.Gallen Executive MBA programmes (**EMBA**, **IEMBA**, and **emba X**). " + _OPENING_QUESTION["en"],
+        "Hello and welcome. I am your Executive Education Advisor for the University of St.Gallen’s Executive MBA programmes and help you assess fit across **EMBA**, **IEMBA**, and **emba X**. " + _OPENING_QUESTION["en"],
+        "Hello and welcome. I support you with questions about the University of St.Gallen Executive MBA programmes (**EMBA**, **IEMBA**, and **emba X**). " + _OPENING_QUESTION["en"],
     ],
     "de": [
-        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme und unterstütze Sie gerne bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
-        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**). Ich unterstütze Sie bei Programmwahl, Ablauf und Zulassungsfragen.",
-        "Guten Tag und herzlich willkommen. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme und unterstütze Sie gerne bei Fragen zu **EMBA**, **IEMBA** und **emba X**.",
-        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie gerne bei der Einschätzung der passenden Option.",
-        "Guten Tag. Ich unterstütze Sie gerne bei Fragen zu den HSG Executive MBA Programmen und helfe Ihnen, die Optionen **EMBA**, **IEMBA** und **emba X** einzuordnen.",
+        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme **EMBA**, **IEMBA** und **emba X**. " + _OPENING_QUESTION["de"],
+        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**) und unterstütze Sie bei Programmwahl, Ablauf und Zulassungsfragen. " + _OPENING_QUESTION["de"],
+        "Guten Tag und herzlich willkommen. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme **EMBA**, **IEMBA** und **emba X**. " + _OPENING_QUESTION["de"],
+        "Guten Tag. Ich bin Ihr Executive-Education-Berater für die HSG Executive MBA Programme (**EMBA**, **IEMBA**, **emba X**) und helfe Ihnen bei der Einschätzung der passenden Option. " + _OPENING_QUESTION["de"],
+        "Guten Tag. Ich unterstütze Sie gerne bei Fragen zu den HSG Executive MBA Programmen **EMBA**, **IEMBA** und **emba X**. " + _OPENING_QUESTION["de"],
     ]
 }
 

@@ -28,7 +28,10 @@ LOCK_LANGUAGE_AFTER_N_MESSAGES = 3
 
 # An integer. Sets the maximum amount of conversation turns as the sum of user queries
 # and agent responses. The conversation ends after the maximum turns amount is reached.
-MAX_CONVERSATION_TURNS = 20
+# 40 = 20 user questions. The pilot limit of 20 (10 questions) ended four
+# test conversations mid-flow; the LLM context is capped separately by
+# MAX_HISTORY_MESSAGES, so a higher limit does not grow prompt size.
+MAX_CONVERSATION_TURNS = 40
 
 # ============================================ LLM Configuration ============================================
 

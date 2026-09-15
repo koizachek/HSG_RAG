@@ -293,6 +293,11 @@ def _metrics_from_events(events: list[dict]) -> dict:
             "invalid_input_turns": outcome_counts.get("invalid_input", 0)
             + outcome_counts.get("repeated_invalid_input", 0),
             "max_turns_endings": outcome_counts.get("max_turns", 0),
+            # Language pre-processing refusals. Not counted before 2026-09-14:
+            # the August 2026 pilot had 16 such turns (7 false "mixed
+            # language", 9 "only English or German") invisible in the report.
+            "language_clarification_turns": outcome_counts.get("language_clarification", 0),
+            "language_fallback_turns": outcome_counts.get("language_fallback", 0),
             "exception_turns": outcome_counts.get("exception", 0),
             "slow_turns_over_15s": sum(1 for v in total_s if v > 15),
         },
@@ -472,6 +477,8 @@ def render_markdown(metrics: dict, rubric: dict | None = None) -> str:
             f"- Scope redirects: {risks.get('scope_redirect_turns', 0)} (by type: {risks.get('scope_types') or 'none'})",
             f"- Invalid-input turns: {risks.get('invalid_input_turns', 0)}",
             f"- Max-turns endings: {risks.get('max_turns_endings', 0)}",
+            f"- Language clarification turns (mixed-language prompt): {risks.get('language_clarification_turns', 0)}",
+            f"- Language fallback turns (unsupported-language refusal): {risks.get('language_fallback_turns', 0)}",
             f"- Exceptions: {risks.get('exception_turns', 0)}",
             f"- Turns slower than 15 s: {risks.get('slow_turns_over_15s', 0)}",
             f"- Consent declines: {declined}",
