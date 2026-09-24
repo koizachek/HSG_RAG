@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-20",
+  "generated_at": "2026-09-24",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -60,33 +60,33 @@
     },
     "iemba": {
       "official_name": "International Executive MBA HSG",
-      "current_cohort": "IEMBA 14",
+      "current_cohort": "IEMBA 15",
       "language": {
         "de": "Englisch",
         "en": "English"
       },
-      "programme_start": "2026-08-24",
+      "programme_start": "2027-08-30",
       "duration": {
         "de": "18 Monate",
         "en": "18 months"
       },
       "ects_credits": 75,
       "structure": {
-        "de": "10 Pflichtkurse, 4 Wahlkurse, 14 Kurswochen (10 Wochen am Campus in St. Gallen, 4 Wochen im Ausland), Diplomarbeit",
-        "en": "10 core courses, 4 electives, 14 course weeks (10 weeks on campus in St. Gallen, 4 weeks abroad), thesis"
+        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland",
+        "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad"
       },
       "locations": {
-        "de": "Schweiz (St. Gallen), China, USA, Japan, Spanien, Südafrika, Italien, Costa Rica Wahlkurs, New York City Wahlkurs",
-        "en": "Switzerland (St. Gallen), China, USA, Japan, Spain, South Africa, Italy, Costa Rica elective, New York City elective"
+        "de": "Costa Rica WahlkursTokio, JapanNew York City WahlkursSt. Gallen, SchweizPeking, ChinaUC Berkeley, USAUC Irvine, USAItalien WahlkursSüdafrika WahlkursSpanien Wahlkurs, 10*, Pflichtkurse, +, 4*, Wahlkurse, 10 Wochen Am Campus, + 4 Wochenim Ausland, +, Company Impact Project (CIP), Kurs 1 St. Gallen, Schweiz 5 Tage Start with you: Find your Leadership Identity, Kurs 2 St. Gallen, Schweiz 5 Tage Fundamentals of Strategy, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 3 St. Gallen, Schweiz 5 Tage Financial Reporting & Finance, Kurs 4 St. Gallen, Schweiz 5 Tage Value Creation in a Global Economy, Kurs 5 Tokyo, Japan 5 Tage Doing Business in Japan, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 6 Peking, China 5 Tage Doing Business in China, Kurs 7 St. Gallen, Schweiz 5 Tage Management Accounting & Performance Management, Kurs 8 UC Berkeley, USA 5 Tage Innovation & Entrepreneurship for Sustainable Development, Kurs 9 UC Irvine, USA 5 Tage Leading for Innovation, Kurs 10 St. Gallen, Schweiz 5 Tage Capstone, International EMBA HSG | Executive MBA HSG, Kontakt, Cyra von Müller, Senior Recruitment & Admissions Manager, EMBA HSG Programm, (deutschsprachig), cyra.vonmueller@unisg.ch, +41 71 224 27 12, Beratungsgespräch buchen, Bei allgemeinen Anfragen:, EMBA HSG Team, Kristin Fuchs, Senior Recruitment & Admissions Manager, International EMBA HSG Programm, (englischsprachig), kristin.fuchs@unisg.ch, +41 71 224 75 46, Beratungsgespräch buchen, Teyuna Giger, Recruitment & Admissions Manager, EMBA ETH HSG (emba X) Programm (englischsprachig), teyuna.giger@unisg.ch, +41 71 224 77 65, Beratungsgespräch buchen, DE, EN, EMBA HSG Experience, Warum ein Executive MBA HSG?, Teilnehmerprofil, Leadership Development Programm, EMBA HSG Community, HSG & Campus, Programm, Executive MBA, International Executive MBA, EMBA ETH HSG (emba X), Bewerbung, Wen suchen wir?, Anforderungen und Prozess, Fristen, Finanzierung & Zuschüsse, News & Events, Events, News, Team, Bewerbungsprozess, IEMBA HSG, Das International Executive MBA HSG Studium ist eine Weiterbildung in General-Management, unterrichtet in englischer Sprache, das aufgeschlossenen, zielstrebigen Führungskräften ein internationales Netzwerk, relevante Management-Einblicke sowie Inspiration durch ein Curriculum mit internationaler Ausrichtung, Auslandsmodulen und multinationaler Vielfalt bietet., International Executive MBA im Überblick, Sprache, Englisch, Beginn, 30. August 2027, Gebühr, CHF 89’000, Orte, Costa Rica, Wahlkurs, Japan (Tokio), New York City, Wahlkurs, Schweiz (St. Gallen), China (Peking), USA (UC Berkeley), USA (UC Irvine), Italien, Wahlkurs, Südafrika, Wahlkurs, Spanien, Wahlkurs",
+        "en": "Costa Rica WahlkursTokio, JapanNew York City WahlkursSt. Gallen, SchweizPeking, ChinaUC Berkeley, USAUC Irvine, USAItalien WahlkursSüdafrika WahlkursSpanien Wahlkurs, 10*, Pflichtkurse, +, 4*, Wahlkurse, 10 Wochen Am Campus, + 4 Wochenim Ausland, +, Company Impact Project (CIP), Kurs 1 St. Gallen, Schweiz 5 Tage Start with you: Find your Leadership Identity, Kurs 2 St. Gallen, Schweiz 5 Tage Fundamentals of Strategy, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 3 St. Gallen, Schweiz 5 Tage Financial Reporting & Finance, Kurs 4 St. Gallen, Schweiz 5 Tage Value Creation in a Global Economy, Kurs 5 Tokyo, Japan 5 Tage Doing Business in Japan, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 6 Peking, China 5 Tage Doing Business in China, Kurs 7 St. Gallen, Schweiz 5 Tage Management Accounting & Performance Management, Kurs 8 UC Berkeley, USA 5 Tage Innovation & Entrepreneurship for Sustainable Development, Kurs 9 UC Irvine, USA 5 Tage Leading for Innovation, Kurs 10 St. Gallen, Schweiz 5 Tage Capstone, International EMBA HSG | Executive MBA HSG, Kontakt, Cyra von Müller, Senior Recruitment & Admissions Manager, EMBA HSG Programm, (deutschsprachig), cyra.vonmueller@unisg.ch, +41 71 224 27 12, Beratungsgespräch buchen, Bei allgemeinen Anfragen:, EMBA HSG Team, Kristin Fuchs, Senior Recruitment & Admissions Manager, International EMBA HSG Programm, (englischsprachig), kristin.fuchs@unisg.ch, +41 71 224 75 46, Beratungsgespräch buchen, Teyuna Giger, Recruitment & Admissions Manager, EMBA ETH HSG (emba X) Programm (englischsprachig), teyuna.giger@unisg.ch, +41 71 224 77 65, Beratungsgespräch buchen, DE, EN, EMBA HSG Experience, Warum ein Executive MBA HSG?, Teilnehmerprofil, Leadership Development Programm, EMBA HSG Community, HSG & Campus, Programm, Executive MBA, International Executive MBA, EMBA ETH HSG (emba X), Bewerbung, Wen suchen wir?, Anforderungen und Prozess, Fristen, Finanzierung & Zuschüsse, News & Events, Events, News, Team, Bewerbungsprozess, IEMBA HSG, Das International Executive MBA HSG Studium ist eine Weiterbildung in General-Management, unterrichtet in englischer Sprache, das aufgeschlossenen, zielstrebigen Führungskräften ein internationales Netzwerk, relevante Management-Einblicke sowie Inspiration durch ein Curriculum mit internationaler Ausrichtung, Auslandsmodulen und multinationaler Vielfalt bietet., International Executive MBA im Überblick, Sprache, Englisch, Beginn, 30. August 2027, Gebühr, CHF 89’000, Orte, Costa Rica, Wahlkurs, Japan (Tokyo), New York City, Wahlkurs, Switzerland (St. Gallen), China (Beijing), USA (UC Berkeley), USA (UC Irvine), Italy, Wahlkurs, South Africa, Wahlkurs, Spain, Wahlkurs"
       },
       "tuition_chf": {
         "first_deadline": {
-          "deadline": "2026-03-31",
-          "fee": 80000
+          "deadline": "2027-03-31",
+          "fee": 84000
         },
         "final_deadline": {
-          "deadline": "2026-06-30",
-          "fee": 85000
+          "deadline": "2027-06-30",
+          "fee": 89000
         },
         "note": {
           "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
