@@ -54,8 +54,11 @@ def ask(client, msg):
 # --- Session 1: decline flow (DE) ---
 c = Client(URL, verbose=False)
 decline_info, _ = (val(x) for x in c.predict(api_name="/on_decline"))
+# The app's default language is whatever main.py --app was started with
+# (prod: EN since the pilot embed), so accept either notice.
 check("consent decline shows notice + contact",
-      "Ohne Ihre Einwilligung" in decline_info and "emba@unisg.ch" in decline_info)
+      ("Ohne Ihre Einwilligung" in decline_info or "Without your consent" in decline_info)
+      and "emba@unisg.ch" in decline_info)
 
 # --- Session 2: accept + DE chat ---
 c = Client(URL, verbose=False)
@@ -77,7 +80,7 @@ check("DE handover offers advisor/booking path",
 
 # --- Session 3: EN ---
 c = Client(URL, verbose=False)
-c.predict(language_label="English", api_name="/on_language_change")
+c.predict(language_label="EN", api_name="/on_language_change")
 c.predict(api_name="/on_accept")
 text, dt = ask(c, "What makes the Executive MBA at the University of St. Gallen special?")
 looks_english = sum(text.lower().count(w) for w in [" the ", " and ", " of "]) >= 3
