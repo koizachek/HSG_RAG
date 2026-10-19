@@ -227,8 +227,11 @@ def build_cases() -> list[dict]:
              forbid=[]),
 
         # --------------------------- Conversational ------------------------
+        # Profile carries three of the four fit facts (experience, leadership,
+        # language), so the prompt rule "recommend once at least two are known"
+        # applies and the answer must name a programme instead of asking back.
         dict(id="de_fit_question", lang="de",
-             query="Ich bin Softwarearchitekt mit 12 Jahren Erfahrung, welches Programm passt zu mir?",
+             query="Ich bin Softwarearchitekt mit 12 Jahren Erfahrung, leite seit 4 Jahren ein Team und möchte auf Deutsch studieren. Welches Programm passt zu mir?",
              expect_any=[["emba x", "embax", "emba"]],
              forbid=[]),
         dict(id="en_fit_question", lang="en",
