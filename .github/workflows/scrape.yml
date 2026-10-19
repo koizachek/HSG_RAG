@@ -38,6 +38,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Push über den Deploy Key wie bei den Facts- und Report-Workflows,
+          # damit der Status-Commit auf main landet.
+          ssh-key: ${{ secrets.FACTS_DEPLOY_KEY }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -59,8 +63,8 @@ jobs:
           echo "SCRAPE_COMMAND=${cmd[*]}" >> "$GITHUB_ENV"
 
           set +e
-          "${cmd[@]}"
-          status=$?
+          "${cmd[@]}" 2>&1 | tee scrape.log
+          status=${PIPESTATUS[0]}
           set -e
 
           if [ "$status" -ne 0 ]; then
@@ -74,6 +78,19 @@ jobs:
         run: |
           set -euo pipefail
           python tools/notify_workflow_failure.py
+
+      - name: Record scrape status in the repository
+        if: github.ref_type == 'branch'
+        run: |
+          set -euo pipefail
+          python scripts/scrape_status.py --log scrape.log --out docs/scrape-status.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/scrape-status.md
+          # docs/** ist im Deploy-Workflow ausgenommen: dieser Commit deployt nicht.
+          git commit -m "chore: weekly scrape $(date -u +%G-W%V) recorded"
+          git push origin HEAD:${{ github.ref_name }}
 
       - name: Trigger programme facts update
         env:
