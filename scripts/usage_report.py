@@ -397,6 +397,19 @@ def _fmt(value, suffix=""):
     return f"{value}{suffix}" if value is not None else "n/a"
 
 
+def _transcript_hint(sessions: int, transcripts: int) -> str:
+    """Explain a zero transcript count instead of guessing that storage is off.
+
+    Zero transcripts with zero sessions is simply no traffic. Zero transcripts
+    with sessions present is the only case that points at USAGE_STORE_TRANSCRIPTS.
+    """
+    if transcripts > 0:
+        return ""
+    if sessions == 0:
+        return " (no sessions in window)"
+    return f" (0 despite {sessions} sessions — check USAGE_STORE_TRANSCRIPTS on the host)"
+
+
 def render_markdown(metrics: dict, rubric: dict | None = None) -> str:
     consent = metrics["consent"]
     accepted, declined = consent["accepted"], consent["declined"]
@@ -461,7 +474,7 @@ def render_markdown(metrics: dict, rubric: dict | None = None) -> str:
         lines.append(f"- Flags raised: {flag_counts or 'none'}")
     else:
         lines.append(
-            "- Not available (transcript storage disabled or no transcripts in window)."
+            "- Not available (no transcripts in window)."
         )
     lines += [
         "",
@@ -500,8 +513,9 @@ def render_markdown(metrics: dict, rubric: dict | None = None) -> str:
         "## 5. Data Protection Status",
         "",
         f"- Transcript files written in window: {metrics.get('transcripts_in_window', 0)}"
-        + (" (transcript storage appears DISABLED)" if metrics.get("transcripts_in_window", 0) == 0 else ""),
-        "- Retention: usage events, transcripts and profiles are deleted after 30 days (host cron); reports contain aggregates only.",
+        + _transcript_hint(sessions, metrics.get("transcripts_in_window", 0)),
+        "- Retention: pre-launch phase — the 30-day deletion of usage events, transcripts and profiles "
+        "is scheduled for go-live and not yet active; reports contain aggregates only.",
         "- Wipe requests: per-session files absent for wiped sessions (not separately counted).",
         "",
         "## 6. Caveats",
