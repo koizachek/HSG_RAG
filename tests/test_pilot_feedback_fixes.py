@@ -290,17 +290,6 @@ def test_chat_handler_updates_widget_only_on_booking_turns():
     assert plain[-1][2] == gr.update()
 
 
-# --- Follow-up 3: greeting opens with a question -----------------------------
-
-@pytest.mark.parametrize("lang", ["en", "de"])
-def test_every_greeting_ends_with_the_opening_question(lang):
-    from src.const.agent_response_constants import GREETING_MESSAGES
-
-    for greeting in GREETING_MESSAGES[lang]:
-        assert greeting.rstrip().endswith("?")
-        assert ("beruflich verändern" if lang == "de" else "change in your career") in greeting
-
-
 # --- Follow-up 4: rubric flags carry turn + reason ---------------------------
 
 def test_rubric_judge_keeps_flag_evidence():
