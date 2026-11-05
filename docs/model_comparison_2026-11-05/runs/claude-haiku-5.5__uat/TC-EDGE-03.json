@@ -1,0 +1,73 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt sachlich und professionell, liefert aktuelle Gebühren, Fristen und Kontaktpersonen, verweist auf Finanzierungsmöglichkeiten und bietet menschlichen Kontakt an. Die Tonalität ist ruhig und informativ. Es fehlt jedoch eine explizite Einordnung des Mehrwerts (z.B. Netzwerk, Outcomes, Rankings) und eine Kontextualisierung der Leistungen, was für eine perfekte Punktzahl erwartet wäre.",
+  "issues": [
+    "Es fehlt eine explizite Erklärung des Mehrwerts der Programme (z.B. Netzwerk, Karrierechancen, Rankings)",
+    "Die inkludierten Leistungen werden nicht direkt erläutert oder in den Preis-Kontext gesetzt",
+    "Die Antwort ist etwas zahlenlastig und könnte für einen frustrierten User empathischer und kontextualisierender sein"
+  ],
+  "criteria_missed": [
+    "Wert des Programms (Rankings, Netzwerk, Outcomes) nicht erklärt",
+    "Preis nicht im Kontext der inkludierten Leistungen erläutert"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Die Antwort bleibt sachlich und professionell, liefert aktuelle Gebühren, Fristen und Kontaktpersonen, verweist auf Finanzierungsmöglichkeiten und bietet menschlichen Kontakt an. Die Tonalität ist ruhig und informativ. Es fehlt jedoch eine explizite Einordnung des Mehrwerts (z.B. Netzwerk, Outcomes, Rankings) und eine Kontextualisierung der Leistungen, was für eine perfekte Punktzahl erwartet wäre.",
+    "strengths": [
+      "Sachliche und professionelle Reaktion auf aggressive Formulierung",
+      "Aktuelle, korrekte Gebühren und Fristen für alle Programme",
+      "Verweis auf Finanzierungsmöglichkeiten und Zuschüsse",
+      "Angebot eines persönlichen Kontakts für weitere Klärung",
+      "Keine defensive oder unhöfliche Reaktion"
+    ],
+    "issues": [
+      "Es fehlt eine explizite Erklärung des Mehrwerts der Programme (z.B. Netzwerk, Karrierechancen, Rankings)",
+      "Die inkludierten Leistungen werden nicht direkt erläutert oder in den Preis-Kontext gesetzt",
+      "Die Antwort ist etwas zahlenlastig und könnte für einen frustrierten User empathischer und kontextualisierender sein"
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Preisangaben korrekt und aktuell",
+      "Kontakt zu menschlichen Ansprechpartnern angeboten",
+      "Keine unhöfliche oder defensive Reaktion"
+    ],
+    "criteria_missed": [
+      "Wert des Programms (Rankings, Netzwerk, Outcomes) nicht erklärt",
+      "Preis nicht im Kontext der inkludierten Leistungen erläutert"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass die Studiengebühren hoch wirken. Gern nenne ich die aktuellen Zahlen, damit Sie die Programme vergleichen können. Beim **EMBA HSG** (Deutsch, Start 8. März 2027, 18 Monate, 75 ECTS) beträgt die Studiengebühr derzeit **CHF 72'500** bei Bewerbung bis zum 23. November 2026. Die finale Bewerbungsfrist ist der 1. Februar 2027, danach gilt **CHF 77'500**. Beim **International Executive MBA HSG** (Englisch, Start 30. August 2027, 18 Monate, 75 ECTS) liegt die Gebühr bis zum 31. März 2027 bei **CHF 84'000**, danach bis zur finalen Frist am 30. Juni 2027 bei **CHF 89'000**. Beim **emba X** (Englisch, Start 1. Februar 2027, blended Format in Zürich, St.Gallen und online) ist die Bewerbungsfrist für die aktuelle Kohorte bereits abgelaufen. Die Gebühr dieser Kohorte betrug **CHF 110'000** bei finaler Frist am 31. Oktober 2026. Die Ansprechperson gibt das nächste Bewerbungsfenster bekannt.\n\nFinanzierungsmöglichkeiten, Darlehen und Studiengebühren-Zuschüsse sind unter https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse beschrieben. Für eine persönliche Einordnung der Preisstruktur und der Leistungen steht Ihnen Cyra von Müller für den EMBA HSG unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12 zur Verfügung, Kristin Fuchs für den IEMBA HSG unter kristin.fuchs@unisg.ch oder +41 71 224 75 46 und Teyuna Giger für den emba X unter teyuna.giger@unisg.ch oder +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.371
+    }
+  ],
+  "error": null
+}

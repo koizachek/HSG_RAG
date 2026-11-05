@@ -46,7 +46,7 @@ SUMMARIZATION_MODEL = ('open_router:openai', 'google/gemini-3.5-flash-lite')
 
 # OpenRouter reasoning effort per model role. The 'main' role covers the lead
 # agent, its fallback, summarization and the facts pipeline. Model comparison
-# and the effort trade-off: docs/modellvergleich_2026-11-05.md.
+# and the effort trade-off: docs/model_comparison_2026-11-05.md.
 OPEN_ROUTER_REASONING_EFFORT = {'main': 'low'}
 
 # Legacy defaults retained for compatibility with existing callers.

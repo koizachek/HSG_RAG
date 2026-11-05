@@ -1,0 +1,126 @@
+{
+  "case_id": "TC-EMBA-01",
+  "title": "TC-EMBA-01: Standard Qualification - Perfect Fit",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Konversation erfüllt die wichtigsten Erfolgskriterien: Die Programme werden korrekt vorgestellt, die Qualifikation wird richtig validiert, die Bewerbungsfristen und Gebühren stimmen mit den aktuellen Hard Facts überein, und der Ton ist sachlich und freundlich. Die Handover-Option wird angeboten, und die Sprache ist durchgehend korrekt. Ein kleiner Abzug erfolgt, weil die Dokumentenliste und der Bewerbungsprozess nicht explizit erläutert werden und die inkludierten Leistungen der Gebühr nicht genannt werden. Die Terminvereinbarung ist nutzergeführt und korrekt erklärt.",
+  "issues": [
+    "Die Liste der einzureichenden Bewerbungsunterlagen (z.B. CV, Motivationsschreiben) wird nicht explizit genannt.",
+    "Die inkludierten Leistungen der Studiengebühr werden nicht aufgezählt.",
+    "Der Bewerbungsprozess (Ablauf: Einreichung → Assessment → Interview) wird nicht im Detail erklärt.",
+    "Die Frage nach der bevorzugten Unterrichtssprache wird zweimal gestellt, obwohl der Nutzer bereits auf Deutsch kommuniziert."
+  ],
+  "criteria_missed": [
+    "Dokumentenliste ausgeben (CV, Motivationsschreiben, etc.)",
+    "Timeline/Ablauf des Bewerbungsprozesses erklären",
+    "Inkludierte Leistungen der Gebühr aufzählen"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Konversation erfüllt die wichtigsten Erfolgskriterien: Die Programme werden korrekt vorgestellt, die Qualifikation wird richtig validiert, die Bewerbungsfristen und Gebühren stimmen mit den aktuellen Hard Facts überein, und der Ton ist sachlich und freundlich. Die Handover-Option wird angeboten, und die Sprache ist durchgehend korrekt. Ein kleiner Abzug erfolgt, weil die Dokumentenliste und der Bewerbungsprozess nicht explizit erläutert werden und die inkludierten Leistungen der Gebühr nicht genannt werden. Die Terminvereinbarung ist nutzergeführt und korrekt erklärt.",
+    "strengths": [
+      "Alle drei Programme werden korrekt und differenziert vorgestellt.",
+      "Qualifikation des Nutzers wird richtig erkannt und validiert.",
+      "Empfehlung für EMBA HSG (deutschsprachig, DACH-Fokus) erfolgt mit Begründung.",
+      "Bewerbungsfristen und Gebühren stimmen exakt mit den aktuellen Hard Facts überein.",
+      "Ton ist sachlich, freundlich und nicht werblich.",
+      "Proaktives Handover mit Kontaktdaten und Terminoptionen.",
+      "Keine Spekulationen oder unsichere Aussagen.",
+      "Sprache ist durchgehend korrekt (Deutsch)."
+    ],
+    "issues": [
+      "Die Liste der einzureichenden Bewerbungsunterlagen (z.B. CV, Motivationsschreiben) wird nicht explizit genannt.",
+      "Die inkludierten Leistungen der Studiengebühr werden nicht aufgezählt.",
+      "Der Bewerbungsprozess (Ablauf: Einreichung → Assessment → Interview) wird nicht im Detail erklärt.",
+      "Die Frage nach der bevorzugten Unterrichtssprache wird zweimal gestellt, obwohl der Nutzer bereits auf Deutsch kommuniziert."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Passende Programm-Empfehlung (EMBA HSG)",
+      "Eligibility korrekt validiert (3 Jahre Führung = qualified)",
+      "Faktisch korrekte Informationen (Kosten, Termine)",
+      "Sachlicher, warmer Ton, keine Marketing-Sprache",
+      "Proaktives Handover-Angebot",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "Dokumentenliste ausgeben (CV, Motivationsschreiben, etc.)",
+      "Timeline/Ablauf des Bewerbungsprozesses erklären",
+      "Inkludierte Leistungen der Gebühr aufzählen"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Guten Tag, ich interessiere mich für ein MBA-Studium \nberufsbegleitend.",
+      "assistant": "Guten Tag. Die Universität St.Gallen bietet drei berufsbegleitende Executive MBA-Programme an: den **EMBA HSG** (Deutsch, Programmstart **8. März 2027**, Dauer 18 Monate, 75 ECTS), das **IEMBA HSG** (Englisch, Programmstart **30. August 2027**, Dauer 18 Monate, 75 ECTS) und den **emba X** (Englisch, Blended Format mit Präsenz in Zürich und St.Gallen sowie Online, Programmstart **1. Februar 2027**, Dauer 18 Monate, 75 ECTS).\n\nDer EMBA HSG wird vollständig auf Deutsch unterrichtet und legt den Fokus auf den deutschsprachigen Raum. Das IEMBA HSG umfasst Auslandsmodule an mehreren Standorten weltweit, und der emba X kombiniert Präsenz- und Onlinelernen mit Impact-Projekten.\n\nWelche Unterrichtssprache, welche Berufserfahrung und welche Führungsverantwortung bringen Sie mit? Damit kann ich Ihnen gezielter sagen, welches Programm am besten zu Ihnen passt.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.896
+    },
+    {
+      "turn": 2,
+      "user": "Ich arbeite seit 15 Jahren, davon 7 Jahre als \nAbteilungsleiter.",
+      "assistant": "Mit 15 Jahren Berufserfahrung und 7 Jahren Führungsverantwortung als Abteilungsleiter erfüllen Sie die Grundvoraussetzungen, die für alle drei Programme relevant sind. Für eine konkrete Empfehlung fehlt mir noch eine Angabe: In welcher Unterrichtssprache möchten Sie studieren, Deutsch oder Englisch?\n\nDeutsch: Der **EMBA HSG** richtet sich mit Fokus auf den deutschsprachigen Raum und wird vollständig auf Deutsch unterrichtet. Der Programmstart ist der **8. März 2027**, die Studiengebühr beträgt aktuell **CHF 72'500** bei Anmeldung bis zur 1. Bewerbungsfrist am **23. November 2026**; danach gilt die finale Bewerbungsfrist am **1. Februar 2027** mit **CHF 77'500**.\n\nEnglisch: Das **IEMBA HSG** umfasst Auslandsmodule weltweit und startet am **30. August 2027**. Die aktuelle Studiengebühr beträgt **CHF 84'000** bei Bewerbung bis **31. März 2027**, danach **CHF 89'000** bis zur finalen Bewerbungsfrist am **30. Juni 2027**. Der **emba X** kombiniert Präsenz in Zürich und St.Gallen mit Online-Lernen und ist für die aktuelle Kohorte bereits im Bewerbungsfenster geschlossen; die nächste Bewerbungsfrist wird von Teyuna Giger bekanntgegeben.\n\nFür eine persönliche Einschätzung Ihres Profils steht Ihnen die jeweilige Ansprechperson zur Verfügung.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.966
+    },
+    {
+      "turn": 3,
+      "user": "Was sind die nächsten Schritte im Bewerbungsprozess?",
+      "assistant": "Der Bewerbungsprozess für den **EMBA HSG** und das **IEMBA HSG** ist auf der Webseite der Universität St.Gallen beschrieben: https://emba.unisg.ch/bewerbung/process. Die Bewerbungsfristen finden Sie unter https://emba.unisg.ch/bewerbung/fristen.\n\nFür den **EMBA HSG** gilt aktuell die erste Bewerbungsfrist am **23. November 2026** (Studiengebühr **CHF 72'500**), die finale Bewerbungsfrist ist der **1. Februar 2027** (Studiengebühr **CHF 77'500**).\n\nFür das **IEMBA HSG** gilt aktuell die erste Bewerbungsfrist am **31. März 2027** (Studiengebühr **CHF 84'000**), die finale Bewerbungsfrist ist der **30. Juni 2027** (Studiengebühr **CHF 89'000**).\n\nFür den **emba X** ist die Bewerbungsphase der aktuellen Kohorte bereits geschlossen; die nächste Bewerbungsfrist wird von Teyuna Giger bekanntgegeben.\n\nWenn Sie eines dieser Programme in Betracht ziehen, begleitet Sie die jeweilige Ansprechperson durch den Prozess: Cyra von Müller für den EMBA HSG (cyra.vonmueller@unisg.ch, +41 71 224 27 12) und Kristin Fuchs für das IEMBA HSG (kristin.fuchs@unisg.ch, +41 71 224 75 46). Möchten Sie einen Beratungstermin vereinbaren?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.222
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr hängt vom Programm und vom Zeitpunkt Ihrer Bewerbung ab. Für den **EMBA HSG** (Deutsch) gilt heute die erste Bewerbungsfrist am **23. November 2026** mit **CHF 72'500**. Bewerben Sie sich bis zur finalen Bewerbungsfrist am **1. Februar 2027**, beträgt die Gebühr **CHF 77'500**.\n\nFür das **IEMBA HSG** (Englisch) gilt heute die erste Bewerbungsfrist am **31. März 2027** mit **CHF 84'000**. Bis zur finalen Bewerbungsfrist am **30. Juni 2027** beträgt die Gebühr **CHF 89'000**.\n\nFür den **emba X** (Englisch, Blended Format) ist die Bewerbungsphase der aktuellen Kohorte emba X6 geschlossen. Die Studiengebühr dieser Kohorte betrug **CHF 110'000** bei finaler Bewerbungsfrist am 31. Oktober 2026, die erste Bewerbungsfrist am 31. August 2026 lag bei **CHF 99'000**. Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65) gibt die nächste Bewerbungsfrist bekannt.\n\nWelches Programm interessiert Sie am meisten, damit ich Ihnen die Gebühr im Detail erläutern kann?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.841
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne. Sie können direkt einen Beratungstermin buchen. Die Terminoptionen werden Ihnen unterhalb angezeigt, sobald Sie zugestimmt haben. Für den **EMBA HSG** (Deutsch) berät Sie Cyra von Müller, und für das **IEMBA HSG** (Englisch) Kristin Fuchs. Welches Programm möchten Sie besprechen? Wenn Sie beide in Betracht ziehen, wählen Sie einfach beide Beratungen aus.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba",
+        "iemba"
+      ],
+      "elapsed_s": 1.738
+    }
+  ],
+  "error": null
+}

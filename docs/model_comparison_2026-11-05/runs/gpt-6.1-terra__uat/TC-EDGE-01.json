@@ -1,0 +1,70 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist sachlich korrekt, freundlich und erfüllt die wichtigsten Anforderungen: Die Kriterien werden klar erklärt, die Ablehnung erfolgt höflich und es wird eine passende Alternative (MBA) angeboten. Ein Kontakt zur Beratung wird genannt, auch wenn die E-Mail-Adresse leicht von der aktuellen Ansprechpartnerin abweicht. Die Sprache ist korrekt und der Ton ist empathisch.",
+  "issues": [
+    "Die genannte Kontaktadresse (emba@unisg.ch) ist generisch und nicht die spezifisch ausgewiesene Ansprechpartnerin (Cyra von Müller) laut aktueller Hard Facts.",
+    "Ein direkter Verweis auf die namentlich genannte Ansprechpartnerin mit E-Mail und Telefonnummer wäre noch besser gewesen."
+  ],
+  "criteria_missed": [
+    "Namentliche Nennung der aktuellen Ansprechpartnerin (Cyra von Müller) mit korrekter E-Mail und Telefonnummer"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antwort ist sachlich korrekt, freundlich und erfüllt die wichtigsten Anforderungen: Die Kriterien werden klar erklärt, die Ablehnung erfolgt höflich und es wird eine passende Alternative (MBA) angeboten. Ein Kontakt zur Beratung wird genannt, auch wenn die E-Mail-Adresse leicht von der aktuellen Ansprechpartnerin abweicht. Die Sprache ist korrekt und der Ton ist empathisch.",
+    "strengths": [
+      "Kriterien für den EMBA HSG werden klar und korrekt erläutert.",
+      "Ablehnung erfolgt höflich und sachlich, nicht abweisend.",
+      "Alternative (MBA-Programm) wird explizit vorgeschlagen.",
+      "Kontakt zur Studienberatung wird angeboten.",
+      "Sprache und Ton sind angemessen und freundlich."
+    ],
+    "issues": [
+      "Die genannte Kontaktadresse (emba@unisg.ch) ist generisch und nicht die spezifisch ausgewiesene Ansprechpartnerin (Cyra von Müller) laut aktueller Hard Facts.",
+      "Ein direkter Verweis auf die namentlich genannte Ansprechpartnerin mit E-Mail und Telefonnummer wäre noch besser gewesen."
+    ],
+    "criteria_met": [
+      "Empathische, nicht abweisende Reaktion",
+      "Kriterien klar erklärt (5+ Jahre ODER 3+ Führung)",
+      "Feststellung, dass Kriterien nicht erfüllt sind",
+      "Alternative (MBA) angeboten",
+      "Kontakt zur Beratung angeboten"
+    ],
+    "criteria_missed": [
+      "Namentliche Nennung der aktuellen Ansprechpartnerin (Cyra von Müller) mit korrekter E-Mail und Telefonnummer"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Für den **EMBA HSG** erfüllen Sie mit zwei Jahren Berufserfahrung derzeit die veröffentlichte Mindestanforderung an Berufserfahrung nicht. Vorausgesetzt werden:\n\n- Ein anerkannter Hochschulabschluss, etwa ein Bachelor einer Universität oder Fachhochschule\n- Mindestens **5 Jahre Berufserfahrung** und **3 Jahre Management- oder Führungserfahrung**\n- Sehr gute Deutschkenntnisse\n\nAuch der IEMBA HSG und der emba X setzen mindestens fünf beziehungsweise zehn Jahre Berufserfahrung voraus. Als Alternative für Personen mit weniger Berufserfahrung können Sie den [MBA der Universität St.Gallen](https://www.mba.unisg.ch/) prüfen.\n\nÜber die Zulassung entscheidet die jeweilige Zulassungsstelle. Für eine persönliche Einschätzung erreichen Sie die Studienberatung unter **emba@unisg.ch** oder **+41 71 224 27 02**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 11.807
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,69 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 7.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "Die Antwort ist sachlich korrekt, freundlich und erklärt die Zulassungskriterien klar. Es fehlt jedoch ein empathischer Einstieg und ein Alternativvorschlag (z.B. Hinweis auf das reguläre MBA-Programm), wie in der Szenariobeschreibung gefordert. Die Kontaktaufnahme zur Studienberatung wird angeboten, was positiv ist.",
+  "issues": [
+    "Kein empathischer Einstieg (z.B. \"Vielen Dank für Ihr Interesse\" oder \"Herzlichen Glückwunsch zum Bachelor\").",
+    "Kein Alternativvorschlag (z.B. Hinweis auf das reguläre MBA-Programm oder andere passende Programme)."
+  ],
+  "criteria_missed": [
+    "Empathisch reagieren (nicht abweisend!)",
+    "Alternative anbieten: \"Unser reguläres MBA-Programm könnte passen\""
+  ],
+  "judgement": {
+    "overall_score": 7.5,
+    "passed": false,
+    "verdict": "Die Antwort ist sachlich korrekt, freundlich und erklärt die Zulassungskriterien klar. Es fehlt jedoch ein empathischer Einstieg und ein Alternativvorschlag (z.B. Hinweis auf das reguläre MBA-Programm), wie in der Szenariobeschreibung gefordert. Die Kontaktaufnahme zur Studienberatung wird angeboten, was positiv ist.",
+    "strengths": [
+      "Korrekte und klare Darstellung der Zulassungskriterien für den EMBA HSG.",
+      "Freundlicher, sachlicher Ton.",
+      "Kontakt zur zuständigen Ansprechperson wird angeboten.",
+      "Sprache ist korrekt (Deutsch)."
+    ],
+    "issues": [
+      "Kein empathischer Einstieg (z.B. \"Vielen Dank für Ihr Interesse\" oder \"Herzlichen Glückwunsch zum Bachelor\").",
+      "Kein Alternativvorschlag (z.B. Hinweis auf das reguläre MBA-Programm oder andere passende Programme)."
+    ],
+    "criteria_met": [
+      "Kriterien klar erklärt",
+      "Festgestellt, dass Kriterien nicht erfüllt sind",
+      "Kontakt zu Admissions angeboten"
+    ],
+    "criteria_missed": [
+      "Empathisch reagieren (nicht abweisend!)",
+      "Alternative anbieten: \"Unser reguläres MBA-Programm könnte passen\""
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Für den **EMBA HSG** erfüllen Sie die Mindestanforderungen derzeit nicht: erforderlich sind mindestens **5 Jahre Berufserfahrung** und **3 Jahre Management- oder Führungserfahrung**. Mit 2 Jahren Berufserfahrung liegen Sie unter der veröffentlichten Mindestanforderung; ein Bachelorabschluss erfüllt zwar die akademische Voraussetzung, ersetzt die erforderliche Berufserfahrung aber nicht. Die Zulassung beurteilt die Universität St.Gallen anhand der vollständigen Bewerbung. Für eine persönliche Einschätzung wenden Sie sich an **Cyra von Müller**: cyra.vonmueller@unisg.ch oder +41 71 224 27 12. Details zum Bewerbungsprozess: https://emba.unisg.ch/bewerbung/process",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.614
+    }
+  ],
+  "error": null
+}

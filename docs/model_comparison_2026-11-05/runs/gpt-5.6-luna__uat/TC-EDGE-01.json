@@ -1,0 +1,50 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 0.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "UAT runner or judge error: Error code: 402 - {'error': {'message': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key's total limit\", 'code': 402, 'metadata': {'limit_source': 'openrouter_key_limit', 'remedy_hint': \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", 'provider_name': None, 'previous_errors': [{'code': 402, 'message': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key's total limit\"}]}}, 'user_id': 'user_3BQikKyCNiswU91X2c0wSYUiFqY'}",
+  "issues": [
+    "APIStatusError('Error code: 402 - {\\'error\\': {\\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\", \\'code\\': 402, \\'metadata\\': {\\'limit_source\\': \\'openrouter_key_limit\\', \\'remedy_hint\\': \"Raise or remove this API key\\'s usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", \\'provider_name\\': None, \\'previous_errors\\': [{\\'code\\': 402, \\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\"}]}}, \\'user_id\\': \\'user_3BQikKyCNiswU91X2c0wSYUiFqY\\'}')"
+  ],
+  "criteria_missed": [
+    "UAT case could not complete"
+  ],
+  "judgement": {
+    "passed": false,
+    "verdict": "UAT runner or judge error: Error code: 402 - {'error': {'message': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key's total limit\", 'code': 402, 'metadata': {'limit_source': 'openrouter_key_limit', 'remedy_hint': \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", 'provider_name': None, 'previous_errors': [{'code': 402, 'message': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key's total limit\"}]}}, 'user_id': 'user_3BQikKyCNiswU91X2c0wSYUiFqY'}",
+    "issues": [
+      "APIStatusError('Error code: 402 - {\\'error\\': {\\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\", \\'code\\': 402, \\'metadata\\': {\\'limit_source\\': \\'openrouter_key_limit\\', \\'remedy_hint\\': \"Raise or remove this API key\\'s usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", \\'provider_name\\': None, \\'previous_errors\\': [{\\'code\\': 402, \\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\"}]}}, \\'user_id\\': \\'user_3BQikKyCNiswU91X2c0wSYUiFqY\\'}')"
+    ],
+    "criteria_missed": [
+      "UAT case could not complete"
+    ]
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Für den **Executive MBA HSG** erfüllen Sie mit einem Bachelorabschluss zwar die akademische Voraussetzung, mit **zwei Jahren Berufserfahrung** jedoch noch nicht die veröffentlichte Mindestanforderung von **mindestens fünf Jahren Berufserfahrung**. Zusätzlich werden **mindestens drei Jahre Management- oder Führungserfahrung** sowie sehr gute Deutschkenntnisse erwartet.\n\nDas gilt grundsätzlich auch für den **IEMBA HSG** und emba X. Eine Zulassung zu einem Executive MBA ist daher nach den veröffentlichten Kriterien derzeit nicht gegeben; die finale Entscheidung trifft stets der Zulassungsausschuss.\n\nFür weniger Berufserfahrung kommt der reguläre **MBA der Universität St.Gallen** infrage: https://www.mba.unisg.ch/",
+      "additional_details": "Falls kein anerkannter akademischer Abschluss vorliegt, gibt es bei den Executive-MBA-Programmen eine individuelle Beurteilung auf Basis des Bewerbungsdossiers. Mit Ihrem Bachelorabschluss ist diese Sonderregelung nicht erforderlich. Für eine persönliche Einschätzung erreichen Sie das Executive-MBA-Team unter emba@unisg.ch oder +41 71 224 27 02.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.178
+    }
+  ],
+  "error": "APIStatusError('Error code: 402 - {\\'error\\': {\\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\", \\'code\\': 402, \\'metadata\\': {\\'limit_source\\': \\'openrouter_key_limit\\', \\'remedy_hint\\': \"Raise or remove this API key\\'s usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", \\'provider_name\\': None, \\'previous_errors\\': [{\\'code\\': 402, \\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 29586. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\"}]}}, \\'user_id\\': \\'user_3BQikKyCNiswU91X2c0wSYUiFqY\\'}')"
+}

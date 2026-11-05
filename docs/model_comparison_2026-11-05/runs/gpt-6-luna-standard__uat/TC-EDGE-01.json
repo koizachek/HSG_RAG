@@ -1,0 +1,70 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist korrekt, empathisch und vollständig. Die Mindestvoraussetzungen für den EMBA HSG werden klar und sachlich erklärt (5 Jahre Berufserfahrung oder 3 Jahre Führungserfahrung). Es wird festgestellt, dass die Kriterien nicht erfüllt sind. Als Alternative wird der reguläre MBA der Universität St.Gallen vorgeschlagen, inklusive Link. Ein Kontaktweg zum Admissions-Team wird angeboten. Die Sprache ist korrekt (Deutsch), der Ton ist höflich und unterstützend. Ein kleiner Punktabzug, weil der Kontakt nicht namentlich (Cyra von Müller) genannt wird, sondern eine allgemeine E-Mail und Telefonnummer angegeben werden. Die Kernanforderungen und der alternative Vorschlag sind aber erfüllt.",
+  "issues": [
+    "Kontakt zum Admissions-Team nicht namentlich (Cyra von Müller) genannt, sondern allgemeine Adresse",
+    "Kleine sprachliche Unschärfe: Es wird nicht explizit gesagt, dass 3 Jahre Führungserfahrung als Alternative zu 5 Jahren Berufserfahrung gelten (\"oder\" fehlt im Satz), aber dies ist aus dem Kontext klar"
+  ],
+  "criteria_missed": [
+    "Kontakt nicht namentlich (Cyra von Müller) genannt"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antwort ist korrekt, empathisch und vollständig. Die Mindestvoraussetzungen für den EMBA HSG werden klar und sachlich erklärt (5 Jahre Berufserfahrung oder 3 Jahre Führungserfahrung). Es wird festgestellt, dass die Kriterien nicht erfüllt sind. Als Alternative wird der reguläre MBA der Universität St.Gallen vorgeschlagen, inklusive Link. Ein Kontaktweg zum Admissions-Team wird angeboten. Die Sprache ist korrekt (Deutsch), der Ton ist höflich und unterstützend. Ein kleiner Punktabzug, weil der Kontakt nicht namentlich (Cyra von Müller) genannt wird, sondern eine allgemeine E-Mail und Telefonnummer angegeben werden. Die Kernanforderungen und der alternative Vorschlag sind aber erfüllt.",
+    "strengths": [
+      "Klar und sachlich erklärt, warum die Voraussetzungen nicht erfüllt sind",
+      "Empathischer, nicht abweisender Ton",
+      "Alternative (MBA) wird angeboten, inkl. Link",
+      "Kontaktweg für weitere Beratung wird angeboten",
+      "Sprache und Ton sind angemessen"
+    ],
+    "issues": [
+      "Kontakt zum Admissions-Team nicht namentlich (Cyra von Müller) genannt, sondern allgemeine Adresse",
+      "Kleine sprachliche Unschärfe: Es wird nicht explizit gesagt, dass 3 Jahre Führungserfahrung als Alternative zu 5 Jahren Berufserfahrung gelten (\"oder\" fehlt im Satz), aber dies ist aus dem Kontext klar"
+    ],
+    "criteria_met": [
+      "Empathisch reagiert",
+      "Kriterien klar erklärt (5+ Jahre ODER 3+ Führung)",
+      "Festgestellt, dass Kriterien nicht erfüllt sind",
+      "Alternative (MBA) angeboten",
+      "Kontaktweg für Beratung zu Alternativen angeboten"
+    ],
+    "criteria_missed": [
+      "Kontakt nicht namentlich (Cyra von Müller) genannt"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Mit **2 Jahren Berufserfahrung** erfüllen Sie derzeit die veröffentlichten Mindestvoraussetzungen für den **EMBA HSG** nicht: Gefordert sind mindestens **5 Jahre Berufserfahrung** sowie **3 Jahre Management- oder Führungserfahrung**. Ihr Bachelorabschluss erfüllt die akademische Voraussetzung, sofern er anerkannt ist. Über die Zulassung entscheidet abschliessend der Zulassungsausschuss.\n\nFür Personen mit weniger Berufserfahrung könnte der reguläre **MBA der Universität St.Gallen** eher passen: https://www.mba.unisg.ch/. Die Zulassungsvoraussetzungen für den EMBA HSG finden Sie unter https://emba.unisg.ch/bewerbung/process. Für eine individuelle Einschätzung können Sie das Admissions-Team unter emba@unisg.ch oder +41 71 224 27 02 kontaktieren.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.649
+    }
+  ],
+  "error": null
+}

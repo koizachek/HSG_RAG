@@ -1,0 +1,74 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist korrekt, freundlich und klar. Die Mindestvoraussetzungen werden richtig erklärt, die Ablehnung erfolgt sachlich und nicht abweisend. Es wird eine passende Alternative (MBA HSG) angeboten und ein Kontaktweg für weitere Beratung genannt. Ein kleiner Abzug erfolgt, weil der Kontakt nicht personalisiert (Cyra von Müller) ist und die offizielle EMBA-Adresse leicht abweicht, aber die Information ist dennoch hilfreich und zielführend.",
+  "issues": [
+    "Kontaktangabe ist generisch (emba@unisg.ch) statt der laut Hard Facts aktuellen Ansprechperson (Cyra von Müller)",
+    "Telefonnummer stimmt nicht exakt mit den aktuellen Hard Facts überein (+41 71 224 27 12 wäre korrekt)",
+    "Der Link zum Bewerbungsprozess ist hilfreich, aber ein direkter Verweis auf die persönliche Beratung durch die namentlich genannte Ansprechperson wäre noch besser"
+  ],
+  "criteria_missed": [
+    "Kontakt nicht namentlich/personalisiert (Cyra von Müller)",
+    "Telefonnummer nicht exakt laut Hard Facts"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Die Antwort ist korrekt, freundlich und klar. Die Mindestvoraussetzungen werden richtig erklärt, die Ablehnung erfolgt sachlich und nicht abweisend. Es wird eine passende Alternative (MBA HSG) angeboten und ein Kontaktweg für weitere Beratung genannt. Ein kleiner Abzug erfolgt, weil der Kontakt nicht personalisiert (Cyra von Müller) ist und die offizielle EMBA-Adresse leicht abweicht, aber die Information ist dennoch hilfreich und zielführend.",
+    "strengths": [
+      "Korrekte und vollständige Darstellung der Zulassungskriterien",
+      "Empathischer, sachlicher Ton",
+      "Alternative (MBA HSG) wird aktiv vorgeschlagen",
+      "Kontaktweg für weitere Beratung wird angeboten",
+      "Sprache ist korrekt (Deutsch)"
+    ],
+    "issues": [
+      "Kontaktangabe ist generisch (emba@unisg.ch) statt der laut Hard Facts aktuellen Ansprechperson (Cyra von Müller)",
+      "Telefonnummer stimmt nicht exakt mit den aktuellen Hard Facts überein (+41 71 224 27 12 wäre korrekt)",
+      "Der Link zum Bewerbungsprozess ist hilfreich, aber ein direkter Verweis auf die persönliche Beratung durch die namentlich genannte Ansprechperson wäre noch besser"
+    ],
+    "criteria_met": [
+      "Empathisch und nicht abweisend",
+      "Kriterien klar erklärt (5+ Jahre ODER 3+ Führung)",
+      "Feststellung, dass Kriterien nicht erfüllt sind",
+      "Alternative (MBA HSG) angeboten",
+      "Kontakt für Beratung zu Alternativen angeboten"
+    ],
+    "criteria_missed": [
+      "Kontakt nicht namentlich/personalisiert (Cyra von Müller)",
+      "Telefonnummer nicht exakt laut Hard Facts"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Für die Executive-MBA-Programme der Universität St.Gallen gelten grundsätzlich folgende Mindestvoraussetzungen: ein anerkannter Bachelor- oder Masterabschluss, mindestens **5 Jahre Berufserfahrung** sowie mindestens **3 Jahre Management- oder Führungserfahrung**. Mit einem Bachelorabschluss und **2 Jahren Berufserfahrung** erfüllen Sie diese veröffentlichten Mindestkriterien derzeit noch nicht. Die finale Entscheidung trifft der Zulassungsausschuss; eine individuelle Ausnahme lässt sich daraus nicht ableiten. Für Bewerberinnen und Bewerber mit weniger Berufserfahrung ist der reguläre **MBA HSG** möglicherweise passender: https://www.mba.unisg.ch/",
+      "additional_details": "Für eine persönliche Einschätzung Ihrer Situation können Sie das Executive-MBA-Team unter **emba@unisg.ch** oder **+41 71 224 27 02** kontaktieren. Die Zulassungsvoraussetzungen und der Bewerbungsprozess sind hier beschrieben: https://emba.unisg.ch/bewerbung/process",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.873
+    }
+  ],
+  "error": null
+}

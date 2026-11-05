@@ -1,0 +1,122 @@
+{
+  "case_id": "TC-EMBA-01",
+  "title": "TC-EMBA-01: Standard Qualification - Perfect Fit",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, sachliche und korrekte Beratung mit kleinen Abzügen bei der Dokumentenliste und der expliziten Timeline. Alle Kernanforderungen erfüllt.",
+  "issues": [
+    "Die Dokumentenliste für die Bewerbung (z.B. CV, Motivationsschreiben) wird nicht explizit genannt.",
+    "Die Timeline des Bewerbungsprozesses (z.B. Dauer der einzelnen Schritte, Fristen) wird nicht konkret erläutert.",
+    "Die im Success Criteria geforderte Aufzählung der inkludierten Leistungen bei den Kosten fehlt.",
+    "Die explizite Erfassung von User-Daten für die Weiterleitung wird nicht angeboten (nur Hinweis auf Terminbuchung)."
+  ],
+  "criteria_missed": [
+    "Dokumentenliste und Timeline im Bewerbungsprozess nicht explizit genannt",
+    "Inkludierte Leistungen bei den Kosten nicht aufgezählt",
+    "User-Daten für Weiterleitung nicht aktiv erfasst"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Sehr gute, sachliche und korrekte Beratung mit kleinen Abzügen bei der Dokumentenliste und der expliziten Timeline. Alle Kernanforderungen erfüllt.",
+    "strengths": [
+      "Sprache korrekt erkannt und konsequent Deutsch verwendet.",
+      "Alle drei Programme werden zu Beginn kurz und korrekt vorgestellt.",
+      "Qualifikation des Nutzers wird korrekt validiert und EMBA HSG als passend empfohlen.",
+      "Fakten zu Kosten, Fristen, Dauer und Sprache stimmen mit den aktuellen Hard Facts überein.",
+      "Kein werblicher oder spekulativer Ton, sondern sachlich und freundlich.",
+      "Proaktives Handover zur richtigen Ansprechperson mit Hinweis auf Terminbuchung.",
+      "Keine verbotenen Details zu Stipendien oder falsche Versprechen."
+    ],
+    "issues": [
+      "Die Dokumentenliste für die Bewerbung (z.B. CV, Motivationsschreiben) wird nicht explizit genannt.",
+      "Die Timeline des Bewerbungsprozesses (z.B. Dauer der einzelnen Schritte, Fristen) wird nicht konkret erläutert.",
+      "Die im Success Criteria geforderte Aufzählung der inkludierten Leistungen bei den Kosten fehlt.",
+      "Die explizite Erfassung von User-Daten für die Weiterleitung wird nicht angeboten (nur Hinweis auf Terminbuchung)."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Passende Programm-Empfehlung (EMBA HSG)",
+      "Eligibility korrekt validiert (3 Jahre Führung = qualified)",
+      "Faktisch korrekte Informationen (Kosten, Termine)",
+      "Sachlicher, warmer Ton, keine Marketing-Sprache",
+      "Proaktives Handover-Angebot",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "Dokumentenliste und Timeline im Bewerbungsprozess nicht explizit genannt",
+      "Inkludierte Leistungen bei den Kosten nicht aufgezählt",
+      "User-Daten für Weiterleitung nicht aktiv erfasst"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Guten Tag, ich interessiere mich für ein MBA-Studium \nberufsbegleitend.",
+      "assistant": "Die Universität St.Gallen bietet drei berufsbegleitende Executive MBA-Programme an, die sich in Ausrichtung und Sprache unterscheiden:\n\n- **EMBA HSG**: Der deutschsprachige Executive MBA fokussiert auf General Management mit starkem Bezug zum deutschsprachigen Raum. Das Programm dauert 18 Monate und kostet in der aktuellen Frist **CHF 72'500** (bei Bewerbung bis 23.11.2026, danach CHF 77'500).\n- **International Executive MBA HSG (IEMBA)**: Dieses englischsprachige Programm bietet eine internationale Ausrichtung mit weltweiten Modulen und dauert ebenfalls 18 Monate. Die Studiengebühr beträgt aktuell **CHF 84'000** (bei Bewerbung bis 31.03.2027, danach CHF 89'000).\n- **emba X (EMBA ETH HSG)**: Das gemeinsame Programm mit der ETH Zürich verbindet Management, Technologie und Transformation auf Englisch im Blended-Format. Die Studiengebühr der aktuellen Kohorte liegt bei **CHF 99'000** bzw. **CHF 110'000** (das Bewerbungsfenster für diese Kohorte ist bereits geschlossen).\n\nUm das für Sie passende Programm zu ermitteln: Welche Unterrichtssprache bevorzugen Sie, und wie viele Jahre Berufs- und Führungserfahrung bringen Sie mit?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.758
+    },
+    {
+      "turn": 2,
+      "user": "Ich arbeite seit 15 Jahren, davon 7 Jahre als \nAbteilungsleiter.",
+      "assistant": "Mit 15 Jahren Berufserfahrung und 7 Jahren Führungserfahrung als Abteilungsleiter bringen Sie ein ideales Profil für unsere Executive MBA-Programme mit. Da Sie Ihre Anfrage auf Deutsch gestellt haben, ist der deutschsprachige **EMBA HSG** (Start: 8. März 2027, Studiengebühr in der ersten Frist bis 23.11.2026: CHF 72'500) eine sehr passende Wahl für General Management im deutschsprachigen Raum. Alternativ stehen Ihnen mit dem englischsprachigen **International Executive MBA HSG** (Start: 30. August 2027, Gebühr bis 31.03.2027: CHF 84'000) für eine globale Ausrichtung oder dem **emba X** für Technologie und Transformation zwei weitere Optionen offen. Für welches der Programme interessieren Sie sich am meisten?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.821
+    },
+    {
+      "turn": 3,
+      "user": "Was sind die nächsten Schritte im Bewerbungsprozess?",
+      "assistant": "Der Bewerbungsprozess für den EMBA HSG umfasst folgende Schritte:\n\n1. Kontaktaufnahme: Senden Sie Ihren Lebenslauf an das Team, um prüfen zu lassen, ob Ihr Profil optimal zum Programm passt.\n2. Online-Bewerbung: Reichen Sie Ihre vollständigen Unterlagen über die Online-Bewerbung ein.\n3. Online-Assessment: Nach Einladung absolvieren Sie das Online-Assessment.\n4. Online-Interview: Im Anschluss findet ein persönliches Online-Gespräch statt.\n5. Finaler Entscheid: Der Zulassungsausschuss trifft die endgültige Entscheidung über Ihre Aufnahme.\n\nDer gesamte Bewerbungsprozess ist für Sie kostenlos. Weitere Details und den Zugang zur Bewerbung finden Sie auf der Seite zum Zulassungsprozess unter https://emba.unisg.ch/bewerbung/process.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.485
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Für den **EMBA HSG** beträgt die Studiengebühr in der ersten Bewerbungsfrist bis zum 23. November 2026 **CHF 72'500**. Bei einer Bewerbung bis zur finalen Frist am 1. Februar 2027 liegt die Gebühr bei **CHF 77'500**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.84
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne vermittle ich Ihnen ein persönliches Beratungsgespräch. Ich zeige Ihnen hier direkt die Terminoptionen mit Cyra von Müller, unserer Senior Recruitment & Admissions Managerin für den EMBA HSG. Die verfügbaren Slots und Kontaktdaten finden Sie im Bereich weiter unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [],
+      "elapsed_s": 2.407
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,18 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0
+rootdir: ~/Desktop/StG/RAG_Agent/HSG_RAG
+configfile: pytest.ini
+plugins: Faker-40.13.0, anyio-4.10.0, asyncio-1.3.0, langsmith-0.7.30
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 34 items
+
+tests/test_llm_fact_eval.py ..................................           [100%]
+
+=============================== warnings summary ===============================
+tests/test_llm_fact_eval.py::test_fact_eval[de_price_emba]
+  /opt/anaconda3/lib/python3.13/site-packages/weaviate/warnings.py:93: DeprecationWarning: Dep005: You are using weaviate-client version 4.20.5. The latest version is 4.24.1.
+              Consider upgrading to the latest version. See https://weaviate.io/developers/weaviate/client-libraries/python for details.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 34 passed, 1 warning in 150.67s (0:02:30) ===================

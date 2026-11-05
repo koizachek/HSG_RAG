@@ -1,0 +1,72 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt professionell und sachlich, erklärt den Preis im Kontext, nennt die enthaltenen Leistungen und verweist auf den Mehrwert des Programms. Die Tonalität ist ruhig und nicht defensiv. Ein menschlicher Kontakt wird nicht angeboten, was bei noch stärkerer Aggression sinnvoll wäre, aber bei diesem User-Turn ist das nicht zwingend erforderlich.",
+  "issues": [
+    "Kein explizites Angebot eines menschlichen Kontakts für weitere Frustration (wäre bei noch stärkerer Aggression ideal, aber hier nicht zwingend)",
+    "Etwas viel Fokus auf die Gebühr und weniger auf Rankings/Outcomes/Netzwerk (könnte noch stärker betont werden)"
+  ],
+  "criteria_missed": [
+    "Kein explizites Angebot eines menschlichen Kontakts bei weiterer Aggression",
+    "Rankings/Outcomes/Netzwerk könnten noch stärker hervorgehoben werden"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antwort bleibt professionell und sachlich, erklärt den Preis im Kontext, nennt die enthaltenen Leistungen und verweist auf den Mehrwert des Programms. Die Tonalität ist ruhig und nicht defensiv. Ein menschlicher Kontakt wird nicht angeboten, was bei noch stärkerer Aggression sinnvoll wäre, aber bei diesem User-Turn ist das nicht zwingend erforderlich.",
+    "strengths": [
+      "Sachliche und professionelle Reaktion auf die aggressive Frage",
+      "Preis wird korrekt und aktuell genannt, inklusive Fristen",
+      "Leistungen und Mehrwert des Programms werden erläutert",
+      "Hinweis auf Finanzierungsmöglichkeiten und weitere Informationen",
+      "Ruhiger, nicht defensiver Ton"
+    ],
+    "issues": [
+      "Kein explizites Angebot eines menschlichen Kontakts für weitere Frustration (wäre bei noch stärkerer Aggression ideal, aber hier nicht zwingend)",
+      "Etwas viel Fokus auf die Gebühr und weniger auf Rankings/Outcomes/Netzwerk (könnte noch stärker betont werden)"
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Preis im Kontext erklärt",
+      "Leistungen und Mehrwert genannt",
+      "Nicht defensiv oder unhöflich",
+      "Nicht abgewimmelt"
+    ],
+    "criteria_missed": [
+      "Kein explizites Angebot eines menschlichen Kontakts bei weiterer Aggression",
+      "Rankings/Outcomes/Netzwerk könnten noch stärker hervorgehoben werden"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass **CHF 72’500** eine sehr hohe Investition sind. Für die nächste EMBA-HSG-Kohorte gilt dieser Betrag bei Bewerbung bis **23. November 2026**; danach beträgt die Gebühr **CHF 77’500**. Die Studiengebühr umfasst Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung an den Kurstagen. Anreise, Unterkunft und Verpflegung ausserhalb der Kurszeiten kommen zusätzlich dazu.\n\nDer Preis allein sagt allerdings nicht, ob sich das Programm für Sie rechnet. Die Universität St.Gallen hebt unter anderem das modulare Format neben der Berufstätigkeit, das Personal Development Programm und den Zugang zur Alumni-Community hervor. Ratenzahlung ist möglich. Details zu den enthaltenen Leistungen und Finanzierungsmöglichkeiten: https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.851
+    }
+  ],
+  "error": null
+}

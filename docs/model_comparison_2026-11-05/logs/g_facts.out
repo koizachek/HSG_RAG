@@ -1,0 +1,181 @@
+[INFO] 2026-11-05 20:00:52,934 [RapidOCR] base.py:22: Using engine_name: torch
+[INFO] 2026-11-05 20:00:52,995 [RapidOCR] device_config.py:57: Using CPU device
+[INFO] 2026-11-05 20:00:53,027 [RapidOCR] download_file.py:60: File exists and is valid: ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_PP-OCRv4_det_mobile.pth
+[INFO] 2026-11-05 20:00:53,027 [RapidOCR] main.py:50: Using ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_PP-OCRv4_det_mobile.pth
+[INFO] 2026-11-05 20:00:53,273 [RapidOCR] base.py:22: Using engine_name: torch
+[INFO] 2026-11-05 20:00:53,273 [RapidOCR] device_config.py:57: Using CPU device
+[INFO] 2026-11-05 20:00:53,284 [RapidOCR] download_file.py:60: File exists and is valid: ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_ptocr_mobile_v2.0_cls_mobile.pth
+[INFO] 2026-11-05 20:00:53,284 [RapidOCR] main.py:50: Using ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_ptocr_mobile_v2.0_cls_mobile.pth
+[INFO] 2026-11-05 20:00:53,327 [RapidOCR] base.py:22: Using engine_name: torch
+[INFO] 2026-11-05 20:00:53,328 [RapidOCR] device_config.py:57: Using CPU device
+[INFO] 2026-11-05 20:00:53,355 [RapidOCR] download_file.py:60: File exists and is valid: ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_PP-OCRv4_rec_mobile.pth
+[INFO] 2026-11-05 20:00:53,356 [RapidOCR] main.py:50: Using ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_PP-OCRv4_rec_mobile.pth
+Loading weights:   0%|          | 0/770 [00:00<?, ?it/s]Loading weights:  18%|█▊        | 136/770 [00:00<00:00, 855.42it/s]Loading weights:  72%|███████▏  | 552/770 [00:00<00:00, 2417.84it/s]Loading weights: 100%|██████████| 770/770 [00:00<00:00, 2553.89it/s]
+[INFO] 2026-11-05 20:00:57,278 [RapidOCR] base.py:22: Using engine_name: torch
+[INFO] 2026-11-05 20:00:57,278 [RapidOCR] device_config.py:57: Using CPU device
+[INFO] 2026-11-05 20:00:57,287 [RapidOCR] download_file.py:60: File exists and is valid: ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_PP-OCRv4_det_mobile.pth
+[INFO] 2026-11-05 20:00:57,287 [RapidOCR] main.py:50: Using ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_PP-OCRv4_det_mobile.pth
+[INFO] 2026-11-05 20:00:57,385 [RapidOCR] base.py:22: Using engine_name: torch
+[INFO] 2026-11-05 20:00:57,386 [RapidOCR] device_config.py:57: Using CPU device
+[INFO] 2026-11-05 20:00:57,386 [RapidOCR] download_file.py:60: File exists and is valid: ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_ptocr_mobile_v2.0_cls_mobile.pth
+[INFO] 2026-11-05 20:00:57,386 [RapidOCR] main.py:50: Using ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_ptocr_mobile_v2.0_cls_mobile.pth
+[INFO] 2026-11-05 20:00:57,415 [RapidOCR] base.py:22: Using engine_name: torch
+[INFO] 2026-11-05 20:00:57,416 [RapidOCR] device_config.py:57: Using CPU device
+[INFO] 2026-11-05 20:00:57,428 [RapidOCR] download_file.py:60: File exists and is valid: ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_PP-OCRv4_rec_mobile.pth
+[INFO] 2026-11-05 20:00:57,428 [RapidOCR] main.py:50: Using ~/Desktop/StG/RAG_Agent/HSG_RAG/venv/lib/python3.13/site-packages/rapidocr/models/ch_PP-OCRv4_rec_mobile.pth
+Loading weights:   0%|          | 0/770 [00:00<?, ?it/s]Loading weights:  43%|████▎     | 334/770 [00:00<00:00, 3336.26it/s]Loading weights:  96%|█████████▌| 736/770 [00:00<00:00, 3735.42it/s]Loading weights: 100%|██████████| 770/770 [00:00<00:00, 3671.70it/s]
+Docling returned near-empty text (0 chars) for https://emba.unisg.ch/wp-content/uploads/2026/05/IEMBA-14-info-sheet-with-payment-plan-6.pdf; trying fallback parser
+{
+  "generated_at": "2026-11-05",
+  "generator": "src/pipeline/update_programme_facts.py",
+  "sources": [
+    "https://emba.unisg.ch/",
+    "https://emba.unisg.ch/bewerbung/fristen",
+    "https://emba.unisg.ch/programm/emba",
+    "https://emba.unisg.ch/programm/iemba",
+    "https://es.unisg.ch/en/executive-programme/international-executive-mba-hsg/",
+    "https://embax.ch/",
+    "https://emba.unisg.ch/wp-content/uploads/2026/05/Neuer-Dataplan-EMBA71-mitRatenplan.pdf",
+    "https://emba.unisg.ch/wp-content/uploads/2026/05/IEMBA-14-info-sheet-with-payment-plan-6.pdf"
+  ],
+  "programmes": {
+    "emba": {
+      "official_name": "Executive MBA HSG",
+      "current_cohort": "EMBA 72",
+      "language": {
+        "de": "Deutsch",
+        "en": "German"
+      },
+      "programme_start": "2027-03-08",
+      "duration": {
+        "de": "18 Monate (bis max. 48 Monate)",
+        "en": "18 months (up to max. 48 months)"
+      },
+      "ects_credits": 75,
+      "structure": {
+        "de": "9 Pflichtkurse, 5 Wahlkurse, 14 Wochen am Campus",
+        "en": "9 core courses, 5 electives, 14 weeks on campus"
+      },
+      "locations": {
+        "de": "Schweiz (St. Gallen)Schweiz (Zürich) WahlkursBelgien Wahlkurs, 9*, Pflichtkurse, +, 5*, Wahlkurse, 14 Wochen Am Campus, +, Company Impact Project (CIP), Kurs 1 5 Tage Strategisches Management, Kurs 2 5 Tage Ökonomie, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 3 5 Tage Marktorientiertes Management, Kurs 4 5 Tage Rechnungslegung & Finanzierung, Kurs 5 5 Tage Strategische Innovation, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 6 5 Tage Controlling & Performance Management, Kurs 7 5 Tage Nachhaltigkeit im unternehmerischen Kontext, Kurs 8 5 Tage Leadership, Kurs 9 5 Tage Eine Woche als CEO, EMBA HSG - Programmstruktur | Executive MBA HSG, Kontakt, Cyra von Müller, Senior Recruitment & Admissions Manager, EMBA HSG Programm, (deutschsprachig), cyra.vonmueller@unisg.ch, +41 71 224 27 12, Beratungsgespräch buchen, Bei allgemeinen Anfragen:, EMBA HSG Team, Kristin Fuchs, Senior Recruitment & Admissions Manager, International EMBA HSG Programm, (englischsprachig), kristin.fuchs@unisg.ch, +41 71 224 75 46, Beratungsgespräch buchen, Teyuna Giger, Recruitment & Admissions Manager, EMBA ETH HSG (emba X) Programm (englischsprachig), teyuna.giger@unisg.ch, +41 71 224 77 65, Beratungsgespräch buchen, DE, EN, EMBA HSG Experience, Warum ein Executive MBA HSG?, Teilnehmerprofil, Leadership Development Programm, EMBA HSG Community, HSG & Campus, Programm, Executive MBA, International Executive MBA, EMBA ETH HSG (emba X), Bewerbung, Wen suchen wir?, Anforderungen und Prozess, Fristen, Finanzierung & Zuschüsse, News & Events, Events, News, Team, Bewerbungsprozess, EMBA HSG, Das Executive MBA HSG Studium ist eine Weiterbildung in General Management, unterrichtet in deutscher Sprache, welches ambitionierten, zielstrebigen Führungskräften wertvolle Inhalte mit Fokus auf den deutschsprachigen Raum vermittelt und dabei einzigartigen Zugang zum HSG-Netzwerk ermöglicht. Durch das modulare Format lässt sich das anspruchsvolle Studium mit einem sehr fokussierten Lernansatz und einer familiären Campus-Kultur optimal mit Beruf und Privatleben kombinieren., Executive MBA im Überblick, Sprache, Deutsch, Beginn, 8. März 2027, Gebühr, CHF 77’500, Orte, Schweiz (St. Gallen), Schweiz (Zürich), Wahlkurs, Belgien, Wahlkurs",
+        "en": "Schweiz (St. Gallen)Schweiz (Zürich) WahlkursBelgien Wahlkurs, 9*, Pflichtkurse, +, 5*, Wahlkurse, 14 Wochen Am Campus, +, Company Impact Project (CIP), Kurs 1 5 Tage Strategisches Management, Kurs 2 5 Tage Ökonomie, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 3 5 Tage Marktorientiertes Management, Kurs 4 5 Tage Rechnungslegung & Finanzierung, Kurs 5 5 Tage Strategische Innovation, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 6 5 Tage Controlling & Performance Management, Kurs 7 5 Tage Nachhaltigkeit im unternehmerischen Kontext, Kurs 8 5 Tage Leadership, Kurs 9 5 Tage Eine Woche als CEO, EMBA HSG - Programmstruktur | Executive MBA HSG, Kontakt, Cyra von Müller, Senior Recruitment & Admissions Manager, EMBA HSG Programm, (deutschsprachig), cyra.vonmueller@unisg.ch, +41 71 224 27 12, Beratungsgespräch buchen, Bei allgemeinen Anfragen:, EMBA HSG Team, Kristin Fuchs, Senior Recruitment & Admissions Manager, International EMBA HSG Programm, (englischsprachig), kristin.fuchs@unisg.ch, +41 71 224 75 46, Beratungsgespräch buchen, Teyuna Giger, Recruitment & Admissions Manager, EMBA ETH HSG (emba X) Programm (englischsprachig), teyuna.giger@unisg.ch, +41 71 224 77 65, Beratungsgespräch buchen, DE, EN, EMBA HSG Experience, Warum ein Executive MBA HSG?, Teilnehmerprofil, Leadership Development Programm, EMBA HSG Community, HSG & Campus, Programm, Executive MBA, International Executive MBA, EMBA ETH HSG (emba X), Bewerbung, Wen suchen wir?, Anforderungen und Prozess, Fristen, Finanzierung & Zuschüsse, News & Events, Events, News, Team, Bewerbungsprozess, EMBA HSG, Das Executive MBA HSG Studium ist eine Weiterbildung in General Management, unterrichtet in deutscher Sprache, welches ambitionierten, zielstrebigen Führungskräften wertvolle Inhalte mit Fokus auf den deutschsprachigen Raum vermittelt und dabei einzigartigen Zugang zum HSG-Netzwerk ermöglicht. Durch das modulare Format lässt sich das anspruchsvolle Studium mit einem sehr fokussierten Lernansatz und einer familiären Campus-Kultur optimal mit Beruf und Privatleben kombinieren., Executive MBA im Überblick, Sprache, Deutsch, Beginn, 8. März 2027, Gebühr, CHF 77’500, Orte, Switzerland (St. Gallen), Switzerland (Zürich), Wahlkurs, Belgium, Wahlkurs"
+      },
+      "tuition_chf": {
+        "first_deadline": {
+          "deadline": "2026-11-23",
+          "fee": 72500
+        },
+        "final_deadline": {
+          "deadline": "2027-02-01",
+          "fee": 77500
+        },
+        "note": {
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
+          "en": "Deadline-based tuition: earlier application = reduced fee"
+        }
+      },
+      "advisor": {
+        "name": "Cyra von Müller",
+        "email": "cyra.vonmueller@unisg.ch",
+        "phone": "+41 71 224 27 12"
+      },
+      "source_urls": [
+        "https://emba.unisg.ch/programm/emba",
+        "https://emba.unisg.ch/bewerbung/fristen",
+        "https://emba.unisg.ch/wp-content/uploads/2026/05/Neuer-Dataplan-EMBA71-mitRatenplan.pdf"
+      ]
+    },
+    "iemba": {
+      "official_name": "International Executive MBA HSG",
+      "current_cohort": "IEMBA 15",
+      "language": {
+        "de": "Englisch",
+        "en": "English"
+      },
+      "programme_start": "2027-08-30",
+      "duration": {
+        "de": "18 Monate",
+        "en": "18 months"
+      },
+      "ects_credits": 75,
+      "structure": {
+        "de": "10 Pflichtkurse, 4 Wahlkurse, 10 Wochen am Campus, 4 Wochen im Ausland",
+        "en": "10 core courses, 4 electives, 10 weeks on campus, 4 weeks abroad"
+      },
+      "locations": {
+        "de": "Costa Rica WahlkursTokio, JapanNew York City WahlkursSt. Gallen, SchweizPeking, ChinaUC Berkeley, USAUC Irvine, USAItalien WahlkursSüdafrika WahlkursSpanien Wahlkurs, 10*, Pflichtkurse, +, 4*, Wahlkurse, 10 Wochen Am Campus, + 4 Wochenim Ausland, +, Company Impact Project (CIP), Kurs 1 St. Gallen, Schweiz 5 Tage Start with you: Find your Leadership Identity, Kurs 2 St. Gallen, Schweiz 5 Tage Fundamentals of Strategy, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 3 St. Gallen, Schweiz 5 Tage Financial Reporting & Finance, Kurs 4 St. Gallen, Schweiz 5 Tage Value Creation in a Global Economy, Kurs 5 Tokyo, Japan 5 Tage Doing Business in Japan, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 6 Peking, China 5 Tage Doing Business in China, Kurs 7 St. Gallen, Schweiz 5 Tage Management Accounting & Performance Management, Kurs 8 UC Berkeley, USA 5 Tage Innovation & Entrepreneurship for Sustainable Development, Kurs 9 UC Irvine, USA 5 Tage Leading for Innovation, Kurs 10 St. Gallen, Schweiz 5 Tage Capstone, International EMBA HSG | Executive MBA HSG, Kontakt, Cyra von Müller, Senior Recruitment & Admissions Manager, EMBA HSG Programm, (deutschsprachig), cyra.vonmueller@unisg.ch, +41 71 224 27 12, Beratungsgespräch buchen, Bei allgemeinen Anfragen:, EMBA HSG Team, Kristin Fuchs, Senior Recruitment & Admissions Manager, International EMBA HSG Programm, (englischsprachig), kristin.fuchs@unisg.ch, +41 71 224 75 46, Beratungsgespräch buchen, Teyuna Giger, Recruitment & Admissions Manager, EMBA ETH HSG (emba X) Programm (englischsprachig), teyuna.giger@unisg.ch, +41 71 224 77 65, Beratungsgespräch buchen, DE, EN, EMBA HSG Experience, Warum ein Executive MBA HSG?, Teilnehmerprofil, Leadership Development Programm, EMBA HSG Community, HSG & Campus, Programm, Executive MBA, International Executive MBA, EMBA ETH HSG (emba X), Bewerbung, Wen suchen wir?, Anforderungen und Prozess, Fristen, Finanzierung & Zuschüsse, News & Events, Events, News, Team, Bewerbungsprozess, IEMBA HSG, Das International Executive MBA HSG Studium ist eine Weiterbildung in General-Management, unterrichtet in englischer Sprache, das aufgeschlossenen, zielstrebigen Führungskräften ein internationales Netzwerk, relevante Management-Einblicke sowie Inspiration durch ein Curriculum mit internationaler Ausrichtung, Auslandsmodulen und multinationaler Vielfalt bietet., International Executive MBA im Überblick, Sprache, Englisch, Beginn, 30. August 2027, Gebühr, CHF 89’000, Orte, Costa Rica, Wahlkurs, Japan (Tokio), New York City, Wahlkurs, Schweiz (St. Gallen), China (Peking), USA (UC Berkeley), USA (UC Irvine), Italien, Wahlkurs, Südafrika, Wahlkurs, Spanien, Wahlkurs",
+        "en": "Costa Rica WahlkursTokio, JapanNew York City WahlkursSt. Gallen, SchweizPeking, ChinaUC Berkeley, USAUC Irvine, USAItalien WahlkursSüdafrika WahlkursSpanien Wahlkurs, 10*, Pflichtkurse, +, 4*, Wahlkurse, 10 Wochen Am Campus, + 4 Wochenim Ausland, +, Company Impact Project (CIP), Kurs 1 St. Gallen, Schweiz 5 Tage Start with you: Find your Leadership Identity, Kurs 2 St. Gallen, Schweiz 5 Tage Fundamentals of Strategy, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 3 St. Gallen, Schweiz 5 Tage Financial Reporting & Finance, Kurs 4 St. Gallen, Schweiz 5 Tage Value Creation in a Global Economy, Kurs 5 Tokyo, Japan 5 Tage Doing Business in Japan, Wahlkurs 5 Tage Wählen Sie 5 Kurse aus dem Angebot an Wahlkursen aus., Kurs 6 Peking, China 5 Tage Doing Business in China, Kurs 7 St. Gallen, Schweiz 5 Tage Management Accounting & Performance Management, Kurs 8 UC Berkeley, USA 5 Tage Innovation & Entrepreneurship for Sustainable Development, Kurs 9 UC Irvine, USA 5 Tage Leading for Innovation, Kurs 10 St. Gallen, Schweiz 5 Tage Capstone, International EMBA HSG | Executive MBA HSG, Kontakt, Cyra von Müller, Senior Recruitment & Admissions Manager, EMBA HSG Programm, (deutschsprachig), cyra.vonmueller@unisg.ch, +41 71 224 27 12, Beratungsgespräch buchen, Bei allgemeinen Anfragen:, EMBA HSG Team, Kristin Fuchs, Senior Recruitment & Admissions Manager, International EMBA HSG Programm, (englischsprachig), kristin.fuchs@unisg.ch, +41 71 224 75 46, Beratungsgespräch buchen, Teyuna Giger, Recruitment & Admissions Manager, EMBA ETH HSG (emba X) Programm (englischsprachig), teyuna.giger@unisg.ch, +41 71 224 77 65, Beratungsgespräch buchen, DE, EN, EMBA HSG Experience, Warum ein Executive MBA HSG?, Teilnehmerprofil, Leadership Development Programm, EMBA HSG Community, HSG & Campus, Programm, Executive MBA, International Executive MBA, EMBA ETH HSG (emba X), Bewerbung, Wen suchen wir?, Anforderungen und Prozess, Fristen, Finanzierung & Zuschüsse, News & Events, Events, News, Team, Bewerbungsprozess, IEMBA HSG, Das International Executive MBA HSG Studium ist eine Weiterbildung in General-Management, unterrichtet in englischer Sprache, das aufgeschlossenen, zielstrebigen Führungskräften ein internationales Netzwerk, relevante Management-Einblicke sowie Inspiration durch ein Curriculum mit internationaler Ausrichtung, Auslandsmodulen und multinationaler Vielfalt bietet., International Executive MBA im Überblick, Sprache, Englisch, Beginn, 30. August 2027, Gebühr, CHF 89’000, Orte, Costa Rica, Wahlkurs, Japan (Tokyo), New York City, Wahlkurs, Switzerland (St. Gallen), China (Beijing), USA (UC Berkeley), USA (UC Irvine), Italy, Wahlkurs, South Africa, Wahlkurs, Spain, Wahlkurs"
+      },
+      "tuition_chf": {
+        "first_deadline": {
+          "deadline": "2027-03-31",
+          "fee": 84000
+        },
+        "final_deadline": {
+          "deadline": "2027-06-30",
+          "fee": 89000
+        },
+        "note": {
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
+          "en": "Deadline-based tuition: earlier application = reduced fee"
+        }
+      },
+      "advisor": {
+        "name": "Kristin Fuchs",
+        "email": "kristin.fuchs@unisg.ch",
+        "phone": "+41 71 224 75 46"
+      },
+      "source_urls": [
+        "https://emba.unisg.ch/programm/iemba",
+        "https://es.unisg.ch/en/executive-programme/international-executive-mba-hsg/",
+        "https://emba.unisg.ch/bewerbung/fristen",
+        "https://emba.unisg.ch/wp-content/uploads/2026/05/IEMBA-14-info-sheet-with-payment-plan-6.pdf"
+      ]
+    },
+    "emba_x": {
+      "official_name": "EMBA ETH HSG (emba X)",
+      "current_cohort": "emba X6",
+      "language": {
+        "de": "Englisch",
+        "en": "English"
+      },
+      "programme_start": "2027-02-01",
+      "duration": {
+        "de": "18 Monate",
+        "en": "18 months"
+      },
+      "ects_credits": 75,
+      "structure": {
+        "de": "Blended: Präsenz in Zürich und St.Gallen (Schweiz) und Online, 56 Tage am Campus, 2 Tage Online, 2 Impact-Projekte",
+        "en": "Blended: In-person in Zurich and St.Gallen (Switzerland) and Online, 56 days on campus, 2 days online, 2 impact projects"
+      },
+      "locations": {
+        "de": "Zürich, St. Gallen, Online",
+        "en": "Zurich, St. Gallen, Online"
+      },
+      "tuition_chf": {
+        "first_deadline": {
+          "deadline": "2026-08-31",
+          "fee": 99000
+        },
+        "final_deadline": {
+          "deadline": "2026-10-31",
+          "fee": 110000
+        },
+        "note": {
+          "de": "Fristabhängige Studiengebühr: frühere Bewerbung = reduzierte Gebühr",
+          "en": "Deadline-based tuition: earlier application = reduced fee"
+        }
+      },
+      "advisor": {
+        "name": "Teyuna Giger",
+        "email": "teyuna.giger@unisg.ch",
+        "phone": "+41 71 224 77 65"
+      },
+      "source_urls": [
+        "https://embax.ch/",
+        "https://emba.unisg.ch/bewerbung/fristen"
+      ]
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist professionell, ruhig und sachlich. Der Wert des Programms wird gut erklärt (Netzwerk, akademisches Niveau, Alumni, Betreuung), die Gebühren werden korrekt und im Kontext dargestellt. Es wird auf Finanzierungsmöglichkeiten hingewiesen und ein persönlicher Kontakt angeboten. Die Sprache ist angemessen, freundlich und nicht defensiv oder übertrieben werblich. Alle wichtigen Kriterien werden erfüllt.",
+  "issues": [
+    "Kleine Verbesserung möglich: Noch expliziter auf Rankings/Outcomes eingehen (z.B. internationale Anerkennung, Karrierechancen), aber dies ist kein echter Mangel, da der Wert und Netzwerk bereits genannt werden."
+  ],
+  "criteria_missed": [
+    "Ranking/Outcomes könnten noch expliziter genannt werden, aber dies ist nur eine optionale Vertiefung"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Die Antwort ist professionell, ruhig und sachlich. Der Wert des Programms wird gut erklärt (Netzwerk, akademisches Niveau, Alumni, Betreuung), die Gebühren werden korrekt und im Kontext dargestellt. Es wird auf Finanzierungsmöglichkeiten hingewiesen und ein persönlicher Kontakt angeboten. Die Sprache ist angemessen, freundlich und nicht defensiv oder übertrieben werblich. Alle wichtigen Kriterien werden erfüllt.",
+    "strengths": [
+      "Sachliche und professionelle Reaktion auf aggressive/frustrierte Nachfrage",
+      "Wert des Programms wird klar und nachvollziehbar erklärt",
+      "Preis wird korrekt und im Kontext (Leistungen, Netzwerk, Betreuung) dargestellt",
+      "Finanzierungsmöglichkeiten und Kontaktperson werden angeboten",
+      "Keine defensive, unhöfliche oder übertrieben werbliche Sprache",
+      "Sprache und Ton sind angemessen und freundlich"
+    ],
+    "issues": [
+      "Kleine Verbesserung möglich: Noch expliziter auf Rankings/Outcomes eingehen (z.B. internationale Anerkennung, Karrierechancen), aber dies ist kein echter Mangel, da der Wert und Netzwerk bereits genannt werden."
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Wert des Programms sachlich erklärt",
+      "Preis im Kontext der Leistungen dargestellt",
+      "Kontakt für weitere Fragen angeboten",
+      "Keine defensive oder unhöfliche Reaktion",
+      "Keine übertriebene Werbung"
+    ],
+    "criteria_missed": [
+      "Ranking/Outcomes könnten noch expliziter genannt werden, aber dies ist nur eine optionale Vertiefung"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass die Studiengebühren für den Executive MBA HSG auf den ersten Blick hoch erscheinen können. Die Kosten spiegeln jedoch verschiedene Faktoren wider:\n\n- Die Programme der Universität St.Gallen bieten eine intensive, praxisnahe Weiterbildung auf höchstem akademischem Niveau mit international anerkanntem Abschluss.\n- Sie profitieren von einem exklusiven Netzwerk, erfahrenen Dozierenden, persönlicher Betreuung und Zugang zu einer starken Alumni-Community.\n- Die Studiengebühren decken alle Lehrveranstaltungen, Materialien, Prüfungen und oft auch spezielle Module im Ausland ab (Reise- und Unterkunftskosten sind jedoch nicht enthalten).\n\nWenn Sie die Kosten im Detail besprechen oder Finanzierungsmöglichkeiten prüfen möchten, können Sie sich direkt an Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) wenden. Die Universität St.Gallen bietet zudem Informationen zu Stipendien und Zuschüssen: https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse",
+      "additional_details": "Die Gebühren für den EMBA HSG liegen aktuell bei CHF 72'500 (bei Bewerbung bis 23.11.2026) bzw. CHF 77'500 (bei späterer Bewerbung). Für andere Programme wie den IEMBA HSG oder emba X gelten jeweils eigene Gebührenstrukturen.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.965
+    }
+  ],
+  "error": null
+}

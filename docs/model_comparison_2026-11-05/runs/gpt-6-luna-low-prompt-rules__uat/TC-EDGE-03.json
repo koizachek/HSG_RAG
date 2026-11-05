@@ -1,0 +1,75 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 8.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Gebührenstruktur korrekt und bietet Kontakt für weitere Beratung an. Die Leistungen und Finanzierungsmöglichkeiten werden erläutert. Allerdings fehlt eine explizite Einordnung des Mehrwerts des Programms (z.B. Netzwerk, Rankings, Outcomes), was für eine vollständige Kontextualisierung des Preises wünschenswert gewesen wäre.",
+  "issues": [
+    "Der Wert des Programms (z.B. Netzwerk, Karrierechancen, HSG-Renommee) wird nicht explizit erläutert",
+    "Kein direkter Bezug auf Rankings oder Outcomes",
+    "Der Preis wird zwar erklärt, aber nicht aktiv in den Kontext des Nutzens gesetzt"
+  ],
+  "criteria_missed": [
+    "Wert des Programms (Rankings, Netzwerk, Outcomes) explizit erklären",
+    "Preis aktiver in den Kontext des Nutzens setzen"
+  ],
+  "judgement": {
+    "overall_score": 8,
+    "passed": true,
+    "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Gebührenstruktur korrekt und bietet Kontakt für weitere Beratung an. Die Leistungen und Finanzierungsmöglichkeiten werden erläutert. Allerdings fehlt eine explizite Einordnung des Mehrwerts des Programms (z.B. Netzwerk, Rankings, Outcomes), was für eine vollständige Kontextualisierung des Preises wünschenswert gewesen wäre.",
+    "strengths": [
+      "Sachliche und ruhige Reaktion auf aggressive Formulierung",
+      "Korrekte und aktuelle Gebührenangabe (CHF 72’500 bis 23.11.2026, danach CHF 77’500)",
+      "Erklärung, was in der Gebühr enthalten ist",
+      "Hinweis auf Ratenzahlung und Zuschüsse",
+      "Angebot eines persönlichen Kontakts für weitere Beratung",
+      "Kein defensiver oder unhöflicher Ton"
+    ],
+    "issues": [
+      "Der Wert des Programms (z.B. Netzwerk, Karrierechancen, HSG-Renommee) wird nicht explizit erläutert",
+      "Kein direkter Bezug auf Rankings oder Outcomes",
+      "Der Preis wird zwar erklärt, aber nicht aktiv in den Kontext des Nutzens gesetzt"
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Preis sachlich erklärt",
+      "Leistungen und Finanzierungsmöglichkeiten erläutert",
+      "Kontakt für weitere Beratung angeboten",
+      "Kein unhöflicher oder defensiver Ton"
+    ],
+    "criteria_missed": [
+      "Wert des Programms (Rankings, Netzwerk, Outcomes) explizit erklären",
+      "Preis aktiver in den Kontext des Nutzens setzen"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass **CHF 72’500** eine sehr hohe Investition sind. Für den **EMBA HSG** gilt dieser Betrag bei Bewerbung bis **23. November 2026**; danach beträgt die Studiengebühr **CHF 77’500**. Die Gebühr umfasst Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung während der Kurstage. Anreise, Unterkunft und Verpflegung ausserhalb der Kurszeiten kommen hinzu.\n\nOb der Preis für Sie angemessen ist, hängt letztlich davon ab, welchen Nutzen Sie persönlich aus dem Programm ziehen. Die Studiengebühr kann in Raten bezahlt werden; zudem gibt es leistungsabhängige Zuschüsse für bestimmte Kategorien, darunter Nachhaltigkeit, Non-Profit-Management und Diversität. Zu den Zuschüssen und Finanzierungsmöglichkeiten berät **Cyra von Müller** unter **cyra.vonmueller@unisg.ch** oder **+41 71 224 27 12**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.494
+    }
+  ],
+  "error": null
+}

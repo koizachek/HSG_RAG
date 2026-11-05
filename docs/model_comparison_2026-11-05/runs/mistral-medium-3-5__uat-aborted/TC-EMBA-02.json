@@ -1,0 +1,114 @@
+{
+  "case_id": "TC-EMBA-02",
+  "title": "TC-EMBA-02: Edge Case - Minimal Qualification",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antworten sind korrekt, empathisch und erfüllen die Szenario-Anforderungen. Die Mindestkriterien werden klar erklärt, die individuelle Prüfung durch das Admissions Team wird betont, und es gibt keine Spekulationen über Zulassungschancen. Die Kosten werden korrekt und aktuell genannt. Die Eskalation zur Beraterin erfolgt proaktiv und freundlich. Einzig bei der Terminvermittlung könnte noch expliziter auf die Möglichkeit zur Buchung (z.B. \"Beratungsgespräch buchen\") hingewiesen werden, aber der Hinweis auf Kontaktmöglichkeiten und Slots ist ausreichend.",
+  "issues": [
+    "Bei der Terminvermittlung könnte noch expliziter auf die Buchungsoption (z.B. \"Beratungsgespräch buchen\") hingewiesen werden, statt nur auf Kontaktmöglichkeiten und Slots zu verweisen."
+  ],
+  "criteria_missed": [
+    "Terminvermittlung könnte noch expliziter auf die Buchungsoption hinweisen"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Die Antworten sind korrekt, empathisch und erfüllen die Szenario-Anforderungen. Die Mindestkriterien werden klar erklärt, die individuelle Prüfung durch das Admissions Team wird betont, und es gibt keine Spekulationen über Zulassungschancen. Die Kosten werden korrekt und aktuell genannt. Die Eskalation zur Beraterin erfolgt proaktiv und freundlich. Einzig bei der Terminvermittlung könnte noch expliziter auf die Möglichkeit zur Buchung (z.B. \"Beratungsgespräch buchen\") hingewiesen werden, aber der Hinweis auf Kontaktmöglichkeiten und Slots ist ausreichend.",
+    "strengths": [
+      "Sprache korrekt (Deutsch)",
+      "Kriterien und Grenzfall klar erklärt",
+      "Keine falschen Versprechungen oder Spekulationen",
+      "Empathischer, unterstützender Ton",
+      "Proaktive Eskalation und Handover zur Beraterin",
+      "Aktuelle und korrekte Kostenangabe (CHF 72'500, Frist 23.11.2026)",
+      "Klare Kommunikation der Bot-Grenzen"
+    ],
+    "issues": [
+      "Bei der Terminvermittlung könnte noch expliziter auf die Buchungsoption (z.B. \"Beratungsgespräch buchen\") hingewiesen werden, statt nur auf Kontaktmöglichkeiten und Slots zu verweisen."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Grenzfall",
+      "Keine falschen Versprechungen über Zulassungschancen",
+      "Proaktive Eskalation zu Menschen",
+      "Empathischer, unterstützender Ton",
+      "Klare Kommunikation von Grenzen des Bots",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "Terminvermittlung könnte noch expliziter auf die Buchungsoption hinweisen"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hallo, ich habe 6 Jahre Berufserfahrung und leite seit 3 Jahren ein Team. Komme ich für das Executive MBA infrage? berufsbegleitend.",
+      "assistant": "Ja, mit **6 Jahren Berufserfahrung** und **3 Jahren Führungserfahrung** erfüllen Sie die entsprechenden Mindestanforderungen für den **EMBA HSG**. Zusätzlich benötigen Sie einen anerkannten Hochschulabschluss (Bachelor oder Master) sowie sehr gute Deutschkenntnisse. Das Programm ist berufsbegleitend konzipiert; während des Studiums sollten Sie weiterhin berufstätig sein.\n\nFalls Sie keinen anerkannten Hochschulabschluss haben, ist eine Zulassung **„sur dossier“** – also eine individuelle Beurteilung Ihrer Bewerbungsunterlagen – möglich. Die finale Entscheidung trifft der Zulassungsausschuss.\n\nFür eine persönliche Einschätzung wenden Sie sich an **Cyra von Müller**, zuständig für den EMBA HSG: cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "additional_details": "Der nächste EMBA HSG startet am **8. März 2027**, dauert **18 Monate** und umfasst **75 ECTS**. Die aktuelle Studiengebühr beträgt bei Bewerbung bis **23. November 2026 CHF 72'500**; danach gilt bis zur finalen Frist am **1. Februar 2027 CHF 77'500**. Weitere Informationen: https://emba.unisg.ch/programm/emba",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 859.427
+    },
+    {
+      "turn": 2,
+      "user": "Ich bin mir unsicher, ob meine Führungserfahrung ausreicht.",
+      "assistant": "Ihre **3 Jahre Management- bzw. Führungserfahrung** erfüllen das veröffentlichte Mindestkriterium für den **EMBA HSG**. Auch Ihre **6 Jahre Berufserfahrung** liegen über der vorausgesetzten Mindestdauer von 5 Jahren.\n\nZusätzlich werden ein anerkannter akademischer Erstabschluss (Bachelor oder Master) sowie sehr gute Deutschkenntnisse verlangt. Bewerbende sollten zum Zeitpunkt der Bewerbung berufstätig sein und dies während des Programms bleiben – der EMBA HSG ist berufsbegleitend aufgebaut.\n\nDie Erfüllung der Mindestkriterien stellt keine Zusage dar; die finale Entscheidung trifft der Zulassungsausschuss. Für eine verbindliche Einschätzung Ihrer konkreten Führungsverantwortung wenden Sie sich an **Cyra von Müller**: cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 405.139
+    },
+    {
+      "turn": 3,
+      "user": "Können Sie einschätzen, ob ich gute Chancen habe?",
+      "assistant": "Ich kann Ihre Zulassungschancen nicht beurteilen – die Bewerbung wird individuell geprüft und der finale Entscheid liegt beim Zulassungsausschuss.\n\nMit **6 Jahren Berufserfahrung** und **3 Jahren Management-/Führungserfahrung** erfüllen Sie jedoch die veröffentlichten Mindestanforderungen für den **EMBA HSG**. Zusätzlich werden ein anerkannter akademischer Erstabschluss sowie sehr gute Deutschkenntnisse vorausgesetzt. Ohne Hochschulabschluss ist eine individuelle **„sur dossier“‑Zulassung** möglich.\n\nFür eine persönliche Einschätzung Ihrer konkreten Führungsverantwortung wenden Sie sich an **Cyra von Müller**: cyra.vonmueller@unisg.ch oder +41 71 224 27 12. Weitere Informationen zum Bewerbungsprozess: https://emba.unisg.ch/bewerbung/process",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 464.577
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für den **EMBA HSG** beträgt aktuell **CHF 72’500** (bei Bewerbung bis zum **23. November 2026**). Bei einer Bewerbung bis zur finalen Frist am **1. Februar 2027** erhöht sich die Gebühr auf **CHF 77’500**. Das Programm startet am **8. März 2027**. \n\nInformationen zu Finanzierungsmöglichkeiten und Zuschüssen finden Sie unter: https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse. Für Rückfragen steht Ihnen **Cyra von Müller** (cyra.vonmueller@unisg.ch, +41 71 224 27 12) zur Verfügung.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 154.128
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Termine mit **Cyra von Müller**, der zuständigen Beraterin für den **EMBA HSG**, anzeigen. Die Kontaktmöglichkeiten und verfügbaren Slots finden Sie unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 1.269
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,114 @@
+{
+  "case_id": "TC-EMBAX-01",
+  "title": "TC-EMBAX-01: Sustainability Leader",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung. Die wichtigsten Anforderungen wurden erfüllt, insbesondere die klare Identifikation von emba X als passendes Programm, die korrekte Darstellung der ETH-Kooperation, die richtige Sprache und die exakte Gebührenauskunft. Die Handover-Option für einen Beratungstermin ist korrekt und nutzerfreundlich umgesetzt.",
+  "issues": [
+    "Bei der Terminvermittlung (Turn 5) wäre ein expliziter Hinweis auf den Buchungsbereich oder ein Link zur Terminbuchung noch hilfreicher gewesen, statt nur auf 'unten' zu verweisen. Die Kontaktdaten wurden aber korrekt genannt.",
+    "Die Leistungen, die in der Gebühr enthalten sind, wurden nicht explizit aufgezählt (nur die Gebühr genannt). Dies ist laut Szenario zwar ein Pluspunkt, aber kein zwingender Fehler, da die Gebühr und Ansprechpartner korrekt genannt wurden."
+  ],
+  "criteria_missed": [
+    "Leistungen, die in der Gebühr enthalten sind, wurden nicht explizit genannt (nur Gebühr)."
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung. Die wichtigsten Anforderungen wurden erfüllt, insbesondere die klare Identifikation von emba X als passendes Programm, die korrekte Darstellung der ETH-Kooperation, die richtige Sprache und die exakte Gebührenauskunft. Die Handover-Option für einen Beratungstermin ist korrekt und nutzerfreundlich umgesetzt.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch, mit englischem Programmhinweis).",
+      "emba X als ideale Option für Nachhaltigkeit und Responsible Leadership klar hervorgehoben.",
+      "USP und Differenzierung zu anderen Programmen (Technologie, ETH, Blended Learning) klar kommuniziert.",
+      "ETH-Kooperation korrekt und differenziert erklärt, ohne zu spekulieren.",
+      "Gebühr (CHF 110'000) und Bewerbungsstatus exakt und aktuell nach Hard Facts kommuniziert.",
+      "Proaktiver Handover zur Programmverantwortlichen mit Kontaktdaten und Hinweis auf Terminoptionen.",
+      "Keine Red Flags (keine falschen Programme, keine Spekulation, keine Verwechslung)."
+    ],
+    "issues": [
+      "Bei der Terminvermittlung (Turn 5) wäre ein expliziter Hinweis auf den Buchungsbereich oder ein Link zur Terminbuchung noch hilfreicher gewesen, statt nur auf 'unten' zu verweisen. Die Kontaktdaten wurden aber korrekt genannt.",
+      "Die Leistungen, die in der Gebühr enthalten sind, wurden nicht explizit aufgezählt (nur die Gebühr genannt). Dies ist laut Szenario zwar ein Pluspunkt, aber kein zwingender Fehler, da die Gebühr und Ansprechpartner korrekt genannt wurden."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "EMBA X korrekt als passend identifiziert",
+      "USP klar kommuniziert (ETH, Sustainability, Tech)",
+      "Differenzierung zu anderen Programmen",
+      "Bei Unsicherheit: Eskalation statt Spekulation"
+    ],
+    "criteria_missed": [
+      "Leistungen, die in der Gebühr enthalten sind, wurden nicht explizit genannt (nur Gebühr)."
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich interessiere mich für ein MBA mit Schwerpunkt nachhaltige Unternehmensführung.\nberufsbegleitend.",
+      "assistant": "Für einen **berufsbegleitenden MBA mit starkem Fokus auf nachhaltige Unternehmensführung** passt **emba X** inhaltlich besonders gut: Nachhaltigkeit, verantwortungsvolle Führung und Technologie stehen im Zentrum. Das 18-monatige Programm wird auf Englisch in einem Blended-Format mit Präsenz in Zürich und St.Gallen sowie Online-Anteilen durchgeführt. Die Bewerbung für die aktuelle Kohorte ist geschlossen; zum nächsten Bewerbungsfenster informiert die Programmverantwortliche **Teyuna Giger**.\n\nWenn Sie auf Deutsch studieren möchten, bietet der **EMBA HSG** eine berufsbegleitende, modulare Struktur über 18 Monate. Nachhaltigkeit ist im Curriculum verankert und wird unter anderem in einem Pflichtkurs sowie einem Wahlkurs behandelt. Der **IEMBA HSG** dauert ebenfalls 18 Monate, wird auf Englisch unterrichtet und umfasst auch ein Nachhaltigkeitsmodul; sein Schwerpunkt ist jedoch stärker international ausgerichtet.\n\nProgrammseiten: [EMBA HSG](https://emba.unisg.ch/programm/emba) · [IEMBA HSG](https://emba.unisg.ch/programm/iemba) · [emba X](https://embax.ch/)\n\nFür die Wahl zwischen den Programmen wären vor allem Ihre bevorzugte Unterrichtssprache und Ihr Interesse an Technologie und Innovation entscheidend.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 15.247
+    },
+    {
+      "turn": 2,
+      "user": "Was macht die Kooperation mit der ETH konkret aus?",
+      "assistant": "Die Kooperation verbindet zwei komplementäre Perspektiven in einem gemeinsamen Executive MBA: Die **ETH Zürich** bringt insbesondere Technologie und Technologiemanagement ein; die **Universität St.Gallen** ergänzt ihre Expertise in Unternehmensführung, Strategie, Nachhaltigkeit und Transformation. Im Mittelpunkt steht, Management- und Technologiefragen zusammenzudenken – etwa, wie Unternehmen technologische Möglichkeiten nutzen und dabei wirtschaftliche Ziele mit Verantwortung gegenüber Gesellschaft und Umwelt verbinden können.\n\nKonkret zeigt sich das im integrierten Programm mit **zwei Impact-Projekten**, in denen die Teilnehmenden an praktischen Herausforderungen arbeiten. Hinzu kommen die Perspektiven und Netzwerke beider Hochschulen. Es geht also nicht nur um zwei Institutionen auf dem Abschluss, sondern um die Verbindung ihrer Fachgebiete im Lernen und Anwenden.\n\n[Weitere Informationen zu emba X](https://embax.ch/)",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.172
+    },
+    {
+      "turn": 3,
+      "user": "Wird das Programm auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "Das **emba X wird auf Englisch unterrichtet**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.35
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr der aktuellen **emba X**-Kohorte beträgt **CHF 110’000**. Die Bewerbungsfrist für diese Kohorte lief vom **31. August bis zum 31. Oktober 2026** und ist geschlossen. Das nächste Bewerbungsfenster ist noch nicht veröffentlicht; dazu informiert **Teyuna Giger** unter teyuna.giger@unisg.ch oder +41 71 224 77 65. Weitere Informationen: [emba X](https://embax.ch/).",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.263
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen für ein Beratungsgespräch mit **Teyuna Giger** zum **emba X** anzeigen. Die Kontaktdaten und verfügbaren Termine finden Sie unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba_x"
+      ],
+      "elapsed_s": 2.487
+    }
+  ],
+  "error": null
+}

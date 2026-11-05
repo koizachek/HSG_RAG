@@ -1,0 +1,70 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Kostenstruktur, nennt die aktuellen Gebühren und Fristen korrekt, listet inkludierte Leistungen auf und verweist auf Finanzierungsmöglichkeiten sowie einen persönlichen Kontakt. Die Tonalität ist ruhig und nicht defensiv. Ein noch stärkerer Fokus auf den Mehrwert des Programms (z.B. Netzwerk, Rankings, Outcomes) hätte die Antwort weiter verbessert.",
+  "issues": [
+    "Der Mehrwert des Programms (z.B. HSG-Netzwerk, Karrierechancen, Rankings) wird nicht explizit hervorgehoben",
+    "Der Begriff 'Wucher' wird nicht direkt adressiert, sondern neutral umschifft – das ist akzeptabel, aber ein empathischer Satz zur Wahrnehmung des Preises wäre noch besser gewesen"
+  ],
+  "criteria_missed": [
+    "Wert des Programms (Rankings, Netzwerk, Outcomes) explizit erklären"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Kostenstruktur, nennt die aktuellen Gebühren und Fristen korrekt, listet inkludierte Leistungen auf und verweist auf Finanzierungsmöglichkeiten sowie einen persönlichen Kontakt. Die Tonalität ist ruhig und nicht defensiv. Ein noch stärkerer Fokus auf den Mehrwert des Programms (z.B. Netzwerk, Rankings, Outcomes) hätte die Antwort weiter verbessert.",
+    "strengths": [
+      "Sachliche und professionelle Reaktion auf aggressive Formulierung",
+      "Korrekte und aktuelle Gebühren und Fristen genannt",
+      "Leistungen und Dauer des Programms werden erläutert",
+      "Finanzierungsmöglichkeiten und Zuschüsse werden erwähnt",
+      "Persönlicher Kontakt für weitere Klärung angeboten",
+      "Ruhiger, nicht defensiver Ton"
+    ],
+    "issues": [
+      "Der Mehrwert des Programms (z.B. HSG-Netzwerk, Karrierechancen, Rankings) wird nicht explizit hervorgehoben",
+      "Der Begriff 'Wucher' wird nicht direkt adressiert, sondern neutral umschifft – das ist akzeptabel, aber ein empathischer Satz zur Wahrnehmung des Preises wäre noch besser gewesen"
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Preis sachlich erklärt und in Kontext gesetzt",
+      "Leistungen und Gebühren transparent dargestellt",
+      "Menschlicher Kontakt angeboten"
+    ],
+    "criteria_missed": [
+      "Wert des Programms (Rankings, Netzwerk, Outcomes) explizit erklären"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass **CHF 72’500** eine sehr hohe Investition sind. Für den **EMBA HSG** gilt bei Bewerbung bis **23. November 2026** die frühere Bewerbungsgebühr von CHF 72’500; ab der finalen Frist am **1. Februar 2027** beträgt sie CHF 77’500.\n\nDie Studiengebühr umfasst Unterricht, Lehrmaterialien und Mittagessen sowie Pausenverpflegung während der Kurseinheiten. Das Programm dauert **18 Monate** und umfasst **14 Wochen am Campus**. Anreise, Unterkunft und Verpflegung ausserhalb der Kurszeiten kommen zusätzlich dazu.\n\nEs gibt Ratenzahlungen und leistungsabhängige Zuschüsse für bestimmte Kategorien, darunter Nachhaltigkeit, Non-Profit-Management sowie Diversität, Gleichberechtigung und Inklusion. Details: https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse. Für eine persönliche Klärung erreichen Sie Cyra von Müller unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 11.425
+    }
+  ],
+  "error": null
+}

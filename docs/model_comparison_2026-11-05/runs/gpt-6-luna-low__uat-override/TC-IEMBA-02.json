@@ -1,0 +1,119 @@
+{
+  "case_id": "TC-IEMBA-02",
+  "title": "TC-IEMBA-02: Career Change Scenario",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "The assistant provided accurate, clear, and well-structured information in English, correctly identified the user's non-standard profile, and gave realistic eligibility assessments for both IEMBA and emba X. It cross-sold emba X appropriately, explained admissions criteria, and consistently referred the user to the correct advisor for individual assessment. Tuition fees and deadlines were quoted accurately and contextually. The assistant avoided unsupported promises, speculation, or detailed application strategies, and maintained a professional, helpful tone throughout.",
+  "issues": [
+    "Turn 3 (application strengthening): The assistant was perhaps overly rigid, stating that 'no application strategy can replace emba X’s minimum five years of leadership experience.' While factually correct, the scenario expected a more general suggestion (e.g., leadership projects, cross-functional initiatives) before escalating to the advisor. However, this is a minor issue as the assistant did not give a detailed strategy or false hope.",
+    "Turn 2 (EMBA X application window): The assistant said the window is 'closed' but should have said 'still open' (deadline is in the future as of reference date). This is a factual slip, but the handover to the advisor is still valid and the fee quoted is correct.",
+    "Turn 5 (eligibility): The assistant gave a clear, correct summary but could have more explicitly encouraged the user to discuss their profile with the advisor, as admissions may consider broader leadership potential. However, the handover was present."
+  ],
+  "criteria_missed": [
+    "Turn 3 could have included a general suggestion for strengthening the application (e.g., leadership projects), as per scenario.",
+    "Turn 2 incorrectly stated the emba X application window was closed when it was still open as of the reference date."
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "The assistant provided accurate, clear, and well-structured information in English, correctly identified the user's non-standard profile, and gave realistic eligibility assessments for both IEMBA and emba X. It cross-sold emba X appropriately, explained admissions criteria, and consistently referred the user to the correct advisor for individual assessment. Tuition fees and deadlines were quoted accurately and contextually. The assistant avoided unsupported promises, speculation, or detailed application strategies, and maintained a professional, helpful tone throughout.",
+    "strengths": [
+      "Language: All responses were in English, as required.",
+      "Eligibility: Correctly explained IEMBA and emba X criteria, including the nuance of leadership experience.",
+      "Cross-selling: Appropriately introduced emba X as a relevant alternative for a tech background.",
+      "Factuality: Tuition fees, deadlines, and programme details were accurate and up-to-date.",
+      "Handover: Consistently referred to the correct advisor for individual assessment and next steps.",
+      "Tone: Professional, clear, and supportive throughout."
+    ],
+    "issues": [
+      "Turn 3 (application strengthening): The assistant was perhaps overly rigid, stating that 'no application strategy can replace emba X’s minimum five years of leadership experience.' While factually correct, the scenario expected a more general suggestion (e.g., leadership projects, cross-functional initiatives) before escalating to the advisor. However, this is a minor issue as the assistant did not give a detailed strategy or false hope.",
+      "Turn 2 (EMBA X application window): The assistant said the window is 'closed' but should have said 'still open' (deadline is in the future as of reference date). This is a factual slip, but the handover to the advisor is still valid and the fee quoted is correct.",
+      "Turn 5 (eligibility): The assistant gave a clear, correct summary but could have more explicitly encouraged the user to discuss their profile with the advisor, as admissions may consider broader leadership potential. However, the handover was present."
+    ],
+    "criteria_met": [
+      "Language correct (English)",
+      "Non-standard profile recognized",
+      "Realistic eligibility assessment",
+      "Cross-selling to emba X",
+      "No false promises or speculation",
+      "Timely escalation to human advisor",
+      "Correct explanation of experience/leadership criteria",
+      "Programme facts (duration, language, international modules, cohort diversity) were referenced or implied",
+      "Tuition fees and deadlines accurate for both IEMBA and emba X"
+    ],
+    "criteria_missed": [
+      "Turn 3 could have included a general suggestion for strengthening the application (e.g., leadership projects), as per scenario.",
+      "Turn 2 incorrectly stated the emba X application window was closed when it was still open as of the reference date."
+    ],
+    "language_ok": true,
+    "factuality_ok": false,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "I'm a software engineer with 9 years of experience. I want to move into business leadership. Do I qualify for the IEMBA?",
+      "assistant": "You meet the **minimum five years of professional experience** requirement for the IEMBA. Applicants must also have a recognised undergraduate degree, at least **three years of managerial or leadership experience**, and fluency in English. Your software engineering background and goal of moving into business leadership do not by themselves establish whether you meet the leadership-experience requirement; admissions assesses this from your responsibilities and experience. The final decision rests with the admissions committee. For an individual assessment, contact IEMBA adviser Kristin Fuchs at kristin.fuchs@unisg.ch or +41 71 224 75 46. Details of the [admissions process](https://emba.unisg.ch/en/admissions/process).",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.774
+    },
+    {
+      "turn": 2,
+      "user": "Would EMBA X be a better fit for my tech background?",
+      "assistant": "Yes—**emba X** is particularly relevant to your technology background and ambition to move into business leadership. It combines technology, leadership and general management, with topics including AI-driven technologies, strategy and innovation, and applied business innovation projects. Its focus is not simply on technical expertise: it is designed for experienced professionals who can help drive change in their organisation and are interested in responsible impact.\n\nIt is an **English-language, blended, 18-month** programme. However, the current cohort’s application window (31 August–31 October 2026) is closed. Teyuna Giger can advise whether any places remain and will share the next application window: teyuna.giger@unisg.ch or +41 71 224 77 65. Your nine years of experience alone do not determine eligibility; admissions reviews each application individually.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.328
+    },
+    {
+      "turn": 3,
+      "user": "How can I strengthen my application without management experience?",
+      "assistant": "There is no application strategy that can replace emba X’s **minimum five years of leadership experience**: it is a formal criterion, alongside at least **10 years of work experience**, a recognised academic degree and fluency in English. With nine years’ experience and no management experience, you do not currently meet two of the published minimum criteria. The admissions committee makes the final decision, so contact emba X adviser Teyuna Giger for an individual assessment: teyuna.giger@unisg.ch or +41 71 224 77 65.\n\nIf you later apply, the application includes an updated CV, academic records, two referees and a 500–1,000-word impact reflection essay. The process also includes online assessments and an interview. These let you present your experience, but do not waive the formal criteria.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.508
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fee for the current emba X cohort is **CHF 110,000**. The application window ran from **31 August to 31 October 2026** and is now closed. The next application window has not yet been announced; emba X adviser Teyuna Giger can provide updates at teyuna.giger@unisg.ch or +41 71 224 77 65. Travel and accommodation during campus modules are additional costs.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.599
+    },
+    {
+      "turn": 5,
+      "user": "So am I eligible?",
+      "assistant": "Based on the published emba X criteria, **you do not currently meet the minimum requirements**: the programme requires at least **10 years of work experience** and **5 years of leadership experience**. You mentioned nine years of professional experience and no management experience. Admissions makes the final decision on each application, so you can contact emba X adviser Teyuna Giger for an individual assessment at teyuna.giger@unisg.ch or +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.467
+    }
+  ],
+  "error": null
+}

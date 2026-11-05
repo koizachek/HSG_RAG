@@ -1,0 +1,72 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt professionell und sachlich, erklärt den Wert des Programms (renommierte Dozenten, Praxisprojekte, Netzwerk, Präsenzphasen) und verweist auf Finanzierungsmöglichkeiten sowie einen menschlichen Kontakt. Die Tonalität ist ruhig und nicht defensiv. Die Antwort ist hilfreich und korrekt, auch wenn sie noch etwas stärker auf Rankings oder Outcomes eingehen könnte.",
+  "issues": [
+    "Kein expliziter Bezug auf Rankings oder konkrete Karriere-Outcomes",
+    "Der Begriff \"Wucher\" wird nicht direkt adressiert, aber das ist in Ordnung, solange die Antwort sachlich bleibt",
+    "Die Kontaktadresse ist generisch (emba@unisg.ch), obwohl ein namentlicher Kontakt (z.B. Cyra von Müller) laut Hard Facts möglich wäre"
+  ],
+  "criteria_missed": [
+    "Rankings und konkrete Outcomes werden nicht explizit erwähnt",
+    "Namentlicher Kontakt aus den Hard Facts wäre persönlicher gewesen"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Die Antwort bleibt professionell und sachlich, erklärt den Wert des Programms (renommierte Dozenten, Praxisprojekte, Netzwerk, Präsenzphasen) und verweist auf Finanzierungsmöglichkeiten sowie einen menschlichen Kontakt. Die Tonalität ist ruhig und nicht defensiv. Die Antwort ist hilfreich und korrekt, auch wenn sie noch etwas stärker auf Rankings oder Outcomes eingehen könnte.",
+    "strengths": [
+      "Professioneller und ruhiger Ton trotz aggressiver Nutzerfrage",
+      "Sachliche Erklärung des Mehrwerts (Dozenten, Netzwerk, Praxisprojekte, Präsenzphasen)",
+      "Verweis auf Finanzierungsmöglichkeiten",
+      "Angebot eines persönlichen Kontakts zur Studienberatung"
+    ],
+    "issues": [
+      "Kein expliziter Bezug auf Rankings oder konkrete Karriere-Outcomes",
+      "Der Begriff \"Wucher\" wird nicht direkt adressiert, aber das ist in Ordnung, solange die Antwort sachlich bleibt",
+      "Die Kontaktadresse ist generisch (emba@unisg.ch), obwohl ein namentlicher Kontakt (z.B. Cyra von Müller) laut Hard Facts möglich wäre"
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Wert des Programms sachlich erklärt",
+      "Preis in Kontext gesetzt (Leistungen genannt)",
+      "Menschlichen Kontakt angeboten"
+    ],
+    "criteria_missed": [
+      "Rankings und konkrete Outcomes werden nicht explizit erwähnt",
+      "Namentlicher Kontakt aus den Hard Facts wäre persönlicher gewesen"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Die Investition in ein Executive MBA an der Universität St.Gallen spiegelt den umfassenden Charakter des Studiums wider, einschliesslich renommierter Dozenten, hochkarätiger Praxisprojekte, exklusivem Netzwerkzugang sowie intensiver Präsenzphasen auf dem Campus. Für Fragen zu Finanzierungsmöglichkeiten und Zuschüssen steht Ihnen die Informationsseite unter https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse zur Verfügung. Gerne können Sie sich für ein persönliches Gespräch auch direkt an unsere Studienberatung unter emba@unisg.ch oder +41 71 224 27 02 wenden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.206
+    }
+  ],
+  "error": null
+}

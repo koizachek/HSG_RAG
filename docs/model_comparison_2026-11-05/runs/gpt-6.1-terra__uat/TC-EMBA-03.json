@@ -1,0 +1,115 @@
+{
+  "case_id": "TC-EMBA-03",
+  "title": "TC-EMBA-03: Cross-Selling Opportunity",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung mit klarer Differenzierung der Programme und korrektem Cross-Selling. Alle wichtigen Anforderungen werden erfüllt, kleinere Optimierungspotenziale bei Terminvermittlung.",
+  "issues": [
+    "Bei der Terminvermittlung (Turn 5) wird zwar korrekt an die Beraterin verwiesen, aber es fehlt ein expliziter Hinweis, wie der Nutzer konkret einen Termin buchen kann (z.B. Link, weitere Schritte). Die Formulierung ist etwas vage, aber nicht falsch.",
+    "Die Gebühren werden als 'Referenzwert' bezeichnet, was leicht missverständlich sein könnte, da es sich um die tatsächlich aktuell buchbare Gebühr handelt. Allerdings wird die Frist korrekt als geschlossen markiert."
+  ],
+  "criteria_missed": [
+    "Terminvermittlung könnte noch klarer und handlungsorientierter formuliert sein (z.B. expliziter Buchungshinweis oder Link)."
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung mit klarer Differenzierung der Programme und korrektem Cross-Selling. Alle wichtigen Anforderungen werden erfüllt, kleinere Optimierungspotenziale bei Terminvermittlung.",
+    "strengths": [
+      "Sprache korrekt erkannt und konsequent Deutsch verwendet.",
+      "Spezialisierungswunsch (Nachhaltigkeit & Digitalisierung) erkannt und emba X als passende Empfehlung hervorgehoben.",
+      "Alle drei Programme werden kurz und korrekt vorgestellt, ohne Abwertung.",
+      "Klare, faktenbasierte Differenzierung zwischen emba X und EMBA HSG, inklusive ETH Zürich-Kooperation.",
+      "Unterrichtssprache, Dauer, Struktur und Gebühren werden korrekt und aktuell genannt.",
+      "Korrekte Information zur Bewerbungsfrist und Eskalation/Handover an die zuständige Beraterin bei geschlossenem Fenster.",
+      "Terminwunsch wird erkannt und an die richtige Kontaktperson verwiesen."
+    ],
+    "issues": [
+      "Bei der Terminvermittlung (Turn 5) wird zwar korrekt an die Beraterin verwiesen, aber es fehlt ein expliziter Hinweis, wie der Nutzer konkret einen Termin buchen kann (z.B. Link, weitere Schritte). Die Formulierung ist etwas vage, aber nicht falsch.",
+      "Die Gebühren werden als 'Referenzwert' bezeichnet, was leicht missverständlich sein könnte, da es sich um die tatsächlich aktuell buchbare Gebühr handelt. Allerdings wird die Frist korrekt als geschlossen markiert."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Spezialisierungswunsch",
+      "Passende Cross-Selling Empfehlung (EMBA X)",
+      "Klare Programm-Differenzierung",
+      "Keine Abwertung anderer Programme",
+      "Bei Unsicherheit: Eskalation/Handover"
+    ],
+    "criteria_missed": [
+      "Terminvermittlung könnte noch klarer und handlungsorientierter formuliert sein (z.B. expliziter Buchungshinweis oder Link)."
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich suche ein MBA-Programm mit Fokus auf Nachhaltigkeit und Digitalisierung.",
+      "assistant": "Für die Verbindung von Nachhaltigkeit und Technologie ist insbesondere der **emba X** interessant. Die **Universität St.Gallen** bietet daneben zwei breiter ausgerichtete Executive-MBA-Programme an:\n\n- **emba X:** Das gemeinsame Programm mit der ETH Zürich verbindet Management, Technologie, verantwortungsvolle Führung und Nachhaltigkeit. Es dauert **18 Monate**, ist englischsprachig und kombiniert Präsenz in Zürich und St.Gallen mit Online-Unterricht. Die Studiengebühr der aktuellen Kohorte beträgt **CHF 110’000** als Referenzwert. Das Bewerbungsfenster vom **31. August bis 31. Oktober 2026** ist geschlossen; Teyuna Giger gibt das nächste Bewerbungsfenster bekannt.\n- **EMBA HSG:** Der deutschsprachige Studiengang vermittelt allgemeine Unternehmensführung mit Fokus auf den deutschsprachigen Raum. Nachhaltigkeit im Unternehmenskontext und strategische Innovation gehören zum Programm. Es dauert **18 Monate** und umfasst **14 Campuswochen**. Bei Bewerbung bis **23. November 2026** beträgt die Studiengebühr **CHF 72’500**.\n- **International EMBA HSG:** Das englischsprachige Programm verbindet allgemeine Unternehmensführung mit internationaler Perspektive; ein Kurs an der UC Berkeley behandelt Innovation und Unternehmertum für nachhaltige Entwicklung. Die **18 Monate** umfassen **10 Campuswochen und 4 Wochen im Ausland**. Bei Bewerbung bis **31. März 2027** beträgt die Studiengebühr **CHF 84’000**.\n\nWie viele Jahre Berufs- und Führungserfahrung bringen Sie mit, und bevorzugen Sie Deutsch oder Englisch als Unterrichtssprache?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 11.59
+    },
+    {
+      "turn": 2,
+      "user": "Was unterscheidet EMBA X vom normalen Executive MBA?",
+      "assistant": "Der **emba X** verbindet allgemeine Unternehmensführung ausdrücklich mit Technologie und gesellschaftlicher Verantwortung. Der **EMBA HSG** ist breiter auf Unternehmensführung im deutschsprachigen Raum ausgerichtet.\n\n- **Inhalte:** Im emba X stehen Technologie, verantwortungsvolle Führung und Nachhaltigkeit im Zusammenspiel. Der EMBA HSG behandelt ebenfalls Nachhaltigkeit und strategische Innovation, legt aber seinen Schwerpunkt auf die allgemeine Unternehmensführung.\n- **Hochschulen:** Der emba X ist ein gemeinsames Programm der **Universität St.Gallen** und der ETH Zürich. Der EMBA HSG wird von der Universität St.Gallen angeboten.\n- **Sprache und Format:** Der emba X wird auf **Englisch** unterrichtet, mit **56 Präsenztagen** in Zürich und St.Gallen sowie **2 Onlinetagen**. Der EMBA HSG ist **deutschsprachig** und umfasst **14 Campuswochen**.\n- **Praxis:** Der emba X beinhaltet zwei wirkungsorientierte Projekte. Der EMBA HSG umfasst ein Unternehmensprojekt sowie neun Pflicht- und fünf Wahlkurse.\n- **Dauer:** Beide Programme dauern regulär **18 Monate** und umfassen **75 ECTS**.\n\nFür Ihren gewünschten Schwerpunkt auf Nachhaltigkeit und Digitalisierung bietet der emba X die stärker technologiebezogene Ausrichtung.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 8.806
+    },
+    {
+      "turn": 3,
+      "user": "Wird EMBA X auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "Der **emba X** wird auf **Englisch** unterrichtet.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.346
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für die aktuelle **emba X-Kohorte** beträgt **CHF 110’000** als Referenzwert. Die Unterkunft ist nicht inbegriffen.\n\nDas Bewerbungsfenster vom **31. August bis 31. Oktober 2026** ist geschlossen. Teyuna Giger gibt das nächste Bewerbungsfenster bekannt: teyuna.giger@unisg.ch oder +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.715
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen für ein Beratungsgespräch zum **emba X** mit Teyuna Giger anzeigen. Die Kontaktdaten und verfügbaren Termine finden Sie unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba_x"
+      ],
+      "elapsed_s": 2.256
+    }
+  ],
+  "error": null
+}

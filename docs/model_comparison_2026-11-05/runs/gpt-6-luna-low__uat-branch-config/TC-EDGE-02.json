@@ -1,0 +1,60 @@
+{
+  "case_id": "TC-EDGE-02",
+  "title": "TC-EDGE-02: Off-Topic Questions",
+  "score": 10.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist vorbildlich: Die Assistentin bleibt höflich, führt das Gespräch klar auf das Thema EMBA-Programme zurück und bietet aktiv Hilfe zu relevanten Themen an. Die Sprache ist korrekt, der Ton freundlich und professionell. Es werden keine falschen Versprechen gemacht und keine internen Details erwähnt.",
+  "issues": [],
+  "criteria_missed": [],
+  "judgement": {
+    "overall_score": 10,
+    "passed": true,
+    "verdict": "Die Antwort ist vorbildlich: Die Assistentin bleibt höflich, führt das Gespräch klar auf das Thema EMBA-Programme zurück und bietet aktiv Hilfe zu relevanten Themen an. Die Sprache ist korrekt, der Ton freundlich und professionell. Es werden keine falschen Versprechen gemacht und keine internen Details erwähnt.",
+    "strengths": [
+      "Höfliche und klare Themeneingrenzung",
+      "Explizite Spezialisierung auf EMBA-Programme genannt",
+      "Angebot, bei programmbezogenen Fragen zu helfen",
+      "Korrekte Sprache (Deutsch)",
+      "Freundlicher, professioneller Ton"
+    ],
+    "issues": [],
+    "criteria_met": [
+      "Höflich auf Thema zurückgeführt",
+      "Spezialisierung auf EMBA-Programme klar kommuniziert",
+      "Angebot, bei relevanten Fragen zu helfen",
+      "Keine falschen Versprechen oder interne Details",
+      "Sprache und Ton angemessen"
+    ],
+    "criteria_missed": [],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Was sind die besten Restaurants in St. Gallen?",
+      "assistant": "Ich bin auf HSG Executive MBA-Programme spezialisiert. Zu allgemeinen Themen wie Restaurants, Reisen oder lokalen Empfehlungen kann ich leider nicht beraten. Gerne helfe ich Ihnen bei Programmdetails, Zulassungsvoraussetzungen oder dabei, das richtige Programm für Ihre Ziele zu finden. Was möchten Sie über unsere Programme wissen?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.001
+    }
+  ],
+  "error": null
+}

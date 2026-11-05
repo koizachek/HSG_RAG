@@ -1,0 +1,75 @@
+{
+  "case_id": "TC-EDGE-04",
+  "title": "TC-EDGE-04: Gibberish / Unverständliche Eingabe",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Reaktion des Chatbots auf unverständliche Eingaben ist angemessen und freundlich. Nach der ersten unverständlichen Eingabe wird höflich um eine Umformulierung gebeten. Nach der zweiten unverständlichen Eingabe wird ein hilfreicher Kontaktweg zu einer Person angeboten, was dem Szenario entspricht. Die Sprache ist korrekt (Deutsch), der Ton ist höflich und unterstützend. Es gibt keine sachlichen Fehler. Ein kleiner Abzug erfolgt, weil die explizite Frage \"Möchten Sie lieber mit einer Person sprechen?\" nicht wörtlich gestellt wird, sondern stattdessen direkt der Kontaktweg angeboten wird. Dies ist jedoch funktional gleichwertig und erfüllt den Sinn der Vorgabe.",
+  "issues": [
+    "Die explizite Nachfrage, ob der Nutzer mit einer Person sprechen möchte, fehlt als direkte Frage. Stattdessen wird direkt der Kontaktweg angeboten."
+  ],
+  "criteria_missed": [
+    "Die explizite Nachfrage \"Möchten Sie lieber mit einer Person sprechen?\" wird nicht als Frage formuliert"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Reaktion des Chatbots auf unverständliche Eingaben ist angemessen und freundlich. Nach der ersten unverständlichen Eingabe wird höflich um eine Umformulierung gebeten. Nach der zweiten unverständlichen Eingabe wird ein hilfreicher Kontaktweg zu einer Person angeboten, was dem Szenario entspricht. Die Sprache ist korrekt (Deutsch), der Ton ist höflich und unterstützend. Es gibt keine sachlichen Fehler. Ein kleiner Abzug erfolgt, weil die explizite Frage \"Möchten Sie lieber mit einer Person sprechen?\" nicht wörtlich gestellt wird, sondern stattdessen direkt der Kontaktweg angeboten wird. Dies ist jedoch funktional gleichwertig und erfüllt den Sinn der Vorgabe.",
+    "strengths": [
+      "Korrekte Sprache (Deutsch)",
+      "Freundlicher und professioneller Ton",
+      "Korrekte Eskalation nach zweiter unverständlicher Eingabe",
+      "Hilfreiche Kontaktinformation für menschlichen Support"
+    ],
+    "issues": [
+      "Die explizite Nachfrage, ob der Nutzer mit einer Person sprechen möchte, fehlt als direkte Frage. Stattdessen wird direkt der Kontaktweg angeboten."
+    ],
+    "criteria_met": [
+      "Unverständliche Eingaben werden erkannt und höflich adressiert",
+      "Nach 2 unverständlichen Eingaben wird ein menschlicher Kontakt angeboten",
+      "Sprache und Ton sind angemessen"
+    ],
+    "criteria_missed": [
+      "Die explizite Nachfrage \"Möchten Sie lieber mit einer Person sprechen?\" wird nicht als Frage formuliert"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "asdfkjhasdf 12345 !!!????",
+      "assistant": "Das habe ich nicht ganz verstanden. Könnten Sie Ihre Frage bitte anders formulieren?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.001
+    },
+    {
+      "turn": 2,
+      "user": "sahjbdashj  sa udiah ub2  2h ewb3 ?!?!?!",
+      "assistant": "Ich habe weiterhin Schwierigkeiten, Ihre Nachricht zu verstehen. Falls sich Ihre Frage auf die HSG Executive MBA-Programme bezieht, formulieren Sie sie bitte als vollständigen Satz um.\n\nSie erreichen das Executive-MBA-Zulassungsteam unter emba@unisg.ch oder +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.005
+    }
+  ],
+  "error": null
+}

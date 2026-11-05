@@ -1,0 +1,14 @@
+/opt/anaconda3/lib/python3.13/site-packages/weaviate/warnings.py:93: DeprecationWarning: Dep005: You are using weaviate-client version 4.20.5. The latest version is 4.24.1.
+            Consider upgrading to the latest version. See https://weaviate.io/developers/weaviate/client-libraries/python for details.
+  warnings.warn(
+de | Was macht den EMBA HSG besonders? | 4.06 s | LeadAgentQueryResponse(response="Der **EMBA HSG** zeichnet sich durch 
+de | Wie ist das Alumni-Netzwerk? | 1.39 s | LeadAgentQueryResponse(response="Das Alumni-Netzwerk der **Universität
+de | Was kostet der EMBA? | 3.34 s | LeadAgentQueryResponse(response="Die Studiengebühren für den **EMBA HS
+de | Welche Zulassungsvoraussetzungen gibt es | 3.03 s | LeadAgentQueryResponse(response='Für die Zulassung zu den Executive MB
+en | What makes the IEMBA HSG distinctive? | 1.55 s | LeadAgentQueryResponse(response='The **International Executive MBA HSG
+en | Tell me about the international modules. | 2.9 s | LeadAgentQueryResponse(response='The **International Executive MBA HSG
+en | How much does emba X cost? | 1.08 s | LeadAgentQueryResponse(response="The **EMBA ETH HSG (emba X)** program
+en | I'd like to book a consultation. | 2.8 s | LeadAgentQueryResponse(response='I can show you appointment options wi
+TIMING total turn: [4.02, 1.38, 3.34, 3.03, 1.55, 2.9, 1.08, 2.8]
+SERVED {'google/gemini-3.5-flash-lite': 12}
+WARNINGS []

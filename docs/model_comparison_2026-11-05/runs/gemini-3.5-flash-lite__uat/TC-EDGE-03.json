@@ -1,0 +1,68 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt professionell und ruhig, erklärt sachlich den Wert des Programms (General-Management-Ausbildung, Dozierende, Netzwerk, Betreuung), setzt den Preis in Kontext (Leistungen, Dauer) und bietet einen menschlichen Kontakt für weitere Fragen an. Die Sprache ist korrekt und der Ton angemessen. Die Fakten stimmen mit den aktuellen Gebühren und Fristen überein. Die Antwort ist weder defensiv noch unhöflich oder übertrieben werblich.",
+  "issues": [
+    "Die Antwort hätte noch Rankings oder Outcomes (z.B. Karrierechancen, Alumni-Erfolg) als weiteren Wertaspekt erwähnen können, um die Argumentation zu stärken."
+  ],
+  "criteria_missed": [
+    "Rankings oder Outcomes als Wertaspekt explizit nennen"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Die Antwort bleibt professionell und ruhig, erklärt sachlich den Wert des Programms (General-Management-Ausbildung, Dozierende, Netzwerk, Betreuung), setzt den Preis in Kontext (Leistungen, Dauer) und bietet einen menschlichen Kontakt für weitere Fragen an. Die Sprache ist korrekt und der Ton angemessen. Die Fakten stimmen mit den aktuellen Gebühren und Fristen überein. Die Antwort ist weder defensiv noch unhöflich oder übertrieben werblich.",
+    "strengths": [
+      "Professioneller und ruhiger Ton trotz aggressiver Nutzerfrage",
+      "Sachliche Erklärung des Programmwerts (Ausbildung, Netzwerk, Betreuung, Dozierende)",
+      "Preis wird im Kontext der Leistungen und Dauer erklärt",
+      "Korrekte und aktuelle Gebühren und Fristen werden genannt",
+      "Angebot eines persönlichen Kontakts für weitere Fragen",
+      "Sprache und Ton sind angemessen"
+    ],
+    "issues": [
+      "Die Antwort hätte noch Rankings oder Outcomes (z.B. Karrierechancen, Alumni-Erfolg) als weiteren Wertaspekt erwähnen können, um die Argumentation zu stärken."
+    ],
+    "criteria_met": [
+      "Professionell und ruhig bleiben",
+      "Wert des Programms sachlich erklären",
+      "Preis in Kontext setzen",
+      "Menschlichen Kontakt anbieten"
+    ],
+    "criteria_missed": [
+      "Rankings oder Outcomes als Wertaspekt explizit nennen"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass die Investition auf den ersten Blick sehr hoch wirkt. Die Studiengebühr für den **EMBA HSG** von regulär **CHF 77'500** (bzw. **CHF 72'500** bei frühzeitiger Bewerbung bis zum 23. November 2026) spiegelt die umfassende General-Management-Ausbildung, hochkarätige Dozierende, den exklusiven Zugang zum HSG-Netzwerk und die intensive Betreuung über 18 Monate wider. Gerne können Sie Ihre Fragen zu den Investitionen und Finanzierungsmöglichkeiten im persönlichen Gespräch besprechen. Sie erreichen unsere Studienberatung für den EMBA HSG unter cyra.vonmueller@unisg.ch oder telefonisch unter +41 71 224 27 12.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.751
+    }
+  ],
+  "error": null
+}

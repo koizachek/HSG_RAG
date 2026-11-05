@@ -1,0 +1,120 @@
+{
+  "case_id": "TC-IEMBA-02",
+  "title": "TC-IEMBA-02: Career Change Scenario",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "The assistant provided accurate, clear, and fair guidance in English, correctly identified the user's non-standard profile, and gave realistic eligibility assessments for both IEMBA and emba X. It avoided false promises, did not speculate on admissions outcomes, and consistently referred the user to the appropriate advisor for further assessment. The assistant also correctly handled the closed application window for emba X and did not attempt to sell a closed cohort. However, it missed some cross-selling opportunities for IEMBA after turn 2 and did not mention the IEMBA tuition when the user asked about costs, focusing only on emba X. The handover was clear but could have been more proactive in offering a conversation or appointment.",
+  "issues": [
+    "Did not mention IEMBA as an alternative after emba X was ruled out, missing a cross-selling opportunity.",
+    "When asked about cost, only provided emba X tuition, not IEMBA, despite the user's initial interest in IEMBA.",
+    "Could have been more proactive in offering a handover or appointment (e.g., suggesting to book a call)."
+  ],
+  "criteria_missed": [
+    "Cross-selling to IEMBA after emba X ruled out",
+    "Did not mention IEMBA tuition when asked about cost",
+    "Could have been more proactive in offering appointment/booking"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "The assistant provided accurate, clear, and fair guidance in English, correctly identified the user's non-standard profile, and gave realistic eligibility assessments for both IEMBA and emba X. It avoided false promises, did not speculate on admissions outcomes, and consistently referred the user to the appropriate advisor for further assessment. The assistant also correctly handled the closed application window for emba X and did not attempt to sell a closed cohort. However, it missed some cross-selling opportunities for IEMBA after turn 2 and did not mention the IEMBA tuition when the user asked about costs, focusing only on emba X. The handover was clear but could have been more proactive in offering a conversation or appointment.",
+    "strengths": [
+      "Language was consistently English and appropriate for the user.",
+      "Eligibility criteria for both IEMBA and emba X were explained accurately.",
+      "No false promises or speculation about admissions outcomes.",
+      "Correctly handled closed application window for emba X.",
+      "Consistent, polite, and professional tone.",
+      "Clear escalation to human advisors with contact details."
+    ],
+    "issues": [
+      "Did not mention IEMBA as an alternative after emba X was ruled out, missing a cross-selling opportunity.",
+      "When asked about cost, only provided emba X tuition, not IEMBA, despite the user's initial interest in IEMBA.",
+      "Could have been more proactive in offering a handover or appointment (e.g., suggesting to book a call)."
+    ],
+    "criteria_met": [
+      "Language correct (English)",
+      "Bot recognizes non-standard profile",
+      "Realistic eligibility assessment",
+      "No false promises",
+      "Timely escalation to human advisor",
+      "Correct explanation of experience requirements",
+      "Did not speculate on admissions outcome",
+      "Did not provide detailed application strategy"
+    ],
+    "criteria_missed": [
+      "Cross-selling to IEMBA after emba X ruled out",
+      "Did not mention IEMBA tuition when asked about cost",
+      "Could have been more proactive in offering appointment/booking"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "I'm a software engineer with 9 years of experience. I want to move into business leadership. Do I qualify for the IEMBA?",
+      "assistant": "The published IEMBA requirements include **at least five years of work experience** and **at least three years of managerial or leadership experience**, a recognised undergraduate degree, and fluency in English. Your nine years of experience meet the work-experience threshold, but you have not mentioned whether you have three years of leadership experience or a recognised degree. Moving into business leadership is a suitable goal for the programme, but it does not replace the stated experience requirement. Admissions makes the final decision on each application. See the [admissions requirements](https://emba.unisg.ch/en/admissions/process); for a personal assessment, contact Kristin Fuchs at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.528
+    },
+    {
+      "turn": 2,
+      "user": "Would EMBA X be a better fit for my tech background?",
+      "assistant": "**emba X could be a strong thematic fit**: it combines technology, general management and leadership, and is designed for experienced leaders who can introduce change in their organisations. Its curriculum includes technology and business innovation alongside leadership development and impact projects. Your software engineering background aligns with that focus, though your background alone does not establish admission eligibility; the admissions committee assesses applications individually.\n\nOne important practical point: applications for the current cohort are closed. The programme is **18 months**, taught in **English**, and its current-cohort tuition fee is **CHF 110,000**. The application window ran from **31 August to 31 October 2026**. Teyuna Giger can advise when the next application window will open: teyuna.giger@unisg.ch or +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.513
+    },
+    {
+      "turn": 3,
+      "user": "How can I strengthen my application without management experience?",
+      "assistant": "For **emba X**, the published formal criteria require **at least 10 years’ work experience** and **at least five years’ leadership experience**, as well as a recognised academic degree and fluency in English. Based on what you’ve shared, you do not currently meet the two experience thresholds. Admissions assesses applications individually, so I can’t predict an outcome or advise how to improve your chances.\n\nThe application includes an updated CV, academic documents, two referees and a 500–1,000-word impact reflection essay. For a personal assessment of whether your experience could be considered, contact emba X advisor Teyuna Giger at teyuna.giger@unisg.ch or +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.586
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fee for the current emba X cohort is **CHF 110,000**. Its application window ran from **31 August to 31 October 2026** and is now closed, so this fee is a reference for that cohort, not a currently available application fee. The programme advisor, Teyuna Giger, can tell you when applications reopen: teyuna.giger@unisg.ch or +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.281
+    },
+    {
+      "turn": 5,
+      "user": "So am I eligible?",
+      "assistant": "Based on what you’ve shared, **you do not meet the published emba X experience criteria**: it requires at least **10 years of work experience** and **five years of leadership experience**. You have nine years of work experience and said you have no management experience. A recognised academic degree and fluency in English are also required; you haven’t mentioned whether you meet those criteria. Admissions assesses applications individually, so contact emba X advisor Teyuna Giger for a personal assessment: teyuna.giger@unisg.ch or +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.201
+    }
+  ],
+  "error": null
+}

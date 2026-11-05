@@ -1,0 +1,76 @@
+{
+  "case_id": "TC-EDGE-04",
+  "title": "TC-EDGE-04: Gibberish / Unverständliche Eingabe",
+  "score": 8.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Reaktionen des Chatbots auf unverständliche Eingaben sind höflich, korrekt und in der richtigen Sprache. Nach der zweiten unverständlichen Eingabe wird ein sinnvoller Handover an das Zulassungsteam angeboten. Die explizite Nachfrage, ob der Nutzer mit einer Person sprechen möchte, fehlt zwar, aber die Kontaktinformation erfüllt den Sinn der Vorgabe. Die Antworten sind sachlich, freundlich und enthalten keine falschen Fakten.",
+  "issues": [
+    "Die explizite Nachfrage \"Möchten Sie lieber mit einer Person sprechen?\" fehlt; stattdessen wird direkt der Kontakt angeboten. Dies ist funktional ausreichend, aber nicht ganz wortgetreu zur Vorgabe."
+  ],
+  "criteria_missed": [
+    "Die explizite Nachfrage, ob der Nutzer mit einer Person sprechen möchte, wird nicht gestellt"
+  ],
+  "judgement": {
+    "overall_score": 8,
+    "passed": true,
+    "verdict": "Die Reaktionen des Chatbots auf unverständliche Eingaben sind höflich, korrekt und in der richtigen Sprache. Nach der zweiten unverständlichen Eingabe wird ein sinnvoller Handover an das Zulassungsteam angeboten. Die explizite Nachfrage, ob der Nutzer mit einer Person sprechen möchte, fehlt zwar, aber die Kontaktinformation erfüllt den Sinn der Vorgabe. Die Antworten sind sachlich, freundlich und enthalten keine falschen Fakten.",
+    "strengths": [
+      "Korrekte und höfliche Reaktion auf unverständliche Eingaben",
+      "Sprache ist durchgehend Deutsch",
+      "Sinnvoller Handover nach zweiter unverständlicher Eingabe",
+      "Keine falschen Versprechen oder Fakten"
+    ],
+    "issues": [
+      "Die explizite Nachfrage \"Möchten Sie lieber mit einer Person sprechen?\" fehlt; stattdessen wird direkt der Kontakt angeboten. Dies ist funktional ausreichend, aber nicht ganz wortgetreu zur Vorgabe."
+    ],
+    "criteria_met": [
+      "Unverständliche Eingabe wird erkannt und höflich adressiert",
+      "Nach zweiter unverständlicher Eingabe erfolgt Handover an menschlichen Kontakt",
+      "Antworten sind sachlich und freundlich",
+      "Sprache ist korrekt (Deutsch)"
+    ],
+    "criteria_missed": [
+      "Die explizite Nachfrage, ob der Nutzer mit einer Person sprechen möchte, wird nicht gestellt"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "asdfkjhasdf 12345 !!!????",
+      "assistant": "Das habe ich nicht ganz verstanden. Könnten Sie Ihre Frage bitte anders formulieren?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.003
+    },
+    {
+      "turn": 2,
+      "user": "sahjbdashj  sa udiah ub2  2h ewb3 ?!?!?!",
+      "assistant": "Ich habe weiterhin Schwierigkeiten, Ihre Nachricht zu verstehen. Falls sich Ihre Frage auf die HSG Executive MBA-Programme bezieht, formulieren Sie sie bitte als vollständigen Satz um.\n\nSie erreichen das Executive-MBA-Zulassungsteam unter emba@unisg.ch oder +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.006
+    }
+  ],
+  "error": null
+}

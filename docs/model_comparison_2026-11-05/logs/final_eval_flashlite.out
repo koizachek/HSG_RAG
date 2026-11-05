@@ -1,0 +1,9 @@
+..................................                                       [100%]
+=============================== warnings summary ===============================
+tests/test_llm_fact_eval.py::test_fact_eval[de_price_emba]
+  /opt/anaconda3/lib/python3.13/site-packages/weaviate/warnings.py:93: DeprecationWarning: Dep005: You are using weaviate-client version 4.20.5. The latest version is 4.24.1.
+              Consider upgrading to the latest version. See https://weaviate.io/developers/weaviate/client-libraries/python for details.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+34 passed, 1 warning in 83.83s (0:01:23)

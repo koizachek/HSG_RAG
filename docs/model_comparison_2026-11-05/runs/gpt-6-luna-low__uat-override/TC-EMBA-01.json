@@ -1,0 +1,117 @@
+{
+  "case_id": "TC-EMBA-01",
+  "title": "TC-EMBA-01: Standard Qualification - Perfect Fit",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Fallbearbeitung ist sehr gut und erfüllt fast alle Akzeptanzkriterien. Die Antworten sind sachlich, korrekt, freundlich und auf Deutsch. Die Programmempfehlung, Kosten, Fristen und Prozessschritte stimmen mit den aktuellen Hard Facts überein. Die Handover-Logik für die Terminvereinbarung ist korrekt umgesetzt. Ein kleiner Abzug erfolgt, weil die Dokumentenliste für die Bewerbung nicht explizit genannt wurde und die Leistungen der Gebühr nur knapp umrissen wurden.",
+  "issues": [
+    "Dokumentenliste für die Bewerbung (z.B. CV, Motivationsschreiben) wurde nicht explizit genannt",
+    "Leistungen der Studiengebühr wurden nur kurz umrissen, könnten etwas ausführlicher sein (z.B. Netzwerk, Lehrmaterialien, Mittagessen etc.)"
+  ],
+  "criteria_missed": [
+    "Dokumentenliste für Bewerbung nicht explizit genannt",
+    "Leistungen der Gebühr könnten ausführlicher sein"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Fallbearbeitung ist sehr gut und erfüllt fast alle Akzeptanzkriterien. Die Antworten sind sachlich, korrekt, freundlich und auf Deutsch. Die Programmempfehlung, Kosten, Fristen und Prozessschritte stimmen mit den aktuellen Hard Facts überein. Die Handover-Logik für die Terminvereinbarung ist korrekt umgesetzt. Ein kleiner Abzug erfolgt, weil die Dokumentenliste für die Bewerbung nicht explizit genannt wurde und die Leistungen der Gebühr nur knapp umrissen wurden.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch)",
+      "Faktisch korrekte Angaben zu Programmen, Kosten, Fristen, Dauer",
+      "Passende Empfehlung (EMBA HSG, deutschsprachig, DACH-Fokus)",
+      "Eligibility korrekt validiert (Berufserfahrung/Führungserfahrung)",
+      "Sachlicher, freundlicher Ton, keine Werbung",
+      "Proaktives Handover für Beratungstermin mit korrektem Ansprechpartner"
+    ],
+    "issues": [
+      "Dokumentenliste für die Bewerbung (z.B. CV, Motivationsschreiben) wurde nicht explizit genannt",
+      "Leistungen der Studiengebühr wurden nur kurz umrissen, könnten etwas ausführlicher sein (z.B. Netzwerk, Lehrmaterialien, Mittagessen etc.)"
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Passende Programm-Empfehlung (EMBA HSG)",
+      "Eligibility korrekt validiert",
+      "Faktisch korrekte Informationen (Kosten, Termine, Dauer)",
+      "Sachlicher, warmer Ton",
+      "Proaktives Handover-Angebot",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "Dokumentenliste für Bewerbung nicht explizit genannt",
+      "Leistungen der Gebühr könnten ausführlicher sein"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Guten Tag, ich interessiere mich für ein MBA-Studium \nberufsbegleitend.",
+      "assistant": "An der **Universität St.Gallen** gibt es drei berufsbegleitende Executive-MBA-Programme. Das **EMBA HSG** wird auf Deutsch unterrichtet und ist modular aufgebaut: 18 Monate, mit 14 Wochen am Campus. Die nächste Kohorte startet am **8. März 2027**; die Studiengebühr beträgt aktuell **CHF 72’500**, wenn Sie sich bis zum **23. November 2026** bewerben.\n\nDas **IEMBA HSG** ist englischsprachig und international ausgerichtet: 18 Monate, mit 10 Wochen am Campus und vier Wochen im Ausland. Start ist am **30. August 2027**; die aktuelle Gebühr beträgt **CHF 84’000** bei Bewerbung bis **31. März 2027**.\n\nDas englischsprachige **emba X**, gemeinsam mit der ETH Zürich, verbindet Management, Technologie und gesellschaftliche Wirkung. Es dauert 18 Monate und kombiniert Präsenz in Zürich und St.Gallen mit Online-Anteilen. Die Bewerbung für die Kohorte mit Start am **1. Februar 2027** ist geschlossen; Teyuna Giger informiert über das nächste Bewerbungsfenster.\n\nFür eine erste Orientierung: Welche Berufserfahrung und Führungsverantwortung haben Sie, in welcher Branche oder Rolle arbeiten Sie, und bevorzugen Sie Deutsch oder Englisch?",
+      "additional_details": "Programmseiten: [EMBA HSG](https://emba.unisg.ch/programm/emba), [IEMBA HSG](https://emba.unisg.ch/programm/iemba), [emba X](https://embax.ch/).",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.936
+    },
+    {
+      "turn": 2,
+      "user": "Ich arbeite seit 15 Jahren, davon 7 Jahre als \nAbteilungsleiter.",
+      "assistant": "Mit 15 Jahren Berufserfahrung und sieben Jahren Führungserfahrung erfüllen Sie die veröffentlichten Mindestwerte für Berufserfahrung und Management-/Führungserfahrung: mindestens fünf beziehungsweise drei Jahre. Für eine Bewerbung sind ausserdem ein anerkannter Hochschulabschluss und sehr gute Kenntnisse der Unterrichtssprache erforderlich. Die endgültige Zulassungsentscheidung trifft der Zulassungsausschuss.\n\nUm ein passendes berufsbegleitendes Programm einzugrenzen: In welcher Branche oder Funktion arbeiten Sie derzeit, und bevorzugen Sie ein Studium auf Deutsch oder Englisch?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.207
+    },
+    {
+      "turn": 3,
+      "user": "Was sind die nächsten Schritte im Bewerbungsprozess?",
+      "assistant": "Der Bewerbungsprozess umfasst diese Schritte:\n\n1. Prüfen Sie die Voraussetzungen: anerkannter Hochschulabschluss, mindestens fünf Jahre Berufserfahrung, davon mindestens drei Jahre Management- oder Führungserfahrung, sowie sehr gute Kenntnisse der Unterrichtssprache. Sie erfüllen die genannten Erfahrungswerte; weitere Voraussetzungen gelten ebenfalls.\n2. Reichen Sie die vollständige Online-Bewerbung mit den erforderlichen Unterlagen ein. Beim **emba X** beginnt der Prozess mit dem Lebenslauf und einer Kontaktaufnahme; danach folgen die vollständige Bewerbung, ein Online-Assessment nach Einladung und ein Online-Interview.\n3. Der Zulassungsausschuss trifft den abschliessenden Entscheid.\n\nFür das **EMBA HSG** ist die nächste Bewerbungsfrist der **23. November 2026**; bis dahin gilt die Studiengebühr von **CHF 72’500**. Die Bewerbung erfolgt über das [Online-Bewerbungsportal](https://emba.unisg.ch/bewerbung/process). Der Prozess ist kostenlos. Die [Zulassungsschritte und Voraussetzungen](https://emba.unisg.ch/bewerbung/process) sind dort beschrieben.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.336
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Falls Sie das **EMBA HSG** meinen: Die Studiengebühr beträgt **CHF 72’500**, wenn Sie sich bis zur ersten Bewerbungsfrist am **23. November 2026** bewerben. Danach gilt bis zur finalen Frist am **1. Februar 2027** die Gebühr von **CHF 77’500**. Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung zwischen den Lerneinheiten sind enthalten; Reise, Unterkunft und Verpflegung ausserhalb der Kurszeiten tragen die Teilnehmenden selbst.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.501
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen für ein Beratungsgespräch mit **Cyra von Müller**, zuständig für das **EMBA HSG**, anzeigen. Die verfügbaren Kontaktangaben und Termine erscheinen unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 4.509
+    }
+  ],
+  "error": null
+}

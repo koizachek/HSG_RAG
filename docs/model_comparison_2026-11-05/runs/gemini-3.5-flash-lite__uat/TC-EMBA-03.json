@@ -1,0 +1,118 @@
+{
+  "case_id": "TC-EMBA-03",
+  "title": "TC-EMBA-03: Cross-Selling Opportunity",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antworten sind fachlich korrekt, freundlich und erfüllen die wichtigsten Akzeptanzkriterien. Die Spezialisierungswünsche des Nutzers werden erkannt, alle drei Programme werden vorgestellt und differenziert, und die Cross-Selling-Empfehlung für emba X ist passend. Die Sprache ist durchgehend korrekt (Deutsch), die Fakten stimmen mit den aktuellen Hard Facts überein, und der Handover zur Beratung ist klar und nutzerorientiert. Ein kleiner Abzug erfolgt, weil die Terminhinweise etwas generisch bleiben und keine expliziten Slots oder ein klarer Call-to-Action (z.B. \"Hier können Sie direkt buchen\") genannt werden. Insgesamt aber ein sehr gutes, hilfreiches und korrektes Gespräch.",
+  "issues": [
+    "Terminangebot bleibt etwas vage (\"werden weiter unten eingeblendet\"), ohne expliziten Buchungslink oder Slot-Auswahl",
+    "Keine explizite Einladung, die Beratung direkt zu buchen (nur implizit durch Verweis auf Einblendung)",
+    "Die Erwähnung, dass die Bewerbungsfrist für emba X \"abgelaufen\" ist, ist leicht missverständlich – sie ist noch offen bis 31.10.2026, aber das wird nicht klar kommuniziert. Die Aussage ist aber nicht faktisch falsch, da \"aktuelle Kohorte\" gemeint sein könnte."
+  ],
+  "criteria_missed": [
+    "Terminangebot könnte expliziter sein (z.B. direkter Buchungslink, konkrete Slots)",
+    "Leichte Unschärfe bei der Frist-Kommunikation für emba X"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antworten sind fachlich korrekt, freundlich und erfüllen die wichtigsten Akzeptanzkriterien. Die Spezialisierungswünsche des Nutzers werden erkannt, alle drei Programme werden vorgestellt und differenziert, und die Cross-Selling-Empfehlung für emba X ist passend. Die Sprache ist durchgehend korrekt (Deutsch), die Fakten stimmen mit den aktuellen Hard Facts überein, und der Handover zur Beratung ist klar und nutzerorientiert. Ein kleiner Abzug erfolgt, weil die Terminhinweise etwas generisch bleiben und keine expliziten Slots oder ein klarer Call-to-Action (z.B. \"Hier können Sie direkt buchen\") genannt werden. Insgesamt aber ein sehr gutes, hilfreiches und korrektes Gespräch.",
+    "strengths": [
+      "Korrekte und differenzierte Vorstellung aller drei Programme",
+      "Spezialisierungswunsch (Nachhaltigkeit, Digitalisierung) wird erkannt und adressiert",
+      "Cross-Selling für emba X mit ETH-Kooperation und Fokus auf Tech/Sustainability",
+      "Alle Fakten (Sprache, Gebühren, Fristen) stimmen mit den aktuellen Hard Facts überein",
+      "Freundlicher, professioneller Ton",
+      "Klarer Handover zur richtigen Ansprechperson für Beratungstermin"
+    ],
+    "issues": [
+      "Terminangebot bleibt etwas vage (\"werden weiter unten eingeblendet\"), ohne expliziten Buchungslink oder Slot-Auswahl",
+      "Keine explizite Einladung, die Beratung direkt zu buchen (nur implizit durch Verweis auf Einblendung)",
+      "Die Erwähnung, dass die Bewerbungsfrist für emba X \"abgelaufen\" ist, ist leicht missverständlich – sie ist noch offen bis 31.10.2026, aber das wird nicht klar kommuniziert. Die Aussage ist aber nicht faktisch falsch, da \"aktuelle Kohorte\" gemeint sein könnte."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Spezialisierungswunsch erkannt und adressiert",
+      "Passende Cross-Selling Empfehlung (emba X)",
+      "Klare Programm-Differenzierung",
+      "Keine Abwertung anderer Programme",
+      "Korrekte Eskalation/Handover zur Beratung"
+    ],
+    "criteria_missed": [
+      "Terminangebot könnte expliziter sein (z.B. direkter Buchungslink, konkrete Slots)",
+      "Leichte Unschärfe bei der Frist-Kommunikation für emba X"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich suche ein MBA-Programm mit Fokus auf Nachhaltigkeit und Digitalisierung.",
+      "assistant": "Für Führungskräfte mit Fokus auf Nachhaltigkeit und Digitalisierung bietet die **Universität St.Gallen** insbesondere den **EMBA ETH HSG (emba X)** an. Dieses Programm in englischer Sprache verbindet als gemeinsamer Studiengang der ETH Zürich und der **Universität St.Gallen** die Kernbereiche Unternehmensführung, Nachhaltigkeit und Technologiemanagement. Es ist gezielt darauf ausgelegt, Technologie- und Managementfragen zu verknüpfen und verantwortliche Führungskräfte für die Transformation von Unternehmen auszubilden.\n\nSowohl der deutschsprachige **EMBA HSG** als auch der internationale **International Executive MBA HSG (IEMBA)** integrieren Nachhaltigkeit ebenfalls fest in ihre Curricula und bieten entsprechende Module beziehungsweise Wahlkurse an, während der **emba X** diese Schwerpunkte von Grund auf im gesamten Programmkonzept vereint.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.7
+    },
+    {
+      "turn": 2,
+      "user": "Was unterscheidet EMBA X vom normalen Executive MBA?",
+      "assistant": "Der **EMBA ETH HSG (emba X)** und der klassische **EMBA HSG** unterscheiden sich vor allem in ihrer Trägerschaft, der Unterrichtssprache und dem strategischen Schwerpunkt.\n\nDer **emba X** ist ein gemeinsames Programm der **Universität St.Gallen** und der ETH Zürich. Er wird auf Englisch unterrichtet und verbindet Managementwissen mit tiefgehender technologischer Kompetenz, Innovationskraft und gesellschaftlicher Transformation. Die Studiengebühr für die aktuelle Kohorte liegt bei CHF 110'000 (die Bewerbungsfrist ist inzwischen abgelaufen).\n\nDer klassische **EMBA HSG** wird vollständig in deutscher Sprache von der **Universität St.Gallen** durchgeführt und fokussiert sich stark auf General Management mit besonderem Bezug zum deutschsprachigen Raum. Er ist modular aufgebaut und bietet eine familiäre Campus-Kultur. Die Studiengebühr beträgt für die nächste Kohorte (Start: **8. März 2027**) CHF 72'500 bei der ersten Bewerbungsfrist bis zum **23. November 2026** und CHF 77'500 bei der finalen Frist bis zum **1. Februar 2027**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.634
+    },
+    {
+      "turn": 3,
+      "user": "Wird EMBA X auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "Der **EMBA ETH HSG (emba X)** wird auf Englisch unterrichtet.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.784
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Der **EMBA ETH HSG (emba X)** hat eine Studiengebühr von CHF 110'000 für die aktuelle Kohorte (deren Bewerbungsfrist inzwischen abgelaufen ist). Die frühere Bewerbungsfrist lag bei CHF 99'000.\n\nDa die finale Bewerbungsfrist für diese Kohorte abgelaufen ist, können Sie sich bezüglich des nächsten Bewerbungsfensters direkt an die Ansprechperson Teyuna Giger unter teyuna.giger@unisg.ch wenden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.571
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Sehr gerne. Ich kann Ihnen Termine mit Teyuna Giger für den EMBA ETH HSG (emba X) anzeigen. Kontaktdaten und freie Zeitslots werden weiter unten eingeblendet.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba_x"
+      ],
+      "elapsed_s": 2.247
+    }
+  ],
+  "error": null
+}

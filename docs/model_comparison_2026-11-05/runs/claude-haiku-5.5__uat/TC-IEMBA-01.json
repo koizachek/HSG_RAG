@@ -1,0 +1,131 @@
+{
+  "case_id": "TC-IEMBA-01",
+  "title": "TC-IEMBA-01: International Professional - Perfect Fit",
+  "score": 7.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "The assistant provided accurate programme recommendations, correct language, and mostly factual information, but missed key scenario requirements for visa guidance, alumni network details, and did not proactively offer a handover or appointment for eligibility assessment. The transcript is informative and polite, but falls short of the scenario's high-touch, proactive expectations.",
+  "issues": [
+    "Visa answer was too generic: did not mention study permit requirement, timeline (8-12 weeks), support services, or offer a document checklist as required by the scenario.",
+    "Alumni network question was not answered: the assistant only stated it was 'pulling information' but did not provide any facts or handover.",
+    "Eligibility assessment was not proactive: did not summarize the published criteria (5 years professional, 3 years leadership, English proficiency), nor did it offer an immediate handover or appointment slot.",
+    "Did not list included services/benefits with tuition as required.",
+    "No mention of FT Ranking or alumni network regional presence as a trust anchor.",
+    "No escalation or handover for missing alumni network details.",
+    "Did not offer to capture user data for eligibility handover."
+  ],
+  "criteria_missed": [
+    "Visa info not sufficiently detailed (no permit, timeline, support, checklist)",
+    "No factual alumni network info or handover",
+    "No proactive eligibility handover or appointment offer",
+    "No summary of eligibility criteria",
+    "No included services listed with tuition",
+    "No FT Ranking or regional alumni presence mentioned"
+  ],
+  "judgement": {
+    "overall_score": 7.5,
+    "passed": false,
+    "verdict": "The assistant provided accurate programme recommendations, correct language, and mostly factual information, but missed key scenario requirements for visa guidance, alumni network details, and did not proactively offer a handover or appointment for eligibility assessment. The transcript is informative and polite, but falls short of the scenario's high-touch, proactive expectations.",
+    "strengths": [
+      "Correctly identified IEMBA as the best fit for an international, English-speaking candidate.",
+      "All responses were in English, as required.",
+      "Programme facts (duration, language, structure, tuition, deadlines) were accurate and up-to-date.",
+      "Did not push German-language programmes.",
+      "Polite and professional tone throughout.",
+      "Advisor contact details provided for further steps."
+    ],
+    "issues": [
+      "Visa answer was too generic: did not mention study permit requirement, timeline (8-12 weeks), support services, or offer a document checklist as required by the scenario.",
+      "Alumni network question was not answered: the assistant only stated it was 'pulling information' but did not provide any facts or handover.",
+      "Eligibility assessment was not proactive: did not summarize the published criteria (5 years professional, 3 years leadership, English proficiency), nor did it offer an immediate handover or appointment slot.",
+      "Did not list included services/benefits with tuition as required.",
+      "No mention of FT Ranking or alumni network regional presence as a trust anchor.",
+      "No escalation or handover for missing alumni network details.",
+      "Did not offer to capture user data for eligibility handover."
+    ],
+    "criteria_met": [
+      "Language correctly recognized (English)",
+      "IEMBA recommended (not German programme)",
+      "International orientation emphasized",
+      "Programme facts and deadlines accurate",
+      "Advisor contact provided"
+    ],
+    "criteria_missed": [
+      "Visa info not sufficiently detailed (no permit, timeline, support, checklist)",
+      "No factual alumni network info or handover",
+      "No proactive eligibility handover or appointment offer",
+      "No summary of eligibility criteria",
+      "No included services listed with tuition",
+      "No FT Ranking or regional alumni presence mentioned"
+    ],
+    "language_ok": true,
+    "factuality_ok": false,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hi, I'm looking for an MBA program in Switzerland with international focus.",
+      "assistant": "The University of St.Gallen offers three Executive MBA programmes that suit an international outlook. The **International Executive MBA HSG (IEMBA HSG)** is taught entirely in English and is the most internationally oriented of the three. It runs for 18 months with 75 ECTS, combines 10 weeks on campus in St.Gallen with 4 weeks abroad, and starts on **30 August 2027**. The **tuition fee is CHF 84,000** if you apply by the first deadline on 31 March 2027, rising to **CHF 89,000** for the final deadline on 30 June 2027. Programme details are at https://emba.unisg.ch/en/programm/iemba.\n\nThe **emba X (EMBA ETH HSG)** is also taught in English and follows a blended format, with in-person sessions in Zurich and St.Gallen, online learning, and two impact projects. It has a technology and innovation focus. For the current cohort, emba X6, applications are closed. The application window ran from 31 August 2026 to 31 October 2026, with a reference tuition fee of **CHF 110,000** at the final deadline. Teyuna Giger, the programme advisor, will announce the next application window. Further information is at https://embax.ch/.\n\nThe **EMBA HSG** is taught in German and focuses on the German-speaking region, so it is less international in orientation. It runs for 18 months with 75 ECTS and starts on **8 March 2027**. The **tuition fee is CHF 72,500** if you apply by 23 November 2026, rising to **CHF 77,500** for the final deadline on 1 February 2027. It is a good choice if German is your study language and your network focus is DACH.\n\nFor an international focus in English, the IEMBA HSG is the most direct match. Your advisor, Kristin Fuchs, can confirm fit and next steps. Her contact is kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.43
+    },
+    {
+      "turn": 2,
+      "user": "I'm from the US. What about visa requirements?",
+      "assistant": "For visa and permit questions, please contact our admissions team. You can reach the Executive MBA admissions team at emba@unisg.ch or +41 71 224 27 02, and they can advise on your situation as a US applicant.\n\nIf you are interested in the **International Executive MBA HSG**, your advisor Kristin Fuchs can also answer general questions about the programme at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.904
+    },
+    {
+      "turn": 3,
+      "user": "How strong is the alumni network in Asia-Pacific?",
+      "assistant": "This is substantive programme content, so I am pulling the current information on the alumni network before answering.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.753
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fee for the **International Executive MBA HSG (IEMBA HSG)** is **CHF 84,000** if you apply by the first application deadline on 31 March 2027. The final application deadline is 30 June 2027, when the fee rises to **CHF 89,000**. The programme starts on 30 August 2027.\n\nIf you are also considering the **emba X (EMBA ETH HSG)**, applications for the current cohort, emba X6, are closed. The reference tuition fee for that cohort is **CHF 110,000**, with the application window running from 31 August 2026 to 31 October 2026. Teyuna Giger, the programme advisor, will announce the next application window.\n\nFor a personal overview of costs and financing options, you can contact Kristin Fuchs for the IEMBA HSG at kristin.fuchs@unisg.ch or +41 71 224 75 46. Financing, loan scheme and tuition incentive information is available at https://emba.unisg.ch/en/admissions/finance-tuitionincentives.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.453
+    },
+    {
+      "turn": 5,
+      "user": "Can you assess whether I am eligible?",
+      "assistant": "To assess your eligibility, I need a few details first. Could you tell me your highest academic qualification, including the institution and year of completion, and how many years of professional work experience you have, including any leadership roles? It would also help to know your current role or industry. Once I have these, I can set out the published admission criteria for the International Executive MBA HSG and the other programmes you are considering. The final decision on admission is always made by the admissions team, who assess each application individually. If your profile is borderline or you would like a personal assessment, Kristin Fuchs can be reached at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.429
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,122 @@
+{
+  "case_id": "TC-IEMBA-02",
+  "title": "TC-IEMBA-02: Career Change Scenario",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "The assistant delivers a highly accurate, helpful, and professional advisory experience for a non-standard candidate considering the IEMBA and emba X. All key facts are correct, language is appropriate, and escalation to human advisors is timely and clear. Minor improvement could be made in explicitly stating that 9 years of experience meets the base criterion, but the lack of formal management experience may require further discussion with admissions.",
+  "issues": [
+    "In turn 1, the assistant could have been slightly more explicit in stating that 9 years of experience fulfills the minimum experience criterion, but that the lack of formal management experience is a potential gap—this is implied but not as direct as the scenario expects.",
+    "In turn 3, the assistant is perhaps overly cautious in declining to give any general advice on strengthening the application; a brief mention of leadership projects or initiatives (without detailed strategy) would have been ideal before escalating.",
+    "In turn 5, the assistant could have more clearly stated that the user meets the minimum experience requirement, but may need to demonstrate leadership potential in other ways."
+  ],
+  "criteria_missed": [
+    "Could have been more explicit in stating that 9 years of experience fulfills the minimum experience criterion, and that the lack of formal management experience is the main area for discussion.",
+    "Could have offered a very brief, general suggestion for strengthening the application (e.g., highlighting leadership in projects), before escalating."
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "The assistant delivers a highly accurate, helpful, and professional advisory experience for a non-standard candidate considering the IEMBA and emba X. All key facts are correct, language is appropriate, and escalation to human advisors is timely and clear. Minor improvement could be made in explicitly stating that 9 years of experience meets the base criterion, but the lack of formal management experience may require further discussion with admissions.",
+    "strengths": [
+      "All responses are in English, matching user preference and scenario requirements.",
+      "Accurately explains admissions criteria (5+ years experience, 3+ leadership), and notes that each profile is assessed individually.",
+      "Correctly identifies that the user meets the foundational experience requirement, but highlights the importance of leadership experience.",
+      "Proactively cross-sells emba X as a strong fit for a tech background, with relevant context about the ETH partnership.",
+      "Provides up-to-date, deadline-sensitive tuition fees for all relevant programmes, referencing the correct deadlines and fees from the hard facts.",
+      "Consistently refers the user to the appropriate admissions contacts for further discussion, as required for non-standard profiles.",
+      "Does not make unsupported promises or speculate on admissions outcomes.",
+      "Tone is professional, supportive, and concise throughout."
+    ],
+    "issues": [
+      "In turn 1, the assistant could have been slightly more explicit in stating that 9 years of experience fulfills the minimum experience criterion, but that the lack of formal management experience is a potential gap—this is implied but not as direct as the scenario expects.",
+      "In turn 3, the assistant is perhaps overly cautious in declining to give any general advice on strengthening the application; a brief mention of leadership projects or initiatives (without detailed strategy) would have been ideal before escalating.",
+      "In turn 5, the assistant could have more clearly stated that the user meets the minimum experience requirement, but may need to demonstrate leadership potential in other ways."
+    ],
+    "criteria_met": [
+      "Language correctly recognized and used (English).",
+      "Bot recognizes and addresses a non-standard profile.",
+      "Provides realistic assessment: user meets minimum experience, but leadership experience is a consideration.",
+      "Cross-sells emba X as a relevant alternative for tech professionals.",
+      "No false promises or speculation about admissions.",
+      "Timely escalation to human advisors with clear contact details.",
+      "Correctly checks for 5 years' experience and 3 years' leadership.",
+      "Mentions English language requirement.",
+      "Describes international, management-focused content and cohort.",
+      "Mentions international modules and English instruction."
+    ],
+    "criteria_missed": [
+      "Could have been more explicit in stating that 9 years of experience fulfills the minimum experience criterion, and that the lack of formal management experience is the main area for discussion.",
+      "Could have offered a very brief, general suggestion for strengthening the application (e.g., highlighting leadership in projects), before escalating."
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "I'm a software engineer with 9 years of experience. I want to move into business leadership. Do I qualify for the IEMBA?",
+      "assistant": "With 9 years of professional experience, you meet the foundational experience level expected for the **International Executive MBA HSG** (**IEMBA**). Candidates typically possess substantial professional and leadership experience. The **IEMBA** is taught in **English**, runs for **18 months**, and begins on **30 August 2027**. Admissions assess each applicant's professional background, leadership potential, and academic qualifications individually. Applications for the current cohort are open, with the first application deadline on **31 March 2027** carrying a tuition fee of **CHF 84'000** (rising to **CHF 89'000** by the final deadline on **30 June 2027**). To discuss whether your software engineering background and leadership aspirations align with the admissions criteria, you can connect with our Senior Recruitment & Admissions Manager for the programme, Kristin Fuchs, at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.873
+    },
+    {
+      "turn": 2,
+      "user": "Would EMBA X be a better fit for my tech background?",
+      "assistant": "The **emba X** (**EMBA ETH HSG**) is specifically designed to build bridges between management and technology, making it an excellent fit for professionals with a tech background like yours. Jointly offered by ETH Zurich and the **University of St.Gallen**, the programme combines world-class technological competence with comprehensive general management training and a strong focus on societal impact. It is taught in **English**, spans **18 months**, and requires 56 days on campus in Zurich and St.Gallen alongside online learning. While the final application deadline for the current cohort has passed, you can reach out to our Recruitment & Admissions Manager for emba X, Teyuna Giger, at teyuna.giger@unisg.ch or +41 71 224 77 65 to discuss upcoming cohorts and admission requirements.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.072
+    },
+    {
+      "turn": 3,
+      "user": "How can I strengthen my application without management experience?",
+      "assistant": "I cannot advise on how to strengthen your application, as the admissions committee assesses every profile individually. To discuss how your background as a software engineer and your leadership aspirations align with the criteria, you can reach out directly to our admissions team: for **emba X**, contact Teyuna Giger at teyuna.giger@unisg.ch or +41 71 224 77 65, and for the **International Executive MBA HSG**, contact Kristin Fuchs at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.296
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fees for the Executive MBA programmes at the **University of St.Gallen** vary by programme and application deadline. For the **International Executive MBA HSG** (**IEMBA**), the fee is **CHF 84'000** for applications submitted by the first deadline on **31 March 2027**, and **CHF 89'000** by the final deadline on **30 June 2027**. For **emba X** (**EMBA ETH HSG**), the tuition fee for the current cohort is **CHF 110'000** (with an earlier fee of **CHF 99'000**). The application window for this cohort ran from **31 August 2026** to **31 October 2026** and is now closed; the next application window will be announced by the programme advisor. For the **EMBA HSG**, the fee is **CHF 72'500** if applied by **23 November 2026**, increasing to **CHF 77'500** by **1 February 2027**.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.921
+    },
+    {
+      "turn": 5,
+      "user": "So am I eligible?",
+      "assistant": "To apply for the **International Executive MBA HSG** (**IEMBA**) or **emba X**, candidates generally need a recognised undergraduate degree, a minimum of five years of professional working experience, and at least three years of managerial or leadership experience, alongside fluency in English. Since admissions decisions evaluate each profile individually—including professional background and leadership potential—you can connect with our admissions team to discuss your specific profile: for **emba X**, contact Teyuna Giger at teyuna.giger@unisg.ch or +41 71 224 77 65, and for the **IEMBA**, contact Kristin Fuchs at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.954
+    }
+  ],
+  "error": null
+}

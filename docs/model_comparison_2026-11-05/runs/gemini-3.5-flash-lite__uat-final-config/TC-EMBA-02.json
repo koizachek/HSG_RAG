@@ -1,0 +1,116 @@
+{
+  "case_id": "TC-EMBA-02",
+  "title": "TC-EMBA-02: Edge Case - Minimal Qualification",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, empathische und korrekte Beratung für einen Grenzfall. Alle Kernanforderungen wurden erfüllt, keine Red Flags. Die Antworten sind sachlich, freundlich und korrekt, mit klarer Kommunikation der Grenzen des Bots und proaktiver Eskalation zum menschlichen Kontakt. Die Gebühren wurden korrekt und aktuell genannt. Einzig die Aufzählung der inkludierten Leistungen bei der Gebühr fehlt, was einen kleinen Abzug rechtfertigt.",
+  "issues": [
+    "Bei der Nennung der Studiengebühr fehlt die Aufzählung der inkludierten Leistungen (z.B. was im Preis enthalten ist).",
+    "Bei der Terminvermittlung wird auf Einblendung verwiesen, aber keine expliziten Terminslots oder Datenabfrage im Text (aber laut Vorgabe ist das kein Muss, daher nur minimaler Abzug)."
+  ],
+  "criteria_missed": [
+    "Inkludierte Leistungen bei der Gebühr werden nicht aufgezählt"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, empathische und korrekte Beratung für einen Grenzfall. Alle Kernanforderungen wurden erfüllt, keine Red Flags. Die Antworten sind sachlich, freundlich und korrekt, mit klarer Kommunikation der Grenzen des Bots und proaktiver Eskalation zum menschlichen Kontakt. Die Gebühren wurden korrekt und aktuell genannt. Einzig die Aufzählung der inkludierten Leistungen bei der Gebühr fehlt, was einen kleinen Abzug rechtfertigt.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch)",
+      "Grenzfall klar erkannt und Mindestkriterien korrekt erklärt",
+      "Keine Spekulation oder Versprechen zu Zulassungschancen",
+      "Empathischer, unterstützender Ton",
+      "Klare Kommunikation der Grenzen des Bots",
+      "Proaktive Eskalation und Angebot eines Beratungstermins mit Kontaktdaten",
+      "Aktuelle Gebühren und Fristen korrekt genannt"
+    ],
+    "issues": [
+      "Bei der Nennung der Studiengebühr fehlt die Aufzählung der inkludierten Leistungen (z.B. was im Preis enthalten ist).",
+      "Bei der Terminvermittlung wird auf Einblendung verwiesen, aber keine expliziten Terminslots oder Datenabfrage im Text (aber laut Vorgabe ist das kein Muss, daher nur minimaler Abzug)."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Grenzfall",
+      "Keine falschen Versprechungen über Zulassungschancen",
+      "Proaktive Eskalation zu Menschen",
+      "Empathischer, unterstützender Ton",
+      "Klare Kommunikation von Grenzen des Bots",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "Inkludierte Leistungen bei der Gebühr werden nicht aufgezählt"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hallo, ich habe 6 Jahre Berufserfahrung und leite seit 3 Jahren ein Team. Komme ich für das Executive MBA infrage? berufsbegleitend.",
+      "assistant": "Mit 6 Jahren Berufserfahrung und 3 Jahren Führungserfahrung erfüllen Sie die formalen Mindestvoraussetzungen für die Zulassung zum **EMBA HSG**, sofern Sie über eine anerkannte akademische Erstausbildung verfügen und sich während des gesamten Studiums in einem Beschäftigungsverhältnis befinden. Alle Executive MBA Programme der Universität St.Gallen sind als berufsbegleitende Weiterbildungen konzipiert. Der **EMBA HSG** dauert in der Regel **18 Monate**, lässt sich bei Bedarf aber flexibel auf bis zu **48 Monate** verlängern. Die finale Entscheidung über die Zulassung trifft nach Einreichung der vollständigen Bewerbung und des Lebenslaufs der Zulassungsausschuss.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.278
+    },
+    {
+      "turn": 2,
+      "user": "Ich bin mir unsicher, ob meine Führungserfahrung ausreicht.",
+      "assistant": "Der Zulassungsausschuss prüft jedes Profil individuell, um die Zusammensetzung der Kohorte optimal zu gestalten. Wenn Sie unsicher sind, ob Ihre bisherige Führungserfahrung ausreicht, empfehle ich ein unverbindliches persönliches Gespräch zur Klärung. Ich kann Ihnen hier direkt Termine mit unserer Studienberaterin Cyra von Müller für den EMBA HSG einblenden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 3.146
+    },
+    {
+      "turn": 3,
+      "user": "Können Sie einschätzen, ob ich gute Chancen habe?",
+      "assistant": "Ich kann Ihre Zulassungschancen nicht pauschal bewerten, da der Zulassungsausschuss der Universität St.Gallen jedes Profil individuell prüft. Ich kann Ihnen hier Termine mit Cyra von Müller für den EMBA HSG einblenden, damit Sie Ihre Voraussetzungen in einem persönlichen Gespräch klären können.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.557
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für den **EMBA HSG** beträgt bei einer Bewerbung bis zur 1. Bewerbungsfrist am **23. November 2026** **CHF 72'500**. Für Bewerbungen bis zur finalen Frist am **1. Februar 2027** liegt die Gebühr bei **CHF 77'500**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.402
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne. Ich kann Ihnen hier Termine mit Cyra von Müller, der Senior Recruitment & Admissions Managerin für den **EMBA HSG**, einblenden. Die entsprechenden Terminoptionen und Kontaktdaten werden Ihnen im Bereich weiter unten angezeigt.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [],
+      "elapsed_s": 2.538
+    }
+  ],
+  "error": null
+}

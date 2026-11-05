@@ -1,0 +1,73 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 8.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Gebühr, inkludierte Leistungen und verweist auf Finanzierungsmöglichkeiten. Die Tonalität ist ruhig und nicht defensiv. Es fehlt jedoch eine explizite Einordnung des Mehrwerts (z.B. Netzwerk, Karrierechancen, Rankings), wie in der Erwartung gefordert. Ein menschlicher Kontakt wird nicht angeboten, was bei weiterem Frust hilfreich wäre. Insgesamt solide, aber mit Verbesserungspotenzial bei der Kontextualisierung des Werts.",
+  "issues": [
+    "Wert des Programms (Netzwerk, Outcomes, Rankings) wird nicht explizit erläutert",
+    "Kein Angebot eines menschlichen Kontakts bei Frust",
+    "Etwas zu nüchtern, wenig empathisch auf die emotionale Lage des Users eingehend"
+  ],
+  "criteria_missed": [
+    "Wert des Programms (Rankings, Netzwerk, Outcomes) nicht erläutert",
+    "Kein menschlicher Kontakt angeboten"
+  ],
+  "judgement": {
+    "overall_score": 8,
+    "passed": true,
+    "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Gebühr, inkludierte Leistungen und verweist auf Finanzierungsmöglichkeiten. Die Tonalität ist ruhig und nicht defensiv. Es fehlt jedoch eine explizite Einordnung des Mehrwerts (z.B. Netzwerk, Karrierechancen, Rankings), wie in der Erwartung gefordert. Ein menschlicher Kontakt wird nicht angeboten, was bei weiterem Frust hilfreich wäre. Insgesamt solide, aber mit Verbesserungspotenzial bei der Kontextualisierung des Werts.",
+    "strengths": [
+      "Sachliche und ruhige Reaktion auf aggressive Formulierung",
+      "Gebühr korrekt und aktuell genannt",
+      "Leistungen (Unterricht, Materialien, Verpflegung) werden erklärt",
+      "Hinweis auf Finanzierung und Zuschüsse",
+      "Keine defensive oder unhöfliche Reaktion"
+    ],
+    "issues": [
+      "Wert des Programms (Netzwerk, Outcomes, Rankings) wird nicht explizit erläutert",
+      "Kein Angebot eines menschlichen Kontakts bei Frust",
+      "Etwas zu nüchtern, wenig empathisch auf die emotionale Lage des Users eingehend"
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Preis und inkludierte Leistungen erklärt",
+      "Finanzierungsmöglichkeiten genannt",
+      "Keine unhöfliche oder defensive Reaktion"
+    ],
+    "criteria_missed": [
+      "Wert des Programms (Rankings, Netzwerk, Outcomes) nicht erläutert",
+      "Kein menschlicher Kontakt angeboten"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass **CHF 72’500** eine erhebliche Investition sind. Die Gebühr für den EMBA HSG umfasst Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung während der Kurstage. Anreise, Unterkunft und Verpflegung ausserhalb der Kurszeiten kommen zusätzlich hinzu.\n\nEine pauschale Rechtfertigung des Preises wäre nicht hilfreich: Ob der Gegenwert für Sie stimmt, hängt davon ab, was Sie aus dem Programm mitnehmen möchten. Die Zahlung ist in vier Raten vorgesehen; für bestimmte Kategorien gibt es zudem leistungsabhängige Zuschüsse. Die erste Bewerbungsfrist mit der Gebühr von **CHF 72’500** ist der **23. November 2026**. Details zu Finanzierung und Zuschüssen finden Sie unter https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.243
+    }
+  ],
+  "error": null
+}

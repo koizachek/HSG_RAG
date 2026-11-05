@@ -1,0 +1,74 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt professionell und sachlich, erklärt den Wert des Programms, setzt den Preis in Kontext und bietet einen menschlichen Kontakt für weitere Fragen an. Die Fakten stimmen, der Ton ist ruhig und respektvoll. Die Antwort ist ausführlich, aber nicht übertrieben werblich oder defensiv.",
+  "issues": [
+    "Die Antwort ist relativ lang und hätte noch etwas stärker auf die emotionale Komponente eingehen können (z.B. Verständnis für die Frustration ausdrücken, bevor die Fakten folgen).",
+    "Die Anmeldegebühr von CHF 3’000 wird erwähnt, obwohl sie nicht explizit nachgefragt wurde – das ist korrekt, aber für diese Situation nicht zwingend notwendig.",
+    "Die Antwort hätte noch einen Satz zur Reputation/Hochschulrankings ergänzen können, um den Wert weiter zu unterstreichen."
+  ],
+  "criteria_missed": [
+    "Noch empathischer auf die Frustration eingehen",
+    "Reputation/Rankings explizit erwähnen"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antwort bleibt professionell und sachlich, erklärt den Wert des Programms, setzt den Preis in Kontext und bietet einen menschlichen Kontakt für weitere Fragen an. Die Fakten stimmen, der Ton ist ruhig und respektvoll. Die Antwort ist ausführlich, aber nicht übertrieben werblich oder defensiv.",
+    "strengths": [
+      "Sachliche und professionelle Reaktion auf die aggressive/frustrierte Frage",
+      "Preis wird transparent erklärt und in Kontext gesetzt (Leistungen, Netzwerk, Zahlungsmodalitäten)",
+      "Wert des Programms wird anhand von Netzwerk, Curriculum und Outcomes erläutert",
+      "Hinweis auf mögliche Zuschüsse und Finanzierungsoptionen",
+      "Kontaktperson für weitere Klärung wird genannt",
+      "Keine defensive, unhöfliche oder abweisende Formulierung"
+    ],
+    "issues": [
+      "Die Antwort ist relativ lang und hätte noch etwas stärker auf die emotionale Komponente eingehen können (z.B. Verständnis für die Frustration ausdrücken, bevor die Fakten folgen).",
+      "Die Anmeldegebühr von CHF 3’000 wird erwähnt, obwohl sie nicht explizit nachgefragt wurde – das ist korrekt, aber für diese Situation nicht zwingend notwendig.",
+      "Die Antwort hätte noch einen Satz zur Reputation/Hochschulrankings ergänzen können, um den Wert weiter zu unterstreichen."
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Wert des Programms sachlich erklärt",
+      "Preis in Kontext gesetzt (Leistungen, Netzwerk, Zahlungsmodalitäten)",
+      "Menschlichen Kontakt angeboten"
+    ],
+    "criteria_missed": [
+      "Noch empathischer auf die Frustration eingehen",
+      "Reputation/Rankings explizit erwähnen"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ihre Reaktion ist nachvollziehbar: **CHF 77’500** für den EMBA HSG sind eine erhebliche Investition. Ob der Preis für Sie gerechtfertigt ist, hängt letztlich davon ab, welchen konkreten beruflichen Nutzen Sie erwarten — er ist jedenfalls nicht nur eine Gebühr für Unterrichtsstunden.\n\nBeim EMBA HSG umfasst die Studiengebühr unter anderem:\n\n- **18 Monate** Studium mit **75 ECTS** und **14 Wochen Präsenzunterricht**\n- Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung während der Lerneinheiten\n- ein General-Management-Curriculum mit Pflicht- und Wahlkursen\n- das Company Impact Project und den Austausch mit Führungskräften aus verschiedenen Branchen\n- Zugang zur EMBA-HSG-Community sowie zum HSG-Alumni-Netzwerk mit über **42’000 Mitgliedern** und **190 Clubs weltweit**\n\nNicht enthalten sind Unterkunft, An- und Abreise, Verpflegung ausserhalb der Kurszeiten und Visa. Die Studiengebühr kann in vier Raten bezahlt werden; zusätzlich fällt bei der Immatrikulation eine nicht erstattungsfähige Anmeldegebühr von **CHF 3’000** an. Die frühere Bewerbungsfrist bis **23. November 2026** gilt noch mit der reduzierten Studiengebühr von **CHF 72’500**.",
+      "additional_details": "Für Zuschüsse gibt es leistungsabhängige Kategorien wie Nachhaltigkeit, Non-Profit-Management, Diversität, Gleichberechtigung und Inklusion sowie aufstrebende Märkte. Die Vergabe entscheidet der Zulassungsausschuss. Für eine konkrete Einordnung der Investition und mögliche Finanzierungsoptionen ist Cyra von Müller zuständig: cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 8.552
+    }
+  ],
+  "error": null
+}

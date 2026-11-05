@@ -1,0 +1,122 @@
+{
+  "case_id": "TC-IEMBA-02",
+  "title": "TC-IEMBA-02: Career Change Scenario",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "The assistant delivers a highly accurate, helpful, and user-centric advisory experience for a non-standard candidate. All key facts are correct, language is appropriate, and escalation to human advisors is clear and timely. Minor deductions are for slightly verbose explanations and a small missed opportunity to explicitly offer a booking slot or data capture at the end, but this is not required per current criteria.",
+  "issues": [
+    "The assistant does not explicitly offer to book an appointment or capture user data in the final turn, though escalation and contact details are provided. This is a minor omission given current acceptance criteria.",
+    "Some responses are slightly verbose, but remain clear and professional.",
+    "In turn 3, the assistant could have more strongly emphasized that the admissions team is the only authority for profile assessment, though this is implied."
+  ],
+  "criteria_missed": [
+    "No explicit offer to book an appointment or capture user data in the final turn (minor, not required per current criteria)"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "The assistant delivers a highly accurate, helpful, and user-centric advisory experience for a non-standard candidate. All key facts are correct, language is appropriate, and escalation to human advisors is clear and timely. Minor deductions are for slightly verbose explanations and a small missed opportunity to explicitly offer a booking slot or data capture at the end, but this is not required per current criteria.",
+    "strengths": [
+      "All responses are in English, matching user language and scenario requirements.",
+      "Eligibility criteria are explained clearly, including the distinction between work experience and leadership experience.",
+      "The assistant recognizes the user's non-standard profile and provides a realistic, nuanced eligibility assessment.",
+      "Cross-selling to emba X is present, with a strong explanation of its relevance for tech professionals.",
+      "No false promises or speculation about admission chances.",
+      "Timely and clear escalation to the correct programme advisors, with contact details provided.",
+      "Tuition fees are quoted accurately for both IEMBA and emba X, using current deadlines and fees from the hard facts.",
+      "Programme context (international modules, language, cohort diversity) is referenced appropriately.",
+      "Alternative pathways (MBA, Open Programmes) are suggested for candidates lacking leadership experience."
+    ],
+    "issues": [
+      "The assistant does not explicitly offer to book an appointment or capture user data in the final turn, though escalation and contact details are provided. This is a minor omission given current acceptance criteria.",
+      "Some responses are slightly verbose, but remain clear and professional.",
+      "In turn 3, the assistant could have more strongly emphasized that the admissions team is the only authority for profile assessment, though this is implied."
+    ],
+    "criteria_met": [
+      "Correct language (English)",
+      "Non-standard profile recognized",
+      "Realistic eligibility assessment (meets experience, but leadership is key)",
+      "Cross-selling to emba X with relevant context",
+      "No false promises or speculation",
+      "Timely escalation to human advisors",
+      "5 years experience and 3 years leadership criteria explained",
+      "English proficiency requirement mentioned",
+      "International, management-focused content described",
+      "Study abroad/international modules referenced",
+      "International cohort and English instruction mentioned"
+    ],
+    "criteria_missed": [
+      "No explicit offer to book an appointment or capture user data in the final turn (minor, not required per current criteria)"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "I'm a software engineer with 9 years of experience. I want to move into business leadership. Do I qualify for the IEMBA?",
+      "assistant": "To qualify for the **International Executive MBA HSG (IEMBA)**, candidates must meet the following published criteria:\n\n* A recognised undergraduate degree (sur dossier admission is possible upon individual assessment)\n* A minimum of 5 years of professional work experience\n* A minimum of 3 years of managerial or leadership experience\n* Fluency in English\n* Active employment maintained throughout the programme\n\nWith 9 years of professional experience as a software engineer, you satisfy the overall work experience threshold. The decisive factor will be whether your background includes at least 3 years of formal or lateral leadership experience, such as leading engineering teams, managing projects, or mentoring colleagues.\n\nFinal admission decisions are made by the admissions committee. For an individual assessment of your leadership background, you can contact the IEMBA programme advisor, Kristin Fuchs, directly at kristin.fuchs@unisg.ch or +41 71 224 75 46. You can also view the full process at https://emba.unisg.ch/en/admissions/process.",
+      "additional_details": "Given your technology background, the **emba X** programme (run jointly by the University of St.Gallen and ETH Zurich) may also be of interest, as it focuses specifically on technology, leadership, and business transformation.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.842
+    },
+    {
+      "turn": 2,
+      "user": "Would EMBA X be a better fit for my tech background?",
+      "assistant": "Yes, **emba X** is often particularly compelling for professionals with a technical background aiming to transition into broader executive leadership.\n\nWhile the **IEMBA HSG** provides a classic international general management curriculum with overseas modules across Asia, the Americas, and Europe, **emba X** is jointly delivered by the **University of St.Gallen** and **ETH Zurich**. It explicitly integrates general management, technology, and leadership, covering topics such as AI-driven technologies, adaptive leadership, and business innovation with social impact. This allows you to leverage your technical foundations while developing the strategic, financial, and executive skills required for senior business roles.\n\nKey programme facts to consider:\n* **emba X** runs over **18 months** in a blended format (56 campus days across Zurich and St.Gallen, plus 2 online days).\n* For the current cohort starting on **1 February 2027**, applications are closed (the application window ran from 31 August to 31 October 2026, with a final tuition fee of CHF 110'000). The advisor will announce the dates for the next application window.\n* **IEMBA HSG** starts on **30 August 2027**, with early applications open until **31 March 2027** at **CHF 84'000** (final deadline 30 June 2027 at CHF 89'000).\n\nFor more details on the tech-focused curriculum, visit https://embax.ch/, or contact the **emba X** programme advisor, Teyuna Giger, at teyuna.giger@unisg.ch or +41 71 224 77 65.",
+      "additional_details": "Both programmes award an Executive MBA and require demonstrated leadership experience alongside a recognised degree. While emba X grants access to the joint alumni networks of ETH Zurich and the University of St.Gallen, the IEMBA focuses heavily on cross-cultural global business environments through mandatory study weeks abroad.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.995
+    },
+    {
+      "turn": 3,
+      "user": "How can I strengthen my application without management experience?",
+      "assistant": "I cannot advise on how to improve your admission chances or judge an outcome, as all applications are assessed individually by the admissions committee.\n\nFor the Executive MBA programmes, leadership experience does not strictly require formal managerial authority or direct line management reports. Evidence of lateral leadership, such as technical lead responsibilities, guiding cross-functional project teams, leading client initiatives, or formal mentoring, is considered during the evaluation of your dossier.\n\nIf you have little or no leadership experience, the full-time or part-time MBA at the University of St.Gallen is designed specifically for professionals with earlier leadership exposure (https://www.mba.unisg.ch/). Alternatively, the HSG Open Programmes offer standalone certificate courses without management prerequisites (https://op.unisg.ch/en/).\n\nTo discuss how your specific project and technical responsibilities align with the criteria, please contact our admissions team directly at emba@unisg.ch or +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.594
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fee depends on the programme:\n\n* **IEMBA HSG**: **CHF 84'000** for applications received by the first deadline on **31 March 2027**; the fee increases to **CHF 89'000** by the final deadline on **30 June 2027**.\n* **emba X**: The tuition fee for the current cohort was **CHF 110'000** (with an early fee of CHF 99'000). The application window ran from 31 August to 31 October 2026 and is now closed. The programme advisor will announce the dates and tuition for the next application window.\n\nAccommodation is not included in either programme. For details on financing options, see https://emba.unisg.ch/en/admissions/finance-tuitionincentives.",
+      "additional_details": "Tuition fees include course materials, tuition, and catering during modular teaching days. Both programmes run over 18 months and award 75 ECTS credits.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.741
+    },
+    {
+      "turn": 5,
+      "user": "So am I eligible?",
+      "assistant": "Whether you are formally eligible depends on how your 9 years of software engineering experience translate into leadership.\n\nThe published criteria for the **International Executive MBA HSG (IEMBA)** require:\n* A recognised undergraduate degree (or individual assessment *sur dossier*)\n* A minimum of 5 years of professional work experience\n* A minimum of 3 years of managerial or leadership experience\n* Fluency in English\n* Active employment maintained throughout the programme\n\nYou clearly meet the overall work experience threshold. However, if you do not have at least 3 years of leadership experience—whether through direct line management or lateral leadership such as project management, technical lead roles, or mentoring—you do not meet the standard criteria for the IEMBA.\n\nFinal admission decisions are made exclusively by the admissions committee. To obtain an individual assessment of your profile and leadership background, you can contact the IEMBA programme advisor, Kristin Fuchs, directly at kristin.fuchs@unisg.ch or +41 71 224 75 46.\n\nIf you lack the required leadership experience, the regular HSG MBA is tailored for professionals earlier in their leadership journey: https://www.mba.unisg.ch/.",
+      "additional_details": "For applicants without managerial experience who wish to gain targeted business qualifications without enrolling in a degree programme, the University of St.Gallen also provides certificate courses via HSG Open Programmes: https://op.unisg.ch/en/.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.759
+    }
+  ],
+  "error": null
+}

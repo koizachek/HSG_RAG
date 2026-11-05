@@ -1,0 +1,79 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 7.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "Die Antwort ist sachlich korrekt, freundlich und erklärt die Zulassungskriterien klar. Allerdings fehlt ein empathischer Einstieg, der explizit auf die Situation des Nutzers eingeht. Es wird keine Alternative (z.B. reguläres MBA-Programm) vorgeschlagen, wie es die Akzeptanzkriterien verlangen. Ein Kontakt zur Beratung wird angeboten, aber der Hinweis auf Alternativen fehlt.",
+  "issues": [
+    "Kein empathischer Einstieg oder positives Feedback zur bisherigen Leistung des Nutzers.",
+    "Keine explizite Feststellung, dass die Kriterien nicht erfüllt sind (nur implizit).",
+    "Keine Alternative (z.B. reguläres MBA-Programm) angeboten.",
+    "Kein aktiver Vorschlag, sich zu Alternativen beraten zu lassen."
+  ],
+  "criteria_missed": [
+    "Empathisch reagieren (nicht abweisend!)",
+    "Feststellen: Kriterien nicht erfüllt (explizit)",
+    "Alternative anbieten: \"Unser reguläres MBA-Programm könnte passen\"",
+    "Kontakt zu Admissions für Alternativen (nicht nur EMBA)"
+  ],
+  "judgement": {
+    "overall_score": 7.5,
+    "passed": false,
+    "verdict": "Die Antwort ist sachlich korrekt, freundlich und erklärt die Zulassungskriterien klar. Allerdings fehlt ein empathischer Einstieg, der explizit auf die Situation des Nutzers eingeht. Es wird keine Alternative (z.B. reguläres MBA-Programm) vorgeschlagen, wie es die Akzeptanzkriterien verlangen. Ein Kontakt zur Beratung wird angeboten, aber der Hinweis auf Alternativen fehlt.",
+    "strengths": [
+      "Korrekte und vollständige Darstellung der Zulassungskriterien für den EMBA HSG.",
+      "Freundlicher, sachlicher Ton.",
+      "Kontakt zur zuständigen Ansprechperson wird angeboten.",
+      "Sprache ist korrekt (Deutsch)."
+    ],
+    "issues": [
+      "Kein empathischer Einstieg oder positives Feedback zur bisherigen Leistung des Nutzers.",
+      "Keine explizite Feststellung, dass die Kriterien nicht erfüllt sind (nur implizit).",
+      "Keine Alternative (z.B. reguläres MBA-Programm) angeboten.",
+      "Kein aktiver Vorschlag, sich zu Alternativen beraten zu lassen."
+    ],
+    "criteria_met": [
+      "Kriterien klar erklärt",
+      "Kontakt zu Admissions angeboten",
+      "Sprache korrekt",
+      "Ton freundlich und sachlich",
+      "Fakten korrekt"
+    ],
+    "criteria_missed": [
+      "Empathisch reagieren (nicht abweisend!)",
+      "Feststellen: Kriterien nicht erfüllt (explizit)",
+      "Alternative anbieten: \"Unser reguläres MBA-Programm könnte passen\"",
+      "Kontakt zu Admissions für Alternativen (nicht nur EMBA)"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Für den **EMBA HSG** erfüllen Sie mit einem Bachelorabschluss die Voraussetzung für einen anerkannten akademischen Erstabschluss. Die veröffentlichten Mindestanforderungen umfassen jedoch zusätzlich mindestens **5 Jahre Berufserfahrung** und **3 Jahre Management- oder Führungserfahrung**. Mit 2 Jahren Berufserfahrung erfüllen Sie die Berufserfahrungsvoraussetzung derzeit nicht. Die Zulassung entscheidet die Universität St.Gallen anhand der Bewerbung; für eine persönliche Einschätzung können Sie Cyra von Müller unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12 kontaktieren. Details zum Verfahren: https://emba.unisg.ch/bewerbung/process",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.336
+    }
+  ],
+  "error": null
+}

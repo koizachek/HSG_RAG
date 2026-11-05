@@ -1,0 +1,62 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 10.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Voll bestanden. Die Antwort ist empathisch, korrekt, klar und bietet alle geforderten Informationen sowie eine passende Alternative und Kontaktmöglichkeit.",
+  "issues": [],
+  "criteria_missed": [],
+  "judgement": {
+    "overall_score": 10,
+    "passed": true,
+    "verdict": "Voll bestanden. Die Antwort ist empathisch, korrekt, klar und bietet alle geforderten Informationen sowie eine passende Alternative und Kontaktmöglichkeit.",
+    "strengths": [
+      "Empathischer und höflicher Ton",
+      "Korrekte und vollständige Darstellung der Zulassungskriterien (5 Jahre Berufserfahrung oder 3 Jahre Führungserfahrung)",
+      "Klarstellung, dass die Kriterien aktuell nicht erfüllt sind",
+      "Hinweis auf die finale Entscheidung durch Admissions (realistisch und hilfreich)",
+      "Angebot einer passenden Alternative (regulärer MBA)",
+      "Kontakt zu Cyra von Müller für weitere Beratung wird angeboten",
+      "Antwort vollständig auf Deutsch"
+    ],
+    "issues": [],
+    "criteria_met": [
+      "Empathisch reagieren",
+      "Kriterien klar erklären (5+ Jahre ODER 3+ Führung)",
+      "Feststellen: Kriterien nicht erfüllt",
+      "Alternative anbieten: regulärer MBA",
+      "Kontakt zu Admissions anbieten"
+    ],
+    "criteria_missed": [],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Mit einem abgeschlossenen Bachelor erfüllen Sie die akademische Voraussetzung. Für den **EMBA HSG** gelten jedoch zusätzlich mindestens **5 Jahre Berufserfahrung** und mindestens **3 Jahre Management- oder Führungserfahrung**. Mit 2 Jahren Berufserfahrung erfüllen Sie die veröffentlichte Mindestanforderung derzeit nicht. Die Zulassung wird abschliessend durch die Admissions beurteilt. Informationen zum Bewerbungsprozess finden Sie unter https://emba.unisg.ch/bewerbung/process; für eine persönliche Einschätzung erreichen Sie Cyra von Müller unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12.\n\nAls Alternative mit weniger Berufserfahrung können Sie den regulären MBA der Universität St.Gallen prüfen: https://www.mba.unisg.ch/.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.545
+    }
+  ],
+  "error": null
+}

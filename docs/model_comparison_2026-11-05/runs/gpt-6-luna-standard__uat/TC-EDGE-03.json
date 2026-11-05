@@ -1,0 +1,72 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Kostenstruktur, nennt die aktuelle Gebühr und inkludierte Leistungen, verweist auf Zuschüsse und bietet einen menschlichen Kontakt an. Die Tonalität ist ruhig und nicht defensiv. Ein noch stärkerer Fokus auf den Mehrwert (z.B. Netzwerk, Rankings, Outcomes) hätte die Antwort perfektioniert.",
+  "issues": [
+    "Der Mehrwert des Programms (z.B. Netzwerk, Karrierechancen, HSG-Ruf) wird nur sehr indirekt angesprochen ('ob sich der Preis lohnt...'), aber nicht explizit erläutert.",
+    "Rankings, Outcomes und das HSG-Netzwerk werden nicht konkret als Rechtfertigung für den Preis genannt.",
+    "Der Begriff 'Wucher' wird nicht direkt adressiert, aber das ist kein Muss, solange die Antwort ruhig bleibt."
+  ],
+  "criteria_missed": [
+    "Mehrwert des Programms (Rankings, Netzwerk, Outcomes) explizit erläutern"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Kostenstruktur, nennt die aktuelle Gebühr und inkludierte Leistungen, verweist auf Zuschüsse und bietet einen menschlichen Kontakt an. Die Tonalität ist ruhig und nicht defensiv. Ein noch stärkerer Fokus auf den Mehrwert (z.B. Netzwerk, Rankings, Outcomes) hätte die Antwort perfektioniert.",
+    "strengths": [
+      "Sachliche und professionelle Reaktion auf aggressive Formulierung",
+      "Korrekte und aktuelle Gebührenangabe (CHF 72’500, Frist 23.11.2026)",
+      "Erklärung der inkludierten Leistungen",
+      "Hinweis auf Zuschüsse und Finanzierungsmöglichkeiten",
+      "Angebot eines persönlichen Kontakts (Cyra von Müller)",
+      "Ruhige, nicht defensive Tonalität"
+    ],
+    "issues": [
+      "Der Mehrwert des Programms (z.B. Netzwerk, Karrierechancen, HSG-Ruf) wird nur sehr indirekt angesprochen ('ob sich der Preis lohnt...'), aber nicht explizit erläutert.",
+      "Rankings, Outcomes und das HSG-Netzwerk werden nicht konkret als Rechtfertigung für den Preis genannt.",
+      "Der Begriff 'Wucher' wird nicht direkt adressiert, aber das ist kein Muss, solange die Antwort ruhig bleibt."
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Preis sachlich erklärt und in Kontext gesetzt",
+      "Leistungen und Gebühren transparent dargestellt",
+      "Menschlichen Kontakt angeboten"
+    ],
+    "criteria_missed": [
+      "Mehrwert des Programms (Rankings, Netzwerk, Outcomes) explizit erläutern"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass **CHF 72’500** eine sehr hohe Investition sind. Für den **EMBA HSG** gilt bei Bewerbung bis **23. November 2026** die aktuelle Studiengebühr von **CHF 72’500**; danach beträgt sie CHF 77’500. Enthalten sind Unterricht, Lehrmaterialien und Mahlzeiten während der Kurstage. Reise- und Übernachtungskosten sowie Verpflegung ausserhalb der Kurszeiten kommen zusätzlich dazu. Das Programm dauert 18 Monate und umfasst 14 Wochen am Campus.\n\nOb sich der Preis für Sie persönlich lohnt, hängt davon ab, welchen Nutzen Sie aus Weiterbildung und Netzwerk ziehen. Es gibt leistungsabhängige Zuschüsse, unter anderem für Nachhaltigkeit, Non-Profit-Management und Diversität. Die Informationen zu Finanzierung und Zuschüssen finden Sie unter https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse. Für eine individuelle Klärung erreichen Sie Cyra von Müller unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 11.062
+    }
+  ],
+  "error": null
+}

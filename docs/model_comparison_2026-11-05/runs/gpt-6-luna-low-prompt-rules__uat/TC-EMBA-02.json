@@ -1,0 +1,113 @@
+{
+  "case_id": "TC-EMBA-02",
+  "title": "TC-EMBA-02: Edge Case - Minimal Qualification",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, empathische und faktenbasierte Beratung für einen Grenzfall. Alle Kernanforderungen wurden erfüllt, keine Red Flags. Die Informationen zu Zulassung, Kosten und Kontakt sind korrekt und aktuell. Ein kleiner Abzug, da bei der Terminvermittlung keine expliziten Slots oder Datenabfrage erfolgte, aber dies ist laut Vorgabe kein Muss.",
+  "issues": [
+    "Bei der Terminvermittlung wurde zwar korrekt an die Beraterin verwiesen und ein Terminangebot signalisiert, aber keine konkreten Slots oder explizite Datenabfrage (z.B. \"Bitte teilen Sie mir Ihre Kontaktdaten mit\") – dies ist laut Vorgabe aber kein zwingendes Kriterium.",
+    "Im Kosten-Reply hätte ein kurzer Hinweis auf mögliche Stipendien (\"allgemein möglich\") als Zusatzpunkt gelten können, ist aber nicht gefordert."
+  ],
+  "criteria_missed": [],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, empathische und faktenbasierte Beratung für einen Grenzfall. Alle Kernanforderungen wurden erfüllt, keine Red Flags. Die Informationen zu Zulassung, Kosten und Kontakt sind korrekt und aktuell. Ein kleiner Abzug, da bei der Terminvermittlung keine expliziten Slots oder Datenabfrage erfolgte, aber dies ist laut Vorgabe kein Muss.",
+    "strengths": [
+      "Sprache korrekt erkannt und durchgehend Deutsch verwendet.",
+      "Grenzfall klar erkannt und Mindestkriterien korrekt erklärt.",
+      "Keine Spekulation oder Versprechen zu Zulassungschancen.",
+      "Empathischer, unterstützender Ton.",
+      "Klare Kommunikation der Grenzen des Bots.",
+      "Proaktive Eskalation und Handover zu menschlichem Kontakt (Cyra von Müller).",
+      "Kosten korrekt und fristabhängig nach aktuellem Stand genannt.",
+      "Beratungstermin angeboten und Kontaktweg klar gemacht."
+    ],
+    "issues": [
+      "Bei der Terminvermittlung wurde zwar korrekt an die Beraterin verwiesen und ein Terminangebot signalisiert, aber keine konkreten Slots oder explizite Datenabfrage (z.B. \"Bitte teilen Sie mir Ihre Kontaktdaten mit\") – dies ist laut Vorgabe aber kein zwingendes Kriterium.",
+      "Im Kosten-Reply hätte ein kurzer Hinweis auf mögliche Stipendien (\"allgemein möglich\") als Zusatzpunkt gelten können, ist aber nicht gefordert."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Grenzfall",
+      "Keine falschen Versprechungen über Zulassungschancen",
+      "Proaktive Eskalation zu Menschen",
+      "Empathischer, unterstützender Ton",
+      "Klare Kommunikation von Grenzen des Bots",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hallo, ich habe 6 Jahre Berufserfahrung und leite seit 3 Jahren ein Team. Komme ich für das Executive MBA infrage? berufsbegleitend.",
+      "assistant": "Für den **EMBA HSG** erfüllen Sie die veröffentlichten Mindestanforderungen an Berufserfahrung und Führungserfahrung: mindestens 5 Jahre Berufserfahrung und mindestens 3 Jahre Management- oder Führungserfahrung. Zusätzlich benötigen Sie einen anerkannten Hochschulabschluss und sehr gute Deutschkenntnisse. Die definitive Zulassungsentscheidung trifft der Zulassungsausschuss.\n\nDas Studium ist berufsbegleitend möglich: Es dauert **18 Monate** und ist modular aufgebaut, sodass es mit einer Vollzeitbeschäftigung vereinbar ist. Der nächste Programmstart ist **8. März 2027**. Für eine persönliche Einschätzung erreichen Sie die EMBA-HSG-Beraterin Cyra von Müller unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12. Informationen zum Bewerbungsprozess: https://emba.unisg.ch/bewerbung/process",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.417
+    },
+    {
+      "turn": 2,
+      "user": "Ich bin mir unsicher, ob meine Führungserfahrung ausreicht.",
+      "assistant": "Für den **EMBA HSG** gilt eine Mindestanforderung von **3 Jahren Management- oder Führungserfahrung**. Wenn Ihre drei Jahre Teamleitung tatsächlich Führungsverantwortung umfassten, erfüllen Sie damit die veröffentlichte Mindestdauer. Wie Ihre konkrete Rolle bewertet wird, entscheidet die Zulassung im Einzelfall; anhand der Dauer allein lässt sich das nicht abschliessend beurteilen. Für eine persönliche Einschätzung können Sie Ihren Lebenslauf an Cyra von Müller senden: cyra.vonmueller@unisg.ch oder +41 71 224 27 12. Der Bewerbungsprozess ist unter https://emba.unisg.ch/bewerbung/process beschrieben.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.41
+    },
+    {
+      "turn": 3,
+      "user": "Können Sie einschätzen, ob ich gute Chancen habe?",
+      "assistant": "Das kann ich nicht beurteilen oder vorhersagen: Die Zulassung prüft jedes Profil individuell und entscheidet nach dem vollständigen Bewerbungsprozess. Mit den von Ihnen genannten Jahren erfüllen Sie zwar die veröffentlichten Mindestanforderungen an Berufs- und Führungserfahrung, sofern Ihre Teamleitungsaufgaben als Management- bzw. Führungserfahrung anerkannt werden. Zusätzlich zählen ein anerkannter Hochschulabschluss und sehr gute Deutschkenntnisse. Für eine persönliche Einschätzung können Sie Ihren Lebenslauf an Cyra von Müller schreiben: cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.021
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Für den **EMBA HSG** beträgt die Studiengebühr **CHF 72’500**, wenn Sie sich bis zur ersten Bewerbungsfrist am **23. November 2026** bewerben. Danach gilt bis zur finalen Bewerbungsfrist am **1. Februar 2027** die Gebühr von **CHF 77’500**. Die Studiengebühr beinhaltet Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung während der Kurstage. Anreise und Unterkunft sind nicht enthalten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.954
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne. Ich kann Ihnen Terminoptionen mit **Cyra von Müller** für den **EMBA HSG** anzeigen. Die verfügbaren Kontaktangaben und Termine finden Sie unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 3.857
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,131 @@
+[    2.1s] weaviate_service   INFO Initializing Weaviate service...
+[    2.3s] httpx              INFO HTTP Request: GET https://kxqwgwgbsdunkjrstwnetw.c0.eu-central-1.aws.weaviate.cloud/v1/meta "HTTP/1.1 200 OK"
+[    4.0s] httpx              INFO HTTP Request: GET https://pypi.org/pypi/weaviate-client/json "HTTP/1.1 200 OK"
+/opt/anaconda3/lib/python3.13/site-packages/weaviate/warnings.py:93: DeprecationWarning: Dep005: You are using weaviate-client version 4.20.5. The latest version is 4.24.1.
+            Consider upgrading to the latest version. See https://weaviate.io/developers/weaviate/client-libraries/python for details.
+  warnings.warn(
+[    4.1s] httpx              INFO HTTP Request: GET https://kxqwgwgbsdunkjrstwnetw.c0.eu-central-1.aws.weaviate.cloud/v1/schema/Hsg_rag_content_en "HTTP/1.1 200 OK"
+[    4.9s] httpx              INFO HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+[    5.0s] weaviate_service   INFO Successully connected to the cloud weaviate database
+[    5.0s] weaviate_service   INFO Weaviate service initialized successfully
+[    5.0s] model_config       INFO Initialized fallback model 'open_router:openai:openai/gpt-5.6-luna'
+[    5.0s] model_config       INFO Initialized main agent model 'open_router:openai:mistralai/mistral-large-4-0'
+[    5.1s] agent_chain        INFO Initialized new Agent Chain for language 'de' with user_id: uat-trace-29e6e5d9-a900-4de3-ae6e-dbbbc203f051
+=== TURN 1 start at 5.1s
+[    5.2s] agent_chain        INFO [timing] preprocessing: 0.00s
+[   10.6s] httpx              INFO HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[   16.1s] agent_chain        INFO [timing] agent loop (lead_agent): 10.91s
+[   16.1s] agent_chain        INFO Additional details returned: False
+[   16.1s] agent_chain        INFO Appointment Requested: False
+[   16.1s] agent_chain        INFO Show Booking Widget: False
+[   16.1s] agent_chain        INFO Relevant Programs: None
+[   16.1s] agent_chain        INFO [timing] total turn: 10.92s
+=== TURN 1 took 11.1s
+=== TURN 2 start at 16.1s
+[   16.1s] agent_chain        INFO [timing] preprocessing: 0.00s
+[   17.9s] httpx              INFO HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[   20.3s] weaviate_service   INFO Querying collection hsg_rag_content_en
+[   20.3s] weaviate_service   INFO Querying collection hsg_rag_content_de
+[   20.3s] weaviate_service   INFO Querying collection hsg_rag_content_en
+[   20.7s] httpx              INFO HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+[   20.8s] httpx              INFO HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+[   20.9s] weaviate_service   INFO Querying retrieved 8 objects in 0.56 seconds
+[   20.9s] httpx              INFO HTTP Request: POST https://openrouter.ai/api/v1/embeddings "HTTP/1.1 200 OK"
+[   20.9s] weaviate_service   INFO Querying retrieved 8 objects in 0.63 seconds
+[   21.0s] weaviate_service   INFO Querying retrieved 8 objects in 0.73 seconds
+[   23.5s] httpx              INFO HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+Timeout (0:04:30)!
+Thread 0x000000700402b000 (most recent call first):
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 994 in run
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1043 in _bootstrap_inner
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1014 in _bootstrap
+
+Thread 0x000000700301f000 (most recent call first):
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 994 in run
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1043 in _bootstrap_inner
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1014 in _bootstrap
+
+Thread 0x0000007002013000 (most recent call first):
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 994 in run
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1043 in _bootstrap_inner
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1014 in _bootstrap
+
+Thread 0x0000007001007000 (most recent call first):
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 994 in run
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1043 in _bootstrap_inner
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1014 in _bootstrap
+
+Thread 0x000000016fb13000 (most recent call first):
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 363 in wait
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 659 in wait
+  File "/opt/anaconda3/lib/python3.13/site-packages/langsmith/_internal/_background_thread.py", line 810 in tracing_control_thread_func_compress_parallel
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 994 in run
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1043 in _bootstrap_inner
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1014 in _bootstrap
+
+Thread 0x000000016eb07000 (most recent call first):
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 363 in wait
+  File "/opt/anaconda3/lib/python3.13/queue.py", line 210 in get
+  File "/opt/anaconda3/lib/python3.13/site-packages/langsmith/_internal/_background_thread.py", line 150 in _tracing_thread_drain_queue
+  File "/opt/anaconda3/lib/python3.13/site-packages/langsmith/_internal/_background_thread.py", line 701 in tracing_control_thread_func
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 994 in run
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1043 in _bootstrap_inner
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1014 in _bootstrap
+
+Thread 0x000000016dafb000 (most recent call first):
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 363 in wait
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 659 in wait
+  File "~/Desktop/StG/RAG_Agent/HSG_RAG/src/database/weavservice.py", line 205 in _keep_warm_loop
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 994 in run
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1043 in _bootstrap_inner
+  File "/opt/anaconda3/lib/python3.13/threading.py", line 1014 in _bootstrap
+
+Thread 0x000000020479ff80 (most recent call first):
+  File "/opt/anaconda3/lib/python3.13/ssl.py", line 1140 in read
+  File "/opt/anaconda3/lib/python3.13/ssl.py", line 1285 in recv
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpcore/_backends/sync.py", line 128 in read
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpcore/_sync/http11.py", line 217 in _receive_event
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpcore/_sync/http11.py", line 203 in _receive_response_body
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpcore/_sync/http11.py", line 334 in __iter__
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpcore/_sync/connection_pool.py", line 403 in __iter__
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_transports/default.py", line 127 in __iter__
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 153 in __iter__
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_models.py", line 951 in iter_raw
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_models.py", line 897 in iter_bytes
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_models.py", line 881 in read
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 922 in send
+  File "/opt/anaconda3/lib/python3.13/site-packages/openai/_base_client.py", line 1005 in request
+  File "/opt/anaconda3/lib/python3.13/site-packages/openai/_base_client.py", line 1297 in post
+  File "/opt/anaconda3/lib/python3.13/site-packages/openai/resources/chat/completions/completions.py", line 191 in parse
+  File "/opt/anaconda3/lib/python3.13/site-packages/openai/_legacy_response.py", line 367 in wrapped
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain_openai/chat_models/base.py", line 1460 in _generate
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1297 in _generate_with_cache
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 995 in generate
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 1185 in generate_prompt
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain_core/language_models/chat_models.py", line 454 in invoke
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain_core/runnables/base.py", line 5695 in invoke
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain/agents/factory.py", line 1282 in _execute_model_sync
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain/agents/middleware/model_fallback.py", line 92 in wrap_model_call
+  File "/opt/anaconda3/lib/python3.13/site-packages/langsmith/run_helpers.py", line 769 in wrapper
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain/agents/factory.py", line 285 in inner_handler
+  File "~/Desktop/StG/RAG_Agent/HSG_RAG/src/rag/middleware.py", line 63 in _model_call_wrapper
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain/agents/middleware/types.py", line 1876 in wrapped
+  File "/opt/anaconda3/lib/python3.13/site-packages/langsmith/run_helpers.py", line 769 in wrapper
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain/agents/factory.py", line 295 in composed
+  File "/opt/anaconda3/lib/python3.13/site-packages/langchain/agents/factory.py", line 1313 in model_node
+  File "/opt/anaconda3/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 400 in invoke
+  File "/opt/anaconda3/lib/python3.13/site-packages/langgraph/_internal/_runnable.py", line 656 in invoke
+  File "/opt/anaconda3/lib/python3.13/site-packages/langgraph/pregel/_retry.py", line 126 in run_with_retry
+  File "/opt/anaconda3/lib/python3.13/site-packages/langgraph/pregel/_runner.py", line 167 in tick
+  File "/opt/anaconda3/lib/python3.13/site-packages/langgraph/pregel/main.py", line 2736 in stream
+  File "/opt/anaconda3/lib/python3.13/site-packages/langgraph/pregel/main.py", line 3309 in invoke
+  File "~/Desktop/StG/RAG_Agent/HSG_RAG/src/rag/agent_chain.py", line 1228 in _query
+  File "~/Desktop/StG/RAG_Agent/HSG_RAG/src/rag/agent_chain.py", line 918 in _query_lead
+  File "~/Desktop/StG/RAG_Agent/HSG_RAG/src/rag/agent_chain.py", line 879 in _run_query_pipeline
+  File "~/Desktop/StG/RAG_Agent/HSG_RAG/src/rag/agent_chain.py", line 694 in query
+  File "/opt/anaconda3/lib/python3.13/site-packages/langsmith/run_helpers.py", line 769 in wrapper
+  File "<scratchpad>/trace.py", line 21 in <module>

@@ -1,0 +1,78 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 6.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "Die Antwort ist sachlich korrekt bezüglich der Zulassungskriterien, aber sie ist zu nüchtern und verpasst wichtige Anforderungen: Es fehlt eine empathische, nicht-abweisende Formulierung, ein klarer Hinweis, dass die Kriterien nicht erfüllt sind, ein Alternativvorschlag (z.B. reguläres MBA-Programm) und ein aktives Angebot zur Beratung zu Alternativen. Die Sprache ist korrekt und der Ton sachlich, aber nicht einladend.",
+  "issues": [
+    "Zu nüchterner, wenig empathischer Ton – keine wertschätzende oder motivierende Ansprache.",
+    "Es fehlt der explizite Hinweis, dass die Kriterien nicht erfüllt sind (nur \"derzeit nicht\", aber nicht klar und abschließend).",
+    "Kein Alternativvorschlag (z.B. reguläres MBA-Programm).",
+    "Kein aktives Angebot zur Beratung zu Alternativen.",
+    "Kein Hinweis auf andere passende Programme."
+  ],
+  "criteria_missed": [
+    "Empathische, nicht-abweisende Reaktion.",
+    "Klar feststellen, dass Kriterien nicht erfüllt sind.",
+    "Alternative (z.B. reguläres MBA-Programm) anbieten.",
+    "Beratung zu Alternativen aktiv anbieten."
+  ],
+  "judgement": {
+    "overall_score": 6,
+    "passed": false,
+    "verdict": "Die Antwort ist sachlich korrekt bezüglich der Zulassungskriterien, aber sie ist zu nüchtern und verpasst wichtige Anforderungen: Es fehlt eine empathische, nicht-abweisende Formulierung, ein klarer Hinweis, dass die Kriterien nicht erfüllt sind, ein Alternativvorschlag (z.B. reguläres MBA-Programm) und ein aktives Angebot zur Beratung zu Alternativen. Die Sprache ist korrekt und der Ton sachlich, aber nicht einladend.",
+    "strengths": [
+      "Korrekte Darstellung der Zulassungskriterien für den EMBA HSG.",
+      "Kontaktmöglichkeit zur zuständigen Ansprechperson wird genannt.",
+      "Sprache ist korrekt (Deutsch)."
+    ],
+    "issues": [
+      "Zu nüchterner, wenig empathischer Ton – keine wertschätzende oder motivierende Ansprache.",
+      "Es fehlt der explizite Hinweis, dass die Kriterien nicht erfüllt sind (nur \"derzeit nicht\", aber nicht klar und abschließend).",
+      "Kein Alternativvorschlag (z.B. reguläres MBA-Programm).",
+      "Kein aktives Angebot zur Beratung zu Alternativen.",
+      "Kein Hinweis auf andere passende Programme."
+    ],
+    "criteria_met": [
+      "Kriterien für EMBA HSG korrekt erklärt.",
+      "Kontakt zur Ansprechperson angeboten.",
+      "Sprache korrekt (Deutsch)."
+    ],
+    "criteria_missed": [
+      "Empathische, nicht-abweisende Reaktion.",
+      "Klar feststellen, dass Kriterien nicht erfüllt sind.",
+      "Alternative (z.B. reguläres MBA-Programm) anbieten.",
+      "Beratung zu Alternativen aktiv anbieten."
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": false
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Mit einem Bachelorabschluss erfüllen Sie die akademische Voraussetzung. Für den **EMBA HSG** gelten jedoch zusätzlich mindestens **5 Jahre Berufserfahrung** und mindestens **3 Jahre Management- oder Führungserfahrung**. Mit 2 Jahren Berufserfahrung erfüllen Sie die veröffentlichte Mindestanforderung derzeit nicht. Die Zulassung entscheidet der Zulassungsausschuss; für eine persönliche Einschätzung können Sie Cyra von Müller unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12 kontaktieren. Den Zulassungsprozess finden Sie unter https://emba.unisg.ch/bewerbung/process.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.542
+    }
+  ],
+  "error": null
+}
