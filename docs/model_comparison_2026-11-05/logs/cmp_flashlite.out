@@ -1,0 +1,7 @@
+/opt/anaconda3/lib/python3.13/site-packages/weaviate/warnings.py:93: DeprecationWarning: Dep005: You are using weaviate-client version 4.20.5. The latest version is 4.24.1.
+            Consider upgrading to the latest version. See https://weaviate.io/developers/weaviate/client-libraries/python for details.
+  warnings.warn(
+Rejected probable gibberish input: 'asdfkjhasdf 12345 !!!????'
+Invalid input received: <redacted user input, 25 chars>
+Repeated invalid-looking input received: <redacted user input, 40 chars>
+RESULT {"model": "google/gemini-3.5-flash-lite", "avg": 9.14, "min": 8.5, "below8": [], "errors": [], "median_s": 3.54, "mean_s": 3.94, "max_s": 11.753, "iemba01": [8.5, 8.5, 0.0, 0.0, 0.0], "edge01": [9.0, 9.0, 9.0, 9.0, 9.0], "edge01_mba": 5, "served": {"google/gemini-3.5-flash-lite": 94}, "scores": {"TC-EMBA-01": 9.0, "TC-EMBA-02": 8.5, "TC-EMBA-03": 9.0, "TC-IEMBA-01": 8.5, "TC-IEMBA-02": 9.5, "TC-EMBAX-01": 8.5, "TC-EDGE-01": 9.0, "TC-EDGE-02": 10.0, "TC-EDGE-03": 9.5, "TC-EDGE-04": 9.0, "TC-EDGE-05": 10.0}}

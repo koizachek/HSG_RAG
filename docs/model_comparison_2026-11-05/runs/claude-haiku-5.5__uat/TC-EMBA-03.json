@@ -1,0 +1,117 @@
+{
+  "case_id": "TC-EMBA-03",
+  "title": "TC-EMBA-03: Cross-Selling Opportunity",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung mit klarer Differenzierung der Programme, korrekter Preisangabe, und professioneller Terminübergabe. Alle Kernanforderungen wurden erfüllt.",
+  "issues": [
+    "Bei der Kostenfrage (Turn 4) hätte noch kurz erwähnt werden können, welche Leistungen in der Gebühr enthalten sind (wie in den Kriterien gewünscht), dies fehlt.",
+    "Die Terminbuchung verweist auf die Anzeige unter der Nachricht, was technisch korrekt ist, aber ein expliziter Hinweis auf die Möglichkeit zur direkten Buchung (z.B. \"Sie können direkt einen Termin auswählen\") wäre noch nutzerfreundlicher gewesen."
+  ],
+  "criteria_missed": [
+    "Leistungen, die in der Gebühr enthalten sind, wurden nicht explizit genannt"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung mit klarer Differenzierung der Programme, korrekter Preisangabe, und professioneller Terminübergabe. Alle Kernanforderungen wurden erfüllt.",
+    "strengths": [
+      "Sprache korrekt erkannt und konsequent Deutsch verwendet.",
+      "Alle drei Programme werden vorgestellt, mit Fokus auf emba X und Bezug zu den Nutzerinteressen.",
+      "Klare Differenzierung zwischen EMBA HSG und emba X, inklusive ETH Zürich Kooperation.",
+      "Keine Abwertung anderer Programme, sondern sachliche Darstellung.",
+      "Preisangabe für emba X ist korrekt und an die aktuelle Bewerbungsphase angepasst.",
+      "Korrekte Eskalation/Handover an die zuständige Beraterin mit Kontaktweg und Hinweis auf Terminbuchung.",
+      "Freundlicher, professioneller und hilfreicher Ton."
+    ],
+    "issues": [
+      "Bei der Kostenfrage (Turn 4) hätte noch kurz erwähnt werden können, welche Leistungen in der Gebühr enthalten sind (wie in den Kriterien gewünscht), dies fehlt.",
+      "Die Terminbuchung verweist auf die Anzeige unter der Nachricht, was technisch korrekt ist, aber ein expliziter Hinweis auf die Möglichkeit zur direkten Buchung (z.B. \"Sie können direkt einen Termin auswählen\") wäre noch nutzerfreundlicher gewesen."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Spezialisierungswunsch",
+      "Passende Cross-Selling Empfehlung (EMBA X)",
+      "Klare Programm-Differenzierung",
+      "Keine Abwertung anderer Programme",
+      "Bei Unsicherheit: Eskalation",
+      "Korrekte Preisangabe und Bewerbungsstatus",
+      "Proaktiver Handover mit Kontaktdaten"
+    ],
+    "criteria_missed": [
+      "Leistungen, die in der Gebühr enthalten sind, wurden nicht explizit genannt"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich suche ein MBA-Programm mit Fokus auf Nachhaltigkeit und Digitalisierung.",
+      "assistant": "Für die Verbindung von Nachhaltigkeit und Digitalisierung bieten alle drei Executive MBA Programme der Universität St.Gallen relevante Inhalte, mit unterschiedlichem Schwerpunkt. Das Programm mit dem stärksten Fokus auf beide Themen ist **emba X**, das gemeinsam mit der ETH Zürich verantwortet wird und Technologie, verantwortungsvolle Führung und Nachhaltigkeit verbindet.\n\n**EMBA HSG** (Deutsch, Start 8. März 2027, 18 Monate, 75 ECTS): Nachhaltigkeit ist als Wahlkurs verankert, zudem gibt es Wahlkurse zu Datenbasierter Wertschöpfung & KI, Coding & Künstlicher Intelligenz sowie Technologie- & Innovationsmanagement. Die Studiengebühr beträgt aktuell **CHF 72'500** bei Bewerbung bis 23. November 2026; die finale Bewerbungsfrist ist der 1. Februar 2027 mit **CHF 77'500**. Für Nachhaltigkeit gibt es zudem Studiengebühren-Zuschüsse.\n\n**IEMBA HSG** (Englisch, Start 30. August 2027, 18 Monate, 75 ECTS, mit Modulen im Ausland): Nachhaltigkeit wird über Wahlkurse zu nachhaltiger Entwicklung und Innovation sowie Leading for Innovation abgedeckt. Die Studiengebühr beträgt aktuell **CHF 84'000** bei Bewerbung bis 31. März 2027; die finale Frist ist der 30. Juni 2027 mit **CHF 89'000**.\n\n**emba X** (Englisch, blended Format in Zürich, St.Gallen und online, 18 Monate, 75 ECTS): Die Themen umfassen Technologie, Leadership, Business Innovation und Social Responsibility, mit AI-driven Technologies sowie Impact-Projekten. Die Bewerbungsfenster der aktuellen Kohorte emba X6 sind geschlossen, die Studiengebühr dieser Kohorte beträgt **CHF 110'000**. Die Bewerbungsfrist lief vom 31. August 2026 bis zum 31. Oktober 2026. Den Termin der nächsten Bewerbungsphase gibt Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65) bekannt.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 14.55
+    },
+    {
+      "turn": 2,
+      "user": "Was unterscheidet EMBA X vom normalen Executive MBA?",
+      "assistant": "Der wesentliche Unterschied liegt im Format und im thematischen Schwerpunkt. **emba X** ist ein englischsprachiges, blended Programm, das in Zürich, St.Gallen und online stattfindet und gemeinsam mit der ETH Zürich verantwortet wird. Es umfasst **56 Tage am Campus**, **2 Online-Tage** und **2 Impact-Projekte**. Der **EMBA HSG** hingegen ist ein deutschsprachiges Programm mit **14 Wochen Campusaufenthalt**, Standorten in St.Gallen und Zürich sowie einer stärkeren Ausrichtung auf den deutschsprachigen Raum. Beide Programme dauern **18 Monate** und umfassen **75 ECTS**.\n\nInhaltlich legt emba X den Schwerpunkt auf Technologie, Leadership, Business Innovation und Social Responsibility, mit AI-driven Technologies und Impact-Projekten im Zentrum. Der EMBA HSG deckt ein breites General-Management-Curriculum ab, in dem Nachhaltigkeit und Digitalisierung als Wahlkurse vertieft werden können.\n\nFür eine Einschätzung, welches Programm besser zu Ihren Zielen passt, empfehle ich ein persönliches Gespräch mit Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65) für emba X oder mit Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) für den EMBA HSG.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.673
+    },
+    {
+      "turn": 3,
+      "user": "Wird EMBA X auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "**emba X** wird auf **Englisch** unterrichtet. Das Programm ist als blended Format in Zürich, St.Gallen und online organisiert. Falls Sie Fragen zur Sprache oder zu den Anforderungen an Ihre Englischkenntnisse haben, steht Ihnen Teyuna Giger gerne zur Verfügung (teyuna.giger@unisg.ch, +41 71 224 77 65).",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.791
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für **emba X** beträgt für die aktuelle Kohorte emba X6 **CHF 110'000**. Die Bewerbungsfenster dieser Kohorte sind geschlossen: Die erste Bewerbungsfrist (31. August 2026) mit der früheren Gebühr von **CHF 99'000** ist abgelaufen, ebenso die finale Bewerbungsfrist am 31. Oktober 2026. Den Termin der nächsten Bewerbungsphase gibt Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65) bekannt.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.894
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne. Da Sie sich für **emba X** interessieren, können Sie mit Teyuna Giger einen Beratungstermin vereinbaren. Ich zeige Ihnen unter dieser Nachricht die Terminmöglichkeiten mit Teyuna Giger für das **emba X** Programm. Die Kontaktdaten und verfügbaren Termine werden dort angezeigt: teyuna.giger@unisg.ch, +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba_x"
+      ],
+      "elapsed_s": 2.063
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,115 @@
+{
+  "case_id": "TC-EMBAX-01",
+  "title": "TC-EMBAX-01: Sustainability Leader",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antworten sind überwiegend korrekt, hilfreich und freundlich. Die Sprache ist durchgehend Deutsch, die Fakten stimmen mit den aktuellen Hard Facts überein, und die Handhabung der Buchung/Handover ist angemessen. Kleinere Abweichungen betreffen die Einleitung (Turn 1), wo EMBA HSG und IEMBA HSG zu stark in den Vordergrund gerückt werden, obwohl emba X für die Nutzerin am relevantesten ist. Die Differenzierung und USP-Kommunikation für emba X sind aber spätestens ab Turn 2 klar und korrekt. Die Fristen und Gebühren werden korrekt als geschlossen/historisch dargestellt, ohne falsche Versprechen. Die Terminvermittlung ist freundlich und korrekt.",
+  "issues": [
+    "In Turn 1 werden EMBA HSG und IEMBA HSG als primäre Optionen genannt, obwohl emba X für die Nutzerin mit Fokus auf Nachhaltigkeit und Responsible Leadership am besten passt. Die Empfehlung für emba X hätte hier klarer und prominenter erfolgen sollen.",
+    "Die Differenzierung zu klassischen EMBA-Programmen könnte in Turn 1 expliziter erfolgen.",
+    "In Turn 5 wird die Terminvermittlung angekündigt, aber keine konkreten Slots oder ein klarer Call-to-Action (z.B. Link oder Hinweis auf das Buchungsmodul) genannt. Die Kontaktdaten werden aber korrekt genannt."
+  ],
+  "criteria_missed": [
+    "EMBA X hätte als passendste Option für die Nutzerin klarer und früher identifiziert werden sollen",
+    "Differenzierung zu anderen Programmen in Turn 1 nicht explizit genug"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Die Antworten sind überwiegend korrekt, hilfreich und freundlich. Die Sprache ist durchgehend Deutsch, die Fakten stimmen mit den aktuellen Hard Facts überein, und die Handhabung der Buchung/Handover ist angemessen. Kleinere Abweichungen betreffen die Einleitung (Turn 1), wo EMBA HSG und IEMBA HSG zu stark in den Vordergrund gerückt werden, obwohl emba X für die Nutzerin am relevantesten ist. Die Differenzierung und USP-Kommunikation für emba X sind aber spätestens ab Turn 2 klar und korrekt. Die Fristen und Gebühren werden korrekt als geschlossen/historisch dargestellt, ohne falsche Versprechen. Die Terminvermittlung ist freundlich und korrekt.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch)",
+      "Fakten zu emba X, Gebühren und Fristen stimmen mit Hard Facts überein",
+      "USP und ETH-Kooperation werden klar und korrekt erklärt",
+      "Keine Spekulationen oder falsche Versprechen",
+      "Freundlicher, professioneller Ton",
+      "Korrekte Handover- und Terminvermittlung"
+    ],
+    "issues": [
+      "In Turn 1 werden EMBA HSG und IEMBA HSG als primäre Optionen genannt, obwohl emba X für die Nutzerin mit Fokus auf Nachhaltigkeit und Responsible Leadership am besten passt. Die Empfehlung für emba X hätte hier klarer und prominenter erfolgen sollen.",
+      "Die Differenzierung zu klassischen EMBA-Programmen könnte in Turn 1 expliziter erfolgen.",
+      "In Turn 5 wird die Terminvermittlung angekündigt, aber keine konkreten Slots oder ein klarer Call-to-Action (z.B. Link oder Hinweis auf das Buchungsmodul) genannt. Die Kontaktdaten werden aber korrekt genannt."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "USP klar kommuniziert (ETH, Sustainability, Tech)",
+      "Bei Unsicherheit: Eskalation statt Spekulation",
+      "Keine falschen Versprechen zu Fristen oder Gebühren",
+      "Korrekte Handover/Terminvermittlung"
+    ],
+    "criteria_missed": [
+      "EMBA X hätte als passendste Option für die Nutzerin klarer und früher identifiziert werden sollen",
+      "Differenzierung zu anderen Programmen in Turn 1 nicht explizit genug"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich interessiere mich für ein MBA mit Schwerpunkt nachhaltige Unternehmensführung.\nberufsbegleitend.",
+      "assistant": "Für eine berufsbegleitende Weiterbildung mit Fokus auf nachhaltige Unternehmensführung und General Management bieten sich das **EMBA HSG** und das **International Executive MBA HSG** der **Universität St.Gallen** an.\n\nDas **EMBA HSG** wird auf Deutsch unterrichtet, dauert **18 Monate**, umfasst **75 ECTS** und beinhaltet spezifische Module wie Nachhaltigkeit im unternehmerischen Kontext. Der nächste Programmstart ist am **8. März 2027**. Die Studiengebühr beträgt bei einer Bewerbung bis zur ersten Frist am 23. November 2026 **CHF 72'500**, danach gilt die finale Frist bis zum 1. Februar 2027 mit **CHF 77'500**.\n\nDas **International Executive MBA HSG** findet auf Englisch statt, dauert ebenfalls **18 Monate** (**75 ECTS**) und integriert internationale Nachhaltigkeits- und Innovationsinhalte unter anderem durch Module an der UC Berkeley. Der Start ist am **30. August 2027**. Die Studiengebühr liegt bei einer Bewerbung bis zur ersten Frist am 31. März 2027 bei **CHF 84'000** und bei der finalen Frist bis zum 30. Juni 2027 bei **CHF 89'000**.\n\nAusserdem bietet das **EMBA ETH HSG (emba X)**, das ebenfalls auf Englisch unterrichtet wird und im Februar startet, eine starke Kombination aus Technologie, Innovation und Transformation (die aktuelle Kohorte ist jedoch bereits geschlossen).\n\nAusführliche Informationen und Broschüren finden Sie unter https://emba.unisg.ch/programm/emba sowie unter https://emba.unisg.ch/programm/iemba.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.624
+    },
+    {
+      "turn": 2,
+      "user": "Was macht die Kooperation mit der ETH konkret aus?",
+      "assistant": "Beim **emba X** (Executive MBA ETH HSG) verbindet sich das Know-how zweier Spitzeninstitutionen: der **Universität St.Gallen** als global renommierter Business School und der **ETH Zürich** als weltweit führender technischer Universität. \n\nDie Kooperation verknüpft strategische Unternehmensführung, Nachhaltigkeit und Firmentransformation mit fundiertem Wissen in den Bereichen Technologiemanagement und Innovation. Ziel ist es, Führungskräfte zu befähigen, die Schnittstelle zwischen Management und Technologie zu meistern, gesellschaftliche und technologische Veränderungen aufzunehmen und verantwortungsvolle Entscheidungen zu treffen.\n\nDas 18-monatige Programm setzt auf interaktive Formate wie Sprint-Wochen und Skill-Building-Interventions sowie Standorte in Zürich und St.Gallen. Die Studiengebühr für die aktuelle Kohorte (mit Start am 2. Februar 2027) betrug regulär bis zur finalen Frist am 31. Oktober 2026 **CHF 110'000** (die Bewerbungsphase für diese Kohorte ist inzwischen geschlossen).\n\nWeitere Informationen finden Sie unter https://embax.ch/.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.971
+    },
+    {
+      "turn": 3,
+      "user": "Wird das Programm auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "Das **emba X** (EMBA ETH HSG) wird vollständig auf Englisch unterrichtet.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.184
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für das **emba X** (EMBA ETH HSG) betrug bei einer Bewerbung bis zur finalen Frist am 31. Oktober 2026 **CHF 110'000** (die erste Frist lief bis zum 31. August 2026 mit CHF 99'000). Da die Bewerbungsfrist für die aktuelle Kohorte mit Start am 1. Februar 2027 inzwischen abgelaufen ist, dient dieser Betrag als Referenzwert. Die Programmleitung gibt das nächste Bewerbungsfenster bekannt. Für persönliche Auskünfte zu kommenden Kohorten erreichen Sie Teyuna Giger unter teyuna.giger@unisg.ch oder +41 71 224 77 65. Weitere Details finden Sie unter https://embax.ch/.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.503
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne vermittle ich Ihnen ein persönliches Beratungsgespräch. Nachfolgend zeige ich Ihnen die verfügbaren Terminoptionen mit Teyuna Giger für das **emba X** an.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [],
+      "elapsed_s": 2.408
+    }
+  ],
+  "error": null
+}

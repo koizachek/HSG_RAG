@@ -1,0 +1,124 @@
+{
+  "case_id": "TC-IEMBA-01",
+  "title": "TC-IEMBA-01: International Professional - Perfect Fit",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Excellent handling of an international candidate for the IEMBA HSG. The assistant consistently provided accurate, up-to-date programme facts, responded in English, emphasized the international focus, and gave clear, actionable handovers for further support. Minor improvement possible in the visa answer, which could have included more detail and a timeline, but no red flags present.",
+  "issues": [
+    "Visa answer is correct in referring to the admissions team, but lacks detail on the study permit requirement, estimated timeline (8-12 weeks), and mention of support services or document list. This is a minor miss, as escalation is valid, but more info would be ideal."
+  ],
+  "criteria_missed": [
+    "Visa-Grundinfo liefern (Study Permit erforderlich)",
+    "Timeline nennen (8-12 Wochen)",
+    "Support-Services erwähnen",
+    "Dokumentenliste anbieten"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Excellent handling of an international candidate for the IEMBA HSG. The assistant consistently provided accurate, up-to-date programme facts, responded in English, emphasized the international focus, and gave clear, actionable handovers for further support. Minor improvement possible in the visa answer, which could have included more detail and a timeline, but no red flags present.",
+    "strengths": [
+      "All responses in English, matching user language and scenario requirements.",
+      "IEMBA HSG correctly recommended as the main programme, with strong emphasis on international focus and global modules.",
+      "Accurate, up-to-date tuition fees and deadlines quoted from current facts.",
+      "Alumni network answer is factual, avoids exaggeration, and offers a handover for more details.",
+      "Eligibility criteria are clearly listed and matched to the user's profile, with a proactive offer for direct review and advisor contact.",
+      "Polite, professional, and concise tone throughout.",
+      "Advisor contact details provided at relevant points."
+    ],
+    "issues": [
+      "Visa answer is correct in referring to the admissions team, but lacks detail on the study permit requirement, estimated timeline (8-12 weeks), and mention of support services or document list. This is a minor miss, as escalation is valid, but more info would be ideal."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Englisch)",
+      "IEMBA empfohlen (nicht deutsche Programme)",
+      "Internationale Ausrichtung betont",
+      "Faktenbasierte Network-Information",
+      "Bei Unsicherheit: Eskalation",
+      "5 Jahre Berufserfahrung, 3 Jahre Leadership",
+      "Bewerber MUSS Englisch können",
+      "Solid management content with a strong international approach",
+      "Modules in Switzerland AND internationally (study abroad components)",
+      "International cohort with participants from 15+ countries",
+      "Fully taught in English",
+      "Kosten CHF 84'000/89'000 korrekt genannt",
+      "Proaktiver Handover und Kontaktdaten für Eligibility"
+    ],
+    "criteria_missed": [
+      "Visa-Grundinfo liefern (Study Permit erforderlich)",
+      "Timeline nennen (8-12 Wochen)",
+      "Support-Services erwähnen",
+      "Dokumentenliste anbieten"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hi, I'm looking for an MBA program in Switzerland with international focus.",
+      "assistant": "For an executive programme in Switzerland with a dedicated global focus, the **International Executive MBA HSG** (**IEMBA HSG**) at the **University of St.Gallen** is specifically designed for global business leaders.\n\nKey programme details include:\n- **Language**: English\n- **Duration**: **18 months** (part-time, **75 ECTS**)\n- **Format & Locations**: 10 core courses, 4 electives; combines **10 weeks on campus** in St.Gallen with **4 weeks abroad** (including modules in Tokyo, Beijing, UC Berkeley, and UC Irvine)\n- **Next Start**: **30 August 2027**\n- **Tuition**: **CHF 84'000** for applications received by the first deadline on **31 March 2027** (**CHF 89'000** final deadline on **30 June 2027**)\n\nKey admission requirements are a recognised undergraduate degree, at least 5 years of professional work experience, and a minimum of 3 years in a managerial or leadership role.\n\nIf you have fewer years of experience, the University of St.Gallen also offers a regular full-time and part-time MBA (https://www.mba.unisg.ch/).",
+      "additional_details": "More details about the curriculum, international electives, and admissions are available on the official IEMBA HSG page: https://emba.unisg.ch/en/programm/iemba. You can reach the programme admissions advisor, Kristin Fuchs, directly at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.646
+    },
+    {
+      "turn": 2,
+      "user": "I'm from the US. What about visa requirements?",
+      "assistant": "For visa and permit questions, please contact our admissions team directly at emba@unisg.ch or +41 71 224 27 02. They will provide individual guidance on entry and residence regulations for studying in Switzerland as a US citizen.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.976
+    },
+    {
+      "turn": 3,
+      "user": "How strong is the alumni network in Asia-Pacific?",
+      "assistant": "The University of St.Gallen maintains an active global alumni community, bolstered by deep institutional ties across the Asia-Pacific region.\n\nIn the International Executive MBA HSG (IEMBA HSG), engagement in Asia is directly integrated into the curriculum through international modules in Tokyo and Beijing, including an established academic partnership with Tsinghua University School of Economics and Management. While the total number of alumni specifically residing in the Asia-Pacific region is not published, HSG alumni clubs and international hubs connect graduates across major global business centres.\n\nFor specific insights into alumni chapters and professional connections in particular Asian markets, programme advisor Kristin Fuchs (kristin.fuchs@unisg.ch, +41 71 224 75 46) can connect you with current ambassadors or alumni from the region.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 13.07
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fee for the **International Executive MBA HSG** (**IEMBA HSG**) is **CHF 84'000** for applications submitted by the first deadline on **31 March 2027**.\n\nFor applications submitted between then and the final application deadline on **30 June 2027**, the tuition fee is **CHF 89'000**.\n\nPlease note that accommodation and travel costs are not included in the tuition fees.",
+      "additional_details": "Information regarding financing options, loan schemes, and tuition incentives is available at https://emba.unisg.ch/en/admissions/finance-tuitionincentives.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.482
+    },
+    {
+      "turn": 5,
+      "user": "Can you assess whether I am eligible?",
+      "assistant": "To assess your eligibility for the **International Executive MBA HSG** (**IEMBA HSG**), your background is evaluated against the following published admission criteria:\n\n- **Academic Degree**: A recognised undergraduate degree (candidates without a formal degree may be considered *sur dossier* through an individual review of their file).\n- **Work Experience**: A minimum of **5 years** of professional work experience.\n- **Leadership Experience**: A minimum of **3 years** in a managerial or leadership role.\n- **Employment**: Current professional employment throughout the programme.\n- **Language**: Full professional fluency in **English**.\n\nPlease share your total years of work experience, years in leadership roles, and academic background so we can check them against these benchmarks. Note that final admission decisions rest solely with the Admissions Committee. For a direct profile review, you may contact programme advisor Kristin Fuchs (kristin.fuchs@unisg.ch, +41 71 224 75 46).",
+      "additional_details": "More details regarding the application steps can be found at https://emba.unisg.ch/en/admissions/process.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.62
+    }
+  ],
+  "error": null
+}

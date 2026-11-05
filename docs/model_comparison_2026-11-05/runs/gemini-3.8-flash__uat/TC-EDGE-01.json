@@ -1,0 +1,69 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist sehr gut: Die Kriterien werden klar und korrekt erklärt, der Ausschluss wird höflich und empathisch kommuniziert, ein alternatives Programm (MBA HSG) wird angeboten und ein Kontaktweg für weitere Beratung genannt. Die Sprache ist korrekt und freundlich. Einzig minimal verbesserungswürdig wäre, explizit den Namen des MBA-Ansprechpartners zu nennen (Cyra von Müller), statt nur die allgemeine E-Mail-Adresse, aber dies ist kein schwerwiegender Mangel.",
+  "issues": [
+    "Der spezifische Name des EMBA-Ansprechpartners (Cyra von Müller) wird nicht genannt, sondern nur eine allgemeine Kontaktadresse. Dies wäre persönlicher gewesen, ist aber kein schwerwiegender Fehler."
+  ],
+  "criteria_missed": [
+    "Nennung des spezifischen Ansprechpartners (Cyra von Müller) statt allgemeiner Kontakt"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Die Antwort ist sehr gut: Die Kriterien werden klar und korrekt erklärt, der Ausschluss wird höflich und empathisch kommuniziert, ein alternatives Programm (MBA HSG) wird angeboten und ein Kontaktweg für weitere Beratung genannt. Die Sprache ist korrekt und freundlich. Einzig minimal verbesserungswürdig wäre, explizit den Namen des MBA-Ansprechpartners zu nennen (Cyra von Müller), statt nur die allgemeine E-Mail-Adresse, aber dies ist kein schwerwiegender Mangel.",
+    "strengths": [
+      "Korrekte und vollständige Darstellung der Zulassungskriterien (5 Jahre Berufserfahrung, davon 3 Jahre Führung)",
+      "Empathische, nicht abweisende Formulierung",
+      "Alternativvorschlag (MBA HSG) mit Link",
+      "Beratungskontakt für Alternativen angeboten",
+      "Zusätzlicher Hinweis auf weitere Weiterbildungsangebote",
+      "Sprache und Ton sind freundlich und professionell"
+    ],
+    "issues": [
+      "Der spezifische Name des EMBA-Ansprechpartners (Cyra von Müller) wird nicht genannt, sondern nur eine allgemeine Kontaktadresse. Dies wäre persönlicher gewesen, ist aber kein schwerwiegender Fehler."
+    ],
+    "criteria_met": [
+      "Empathische Reaktion",
+      "Kriterien klar erklärt",
+      "Feststellung: Kriterien nicht erfüllt",
+      "Alternative angeboten (MBA HSG)",
+      "Kontakt zu Admissions für Beratung zu Alternativen angeboten"
+    ],
+    "criteria_missed": [
+      "Nennung des spezifischen Ansprechpartners (Cyra von Müller) statt allgemeiner Kontakt"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Mit einem Bachelorabschluss und zwei Jahren Berufserfahrung erfüllen Sie die Zulassungsvoraussetzungen für die Executive MBA-Programme der Universität St.Gallen derzeit noch nicht. Für den **EMBA HSG** (sowie die weiteren Executive MBA-Programme) sind mindestens **fünf Jahre Berufserfahrung** und davon mindestens **drei Jahre Führungs- bzw. Managementerfahrung** erforderlich.\n\nFür Fachkräfte mit weniger Berufserfahrung bietet die Universität St.Gallen das reguläre **MBA HSG** an (Vollzeit oder Teilzeit), für das in der Regel mindestens zwei bis drei Jahre Berufserfahrung genügen. Informationen dazu finden Sie unter https://www.mba.unisg.ch/.\n\nDie finale Zulassungsentscheidung trifft stets das Zulassungsteam. Für eine individuelle Abklärung oder Beratung zu alternativen Weiterbildungswegen können Sie sich direkt an emba@unisg.ch oder +41 71 224 27 02 wenden.",
+      "additional_details": "Weitere Weiterbildungsangebote ohne MBA-Abschluss finden Sie zudem bei den HSG Open Programmes unter https://op.unisg.ch/.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.15
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,122 @@
+{
+  "case_id": "TC-EMBA-01",
+  "title": "TC-EMBA-01: Standard Qualification - Perfect Fit",
+  "score": 8.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Bestanden, aber mit einem relevanten Fehler bei der Gebührennennung. Die Beratung ist sachlich, freundlich und korrekt, die Programmempfehlung und Prozessbeschreibung stimmen. Die Sprache ist durchgehend Deutsch und der Ton angemessen. Die Gebührenangabe in Turn 1 und 4 ist jedoch nicht vollständig korrekt: Die aktuelle Gebühr (CHF 72'500) wird richtig genannt, aber die finale Gebühr (CHF 77'500) wird in Turn 1 nicht erwähnt und in Turn 4 nur als 'danach', ohne die Frist für die höhere Gebühr zu wiederholen. Die inkludierten Leistungen werden nicht aufgezählt. Die Handover- und Terminvermittlung ist korrekt und nutzerorientiert.",
+  "issues": [
+    "Gebührenangabe: Die finale Gebühr (CHF 77'500) wird nicht immer klar und mit Frist genannt (Turn 1 fehlt sie ganz, Turn 4 ist sie nur als 'danach' erwähnt)",
+    "Inkludierte Leistungen der Gebühr werden nicht genannt",
+    "Dokumentenliste für Bewerbung wird nicht explizit ausgegeben (nur Lebenslauf erwähnt, keine vollständige Liste wie CV, Motivationsschreiben etc.)"
+  ],
+  "criteria_missed": [
+    "Kosten: Finale Gebühr und Frist nicht immer klar genannt",
+    "Inkludierte Leistungen der Gebühr nicht aufgezählt",
+    "Dokumentenliste nicht vollständig ausgegeben"
+  ],
+  "judgement": {
+    "overall_score": 8.0,
+    "passed": true,
+    "verdict": "Bestanden, aber mit einem relevanten Fehler bei der Gebührennennung. Die Beratung ist sachlich, freundlich und korrekt, die Programmempfehlung und Prozessbeschreibung stimmen. Die Sprache ist durchgehend Deutsch und der Ton angemessen. Die Gebührenangabe in Turn 1 und 4 ist jedoch nicht vollständig korrekt: Die aktuelle Gebühr (CHF 72'500) wird richtig genannt, aber die finale Gebühr (CHF 77'500) wird in Turn 1 nicht erwähnt und in Turn 4 nur als 'danach', ohne die Frist für die höhere Gebühr zu wiederholen. Die inkludierten Leistungen werden nicht aufgezählt. Die Handover- und Terminvermittlung ist korrekt und nutzerorientiert.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch)",
+      "Passende Programmempfehlung (EMBA HSG) mit Begründung",
+      "Eligibility korrekt validiert",
+      "Bewerbungsprozess und Fristen korrekt und verständlich erklärt",
+      "Sachlicher, freundlicher Ton",
+      "Proaktives Handover und Terminangebot"
+    ],
+    "issues": [
+      "Gebührenangabe: Die finale Gebühr (CHF 77'500) wird nicht immer klar und mit Frist genannt (Turn 1 fehlt sie ganz, Turn 4 ist sie nur als 'danach' erwähnt)",
+      "Inkludierte Leistungen der Gebühr werden nicht genannt",
+      "Dokumentenliste für Bewerbung wird nicht explizit ausgegeben (nur Lebenslauf erwähnt, keine vollständige Liste wie CV, Motivationsschreiben etc.)"
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Passende Programm-Empfehlung (EMBA HSG)",
+      "Eligibility korrekt validiert (3 Jahre Führung = qualified)",
+      "Faktisch korrekte Informationen (Kosten, Termine) – mit Einschränkung bei der Darstellung der Gebührenstaffel",
+      "Sachlicher, warmer Ton, keine Marketing-Sprache",
+      "Proaktives Handover-Angebot",
+      "Keine Spekulation oder unsichere Infos",
+      "Dauer: 18 Monate (max. 48 Monate verlängerbar)"
+    ],
+    "criteria_missed": [
+      "Kosten: Finale Gebühr und Frist nicht immer klar genannt",
+      "Inkludierte Leistungen der Gebühr nicht aufgezählt",
+      "Dokumentenliste nicht vollständig ausgegeben"
+    ],
+    "language_ok": true,
+    "factuality_ok": false,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Guten Tag, ich interessiere mich für ein MBA-Studium \nberufsbegleitend.",
+      "assistant": "Die **Universität St.Gallen** bietet drei berufsbegleitende Executive-MBA-Programme für erfahrene Führungskräfte an:\n\n- **EMBA HSG:** Deutschsprachiges Programm für allgemeine Unternehmensführung mit Schwerpunkt auf dem deutschsprachigen Raum. Es dauert **18 Monate**, bei Bedarf bis zu 48 Monate, und umfasst 14 Campuswochen. Bei Bewerbung bis **23. November 2026** beträgt die Studiengebühr **CHF 72’500**.\n- **International EMBA HSG:** Englischsprachiges Programm für allgemeine Unternehmensführung mit internationaler Ausrichtung. Es dauert **18 Monate** und umfasst zehn Campuswochen sowie vier Wochen im Ausland. Bei Bewerbung bis **31. März 2027** beträgt die Studiengebühr **CHF 84’000**.\n- **EMBA ETH HSG (emba X):** Englischsprachiges gemeinsames Programm mit der ETH Zürich, mit Schwerpunkten auf Unternehmensführung, Technologie und Nachhaltigkeit. Es dauert **18 Monate** und verbindet Präsenz in Zürich und St.Gallen mit Online-Unterricht. Die Studiengebühr der aktuellen Kohorte beträgt **CHF 110’000**. Das Bewerbungsfenster vom **31. August bis 31. Oktober 2026** ist geschlossen; Teyuna Giger gibt das nächste Bewerbungsfenster bekannt.\n\nFür den EMBA HSG und den International EMBA HSG gelten grundsätzlich mindestens fünf Jahre Berufs- und drei Jahre Führungserfahrung sowie ein anerkannter Hochschulabschluss. Für Interessierte mit weniger Berufserfahrung gibt es auch den [MBA HSG](https://www.mba.unisg.ch/).\n\nWie viele Jahre Berufs- und Führungserfahrung bringen Sie mit, und bevorzugen Sie Deutsch oder Englisch als Unterrichtssprache?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 10.071
+    },
+    {
+      "turn": 2,
+      "user": "Ich arbeite seit 15 Jahren, davon 7 Jahre als \nAbteilungsleiter.",
+      "assistant": "Ihre Berufs- und Führungserfahrung erfüllt die veröffentlichten Mindestanforderungen für alle drei Programme: Beim **EMBA HSG** und **International EMBA HSG** sind es fünf Jahre Berufs- und drei Jahre Führungserfahrung; beim **emba X** zehn Jahre Berufs- und fünf Jahre Führungserfahrung.\n\nFür die Wahl kommt es vor allem auf Ihre Ziele und die Unterrichtssprache an: Der EMBA HSG vermittelt allgemeine Unternehmensführung auf Deutsch, der International EMBA HSG hat eine internationale Ausrichtung auf Englisch. Der emba X verbindet Unternehmensführung und Technologie, ebenfalls auf Englisch.\n\nFür die Zulassung sind zudem ein anerkannter Hochschulabschluss und sehr gute Kenntnisse der Unterrichtssprache relevant. Die endgültige Entscheidung trifft der Zulassungsausschuss; für eine persönliche Einschätzung erreichen Sie die Studienberatung unter **emba@unisg.ch** oder **+41 71 224 27 02**.\n\nBevorzugen Sie Deutsch oder Englisch als Unterrichtssprache? Und interessieren Sie sich besonders für internationale Unternehmensführung oder für Technologie und Transformation?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 30.458
+    },
+    {
+      "turn": 3,
+      "user": "Was sind die nächsten Schritte im Bewerbungsprozess?",
+      "assistant": "Für den **EMBA HSG** und den **International EMBA HSG** läuft die Bewerbung in fünf Schritten ab:\n\n1. Senden Sie Ihren Lebenslauf an die Studienberatung, um Ihr Profil und die Programmwahl zu besprechen: **emba@unisg.ch**.\n2. Füllen Sie die Online-Bewerbung vollständig aus.\n3. Nach Einladung absolvieren Sie eine Online-Eignungsprüfung.\n4. Anschliessend führen Sie ein Online-Gespräch.\n5. Der Zulassungsausschuss trifft den endgültigen Entscheid.\n\nDas Bewerbungsverfahren ist kostenlos. Details finden Sie auf der [Seite zum Bewerbungsprozess](https://emba.unisg.ch/bewerbung/process).\n\nFür den **EMBA HSG** ist die nächste Bewerbungsfrist der **23. November 2026**, die finale Frist der **1. Februar 2027**. Für den **International EMBA HSG** sind es der **31. März 2027** und der **30. Juni 2027**.\n\nBeim **emba X** umfasst die Bewerbung zusätzlich unter anderem ein Reflexionsessay und die Kontaktdaten von zwei Referenzpersonen. Das Bewerbungsfenster der aktuellen Kohorte ist geschlossen; Teyuna Giger informiert über das nächste Fenster: **teyuna.giger@unisg.ch**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 10.321
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Für den **EMBA HSG** beträgt die Studiengebühr bei einer Bewerbung bis zum **23. November 2026 CHF 72’500**. Danach beträgt sie **CHF 77’500**; die finale Bewerbungsfrist ist der **1. Februar 2027**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.785
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen für ein Beratungsgespräch zum **EMBA HSG** mit **Cyra von Müller** anzeigen. Die Kontaktdaten und verfügbaren Termine finden Sie unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 2.907
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,75 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 7.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "Die Antwort ist sachlich, korrekt und bleibt ruhig, aber sie geht nicht ausreichend auf den Wert des Programms ein (Rankings, Netzwerk, Outcomes) und setzt den Preis nicht in den Kontext der gebotenen Leistungen und Vorteile. Die Antwort ist informativ bezüglich Gebühren, Zahlungsmodalitäten und Zuschüssen, aber sie wirkt etwas defensiv und zu sehr auf die Kostenstruktur fokussiert. Ein Hinweis auf den Mehrwert (z.B. HSG-Netzwerk, Karrierechancen, akademische Exzellenz) fehlt. Die Tonalität bleibt professionell und höflich.",
+  "issues": [
+    "Wert des Programms (Rankings, Netzwerk, Outcomes) wird nicht erklärt",
+    "Preis wird nicht ausreichend in den Kontext der gebotenen Leistungen und Vorteile gesetzt",
+    "Fokus zu stark auf Kosten und Zahlungsmodalitäten",
+    "Kein Angebot eines menschlichen Kontakts bei Frustration"
+  ],
+  "criteria_missed": [
+    "Wert des Programms (Rankings, Netzwerk, Outcomes) erklären",
+    "Preis in Kontext der Leistungen/Vorteile setzen",
+    "Bei weiterer Aggression menschlichen Kontakt anbieten"
+  ],
+  "judgement": {
+    "overall_score": 7.5,
+    "passed": false,
+    "verdict": "Die Antwort ist sachlich, korrekt und bleibt ruhig, aber sie geht nicht ausreichend auf den Wert des Programms ein (Rankings, Netzwerk, Outcomes) und setzt den Preis nicht in den Kontext der gebotenen Leistungen und Vorteile. Die Antwort ist informativ bezüglich Gebühren, Zahlungsmodalitäten und Zuschüssen, aber sie wirkt etwas defensiv und zu sehr auf die Kostenstruktur fokussiert. Ein Hinweis auf den Mehrwert (z.B. HSG-Netzwerk, Karrierechancen, akademische Exzellenz) fehlt. Die Tonalität bleibt professionell und höflich.",
+    "strengths": [
+      "Sachliche und ruhige Reaktion auf aggressive Formulierung",
+      "Korrekte und aktuelle Gebührenangabe (CHF 72’500, Frist, Ratenzahlung)",
+      "Hinweis auf Zuschüsse und Finanzierungsmöglichkeiten",
+      "Keine unhöfliche oder defensive Sprache"
+    ],
+    "issues": [
+      "Wert des Programms (Rankings, Netzwerk, Outcomes) wird nicht erklärt",
+      "Preis wird nicht ausreichend in den Kontext der gebotenen Leistungen und Vorteile gesetzt",
+      "Fokus zu stark auf Kosten und Zahlungsmodalitäten",
+      "Kein Angebot eines menschlichen Kontakts bei Frustration"
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Preis korrekt und sachlich erklärt",
+      "Finanzierungsmöglichkeiten erwähnt"
+    ],
+    "criteria_missed": [
+      "Wert des Programms (Rankings, Netzwerk, Outcomes) erklären",
+      "Preis in Kontext der Leistungen/Vorteile setzen",
+      "Bei weiterer Aggression menschlichen Kontakt anbieten"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass **CHF 72’500** eine sehr hohe Investition ist. Die Gebühr umfasst beim **EMBA HSG** Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung an den Kurstagen. Anreise, Unterkunft und Verpflegung ausserhalb der Kurszeiten kommen zusätzlich dazu. Die Zahlung kann in vier Raten erfolgen; für die aktuelle Kohorte gilt bis **23. November 2026** die reduzierte Gebühr von CHF 72’500, danach CHF 77’500. Es gibt zudem leistungsabhängige Zuschüsse in bestimmten Kategorien, darunter Nachhaltigkeit, Non-Profit-Management und Diversität. Die Universität schlüsselt den Preis nicht in einzelne Kostenbestandteile auf. Informationen zu Zuschüssen und Finanzierung: https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.021
+    }
+  ],
+  "error": null
+}

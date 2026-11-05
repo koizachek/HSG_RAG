@@ -1,0 +1,114 @@
+{
+  "case_id": "TC-EMBA-02",
+  "title": "TC-EMBA-02: Edge Case - Minimal Qualification",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, empathische und faktenbasierte Beratung. Alle Kernanforderungen wurden erfüllt, keine Red Flags. Die Antworten sind korrekt, freundlich und klar abgegrenzt. Die Kostenangabe ist aktuell und differenziert nach Fristen. Die Eskalation zur persönlichen Beratung erfolgt konsequent und proaktiv. Einzig die explizite Nennung der Datenerfassung für die Weiterleitung fehlt, was aber durch die klare Handlungsanweisung und Kontaktmöglichkeiten kompensiert wird.",
+  "issues": [
+    "Im letzten Turn wird nicht explizit nach User-Daten für die Weiterleitung gefragt, sondern auf die Kontaktaufnahme und Terminbuchung verwiesen. Dies ist aber im aktuellen Produktkontext akzeptabel, da die Terminbuchung user-led ist und alle Kontaktwege klar genannt werden."
+  ],
+  "criteria_missed": [
+    "User-Daten für Weiterleitung explizit erfassen (nur implizit durch Verweis auf Terminbuchung/Kontakt)"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, empathische und faktenbasierte Beratung. Alle Kernanforderungen wurden erfüllt, keine Red Flags. Die Antworten sind korrekt, freundlich und klar abgegrenzt. Die Kostenangabe ist aktuell und differenziert nach Fristen. Die Eskalation zur persönlichen Beratung erfolgt konsequent und proaktiv. Einzig die explizite Nennung der Datenerfassung für die Weiterleitung fehlt, was aber durch die klare Handlungsanweisung und Kontaktmöglichkeiten kompensiert wird.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch)",
+      "Kriterien und Grenzfall klar erklärt",
+      "Keine Spekulation über Zulassungschancen, sondern klare Abgrenzung",
+      "Empathischer, unterstützender Ton",
+      "Proaktive Eskalation und Handover zur zuständigen Person mit Kontaktdaten",
+      "Aktuelle und differenzierte Kostenangabe gemäß Stichtag",
+      "Keine Red Flags (keine Zusage, keine Spekulation, keine Abweisung)"
+    ],
+    "issues": [
+      "Im letzten Turn wird nicht explizit nach User-Daten für die Weiterleitung gefragt, sondern auf die Kontaktaufnahme und Terminbuchung verwiesen. Dies ist aber im aktuellen Produktkontext akzeptabel, da die Terminbuchung user-led ist und alle Kontaktwege klar genannt werden."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Grenzfall",
+      "Keine falschen Versprechungen über Zulassungschancen",
+      "Proaktive Eskalation zu Menschen",
+      "Empathischer, unterstützender Ton",
+      "Klare Kommunikation von Grenzen des Bots",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "User-Daten für Weiterleitung explizit erfassen (nur implizit durch Verweis auf Terminbuchung/Kontakt)"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hallo, ich habe 6 Jahre Berufserfahrung und leite seit 3 Jahren ein Team. Komme ich für das Executive MBA infrage? berufsbegleitend.",
+      "assistant": "Mit 6 Jahren Berufserfahrung und 3 Jahren Führungserfahrung erfüllen Sie die zentralen Zulassungsvoraussetzungen für das berufsbegleitende Executive MBA HSG Programm der Universität St.Gallen. Die wichtigsten Kriterien sind:\n\n- Ein anerkannter akademischer Erstabschluss (Bachelor/Master einer FH oder Universität). Falls Sie keinen Hochschulabschluss haben, ist eine \"sur dossier\"-Zulassung nach individueller Prüfung möglich.\n- Mindestens 5 Jahre Berufserfahrung (Sie haben 6 Jahre).\n- Mindestens 3 Jahre Management- oder Führungserfahrung (Sie haben 3 Jahre).\n- Sehr gute Deutschkenntnisse (Unterrichtssprache ist Deutsch).\n- Sie sollten während des Studiums berufstätig bleiben, um das Gelernte direkt anwenden zu können.\n\nDie finale Entscheidung trifft der Zulassungsausschuss nach Prüfung Ihrer vollständigen Bewerbung. Für eine persönliche Einschätzung Ihres Profils können Sie sich direkt an Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) wenden.",
+      "additional_details": "Das EMBA HSG Programm ist modular aufgebaut, dauert 18 Monate (bis max. 48 Monate) und lässt sich optimal mit Beruf und Privatleben vereinbaren. Weitere Informationen zum Ablauf und zur Bewerbung finden Sie unter https://emba.unisg.ch/programm/emba.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.0
+    },
+    {
+      "turn": 2,
+      "user": "Ich bin mir unsicher, ob meine Führungserfahrung ausreicht.",
+      "assistant": "Mit 3 Jahren Führungserfahrung erfüllen Sie die formale Mindestanforderung für das Executive MBA HSG Programm, da mindestens 3 Jahre Management- oder Führungserfahrung verlangt werden. Entscheidend ist, dass Sie in dieser Zeit tatsächlich Personal- oder Projektverantwortung übernommen haben und Ihre Rolle klar Führungsaufgaben beinhaltete.\n\nDie Zulassungskommission prüft jede Bewerbung individuell und berücksichtigt dabei auch die Qualität und den Kontext Ihrer Führungserfahrung. Wenn Sie unsicher sind, ob Ihre konkrete Führungserfahrung ausreichend ist, empfehle ich Ihnen, Ihr Profil direkt mit der Programmleitung zu besprechen. Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) ist Ihre Ansprechpartnerin für eine persönliche Einschätzung.",
+      "additional_details": "Sie können in Ihrer Bewerbung genau beschreiben, wie Sie Ihr Team geführt haben, welche Verantwortung Sie übernommen haben und welche Erfolge Sie erzielt haben. Das hilft der Zulassungskommission, Ihre Führungserfahrung besser einzuordnen.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.334
+    },
+    {
+      "turn": 3,
+      "user": "Können Sie einschätzen, ob ich gute Chancen habe?",
+      "assistant": "Ich kann keine individuelle Zulassungsprognose abgeben, da jede Bewerbung vom Zulassungsausschuss der Universität St.Gallen sorgfältig und im Gesamtkontext geprüft wird. Sie erfüllen jedoch die formalen Mindestanforderungen bezüglich Berufserfahrung und Führungserfahrung für das Executive MBA HSG Programm. Die finale Entscheidung hängt von weiteren Faktoren wie Ihrem akademischen Hintergrund, Ihrer Motivation und der Darstellung Ihrer Führungserfahrung im Bewerbungsprozess ab.\n\nFür eine persönliche Einschätzung empfehle ich Ihnen, direkt mit Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) Kontakt aufzunehmen. Sie kann Ihr Profil individuell bewerten und offene Fragen klären.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.904
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für das Executive MBA HSG Programm beträgt aktuell CHF 72’500, wenn Sie sich bis zur ersten Bewerbungsfrist am 23. November 2026 bewerben. Nach Ablauf dieser Frist gilt die finale Bewerbungsgebühr von CHF 77’500 (Bewerbungsfrist: 1. Februar 2027).\n\nDie Gebühr umfasst die Lehrveranstaltungen, Kursunterlagen und die meisten Verpflegungsleistungen während der Präsenzmodule. Reise- und Übernachtungskosten sind nicht enthalten.",
+      "additional_details": "Weitere Informationen zur Finanzierung und möglichen Zuschüssen finden Sie unter: https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse\n\nBei Fragen zur Bewerbung oder Finanzierung steht Ihnen Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) gerne zur Verfügung.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.513
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne! Ich kann Ihnen direkt Terminoptionen für ein Beratungsgespräch mit Cyra von Müller, der Senior Recruitment & Admissions Managerin für das Executive MBA HSG Programm, anzeigen. Die verfügbaren Kontaktmöglichkeiten und Terminzeiten werden Ihnen unten eingeblendet.",
+      "additional_details": "Cyra von Müller ist Ihre Ansprechpartnerin für alle Fragen rund um das Executive MBA HSG Programm. Sie können sich auch per E-Mail an cyra.vonmueller@unisg.ch oder telefonisch unter +41 71 224 27 12 wenden, falls Sie einen individuellen Terminwunsch haben.",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 2.216
+    }
+  ],
+  "error": null
+}

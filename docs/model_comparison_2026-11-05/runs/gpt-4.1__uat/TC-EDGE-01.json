@@ -1,0 +1,68 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 8.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist korrekt, freundlich und erklärt die Zulassungskriterien klar. Die Mindestanforderungen werden richtig dargestellt und es wird ein Kontakt zur Programmberatung angeboten. Allerdings fehlt der explizite Hinweis auf das reguläre MBA-Programm als mögliche Alternative, wie im Szenario gefordert. Stattdessen wird auf Open Programmes verwiesen, was zwar hilfreich, aber nicht ganz deckungsgleich mit der Erwartung ist.",
+  "issues": [
+    "Es wird keine explizite Alternative 'reguläres MBA-Programm' angeboten, wie im Szenario gefordert.",
+    "Stattdessen wird auf Open Programmes verwiesen, was zwar hilfreich, aber nicht die geforderte Alternative ist."
+  ],
+  "criteria_missed": [
+    "Alternative 'reguläres MBA-Programm' explizit anbieten"
+  ],
+  "judgement": {
+    "overall_score": 8,
+    "passed": true,
+    "verdict": "Die Antwort ist korrekt, freundlich und erklärt die Zulassungskriterien klar. Die Mindestanforderungen werden richtig dargestellt und es wird ein Kontakt zur Programmberatung angeboten. Allerdings fehlt der explizite Hinweis auf das reguläre MBA-Programm als mögliche Alternative, wie im Szenario gefordert. Stattdessen wird auf Open Programmes verwiesen, was zwar hilfreich, aber nicht ganz deckungsgleich mit der Erwartung ist.",
+    "strengths": [
+      "Korrekte und vollständige Darstellung der Zulassungskriterien (5 Jahre Berufserfahrung oder 3 Jahre Führungserfahrung).",
+      "Empathischer und respektvoller Ton.",
+      "Kontakt zur zuständigen Ansprechperson wird angeboten.",
+      "Begründung der Anforderungen wird gegeben."
+    ],
+    "issues": [
+      "Es wird keine explizite Alternative 'reguläres MBA-Programm' angeboten, wie im Szenario gefordert.",
+      "Stattdessen wird auf Open Programmes verwiesen, was zwar hilfreich, aber nicht die geforderte Alternative ist."
+    ],
+    "criteria_met": [
+      "Empathisch und nicht abweisend",
+      "Kriterien klar erklärt",
+      "Feststellung, dass Kriterien nicht erfüllt sind",
+      "Kontakt zu Admissions angeboten"
+    ],
+    "criteria_missed": [
+      "Alternative 'reguläres MBA-Programm' explizit anbieten"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Mit einem Bachelor-Abschluss und 2 Jahren Berufserfahrung erfüllen Sie aktuell nicht die Mindestvoraussetzungen für den Executive MBA HSG an der Universität St.Gallen. Für eine Bewerbung benötigen Sie:\n\n- Einen anerkannten akademischen Erstabschluss (z. B. Bachelor oder Master)\n- Mindestens 5 Jahre Berufserfahrung\n- Mindestens 3 Jahre Management- bzw. Führungserfahrung\n\nDie Anforderungen sind so gestaltet, dass Sie das Gelernte direkt im Berufsalltag anwenden und von der Erfahrung anderer Führungskräfte profitieren können. \n\nFalls Sie noch nicht über die geforderte Berufserfahrung verfügen, empfehle ich Ihnen, zunächst weitere Praxiserfahrung und idealerweise Führungserfahrung zu sammeln. Alternativ können Sie sich über die HSG Open Programmes (Zertifikatslehrgänge ohne MBA-Abschluss) informieren: https://op.unisg.ch/\n\nFür eine individuelle Einschätzung Ihres Profils wenden Sie sich gerne an Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12).",
+      "additional_details": "Die Zulassung \"sur dossier\" (individuelle Prüfung) ist nur für Bewerbende ohne anerkannten Hochschulabschluss vorgesehen, nicht bei fehlender Berufserfahrung. Die Mindestanforderungen an Berufserfahrung und Führungserfahrung sind verbindlich.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 17.988
+    }
+  ],
+  "error": null
+}

@@ -63,6 +63,7 @@ data/*
 !data/database/
 data/database/*
 !data/database/programme_facts.json
+!docs/model_comparison_2026-11-05/**
 
 # Pyright config may differ from one platform to another 
 pyrightconfig.json

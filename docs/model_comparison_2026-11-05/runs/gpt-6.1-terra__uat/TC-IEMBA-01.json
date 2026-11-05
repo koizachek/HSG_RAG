@@ -1,0 +1,123 @@
+{
+  "case_id": "TC-IEMBA-01",
+  "title": "TC-IEMBA-01: International Professional - Perfect Fit",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Pass – The assistant provided accurate, concise, and well-structured information in English, recommended the correct programme, and handled eligibility and network questions appropriately. Minor improvement needed on visa support detail.",
+  "issues": [
+    "Visa Support: The assistant only provided a contact email/phone for visa questions, missing the opportunity to mention the need for a study permit, the typical 8-12 week timeline, and the existence of support services or the International Office. This is a minor miss but relevant to the scenario's success criteria.",
+    "Alumni Network: While the assistant correctly avoided exaggeration and offered a handover, a brief mention of the FT ranking as a trust anchor would have been ideal.",
+    "Included Services: When quoting tuition, the assistant did not list included services (e.g., modules, international weeks, etc.), which would have added value."
+  ],
+  "criteria_missed": [
+    "Visa info: Did not mention study permit, timeline (8-12 weeks), or support services/International Office",
+    "Tuition: Did not list included services",
+    "Network: Did not mention FT ranking as a trust anchor"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Pass – The assistant provided accurate, concise, and well-structured information in English, recommended the correct programme, and handled eligibility and network questions appropriately. Minor improvement needed on visa support detail.",
+    "strengths": [
+      "Language: All responses were in English, as required.",
+      "Programme Recommendation: IEMBA was correctly recommended as the best fit for an international, English-speaking candidate.",
+      "International Focus: The international nature of the IEMBA was clearly highlighted, including modules abroad and a diverse cohort.",
+      "Factual Accuracy: Tuition fees, deadlines, programme structure, and eligibility criteria were all correct and up-to-date.",
+      "Network Question: The assistant acknowledged limits of available data and offered a handover to the advisor for more details.",
+      "Eligibility: The assistant listed all relevant criteria and offered to connect the user with the advisor for a final assessment.",
+      "Tone: Professional, helpful, and concise throughout."
+    ],
+    "issues": [
+      "Visa Support: The assistant only provided a contact email/phone for visa questions, missing the opportunity to mention the need for a study permit, the typical 8-12 week timeline, and the existence of support services or the International Office. This is a minor miss but relevant to the scenario's success criteria.",
+      "Alumni Network: While the assistant correctly avoided exaggeration and offered a handover, a brief mention of the FT ranking as a trust anchor would have been ideal.",
+      "Included Services: When quoting tuition, the assistant did not list included services (e.g., modules, international weeks, etc.), which would have added value."
+    ],
+    "criteria_met": [
+      "Language correctly recognized (English)",
+      "IEMBA recommended (not German-language EMBA)",
+      "International focus emphasized",
+      "Factual, up-to-date tuition and deadlines",
+      "Eligibility criteria listed accurately",
+      "Network question handled with escalation",
+      "Professional, concise tone",
+      "Advisor handover offered for eligibility and network details"
+    ],
+    "criteria_missed": [
+      "Visa info: Did not mention study permit, timeline (8-12 weeks), or support services/International Office",
+      "Tuition: Did not list included services",
+      "Network: Did not mention FT ranking as a trust anchor"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hi, I'm looking for an MBA program in Switzerland with international focus.",
+      "assistant": "The **University of St.Gallen** offers three Executive MBA programmes. For an international focus, the **International EMBA HSG** is the most directly aligned:\n\n- **International EMBA HSG:** An English-language general management programme with an international curriculum and modules abroad. It lasts **18 months**, with 10 weeks on campus and four weeks abroad. The next cohort starts **30 August 2027**. Tuition is **CHF 84,000** for applications by **31 March 2027**; the final deadline is 30 June 2027, with tuition of CHF 89,000.\n- **emba X:** An English-language programme jointly offered with ETH Zurich, combining general management, technology and leadership. It lasts **18 months**, with in-person study in Zurich and St.Gallen and online elements. The current cohort’s reference tuition is **CHF 110,000**. Its application window, from **31 August to 31 October 2026**, has closed; advisor Teyuna Giger announces the next window.\n- **EMBA HSG:** A German-language general management programme with a focus on German-speaking markets. It lasts **18 months**, extendable to 48 months, and includes 14 weeks on campus. Tuition is **CHF 72,500** for applications by **23 November 2026**; the final deadline is 1 February 2027, with tuition of CHF 77,500.\n\nThese are executive programmes for experienced professionals. The regular MBA is another option: https://www.mba.unisg.ch/",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 8.889
+    },
+    {
+      "turn": 2,
+      "user": "I'm from the US. What about visa requirements?",
+      "assistant": "For visa and permit questions, please contact our admissions team at emba@unisg.ch or +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.129
+    },
+    {
+      "turn": 3,
+      "user": "How strong is the alumni network in Asia-Pacific?",
+      "assistant": "The **International EMBA HSG** offers an international network and opportunities to build connections in Asia, but I cannot assess the strength of its alumni network across Asia-Pacific: regional alumni numbers and chapter details are not published in the programme information available to me.\n\nThe programme includes modules in **Tokyo and Beijing**. The **University of St.Gallen** has also collaborated with Tsinghua University on executive education exchange modules in China and Switzerland. These provide regional connections, although they are not a measure of alumni network size.\n\nFor details about alumni contacts in a particular Asia-Pacific country, you can contact IEMBA advisor **Kristin Fuchs** at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.51
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The **International EMBA HSG** tuition fee is **CHF 84,000** for applications submitted by **31 March 2027**. After that, the fee is **CHF 89,000**, with a final application deadline of **30 June 2027**.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.842
+    },
+    {
+      "turn": 5,
+      "user": "Can you assess whether I am eligible?",
+      "assistant": "For the **International EMBA HSG**, the published requirements are:\n\n- A recognised undergraduate degree. Admission without one is possible **sur dossier**, following an individual assessment.\n- At least **five years of work experience**, including at least **three years of managerial or leadership experience**.\n- Fluency in English and employment at the time of application, maintained during the programme.\n\nTo assess these criteria against your profile, what degree do you hold, how many years of work and leadership experience do you have, and are you currently employed? The admissions committee makes the final decision.\n\nI can show you appointment options with **Kristin Fuchs** for the **International EMBA HSG**. Contact details and available slots are shown below.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "iemba"
+      ],
+      "elapsed_s": 7.152
+    }
+  ],
+  "error": null
+}

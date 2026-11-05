@@ -1,0 +1,124 @@
+{
+  "case_id": "TC-IEMBA-01",
+  "title": "TC-IEMBA-01: International Professional - Perfect Fit",
+  "score": 7.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "The assistant provided accurate programme facts, responded in English, and correctly highlighted the International EMBA HSG as the best fit for an international, English-speaking candidate. However, it missed several scenario-specific requirements: the visa answer was generic and did not mention the study permit, timeline, or support services; the alumni network answer was vague and did not mention regional presence, FT ranking, or offer a handover for more details; and the eligibility answer did not proactively offer a handover or appointment, nor did it display advisor contact details directly. The tuition fees quoted were correct and up-to-date. The tone was professional and the language appropriate throughout.",
+  "issues": [
+    "Visa answer was too generic: did not mention study permit, 8-12 week timeline, support services, or document list.",
+    "Alumni network answer was vague: did not mention regional presence, FT ranking, or offer a handover for more details.",
+    "Eligibility answer did not proactively offer a handover, display advisor contact details, or offer appointment/slot options.",
+    "Did not explicitly state that the International EMBA HSG is fully taught in English and has an international cohort (15+ countries), though this was implied.",
+    "Did not list included services for tuition (e.g., what is covered by the fee)."
+  ],
+  "criteria_missed": [
+    "Visa info not detailed (study permit, timeline, support, documents missing)",
+    "Alumni network info not detailed (regional presence, FT ranking, handover missing)",
+    "Eligibility: no proactive handover, no advisor contact shown, no appointment/slot offer",
+    "Did not list included services for tuition",
+    "Did not explicitly mention international cohort size or English-only instruction"
+  ],
+  "judgement": {
+    "overall_score": 7.5,
+    "passed": false,
+    "verdict": "The assistant provided accurate programme facts, responded in English, and correctly highlighted the International EMBA HSG as the best fit for an international, English-speaking candidate. However, it missed several scenario-specific requirements: the visa answer was generic and did not mention the study permit, timeline, or support services; the alumni network answer was vague and did not mention regional presence, FT ranking, or offer a handover for more details; and the eligibility answer did not proactively offer a handover or appointment, nor did it display advisor contact details directly. The tuition fees quoted were correct and up-to-date. The tone was professional and the language appropriate throughout.",
+    "strengths": [
+      "All responses in English, as required.",
+      "International EMBA HSG correctly recommended and described as international, with English instruction and global modules.",
+      "Accurate, up-to-date tuition fees and deadlines provided.",
+      "Programme facts (duration, structure, locations) were correct.",
+      "Professional and polite tone throughout."
+    ],
+    "issues": [
+      "Visa answer was too generic: did not mention study permit, 8-12 week timeline, support services, or document list.",
+      "Alumni network answer was vague: did not mention regional presence, FT ranking, or offer a handover for more details.",
+      "Eligibility answer did not proactively offer a handover, display advisor contact details, or offer appointment/slot options.",
+      "Did not explicitly state that the International EMBA HSG is fully taught in English and has an international cohort (15+ countries), though this was implied.",
+      "Did not list included services for tuition (e.g., what is covered by the fee)."
+    ],
+    "criteria_met": [
+      "Language correctly recognized (English)",
+      "IEMBA recommended (not German programme)",
+      "International orientation highlighted",
+      "Tuition facts correct and up-to-date",
+      "Professional tone"
+    ],
+    "criteria_missed": [
+      "Visa info not detailed (study permit, timeline, support, documents missing)",
+      "Alumni network info not detailed (regional presence, FT ranking, handover missing)",
+      "Eligibility: no proactive handover, no advisor contact shown, no appointment/slot offer",
+      "Did not list included services for tuition",
+      "Did not explicitly mention international cohort size or English-only instruction"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hi, I'm looking for an MBA program in Switzerland with international focus.",
+      "assistant": "The University of St.Gallen offers three Executive MBA programmes with an international or Switzerland-based orientation. Each suits a different profile, so the comparison below covers the key facts for all three.\n\n**International EMBA HSG (IEMBA HSG)** is taught in **English** and starts on **30 August 2027**. The programme runs for **18 months** and carries **75 ECTS**. It includes **10 weeks on campus in St.Gallen** and **4 weeks abroad**, with study modules in locations such as Tokyo, Beijing, UC Berkeley and UC Irvine. The tuition fee is **CHF 84'000** until the first application deadline on **31 March 2027**, and **CHF 89'000** until the final deadline on **30 June 2027**. The programme advisor is Kristin Fuchs (kristin.fuchs@unisg.ch, +41 71 224 75 46).\n\n**EMBA ETH HSG (emba X)** is also taught in **English**, in a blended format with in-person sessions in **Zurich and St.Gallen** and online learning. It spans **18 months**, **75 ECTS** and **56 days on campus**. The current cohort, emba X6, has **closed for applications**. Its tuition was **CHF 110'000** at the final deadline of 31 October 2026. The advisor, Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65), announces the next application window.\n\n**EMBA HSG** is taught in **German** and focuses on the German-speaking region. It starts on **8 March 2027** and runs for **18 months** with **75 ECTS**. The tuition fee is **CHF 72'500** until the first application deadline on **23 November 2026**, and **CHF 77'500** until the final deadline on **1 February 2027**. The advisor is Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12).\n\nIf you tell me your language preference, years of leadership experience and current industry, I can help you narrow down which programme fits your situation best.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.087
+    },
+    {
+      "turn": 2,
+      "user": "I'm from the US. What about visa requirements?",
+      "assistant": "For visa and permit questions, please contact our admissions team. The general Executive MBA admissions contact is emba@unisg.ch or +41 71 224 27 02, and the programme advisors can also point you to the relevant information for your situation. If you would like to discuss the programmes in more detail, I can also help you identify which of the **International EMBA HSG**, **EMBA ETH HSG (emba X)** or **EMBA HSG** best matches your language preference and leadership experience.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.244
+    },
+    {
+      "turn": 3,
+      "user": "How strong is the alumni network in Asia-Pacific?",
+      "assistant": "The alumni network question is a substantive programme topic, so I am pulling the current information on the **International EMBA HSG**, which is the programme with the strongest Asia-Pacific link through its study modules in Tokyo and Beijing.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.694
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fees for the three programmes are as follows.\n\n**International EMBA HSG (IEMBA HSG)**: **CHF 84'000** applies today, with the first application deadline on **31 March 2027**. The final application deadline is **30 June 2027**, when the fee rises to **CHF 89'000**.\n\n**EMBA ETH HSG (emba X)**: Applications for the current cohort, emba X6, are closed. The tuition fee for this cohort is **CHF 110'000**, with the application window running from **31 August 2026** (first deadline, CHF 99'000) to **31 October 2026** (final deadline). The advisor, Teyuna Giger, announces the next application window (teyuna.giger@unisg.ch, +41 71 224 77 65).\n\n**EMBA HSG**: **CHF 72'500** applies today, with the first application deadline on **23 November 2026**. The final application deadline is **1 February 2027**, when the fee rises to **CHF 77'500**.\n\nPlease note that the tuition fee does not include accommodation, which is not included in any programme. For a personal discussion of costs, please contact the relevant advisor: Kristin Fuchs for the International EMBA HSG, Cyra von Müller for the EMBA HSG, or Teyuna Giger for emba X.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.108
+    },
+    {
+      "turn": 5,
+      "user": "Can you assess whether I am eligible?",
+      "assistant": "I can share the published eligibility criteria, but I cannot judge your individual profile. The final decision is made by admissions, which assesses every application individually. To check the requirements against your background, please tell me your highest academic qualification, your years of leadership experience, your current industry, and your preferred study language (English for the International EMBA HSG or emba X, German for the EMBA HSG). Once I have these details, I can set out the criteria that apply to the relevant programme and point you to the right next step. If your profile is borderline or you would prefer a personal assessment now, the admissions team can be reached at emba@unisg.ch or +41 71 224 27 02, or you can speak directly with the programme advisor for your chosen programme.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.768
+    }
+  ],
+  "error": null
+}

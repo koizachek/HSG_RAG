@@ -1,0 +1,125 @@
+{
+  "case_id": "TC-IEMBA-02",
+  "title": "TC-IEMBA-02: Career Change Scenario",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Pass – The assistant provided accurate, well-structured, and user-appropriate information in English, correctly identified the user's non-standard profile, explained eligibility criteria, cross-sold emba X, and referred to the admissions team for further guidance. Minor deductions for slightly rigid eligibility interpretation and not explicitly offering appointment slots or capturing user data, but all critical success criteria were met.",
+  "issues": [
+    "Eligibility: The assistant was slightly rigid in the final eligibility assessment, stating the user does not meet the criteria, rather than emphasizing the admissions committee's discretion and the value of informal leadership (though this was mentioned earlier).",
+    "Booking/Handover: Did not proactively offer to book an appointment or capture user data for follow-up, though contact details were provided.",
+    "Programme Suggestion: Did not mention the regular MBA as an alternative in the final eligibility turn, though it was referenced in turn 1's additional details."
+  ],
+  "criteria_missed": [
+    "Did not proactively offer to book an appointment or capture user data for follow-up.",
+    "Final eligibility turn could have more strongly emphasized the admissions committee's discretion and encouraged a personal assessment.",
+    "Did not explicitly mention the regular MBA as an alternative in the final eligibility turn."
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Pass – The assistant provided accurate, well-structured, and user-appropriate information in English, correctly identified the user's non-standard profile, explained eligibility criteria, cross-sold emba X, and referred to the admissions team for further guidance. Minor deductions for slightly rigid eligibility interpretation and not explicitly offering appointment slots or capturing user data, but all critical success criteria were met.",
+    "strengths": [
+      "Language: All responses were in English, as required.",
+      "Eligibility: Clearly explained IEMBA and emba X criteria, including the distinction between work and leadership experience.",
+      "Profile Assessment: Recognized the user's lack of formal management experience and addressed it sensitively.",
+      "Cross-Selling: Appropriately introduced emba X as a relevant alternative for tech professionals.",
+      "Escalation: Consistently referred the user to the correct admissions contacts for individual assessment.",
+      "Factuality: Tuition fees, deadlines, and programme details were accurate and up-to-date.",
+      "Tone: Professional, supportive, and clear throughout."
+    ],
+    "issues": [
+      "Eligibility: The assistant was slightly rigid in the final eligibility assessment, stating the user does not meet the criteria, rather than emphasizing the admissions committee's discretion and the value of informal leadership (though this was mentioned earlier).",
+      "Booking/Handover: Did not proactively offer to book an appointment or capture user data for follow-up, though contact details were provided.",
+      "Programme Suggestion: Did not mention the regular MBA as an alternative in the final eligibility turn, though it was referenced in turn 1's additional details."
+    ],
+    "criteria_met": [
+      "Language correctly recognized and used (English).",
+      "Bot recognized non-standard profile and explained criteria.",
+      "Realistic eligibility assessment (meets experience, but not leadership).",
+      "Cross-selling to emba X with relevant context.",
+      "No false promises or speculation about admission chances.",
+      "Escalation to human advisors with contact details.",
+      "Explained 5 years' experience and 3 years' leadership rule.",
+      "Mentioned English fluency requirement.",
+      "Described international, management-focused content.",
+      "Explained international modules and cohort.",
+      "Fully taught in English.",
+      "Tuition fees and deadlines accurate and up-to-date."
+    ],
+    "criteria_missed": [
+      "Did not proactively offer to book an appointment or capture user data for follow-up.",
+      "Final eligibility turn could have more strongly emphasized the admissions committee's discretion and encouraged a personal assessment.",
+      "Did not explicitly mention the regular MBA as an alternative in the final eligibility turn."
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "I'm a software engineer with 9 years of experience. I want to move into business leadership. Do I qualify for the IEMBA?",
+      "assistant": "To qualify for the International Executive MBA HSG (IEMBA), you must meet the following requirements:\n\n- Hold a recognised undergraduate degree (\"sur dossier\" admission is possible in special cases without a degree, subject to individual assessment)\n- Have at least 5 years of professional work experience\n- Have at least 3 years of managerial or leadership experience\n- Be fluent in English\n\nWith 9 years of experience as a software engineer, you clearly meet the work experience requirement. The key question is whether you have at least 3 years of managerial or leadership experience. This can include formal management roles, project leadership, team lead responsibilities, or significant leadership in cross-functional initiatives. If you have this leadership experience, you are eligible to apply. If your leadership experience is less formal or you are unsure, I recommend sharing your CV with the admissions team for a personal assessment.\n\nThe final admission decision is made by the admissions committee. For individual guidance, you can contact Kristin Fuchs, Senior Recruitment & Admissions Manager for the IEMBA HSG, at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "If you do not yet have 3 years of leadership experience, you may wish to consider the regular MBA at the University of St.Gallen (https://www.mba.unisg.ch/) or explore HSG Open Programmes (https://op.unisg.ch/en/) for further development until you meet the IEMBA criteria.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.34
+    },
+    {
+      "turn": 2,
+      "user": "Would EMBA X be a better fit for my tech background?",
+      "assistant": "emba X is specifically designed for experienced professionals with a strong background in technology, engineering, or science who are aiming to move into business leadership roles. The programme is a joint initiative between ETH Zurich and the University of St.Gallen, combining expertise in technology management, innovation, and leadership. Its curriculum integrates technology, business innovation, and general management, making it highly relevant for someone with your software engineering background who wants to transition into broader business leadership.\n\nHowever, the formal admissions criteria for emba X are:\n- Minimum 10 years of work experience\n- Minimum 5 years of leadership experience\n- Recognised academic degree\n- Fluency in English\n\nWith 9 years of experience, you do not yet meet the minimum work experience requirement for emba X. If you are close to this threshold and have significant leadership responsibilities, you may wish to discuss your profile directly with the admissions manager, Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65), for a personal assessment and to explore your options for future intakes.",
+      "additional_details": "emba X offers a unique blend of technology and management education, with modules on AI-driven technologies, strategy, innovation, and adaptive leadership. The programme is delivered in a blended format (in-person in Zurich and St.Gallen, plus online elements) and is designed for senior professionals ready to drive change at the intersection of technology and business.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.71
+    },
+    {
+      "turn": 3,
+      "user": "How can I strengthen my application without management experience?",
+      "assistant": "For the IEMBA HSG and emba X, management or leadership experience is a core admissions requirement. This typically means having held roles where you were responsible for leading teams, projects, or significant initiatives, not just technical expertise. If you do not yet have formal management experience, the best way to strengthen your application is to actively seek out leadership opportunities in your current role. This could include:\n\n- Leading project teams or cross-functional initiatives\n- Taking on responsibility for mentoring or coaching colleagues\n- Driving strategic projects or organisational change\n- Volunteering for roles that require decision-making and people management\n\nAdmissions committees look for evidence of leadership potential and impact, not just job titles. Documenting concrete examples of how you have influenced outcomes, motivated others, or taken ownership of complex challenges will help demonstrate your readiness.\n\nIf you are not yet able to show this experience, you may wish to consider building your leadership profile further before applying. For tailored advice, you can contact the admissions team at emba@unisg.ch or +41 71 224 27 02.",
+      "additional_details": "If you are interested in developing your leadership skills before applying for an Executive MBA, the University of St.Gallen also offers certificate programmes through HSG Open Programmes (https://op.unisg.ch/en/) that do not require management experience and can help you build relevant competencies.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.886
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "For the International Executive MBA HSG (IEMBA), the tuition fee is **CHF 84,000** if you apply by the first application deadline (**31 March 2027**). After this date, the fee increases to **CHF 89,000** for applications submitted by the final deadline (**30 June 2027**).\n\nFor emba X, the tuition fee for the current cohort is **CHF 110,000**. However, applications for this cohort are now closed (the application window ran from 31 August 2026 to 31 October 2026). The next application window will be announced by the programme advisor.\n\nThese fees cover tuition and most course materials, but do not include accommodation or travel expenses.",
+      "additional_details": "If you would like more information on financing options or tuition incentives, you can visit: https://emba.unisg.ch/en/admissions/finance-tuitionincentives",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.901
+    },
+    {
+      "turn": 5,
+      "user": "So am I eligible?",
+      "assistant": "Based on your profile as a software engineer with 9 years of experience and no formal management background, you do not currently meet the full admissions criteria for either the International Executive MBA HSG (IEMBA) or emba X.\n\nFor the IEMBA HSG, you need at least 3 years of managerial or leadership experience in addition to your professional experience. For emba X, the requirements are even higher: a minimum of 10 years of work experience and 5 years in a leadership role.\n\nIf you are actively taking on leadership responsibilities (such as leading projects or teams), you may be closer to meeting the IEMBA HSG requirements. However, without formal leadership experience, your application would not fulfil the standard criteria for either programme at this time. The admissions committee does assess each profile individually, so if you have significant informal leadership experience, you may wish to discuss your situation directly with the admissions team for a personal assessment.\n\nFor tailored advice or to discuss your profile in detail, you can contact the admissions team at emba@unisg.ch or +41 71 224 27 02.",
+      "additional_details": "If you are interested in developing your leadership skills before applying, you might consider the HSG Open Programmes (certificate courses without an MBA degree) as a next step: https://op.unisg.ch/en/",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.788
+    }
+  ],
+  "error": null
+}

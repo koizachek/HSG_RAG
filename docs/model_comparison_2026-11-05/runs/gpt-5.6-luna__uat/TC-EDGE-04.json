@@ -1,0 +1,76 @@
+{
+  "case_id": "TC-EDGE-04",
+  "title": "TC-EDGE-04: Gibberish / Unverständliche Eingabe",
+  "score": 8.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Reaktion des Chatbots auf unverständliche Eingaben ist angemessen und höflich. Nach der ersten unverständlichen Eingabe wird um eine Umformulierung gebeten. Nach der zweiten unverständlichen Eingabe wird eine alternative Kontaktmöglichkeit zu einer Person angeboten, was dem Geist der Vorgabe entspricht, auch wenn nicht exakt nach einer Person gefragt wird. Die Sprache ist korrekt (Deutsch), der Ton ist freundlich und hilfreich. Es gibt keine sachlichen Fehler. Ein kleiner Abzug erfolgt, weil die Formulierung \"Möchten Sie lieber mit einer Person sprechen?\" nicht explizit verwendet wird, sondern stattdessen direkt Kontaktinformationen angeboten werden. Dies ist jedoch eine akzeptable Interpretation der Vorgabe.",
+  "issues": [
+    "Die explizite Nachfrage, ob der Nutzer mit einer Person sprechen möchte, fehlt; stattdessen wird direkt der Kontakt genannt."
+  ],
+  "criteria_missed": [
+    "Die Formulierung \"Möchten Sie lieber mit einer Person sprechen?\" wird nicht explizit verwendet"
+  ],
+  "judgement": {
+    "overall_score": 8,
+    "passed": true,
+    "verdict": "Die Reaktion des Chatbots auf unverständliche Eingaben ist angemessen und höflich. Nach der ersten unverständlichen Eingabe wird um eine Umformulierung gebeten. Nach der zweiten unverständlichen Eingabe wird eine alternative Kontaktmöglichkeit zu einer Person angeboten, was dem Geist der Vorgabe entspricht, auch wenn nicht exakt nach einer Person gefragt wird. Die Sprache ist korrekt (Deutsch), der Ton ist freundlich und hilfreich. Es gibt keine sachlichen Fehler. Ein kleiner Abzug erfolgt, weil die Formulierung \"Möchten Sie lieber mit einer Person sprechen?\" nicht explizit verwendet wird, sondern stattdessen direkt Kontaktinformationen angeboten werden. Dies ist jedoch eine akzeptable Interpretation der Vorgabe.",
+    "strengths": [
+      "Korrekte Sprache (Deutsch)",
+      "Höflicher und hilfreicher Ton",
+      "Sinnvolle Eskalation nach wiederholter unverständlicher Eingabe",
+      "Angebot eines menschlichen Kontakts nach zweiter unverständlicher Eingabe"
+    ],
+    "issues": [
+      "Die explizite Nachfrage, ob der Nutzer mit einer Person sprechen möchte, fehlt; stattdessen wird direkt der Kontakt genannt."
+    ],
+    "criteria_met": [
+      "Unverständliche Eingaben werden erkannt",
+      "Nach der ersten Eingabe wird um Umformulierung gebeten",
+      "Nach der zweiten Eingabe wird ein menschlicher Kontakt angeboten",
+      "Sprache und Ton sind korrekt"
+    ],
+    "criteria_missed": [
+      "Die Formulierung \"Möchten Sie lieber mit einer Person sprechen?\" wird nicht explizit verwendet"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "asdfkjhasdf 12345 !!!????",
+      "assistant": "Das habe ich nicht ganz verstanden. Könnten Sie Ihre Frage bitte anders formulieren?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.004
+    },
+    {
+      "turn": 2,
+      "user": "sahjbdashj  sa udiah ub2  2h ewb3 ?!?!?!",
+      "assistant": "Ich habe weiterhin Schwierigkeiten, Ihre Nachricht zu verstehen. Falls sich Ihre Frage auf die HSG Executive MBA-Programme bezieht, formulieren Sie sie bitte als vollständigen Satz um.\n\nSie erreichen das Executive-MBA-Zulassungsteam unter emba@unisg.ch oder +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.007
+    }
+  ],
+  "error": null
+}

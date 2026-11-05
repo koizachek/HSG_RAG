@@ -1,0 +1,122 @@
+{
+  "case_id": "TC-EMBA-01",
+  "title": "TC-EMBA-01: Standard Qualification - Perfect Fit",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, sachliche und korrekte Beratung mit minimalen Abweichungen bei der Gebührennennung. Alle Kernanforderungen wurden erfüllt, die Sprache und der Ton waren angemessen, und der Handover zum Beratungstermin wurde korrekt angeboten.",
+  "issues": [
+    "Die aktuell gültige Gebühr für Bewerbungen bis zur ersten Frist (CHF 72'500) wurde korrekt genannt, aber die Formulierung \"regulär CHF 77'500 bis zur finalen Frist\" könnte missverstanden werden, da zum Referenzdatum nur die reduzierte Gebühr buchbar ist. Die Angabe ist aber als Kontext zulässig.",
+    "Die explizite Aufzählung der einzureichenden Dokumente (z.B. CV, Motivationsschreiben) hätte noch etwas konkreter sein können, wurde aber im Kontext des Bewerbungsprozesses ausreichend adressiert.",
+    "Die explizite Nennung der maximalen Studiendauer (bis zu 48 Monate) fehlt, obwohl die Standarddauer (18 Monate) korrekt genannt wurde."
+  ],
+  "criteria_missed": [
+    "Maximale Studiendauer (48 Monate) wurde nicht explizit genannt.",
+    "Dokumentenliste hätte noch konkreter sein können (z.B. Motivationsschreiben, Zeugnisse)."
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, sachliche und korrekte Beratung mit minimalen Abweichungen bei der Gebührennennung. Alle Kernanforderungen wurden erfüllt, die Sprache und der Ton waren angemessen, und der Handover zum Beratungstermin wurde korrekt angeboten.",
+    "strengths": [
+      "Sprache korrekt erkannt und konsequent Deutsch verwendet.",
+      "Alle drei Programme wurden zu Beginn knapp und korrekt vorgestellt.",
+      "Berufserfahrung und Führungserfahrung wurden aktiv erfragt und korrekt validiert.",
+      "Empfehlung für EMBA HSG mit Begründung (Sprache, DACH-Fokus, Erfahrungslevel).",
+      "Bewerbungsprozess und Dokumentenanforderungen klar und strukturiert erklärt.",
+      "Bewerbungsfristen und Starttermine korrekt genannt.",
+      "Kostenstruktur und enthaltene Leistungen sachlich und korrekt erläutert.",
+      "Kein werblicher oder spekulativer Ton.",
+      "Proaktives Handover zum Beratungsgespräch mit Kontaktdaten und Hinweis auf Terminbuchung."
+    ],
+    "issues": [
+      "Die aktuell gültige Gebühr für Bewerbungen bis zur ersten Frist (CHF 72'500) wurde korrekt genannt, aber die Formulierung \"regulär CHF 77'500 bis zur finalen Frist\" könnte missverstanden werden, da zum Referenzdatum nur die reduzierte Gebühr buchbar ist. Die Angabe ist aber als Kontext zulässig.",
+      "Die explizite Aufzählung der einzureichenden Dokumente (z.B. CV, Motivationsschreiben) hätte noch etwas konkreter sein können, wurde aber im Kontext des Bewerbungsprozesses ausreichend adressiert.",
+      "Die explizite Nennung der maximalen Studiendauer (bis zu 48 Monate) fehlt, obwohl die Standarddauer (18 Monate) korrekt genannt wurde."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Passende Programm-Empfehlung (EMBA HSG)",
+      "Eligibility korrekt validiert (3 Jahre Führung = qualified)",
+      "Faktisch korrekte Informationen (Kosten, Termine, Fristen, Ablauf)",
+      "Sachlicher, warmer Ton, keine Marketing-Sprache",
+      "Proaktives Handover-Angebot mit Kontaktdaten und Terminoption",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "Maximale Studiendauer (48 Monate) wurde nicht explizit genannt.",
+      "Dokumentenliste hätte noch konkreter sein können (z.B. Motivationsschreiben, Zeugnisse)."
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Guten Tag, ich interessiere mich für ein MBA-Studium \nberufsbegleitend.",
+      "assistant": "Die Universität St.Gallen bietet drei modular aufgebaute, berufsbegleitende Executive MBA-Programme an, die jeweils 18 Monate dauern, 75 ECTS umfassen und sich flexibel mit einer anspruchsvollen Führungsposition vereinbaren lassen:\n\n- **EMBA HSG**: Der deutschsprachige General-Management-Studiengang mit starkem Fokus auf den DACH-Raum. Der nächste Start ist am **8. März 2027**. Die Studiengebühr beträgt aktuell **CHF 72'500** bei einer Bewerbung bis zum **23. November 2026** (regulär **CHF 77'500** bis zur finalen Frist am **1. Februar 2027**).\n- **IEMBA HSG**: Das englischsprachige Programm mit internationaler Ausrichtung und Auslandsmodulen in den USA und Asien. Der nächste Start ist am **30. August 2027**. Die Studiengebühr liegt aktuell bei **CHF 84'000** bei einer Bewerbung bis zum **31. März 2027** (regulär **CHF 89'000** bis zum **30. Juni 2027**).\n- **EMBA ETH HSG (emba X)**: Die gemeinsame Weiterbildung der Universität St.Gallen und der ETH Zürich an der Schnittstelle von Technologieführung, Innovation und Management auf Englisch. Das Programm startet am **1. Februar 2027**. Das Bewerbungsfenster für diese Kohorte (Referenzgebühr regulär CHF 110'000) ist bereits geschlossen; die Termine für die darauffolgende Kohorte gibt die Programmberatung bekannt.\n\nUm zu beurteilen, welches Format optimal zu Ihren Zielen passt: Wie viele Jahre Berufs- und Führungserfahrung bringen Sie mit, in welcher Funktion oder Branche sind Sie tätig und welche Unterrichtssprache bevorzugen Sie?",
+      "additional_details": "Alle drei Programme richten sich an erfahrene Fach- und Führungskräfte mit mindestens fünf Jahren Berufserfahrung sowie mehrjähriger Management- bzw. Führungserfahrung. Für Personen mit geringerer Berufserfahrung bietet die Universität St.Gallen zudem das Vollzeit- und Teilzeit-MBA-Programm an (https://www.mba.unisg.ch/).",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 10.563
+    },
+    {
+      "turn": 2,
+      "user": "Ich arbeite seit 15 Jahren, davon 7 Jahre als \nAbteilungsleiter.",
+      "assistant": "Mit 15 Jahren Berufserfahrung und 7 Jahren Führungserfahrung als Abteilungsleiter erfüllen Sie die formalen Mindestkriterien (mindestens 5 Jahre Berufserfahrung, davon mindestens 3 Jahre Führungserfahrung) für alle drei Executive MBA-Programme der Universität St.Gallen problemlos. Neben der Berufserfahrung wird eine anerkannte akademische Erstausbildung (Bachelor oder Master einer Universität bzw. Fachhochschule) vorausgesetzt; bei fehlendem Erstabschluss ist eine Zulassung «sur dossier» nach individueller Prüfung möglich. Die finale Zulassungsentscheidung trifft jeweils der Zulassungsausschuss.\n\nFür eine gezielte Empfehlung sind vor allem die inhaltliche Ausrichtung und die Sprache ausschlaggebend:\n- **EMBA HSG**: Ideal, wenn Sie Ihre General-Management-Kompetenzen auf Deutsch vertiefen möchten und Ihr beruflicher Schwerpunkt im DACH-Raum liegt.\n- **IEMBA HSG**: Passend, wenn Sie in einem internationalen Umfeld auf Englisch studieren und von weltweiten Modulen (u. a. USA und Asien) profitieren möchten.\n- **EMBA ETH HSG (emba X)**: Die richtige Wahl bei einem starken Fokus auf Technologie, Innovation und digitale Unternehmenstransformation an der Schnittstelle von Business und Tech.\n\nIn welcher Branche sind Sie tätig und welche sprachliche sowie strategische Ausrichtung entspricht Ihren beruflichen Zielen am besten?",
+      "additional_details": "Der reguläre Zulassungsprozess umfasst das Einreichen des Lebenslaufs, die Online-Bewerbung, ein Online-Assessment nach Einladung, ein persönliches Interview sowie den finalen Entscheid des Zulassungsausschusses. Der Bewerbungsprozess selbst ist kostenlos. Weiterführende Informationen zum Ablauf finden Sie unter https://emba.unisg.ch/bewerbung/process.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.314
+    },
+    {
+      "turn": 3,
+      "user": "Was sind die nächsten Schritte im Bewerbungsprozess?",
+      "assistant": "Der Bewerbungsprozess für die Executive MBA-Programme der Universität St.Gallen ist kostenlos und gliedert sich in folgende Schritte:\n\n1. **Profil-Check und Kontaktaufnahme**: Sie können Ihren Lebenslauf unverbindlich einreichen, um vorab eine erste Einschätzung zu erhalten, ob Ihr Profil zu den Anforderungen passt.\n2. **Online-Bewerbung**: Einreichen der vollständigen Bewerbungsunterlagen über das Online-Portal.\n3. **Online-Assessment**: Nach Prüfung der Unterlagen werden geeignete Kandidatinnen und Kandidaten zu einem Online-Assessment eingeladen.\n4. **Persönliches Interview**: Führen eines ausführlichen Online-Interviews mit der Programmleitung.\n5. **Zulassungsentscheid**: Der finale Entscheid wird durch den Zulassungsausschuss getroffen.\n\nAusführliche Informationen zum Ablauf finden Sie unter https://emba.unisg.ch/bewerbung/process. Für eine persönliche Vorprüfung Ihres Lebenslaufs oder offene Fragen steht Ihnen das Zulassungsteam unter emba@unisg.ch oder +41 71 224 27 02 gern zur Verfügung.",
+      "additional_details": "Für die Zulassung gelten als formale Mindestkriterien eine anerkannte akademische Erstausbildung (Bachelor oder Master), mindestens fünf Jahre Berufserfahrung sowie mindestens drei Jahre Management- und Führungserfahrung. Bewerbende sollten während des Studiums in einem festen Beschäftigungsverhältnis stehen. Bei fehlendem Erststudium ist eine Zulassung «sur dossier» nach Einzelfallprüfung möglich.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 14.573
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für den deutschsprachigen **EMBA HSG** ist nach Bewerbungsfristen gestaffelt:\n\n- Bei einer Bewerbung bis zur 1. Frist am **23. November 2026** gilt die reduzierte Studiengebühr von **CHF 72'500**.\n- Bis zur finalen Bewerbungsfrist am **1. Februar 2027** beträgt die reguläre Studiengebühr **CHF 77'500**.\n\nIn den Studiengebühren enthalten sind der gesamte Unterricht, sämtliche Lehrmaterialien sowie die Verpflegung (Mittagessen und Kaffeepausen) an den Unterrichtstagen. Nicht enthalten sind Übernachtungskosten, Reisekosten, Visa sowie die Verpflegung ausserhalb der Kurszeiten.\n\nNach der Zulassung wird eine nicht erstattungsfähige Anmeldegebühr von **CHF 3'000** fällig, um den Studienplatz zu sichern; der verbleibende Betrag wird in vier Raten über die Studiendauer aufgeteilt. Details zu Ratenzahlung und Finanzierungsmöglichkeiten finden Sie unter https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse.",
+      "additional_details": "Für Fragen zur Rechnungsaufteilung zwischen Arbeitgeber und Privatperson sowie zu Studiengebühren-Zuschüssen steht Ihnen Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) zur Verfügung.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 11.564
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Sehr gerne. Ich kann Ihnen passende Termine für ein persönliches Beratungsgespräch mit Cyra von Müller für das EMBA HSG Programm anzeigen. Die verfügbaren Termine und Kontaktdaten finden Sie direkt unten.",
+      "additional_details": "Sie können im Gespräch vorab Ihren Lebenslauf besprechen, individuelle Fragen zum Zeitaufwand und zum Bewerbungsprozess klären oder sich zu den Inhalten des EMBA HSG austauschen.",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 5.589
+    }
+  ],
+  "error": null
+}

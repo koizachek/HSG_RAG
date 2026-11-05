@@ -1,0 +1,116 @@
+{
+  "case_id": "TC-EMBA-03",
+  "title": "TC-EMBA-03: Cross-Selling Opportunity",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung mit klarer Differenzierung der Programme, korrekter Preisangabe, und professioneller Terminvermittlung. Alle Kernanforderungen wurden erfüllt.",
+  "issues": [
+    "Die Leistungen, die in der Studiengebühr enthalten sind, wurden nicht explizit aufgezählt (nur Hinweis, dass Unterkunft nicht enthalten ist). Das ist ein kleiner Mangel, da laut Kriterien zumindest ein kurzer Überblick zu den inkludierten Leistungen erwartet wird.",
+    "Terminslots werden zwar angekündigt, aber nicht explizit aufgelistet (Hinweis auf Einblendung unten). Dies ist aber laut Vorgabe ausreichend, da die Widget-Logik nicht bewertet wird."
+  ],
+  "criteria_missed": [
+    "Inkludierte Leistungen der Studiengebühr wurden nicht explizit genannt"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung mit klarer Differenzierung der Programme, korrekter Preisangabe, und professioneller Terminvermittlung. Alle Kernanforderungen wurden erfüllt.",
+    "strengths": [
+      "Sprache korrekt erkannt und konsequent Deutsch verwendet.",
+      "Spezialisierungswunsch (Nachhaltigkeit, Digitalisierung) erkannt und emba X als passend empfohlen.",
+      "Alle drei Programme werden vorgestellt, ohne andere Programme abzuwerten.",
+      "Klare, strukturierte Differenzierung zwischen EMBA HSG und emba X (inkl. ETH Zürich-Kooperation, Curriculum, Sprache, Netzwerk).",
+      "Korrekte, aktuelle Preisangabe für emba X (CHF 110'000, Fristen und Bewerbungsstatus korrekt erklärt).",
+      "Proaktive und höfliche Terminvermittlung mit klarer Kontaktinformation.",
+      "Keine unsicheren Aussagen als Fakten dargestellt.",
+      "Freundlicher, professioneller Ton."
+    ],
+    "issues": [
+      "Die Leistungen, die in der Studiengebühr enthalten sind, wurden nicht explizit aufgezählt (nur Hinweis, dass Unterkunft nicht enthalten ist). Das ist ein kleiner Mangel, da laut Kriterien zumindest ein kurzer Überblick zu den inkludierten Leistungen erwartet wird.",
+      "Terminslots werden zwar angekündigt, aber nicht explizit aufgelistet (Hinweis auf Einblendung unten). Dies ist aber laut Vorgabe ausreichend, da die Widget-Logik nicht bewertet wird."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Spezialisierungswunsch",
+      "Passende Cross-Selling Empfehlung (EMBA X)",
+      "Klare Programm-Differenzierung",
+      "Keine Abwertung anderer Programme",
+      "Bei Unsicherheit: Eskalation (Verweis auf Programmverantwortliche für nächste Kohorte und Gebühren)"
+    ],
+    "criteria_missed": [
+      "Inkludierte Leistungen der Studiengebühr wurden nicht explizit genannt"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich suche ein MBA-Programm mit Fokus auf Nachhaltigkeit und Digitalisierung.",
+      "assistant": "Für Ihren Fokus auf Nachhaltigkeit, Technologie und Digitalisierung ist der **EMBA ETH HSG (emba X)** die passendste Weiterbildung. Das Programm ist eine gemeinsame Initiative der Universität St.Gallen und der ETH Zürich, die Technologiemanagement und digitale Transformation mit General Management und gesellschaftlicher Verantwortung verbindet.\n\nEckdaten zum **emba X**:\n• **Format und Dauer**: 18 Monate im Blended-Learning-Format (56 Tage Präsenz in Zürich und St.Gallen, 2 Tage online) mit 75 ECTS-Punkten\n• **Unterrichtssprache**: Englisch\n• **Studiengebühr**: Als Referenzwert lag die Studiengebühr für die aktuelle Kohorte (emba X6, Start am **1. Februar 2027**) zwischen **CHF 99'000** (Frühbucherfrist) und **CHF 110'000** (finale Frist). Das Bewerbungsfenster für diese Kohorte lief vom 31. August 2026 bis zum 31. Oktober 2026 und ist nun geschlossen. Wann das nächste Bewerbungsfenster öffnet, gibt die Programmverantwortliche Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65) bekannt.\n\nAlternativ behandeln auch der deutschsprachige **EMBA HSG** (Kurs «Nachhaltigkeit im unternehmerischen Kontext» sowie strategische Innovation) und der englischsprachige **International EMBA HSG** (Modul an der UC Berkeley zu «Innovation & Entrepreneurship for Sustainable Development») Nachhaltigkeitsthemen im General-Management-Rahmen. Bei tiefergehendem Technologiefokus steht jedoch der emba X im Vordergrund. Weitere Informationen finden Sie auf https://embax.ch/ .",
+      "additional_details": "Der emba X zeichnet sich durch praxisnahe Sprint-Wochen, Skill-Building-Interventionen und zwei konkrete Impact-Projekte aus. Ziel ist es, Führungskräfte zu befähigen, technologische Innovationen und gesellschaftliche Verantwortung in nachhaltige Geschäftsmodelle zu integrieren.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.927
+    },
+    {
+      "turn": 2,
+      "user": "Was unterscheidet EMBA X vom normalen Executive MBA?",
+      "assistant": "Der **EMBA ETH HSG (emba X)** und der klassische **EMBA HSG** unterscheiden sich grundlegend in Institution, Ausrichtung, Unterrichtssprache und Format:\n\n• **Institution und Ausrichtung**: Der **EMBA HSG** ist ein reines Programm der Universität St.Gallen und fokussiert sich auf General Management mit starker Ausrichtung auf den deutschsprachigen Wirtschaftsraum (DACH). Der **emba X** ist ein gemeinsames Programm der Universität St.Gallen und der ETH Zürich; er verknüpft betriebswirtschaftliche Unternehmensführung mit Technologiemanagement, digitaler Transformation und gesellschaftlicher Verantwortung («Social Impact»).\n• **Unterrichtssprache**: Der EMBA HSG wird auf Deutsch unterrichtet, der emba X vollständig auf Englisch.\n• **Studienformat und Orte**: Der EMBA HSG umfasst 14 Präsenzwochen vorwiegend am Campus in St.Gallen und Zürich. Der emba X ist als Blended-Learning-Format aufgebaut (56 Präsenztage in Zürich und St.Gallen, 2 Online-Tage) und beinhaltet zwei praxisorientierte Impact-Projekte.\n• **Netzwerk**: Beim EMBA HSG erhalten Sie Zugang zum HSG-Alumni-Netzwerk, während Absolventinnen und Absolventen des emba X Zugang zu den kombinierten Netzwerken der Universität St.Gallen und der ETH Zürich erhalten.\n• **Gebühren**: Für den EMBA HSG (Start: **8. März 2027**) beträgt die Studiengebühr regulär **CHF 77'500** bzw. **CHF 72'500** bei Bewerbung bis zum 23. November 2026. Beim emba X lag die Gebühr für die aktuelle Kohorte (Start: 1. Februar 2027, Bewerbungsfenster geschlossen) zwischen **CHF 99'000** und **CHF 110'000**.",
+      "additional_details": "Beide Studiengänge umfassen 75 ECTS-Punkte und eine Regelstudienzeit von 18 Monaten. Beim EMBA HSG können Module bei Bedarf flexibel auf bis zu 48 Monate erstreckt werden.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 21.219
+    },
+    {
+      "turn": 3,
+      "user": "Wird EMBA X auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "Der **EMBA ETH HSG (emba X)** wird vollständig auf **Englisch** unterrichtet.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.951
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für die aktuelle Kohorte des **EMBA ETH HSG (emba X)** (emba X6, Start am **1. Februar 2027**) dient als Referenzwert:\n\n• **CHF 99'000** bei Bewerbung bis zur 1. Frist am 31. August 2026\n• **CHF 110'000** bei Bewerbung bis zur finalen Frist am 31. Oktober 2026\n\nDas Bewerbungsfenster für diese Kohorte lief vom 31. August 2026 bis zum 31. Oktober 2026 und ist nun geschlossen. Wann die Bewerbung für die nächste Kohorte öffnet und welche Gebühren dann gelten, gibt die Programmverantwortliche Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65) bekannt. Unterkünfte sind in den Studiengebühren nicht enthalten.",
+      "additional_details": "Informationen zum Programm und den Inhalten finden Sie auf https://embax.ch/ sowie zur Finanzierung auf https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse .",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.791
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Sehr gerne. Ich kann Ihnen Termine für ein persönliches Beratungsgespräch mit Teyuna Giger für das Programm EMBA ETH HSG (emba X) anzeigen. Sie finden die verfügbaren Zeitfenster und Kontaktdaten direkt unten eingeblendet.",
+      "additional_details": "Alternativ erreichen Sie Teyuna Giger auch direkt per E-Mail unter teyuna.giger@unisg.ch oder telefonisch unter +41 71 224 77 65.",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba_x"
+      ],
+      "elapsed_s": 3.289
+    }
+  ],
+  "error": null
+}

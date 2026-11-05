@@ -1,0 +1,59 @@
+F
+=================================== FAILURES ===================================
+___________________ test_uat_average_score_passes_llm_judge ____________________
+
+    @pytest.mark.network
+    @pytest.mark.integration
+    @pytest.mark.skipif(
+        os.getenv("RUN_UAT_LLM_JUDGE") != "1",
+        reason="Set RUN_UAT_LLM_JUDGE=1 to run live UAT conversations and LLM judge.",
+    )
+    def test_uat_average_score_passes_llm_judge():
+        assert UAT_CASES, "Expected at least one UAT case."
+    
+        results = [_run_and_judge_case(case) for case in UAT_CASES]
+        scores = [float(result["score"]) for result in results]
+        average_score = sum(scores) / len(scores)
+        errored = [result for result in results if result.get("error")]
+        below_case_floor = [
+            result for result in results if float(result["score"]) < CASE_MIN_ACCEPTABLE_SCORE
+        ]
+    
+        failure_summary = "\n".join(
+            (
+                f"- {result['case'].case_id}: score {result['score']:.1f}/{CASE_MIN_ACCEPTABLE_SCORE}; "
+                f"{result['judgement'].get('verdict')}"
+            )
+            for result in below_case_floor
+        )
+    
+        error_summary = "\n".join(
+            f"- {result['case'].case_id}: {result.get('error')}" for result in errored
+        )
+    
+        assert not errored, f"\nUAT runner or judge errors:\n{error_summary}"
+>       assert not below_case_floor, (
+            f"\nUAT cases below minimum case score {CASE_MIN_ACCEPTABLE_SCORE}:"
+            f"\n{failure_summary or 'None'}"
+        )
+E       AssertionError: 
+E         UAT cases below minimum case score 8.0:
+E         - TC-IEMBA-02: score 7.5/8.0; The assistant provided accurate, clear, and polite information about emba X, including correct tuition, deadlines, and eligibility criteria. However, it failed to address the IEMBA after the first turn, did not cross-sell or compare IEMBA and emba X as required, and did not mention the IEMBA as a viable alternative for the user's profile. The handover to advisors was appropriate, but the lack of IEMBA follow-up and cross-programme guidance means key scenario criteria were missed.
+E         - TC-EDGE-01: score 7.5/8.0; Die Antwort ist sachlich korrekt, freundlich und erklärt die Zulassungskriterien klar. Es fehlt jedoch ein empathischer Einstieg und ein Alternativvorschlag (z.B. Hinweis auf das reguläre MBA-Programm), wie in der Szenariobeschreibung gefordert. Die Kontaktaufnahme zur Studienberatung wird angeboten, was positiv ist.
+E       assert not [{'case': UATCase(case_id='TC-IEMBA-02', sheet='IEMBA_EDGE', title='TC-IEMBA-02: Career Change Scenario', persona=['Na...vvorschlag (z.B. Hinweis auf das reguläre MBA-Programm oder andere passende Programme).'], ...}, 'passed': False, ...}]
+
+tests/test_uat_llm_judge.py:600: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  input_handler:input_handler.py:345 Rejected probable gibberish input: 'asdfkjhasdf 12345 !!!????'
+WARNING  agent_chain:agent_chain.py:731 Invalid input received: <redacted user input, 25 chars>
+WARNING  agent_chain:agent_chain.py:746 Repeated invalid-looking input received: <redacted user input, 40 chars>
+=============================== warnings summary ===============================
+tests/test_uat_llm_judge.py::test_uat_average_score_passes_llm_judge
+  /opt/anaconda3/lib/python3.13/site-packages/weaviate/warnings.py:93: DeprecationWarning: Dep005: You are using weaviate-client version 4.20.5. The latest version is 4.24.1.
+              Consider upgrading to the latest version. See https://weaviate.io/developers/weaviate/client-libraries/python for details.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_uat_llm_judge.py::test_uat_average_score_passes_llm_judge
+1 failed, 9 deselected, 1 warning in 287.64s (0:04:47)

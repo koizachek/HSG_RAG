@@ -1,0 +1,58 @@
+F
+=================================== FAILURES ===================================
+___________________ test_uat_average_score_passes_llm_judge ____________________
+
+    @pytest.mark.network
+    @pytest.mark.integration
+    @pytest.mark.skipif(
+        os.getenv("RUN_UAT_LLM_JUDGE") != "1",
+        reason="Set RUN_UAT_LLM_JUDGE=1 to run live UAT conversations and LLM judge.",
+    )
+    def test_uat_average_score_passes_llm_judge():
+        assert UAT_CASES, "Expected at least one UAT case."
+    
+        results = [_run_and_judge_case(case) for case in UAT_CASES]
+        scores = [float(result["score"]) for result in results]
+        average_score = sum(scores) / len(scores)
+        errored = [result for result in results if result.get("error")]
+        below_case_floor = [
+            result for result in results if float(result["score"]) < CASE_MIN_ACCEPTABLE_SCORE
+        ]
+    
+        failure_summary = "\n".join(
+            (
+                f"- {result['case'].case_id}: score {result['score']:.1f}/{CASE_MIN_ACCEPTABLE_SCORE}; "
+                f"{result['judgement'].get('verdict')}"
+            )
+            for result in below_case_floor
+        )
+    
+        error_summary = "\n".join(
+            f"- {result['case'].case_id}: {result.get('error')}" for result in errored
+        )
+    
+        assert not errored, f"\nUAT runner or judge errors:\n{error_summary}"
+>       assert not below_case_floor, (
+            f"\nUAT cases below minimum case score {CASE_MIN_ACCEPTABLE_SCORE}:"
+            f"\n{failure_summary or 'None'}"
+        )
+E       AssertionError: 
+E         UAT cases below minimum case score 8.0:
+E         - TC-EDGE-03: score 7.5/8.0; Die Antwort ist sachlich, korrekt und bleibt ruhig, aber sie geht nicht ausreichend auf den Wert des Programms ein (Rankings, Netzwerk, Outcomes) und setzt den Preis nicht in den Kontext der gebotenen Leistungen und Vorteile. Die Antwort ist informativ bezüglich Gebühren, Zahlungsmodalitäten und Zuschüssen, aber sie wirkt etwas defensiv und zu sehr auf die Kostenstruktur fokussiert. Ein Hinweis auf den Mehrwert (z.B. HSG-Netzwerk, Karrierechancen, akademische Exzellenz) fehlt. Die Tonalität bleibt professionell und höflich.
+E       assert not [{'case': UATCase(case_id='TC-EDGE-03', sheet='EdgecasesError', title='TC-EDGE-03: Aggressive/Frustrated User', person...ten und Zahlungsmodalitäten', 'Kein Angebot eines menschlichen Kontakts bei Frustration'], ...}, 'passed': False, ...}]
+
+tests/test_uat_llm_judge.py:600: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  input_handler:input_handler.py:345 Rejected probable gibberish input: 'asdfkjhasdf 12345 !!!????'
+WARNING  agent_chain:agent_chain.py:731 Invalid input received: <redacted user input, 25 chars>
+WARNING  agent_chain:agent_chain.py:746 Repeated invalid-looking input received: <redacted user input, 40 chars>
+=============================== warnings summary ===============================
+tests/test_uat_llm_judge.py::test_uat_average_score_passes_llm_judge
+  /opt/anaconda3/lib/python3.13/site-packages/weaviate/warnings.py:93: DeprecationWarning: Dep005: You are using weaviate-client version 4.20.5. The latest version is 4.24.1.
+              Consider upgrading to the latest version. See https://weaviate.io/developers/weaviate/client-libraries/python for details.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_uat_llm_judge.py::test_uat_average_score_passes_llm_judge
+1 failed, 9 deselected, 1 warning in 306.72s (0:05:06)

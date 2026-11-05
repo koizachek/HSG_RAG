@@ -1,0 +1,68 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist professionell, ruhig und sachlich. Die Studiengebühr wird korrekt und transparent erklärt, inklusive der aktuellen Fristen und Leistungen. Der Wert des Programms wird durch Netzwerk, Betreuung und Reputation der HSG in den Kontext gesetzt. Ein persönlicher Kontakt für weitere Fragen wird angeboten. Die Tonalität bleibt respektvoll und nicht defensiv. Die Antwort ist hilfreich und faktenbasiert.",
+  "issues": [
+    "Die Antwort hätte noch expliziter auf die Emotion des Nutzers eingehen können (z.B. Verständnis für die Kostenfrage zeigen), um die Deeskalation weiter zu unterstützen."
+  ],
+  "criteria_missed": [
+    "Explizite empathische Ansprache der Frustration des Nutzers"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antwort ist professionell, ruhig und sachlich. Die Studiengebühr wird korrekt und transparent erklärt, inklusive der aktuellen Fristen und Leistungen. Der Wert des Programms wird durch Netzwerk, Betreuung und Reputation der HSG in den Kontext gesetzt. Ein persönlicher Kontakt für weitere Fragen wird angeboten. Die Tonalität bleibt respektvoll und nicht defensiv. Die Antwort ist hilfreich und faktenbasiert.",
+    "strengths": [
+      "Sachliche und professionelle Reaktion auf die aggressive Nutzerfrage",
+      "Korrekte und aktuelle Gebührenangabe mit Frist",
+      "Leistungen und Mehrwert des Programms werden klar erläutert",
+      "Reputation der HSG wird angemessen erwähnt",
+      "Kontaktperson für individuelle Beratung wird angeboten",
+      "Zusätzliche Hinweise zu Finanzierungsmöglichkeiten und Leistungen"
+    ],
+    "issues": [
+      "Die Antwort hätte noch expliziter auf die Emotion des Nutzers eingehen können (z.B. Verständnis für die Kostenfrage zeigen), um die Deeskalation weiter zu unterstützen."
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Wert des Programms sachlich erklärt",
+      "Preis in Kontext gesetzt",
+      "Menschlichen Kontakt angeboten"
+    ],
+    "criteria_missed": [
+      "Explizite empathische Ansprache der Frustration des Nutzers"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Die Studiengebühr für den Executive MBA HSG beträgt aktuell CHF 72'500 bei Bewerbung bis zum 23. November 2026, danach CHF 77'500. Diese Gebühr deckt ein umfassendes Weiterbildungsprogramm ab, das folgende Leistungen beinhaltet:\n\n- 18 Monate berufsbegleitendes General-Management-Studium mit 75 ECTS\n- 14 Wochen Präsenzmodule an der Universität St.Gallen und in Zürich\n- Zugang zu einem exklusiven Netzwerk von Führungskräften und Alumni\n- Persönliche Betreuung, Leadership-Entwicklung und individuelle Karriereberatung\n- Teilnahme an Wahlkursen und internationalen Modulen\n\nDie Universität St.Gallen zählt zu den führenden Wirtschaftsuniversitäten Europas. Die Investition in das Programm spiegelt die Qualität der Lehre, die Betreuung und das Netzwerk wider. Bei Fragen zur Finanzierung oder individuellen Möglichkeiten können Sie sich direkt an Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) wenden.",
+      "additional_details": "Die Studiengebühr umfasst alle Lehrveranstaltungen, Kursmaterialien und Prüfungen. Reise-, Unterkunfts- und Verpflegungskosten sind nicht enthalten. Es gibt verschiedene Finanzierungsoptionen und Zuschüsse, die Sie auf https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse finden.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.144
+    }
+  ],
+  "error": null
+}

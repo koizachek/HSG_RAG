@@ -44,6 +44,12 @@ LANGUAGE_DETECTION_MODEL = ('open_router:openai', 'openai/gpt-4o-mini')
 CONFIDENCE_SCORING_MODEL = ('open_router:openai', 'openai/gpt-4o-mini')
 SUMMARIZATION_MODEL = ('open_router:openai', 'openai/gpt-4.1')
 
+# Optional OpenRouter reasoning effort per model role, e.g. {'main': 'low'}.
+# The 'main' role covers the lead agent, its fallback, summarization and the
+# facts pipeline. Empty for the current non-reasoning models. Model comparison
+# for the gpt-4.1 successor: docs/model_comparison_2026-11-05.md.
+OPEN_ROUTER_REASONING_EFFORT = {}
+
 # Legacy defaults retained for compatibility with existing callers.
 LLM_PROVIDER = 'openai'
 OPENAI_MODEL = 'gpt-4.1'

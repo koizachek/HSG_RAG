@@ -1,0 +1,71 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 8.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Leistungen und setzt den Preis in Kontext. Die Tonalität ist ruhig und verständnisvoll. Die Kontaktperson wird korrekt genannt. Es fehlt jedoch ein expliziter Hinweis auf den Wert des Programms (z.B. Netzwerk, Karrierechancen, Rankings), was für eine volle Punktzahl erwartet wird.",
+  "issues": [
+    "Kein expliziter Hinweis auf den Wert des Programms (z.B. Netzwerk, Karrierechancen, Rankings)",
+    "Keine Erwähnung, warum der Preis im Vergleich zu anderen Programmen gerechtfertigt sein könnte",
+    "Etwas zu starker Fokus auf die Kostenaufteilung statt auf den Mehrwert"
+  ],
+  "criteria_missed": [
+    "Wert des Programms (Rankings, Netzwerk, Outcomes) explizit erklären"
+  ],
+  "judgement": {
+    "overall_score": 8,
+    "passed": true,
+    "verdict": "Die Antwort bleibt sachlich und professionell, erklärt die Leistungen und setzt den Preis in Kontext. Die Tonalität ist ruhig und verständnisvoll. Die Kontaktperson wird korrekt genannt. Es fehlt jedoch ein expliziter Hinweis auf den Wert des Programms (z.B. Netzwerk, Karrierechancen, Rankings), was für eine volle Punktzahl erwartet wird.",
+    "strengths": [
+      "Sachliche und ruhige Reaktion auf die aggressive Formulierung",
+      "Preis wird im Kontext der enthaltenen Leistungen erklärt",
+      "Gebühren und Fristen sind korrekt und aktuell",
+      "Kontakt zur zuständigen Person wird angeboten",
+      "Keine defensive oder unhöfliche Reaktion"
+    ],
+    "issues": [
+      "Kein expliziter Hinweis auf den Wert des Programms (z.B. Netzwerk, Karrierechancen, Rankings)",
+      "Keine Erwähnung, warum der Preis im Vergleich zu anderen Programmen gerechtfertigt sein könnte",
+      "Etwas zu starker Fokus auf die Kostenaufteilung statt auf den Mehrwert"
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Preis im Kontext der Leistungen erklärt",
+      "Kontakt zu menschlicher Ansprechperson angeboten",
+      "Fakten korrekt und aktuell"
+    ],
+    "criteria_missed": [
+      "Wert des Programms (Rankings, Netzwerk, Outcomes) explizit erklären"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Ich verstehe, dass die Höhe der Studiengebühr Sie ärgert. Sie ist eine erhebliche finanzielle Belastung.\n\nBeim **EMBA HSG** umfasst die Gebühr ein 18-monatiges Studium mit 14 Wochen am Campus, Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung während der Kurse. Reise und Unterkunft sind nicht enthalten. Eine detaillierte Aufschlüsselung, wie sich der Preis kalkuliert, liegt mir nicht vor.\n\nBei Bewerbung bis **23. November 2026** beträgt die Studiengebühr **CHF 72’500**, danach bis zur finalen Frist am **1. Februar 2027 CHF 77’500**. Es gibt Möglichkeiten zur Ratenzahlung und leistungsabhängige Zuschüsse.\n\nFür Fragen zur Gebühr und Finanzierung erreichen Sie Cyra von Müller unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 8.483
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,59 @@
+{
+  "case_id": "TC-EDGE-05",
+  "title": "TC-EDGE-05: Multiple Languages",
+  "score": 10.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "The assistant correctly identified the mixed-language input and responded with a concise clarification in English, asking the user to choose between English or German. This matches the scenario's expectation for mixed_language_clarification_expected. The initial greeting was in German as required. No factual, language, or tone issues were present.",
+  "issues": [],
+  "criteria_missed": [],
+  "judgement": {
+    "overall_score": 10,
+    "passed": true,
+    "verdict": "The assistant correctly identified the mixed-language input and responded with a concise clarification in English, asking the user to choose between English or German. This matches the scenario's expectation for mixed_language_clarification_expected. The initial greeting was in German as required. No factual, language, or tone issues were present.",
+    "strengths": [
+      "Correctly detected mixed-language input.",
+      "Provided a clear and concise language preference clarification.",
+      "Initial greeting was in the expected language (German).",
+      "Polite and professional tone throughout."
+    ],
+    "issues": [],
+    "criteria_met": [
+      "Greeting in expected language (German).",
+      "Mixed-language input detected.",
+      "Clarification offered in English, as allowed.",
+      "No factual errors.",
+      "Polite and helpful tone."
+    ],
+    "criteria_missed": [],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich want to know sobre los programs",
+      "assistant": "Your message mixes multiple languages. Would you like to continue in English or German?",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.002
+    }
+  ],
+  "error": null
+}

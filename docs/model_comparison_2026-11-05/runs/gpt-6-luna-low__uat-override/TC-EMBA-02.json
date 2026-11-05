@@ -1,0 +1,113 @@
+{
+  "case_id": "TC-EMBA-02",
+  "title": "TC-EMBA-02: Edge Case - Minimal Qualification",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, faktenbasierte und empathische Beratung. Die Mindestkriterien wurden korrekt erklärt, Grenzfall erkannt, keine Spekulationen über Zulassungschancen, klare Kommunikation der Grenzen des Bots und proaktive Eskalation zur zuständigen Person. Die Kosten wurden korrekt und aktuell genannt. Die Sprache war durchgehend korrekt (Deutsch), der Ton freundlich und unterstützend. Einziger kleiner Abzug: Bei der Terminvermittlung hätte ein expliziter Hinweis auf die Buchungsmöglichkeit (z.B. \"unten auf der Seite\" oder \"über den Link\") oder ein aktiverer Abschluss (z.B. \"Möchten Sie mir Ihre Kontaktdaten geben?\") die Antwort noch perfekter gemacht.",
+  "issues": [
+    "Bei der Terminvermittlung hätte ein noch aktiverer Abschluss (z.B. explizite Aufforderung zur Kontaktaufnahme oder Hinweis auf Buchungslink) die Antwort abgerundet."
+  ],
+  "criteria_missed": [
+    "Bei Terminvermittlung hätte ein aktiverer Abschluss (z.B. explizite Aufforderung zur Kontaktaufnahme oder Hinweis auf Buchungslink) erfolgen können"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, faktenbasierte und empathische Beratung. Die Mindestkriterien wurden korrekt erklärt, Grenzfall erkannt, keine Spekulationen über Zulassungschancen, klare Kommunikation der Grenzen des Bots und proaktive Eskalation zur zuständigen Person. Die Kosten wurden korrekt und aktuell genannt. Die Sprache war durchgehend korrekt (Deutsch), der Ton freundlich und unterstützend. Einziger kleiner Abzug: Bei der Terminvermittlung hätte ein expliziter Hinweis auf die Buchungsmöglichkeit (z.B. \"unten auf der Seite\" oder \"über den Link\") oder ein aktiverer Abschluss (z.B. \"Möchten Sie mir Ihre Kontaktdaten geben?\") die Antwort noch perfekter gemacht.",
+    "strengths": [
+      "Kriterien und Grenzfall klar und korrekt erklärt",
+      "Keine Spekulationen oder Versprechen zur Zulassung",
+      "Empathischer, unterstützender Ton",
+      "Proaktive Eskalation und Kontaktdaten der zuständigen Person genannt",
+      "Aktuelle, korrekte Gebühren und Fristen genannt",
+      "Sprache und Ton durchgehend passend"
+    ],
+    "issues": [
+      "Bei der Terminvermittlung hätte ein noch aktiverer Abschluss (z.B. explizite Aufforderung zur Kontaktaufnahme oder Hinweis auf Buchungslink) die Antwort abgerundet."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Grenzfall",
+      "Keine falschen Versprechungen über Zulassungschancen",
+      "Proaktive Eskalation zu Menschen",
+      "Empathischer, unterstützender Ton",
+      "Klare Kommunikation von Grenzen des Bots",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "Bei Terminvermittlung hätte ein aktiverer Abschluss (z.B. explizite Aufforderung zur Kontaktaufnahme oder Hinweis auf Buchungslink) erfolgen können"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hallo, ich habe 6 Jahre Berufserfahrung und leite seit 3 Jahren ein Team. Komme ich für das Executive MBA infrage? berufsbegleitend.",
+      "assistant": "Ja, nach den veröffentlichten Mindestvoraussetzungen erfüllen Sie die Anforderungen an Berufserfahrung und Führungserfahrung für den **EMBA HSG**: mindestens fünf Jahre Berufserfahrung und drei Jahre Management- oder Führungserfahrung. Das Programm ist modular aufgebaut und lässt sich berufsbegleitend absolvieren; die Dauer beträgt **18 Monate**. Zusätzlich benötigen Sie grundsätzlich einen anerkannten Hochschulabschluss und sehr gute Deutschkenntnisse. Ohne anerkannten Abschluss ist eine individuelle Zulassung «sur dossier» möglich. Die endgültige Entscheidung trifft der Zulassungsausschuss. Weitere Informationen zum Bewerbungsprozess: https://emba.unisg.ch/bewerbung/process",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.075
+    },
+    {
+      "turn": 2,
+      "user": "Ich bin mir unsicher, ob meine Führungserfahrung ausreicht.",
+      "assistant": "Für den **EMBA HSG** gilt als Mindestvoraussetzung mindestens **drei Jahre Management- oder Führungserfahrung**. Eine Teamleitungsfunktion kann darunterfallen; entscheidend ist, ob Sie in dieser Zeit tatsächlich Führungsverantwortung getragen haben. Die veröffentlichten Kriterien legen keine genauere Definition fest. Da Sie drei Jahre Teamleitung angeben, erfüllen Sie die zeitliche Mindestanforderung nach Ihren Angaben. Ob Ihre konkreten Aufgaben als Führungserfahrung anerkannt werden, beurteilt die Zulassung individuell. Für eine Einschätzung zu Ihrem Profil können Sie Cyra von Müller unter **cyra.vonmueller@unisg.ch** oder **+41 71 224 27 12** kontaktieren. Der Zulassungsprozess ist kostenlos: https://emba.unisg.ch/bewerbung/process",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 14.697
+    },
+    {
+      "turn": 3,
+      "user": "Können Sie einschätzen, ob ich gute Chancen habe?",
+      "assistant": "Das lässt sich anhand der Angaben nicht zuverlässig einschätzen. Ich kann Ihre Zulassungschancen nicht vorhersagen: Die Zulassung wird für jedes Profil individuell beurteilt. Die veröffentlichten Mindestkriterien für den **EMBA HSG** sind mindestens fünf Jahre Berufserfahrung und drei Jahre Management- oder Führungserfahrung. Nach Ihren Angaben erfüllen Sie diese zeitlichen Kriterien; ob Ihre konkrete Teamleitungsfunktion als Führungserfahrung anerkannt wird, entscheidet die Zulassung. Für eine persönliche Einschätzung können Sie Cyra von Müller unter **cyra.vonmueller@unisg.ch** oder **+41 71 224 27 12** kontaktieren. Informationen zum Prozess: https://emba.unisg.ch/bewerbung/process",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.189
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Für den **EMBA HSG** beträgt die Studiengebühr **CHF 72’500**, wenn Sie sich bis zur ersten Bewerbungsfrist am **23. November 2026** bewerben. Danach gilt bis zur finalen Frist am **1. Februar 2027** die Gebühr von **CHF 77’500**. Die Studiengebühren umfassen Unterricht, Lehrmaterialien und Mahlzeiten während der Kurstage. Anreise und Unterkunft sind nicht enthalten. Weitere Informationen: https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.888
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen für ein Beratungsgespräch mit **Cyra von Müller** zum **EMBA HSG** anzeigen. Die Kontaktangaben und verfügbaren Termine finden Sie unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 4.948
+    }
+  ],
+  "error": null
+}

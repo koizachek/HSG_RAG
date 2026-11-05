@@ -1,0 +1,127 @@
+{
+  "case_id": "TC-EMBA-01",
+  "title": "TC-EMBA-01: Standard Qualification - Perfect Fit",
+  "score": 7.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "Die Antworten sind überwiegend korrekt, freundlich und strukturiert, aber es gibt einen gravierenden Faktfehler bei der Nennung der Studiengebühr (CHF 72’500 statt CHF 72’500/CHF 77’500, wobei laut aktuellem Stichtag CHF 72’500 korrekt ist, aber die finale Gebühr wurde zu früh genannt und die Leistungen wurden nicht aufgezählt). Die Handover- und Terminvermittlung ist knapp, aber akzeptabel. Die Sprache ist korrekt und der Ton sachlich.",
+  "issues": [
+    "Die Gebühr CHF 72’500 wird korrekt genannt, aber die finale Gebühr (CHF 77’500) wird zu früh und zu prominent genannt, obwohl sie erst nach Ablauf der ersten Frist gilt.",
+    "Die inkludierten Leistungen der Gebühr werden nicht genannt.",
+    "Die Dokumentenliste ist nicht vollständig ausgeführt (z.B. Motivationsschreiben fehlt).",
+    "Die Terminvermittlung ist sehr knapp gehalten und nennt keine konkreten Slots oder fragt nach Kontaktdaten.",
+    "Der Hinweis auf den individuellen Zulassungsentscheid ist korrekt, aber etwas zu ausführlich und könnte als Unsicherheit interpretiert werden.",
+    "Die Kontaktangaben im ersten Turn sind zu allgemein (allgemeine EMBA-Adresse statt direkt Cyra von Müller)."
+  ],
+  "criteria_missed": [
+    "Inkludierte Leistungen der Gebühr werden nicht genannt",
+    "Dokumentenliste nicht vollständig (z.B. Motivationsschreiben fehlt)",
+    "Keine konkreten Terminslots oder Datenerfassung für Termin",
+    "Keine explizite Timeline (Einreichung → Assessment → Interview) als Fluss dargestellt"
+  ],
+  "judgement": {
+    "overall_score": 7.5,
+    "passed": false,
+    "verdict": "Die Antworten sind überwiegend korrekt, freundlich und strukturiert, aber es gibt einen gravierenden Faktfehler bei der Nennung der Studiengebühr (CHF 72’500 statt CHF 72’500/CHF 77’500, wobei laut aktuellem Stichtag CHF 72’500 korrekt ist, aber die finale Gebühr wurde zu früh genannt und die Leistungen wurden nicht aufgezählt). Die Handover- und Terminvermittlung ist knapp, aber akzeptabel. Die Sprache ist korrekt und der Ton sachlich.",
+    "strengths": [
+      "Sprache und Ton sind durchgehend korrekt und freundlich.",
+      "Programme werden zu Beginn übersichtlich vorgestellt.",
+      "Qualifikation wird korrekt validiert und Empfehlung für EMBA HSG gegeben.",
+      "Bewerbungsprozess und Fristen werden klar erklärt.",
+      "Proaktiver Handover zur zuständigen Person erfolgt."
+    ],
+    "issues": [
+      "Die Gebühr CHF 72’500 wird korrekt genannt, aber die finale Gebühr (CHF 77’500) wird zu früh und zu prominent genannt, obwohl sie erst nach Ablauf der ersten Frist gilt.",
+      "Die inkludierten Leistungen der Gebühr werden nicht genannt.",
+      "Die Dokumentenliste ist nicht vollständig ausgeführt (z.B. Motivationsschreiben fehlt).",
+      "Die Terminvermittlung ist sehr knapp gehalten und nennt keine konkreten Slots oder fragt nach Kontaktdaten.",
+      "Der Hinweis auf den individuellen Zulassungsentscheid ist korrekt, aber etwas zu ausführlich und könnte als Unsicherheit interpretiert werden.",
+      "Die Kontaktangaben im ersten Turn sind zu allgemein (allgemeine EMBA-Adresse statt direkt Cyra von Müller)."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Passende Programm-Empfehlung (EMBA HSG)",
+      "Eligibility korrekt validiert (3 Jahre Führung = qualified)",
+      "Faktisch korrekte Informationen (Kosten, Termine, Fristen, Ansprechpartner)",
+      "Sachlicher, warmer Ton, keine Marketing-Sprache",
+      "Proaktives Handover-Angebot"
+    ],
+    "criteria_missed": [
+      "Inkludierte Leistungen der Gebühr werden nicht genannt",
+      "Dokumentenliste nicht vollständig (z.B. Motivationsschreiben fehlt)",
+      "Keine konkreten Terminslots oder Datenerfassung für Termin",
+      "Keine explizite Timeline (Einreichung → Assessment → Interview) als Fluss dargestellt"
+    ],
+    "language_ok": true,
+    "factuality_ok": false,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Guten Tag, ich interessiere mich für ein MBA-Studium \nberufsbegleitend.",
+      "assistant": "Die Universität St.Gallen bietet drei berufsbegleitende Executive MBA-Programme an: **EMBA HSG** (deutsch, Fokus DACH-Raum, Start **8. März 2027**, **CHF 72’500** bei Bewerbung bis **23. November 2026**), **IEMBA HSG** (englisch, international, Start **30. August 2027**, **CHF 84’000** bei Bewerbung bis **31. März 2027**) und **emba X** (englisch, Technologie/Innovation mit ETH Zürich, Bewerbung aktuell geschlossen, Referenzgebühr **CHF 110’000**).\n\nFür eine Empfehlung benötige ich Ihre Berufserfahrung, Branche und bevorzugte Sprache. Programmseiten: https://emba.unisg.ch/programm/emba, https://emba.unisg.ch/programm/iemba, https://embax.ch/. Kontakt: emba@unisg.ch oder +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 136.707
+    },
+    {
+      "turn": 2,
+      "user": "Ich arbeite seit 15 Jahren, davon 7 Jahre als \nAbteilungsleiter.",
+      "assistant": "Ihre Berufserfahrung und Führungserfahrung erfüllen die veröffentlichten Mindestkriterien für die Executive MBA-Programme der Universität St.Gallen: mindestens **5 Jahre Berufserfahrung** und **3 Jahre Management- oder Führungserfahrung**. Zusätzlich werden ein anerkannter akademischer Erstabschluss sowie sehr gute Kenntnisse der Unterrichtssprache erwartet. Die definitive Zulassung entscheidet der Zulassungsausschuss individuell.\n\nWenn Sie auf Deutsch studieren möchten und den Schwerpunkt auf den deutschsprachigen Raum legen, ist der **EMBA HSG** naheliegend: Start **8. März 2027**, Dauer **18 Monate** und **75 ECTS**. Die Studiengebühr beträgt bei Bewerbung bis **23. November 2026 CHF 72’500**.\n\nFür eine passende Einordnung sind noch zwei Punkte entscheidend: Haben Sie einen anerkannten Hochschulabschluss, und bevorzugen Sie Deutsch oder Englisch?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 753.401
+    },
+    {
+      "turn": 3,
+      "user": "Was sind die nächsten Schritte im Bewerbungsprozess?",
+      "assistant": "Für den **EMBA HSG** sind die nächsten Schritte:\n\n1. Prüfen Sie die Voraussetzungen: anerkannter Hochschulabschluss, mindestens **5 Jahre Berufserfahrung**, mindestens **3 Jahre Führungs- oder Managementerfahrung** sowie sehr gute Deutschkenntnisse. Ihre bisher genannten Berufs- und Führungserfahrungen erfüllen diese beiden Erfahrungsanforderungen.\n2. Reichen Sie Ihren Lebenslauf ein und füllen Sie anschliessend die **Online-Bewerbung** vollständig aus.\n3. Absolvieren Sie nach Einladung das **Online-Assessment**.\n4. Nehmen Sie am **Online-Interview** teil.\n5. Der Zulassungsausschuss trifft den finalen Entscheid.\n\nDer Bewerbungsprozess ist kostenlos. Für den Programmstart am **8. März 2027** gilt die erste Bewerbungsfrist am **23. November 2026**; dabei beträgt die Studiengebühr **CHF 72’500**. Die finale Frist ist der **1. Februar 2027** mit einer Studiengebühr von **CHF 77’500**.\n\nDetails und Bewerbung: https://emba.unisg.ch/bewerbung/process\n\nFür eine persönliche Besprechung ist Cyra von Müller zuständig: cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 465.27
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für den **EMBA HSG** (Start **8. März 2027**) beträgt **CHF 72’500** bei Bewerbung bis zum **23. November 2026**. Bei Bewerbung bis zur finalen Frist am **1. Februar 2027** erhöht sich die Gebühr auf **CHF 77’500**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 67.915
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen mit Cyra von Müller für den **EMBA HSG** anzeigen. Die Kontaktmöglichkeiten und verfügbaren Slots finden Sie unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 1.233
+    }
+  ],
+  "error": null
+}

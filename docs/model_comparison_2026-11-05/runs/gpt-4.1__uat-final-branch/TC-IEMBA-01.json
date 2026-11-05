@@ -1,0 +1,120 @@
+{
+  "case_id": "TC-IEMBA-01",
+  "title": "TC-IEMBA-01: International Professional - Perfect Fit",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Excellent performance: The assistant provided accurate, concise, and well-structured information in English, correctly recommended the IEMBA HSG for an international profile, emphasized the programme's global focus, handled the visa question with an appropriate handover, gave factual alumni network details with Asia-Pacific context, quoted the correct tuition fee and deadlines, and offered a clear eligibility assessment with a proactive handover to the advisor. All critical success criteria were met, and no red flags were triggered.",
+  "issues": [
+    "Did not explicitly mention the Financial Times (FT) ranking as a trust anchor in the alumni network answer, which is a minor miss from the scenario's ideal answer.",
+    "Did not proactively offer available appointment slots or data capture for forwarding, but did provide advisor contact details and offered a handover, which is acceptable per current criteria."
+  ],
+  "criteria_missed": [
+    "Did not mention FT ranking as a trust anchor in the alumni network answer.",
+    "Did not proactively offer appointment slots or capture user data for forwarding (acceptable per current product decision, but noted for completeness)."
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Excellent performance: The assistant provided accurate, concise, and well-structured information in English, correctly recommended the IEMBA HSG for an international profile, emphasized the programme's global focus, handled the visa question with an appropriate handover, gave factual alumni network details with Asia-Pacific context, quoted the correct tuition fee and deadlines, and offered a clear eligibility assessment with a proactive handover to the advisor. All critical success criteria were met, and no red flags were triggered.",
+    "strengths": [
+      "Consistently used English, matching user preference and scenario requirements.",
+      "Correctly recommended IEMBA HSG as the primary option for an international, English-speaking candidate.",
+      "Highlighted the international structure, cohort diversity, and global modules of the IEMBA HSG.",
+      "Handled the visa question by referring to the admissions team, avoiding unsupported details.",
+      "Provided factual, region-specific alumni network information, including partnerships and Asia-Pacific presence.",
+      "Quoted the correct, deadline-based tuition fee (CHF 84,000) and explained the fee structure and inclusions.",
+      "Eligibility assessment was clear, asked for relevant details, and offered a handover to the advisor.",
+      "Polite, professional, and helpful tone throughout."
+    ],
+    "issues": [
+      "Did not explicitly mention the Financial Times (FT) ranking as a trust anchor in the alumni network answer, which is a minor miss from the scenario's ideal answer.",
+      "Did not proactively offer available appointment slots or data capture for forwarding, but did provide advisor contact details and offered a handover, which is acceptable per current criteria."
+    ],
+    "criteria_met": [
+      "Language correctly recognized and used (English).",
+      "IEMBA HSG recommended, not German-language programmes.",
+      "International focus and cohort diversity emphasized.",
+      "Visa question referred to admissions team.",
+      "Factual alumni network information with Asia-Pacific context.",
+      "Escalation/handover offered where appropriate.",
+      "Eligibility criteria (work experience, leadership, English) explained.",
+      "Programme structure and international modules described.",
+      "Tuition fee and deadlines accurately quoted.",
+      "Advisor contact details provided for further steps."
+    ],
+    "criteria_missed": [
+      "Did not mention FT ranking as a trust anchor in the alumni network answer.",
+      "Did not proactively offer appointment slots or capture user data for forwarding (acceptable per current product decision, but noted for completeness)."
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hi, I'm looking for an MBA program in Switzerland with international focus.",
+      "assistant": "For an MBA programme in Switzerland with an international focus, the University of St.Gallen offers two strong options:\n\n1. **International Executive MBA HSG (IEMBA HSG)**: This programme is taught in English and designed for experienced professionals seeking a global perspective. It features:\n- **Start date**: 30 August 2027\n- **Duration**: 18 months\n- **Language**: English\n- **Structure**: 10 core courses, 4 electives, 10 weeks on campus in St.Gallen, plus 4 weeks abroad (including modules in Tokyo, Beijing, UC Berkeley, UC Irvine, and more)\n- **Tuition fee**: CHF 84,000 if you apply by 31 March 2027 (CHF 89,000 after that)\n- **Advisor**: Kristin Fuchs (kristin.fuchs@unisg.ch, +41 71 224 75 46)\n\n2. **emba X (EMBA ETH HSG)**: A joint programme by the University of St.Gallen and ETH Zurich, also taught in English, with a strong focus on innovation and transformation. The current application window is closed, but the last tuition fee was CHF 110,000. The next application window will be announced by the advisor, Teyuna Giger (teyuna.giger@unisg.ch).\n\nBoth programmes offer a highly international curriculum, diverse cohorts, and access to a global alumni network. If you have less work experience or are looking for a full-time MBA, consider the regular HSG MBA: https://www.mba.unisg.ch/",
+      "additional_details": "You can find more details and download brochures for all programmes at https://emba.unisg.ch/en/download. For personal guidance, you may contact the relevant advisor or request an appointment.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.168
+    },
+    {
+      "turn": 2,
+      "user": "I'm from the US. What about visa requirements?",
+      "assistant": "For visa and permit questions, please contact our admissions team. They can provide detailed guidance on the requirements and process for US citizens enrolling in an MBA programme at the University of St.Gallen. For the International Executive MBA HSG, you may reach out to Kristin Fuchs at kristin.fuchs@unisg.ch or +41 71 224 75 46. For emba X, contact Teyuna Giger at teyuna.giger@unisg.ch or +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.997
+    },
+    {
+      "turn": 3,
+      "user": "How strong is the alumni network in Asia-Pacific?",
+      "assistant": "The University of St.Gallen’s Executive MBA programmes offer a robust and influential alumni network in the Asia-Pacific region, particularly through the International Executive MBA HSG (IEMBA HSG). The IEMBA HSG has a strategic partnership with Tsinghua University in Beijing, one of Asia’s top business schools, enabling participants to build strong connections in China and the wider region. The programme includes modules in major Asia-Pacific cities such as Tokyo and Beijing, providing direct access to local business leaders and alumni.\n\nGraduates join a global network of HSG alumni, many of whom hold senior positions in multinational companies across Asia-Pacific. The network is further strengthened by regular international modules, company visits, and collaborative projects, ensuring ongoing engagement and opportunities in the region.\n\nFor emba X (EMBA ETH HSG), graduates become part of Switzerland’s most influential combined alumni network (ETH Zurich and University of St.Gallen), which extends across Europe and Asia-Pacific, supporting career development and business opportunities worldwide.",
+      "additional_details": "The University of St.Gallen’s alumni network is known for its diversity and reach, with active chapters and events in key Asia-Pacific cities. The collaboration with Tsinghua University not only enhances academic exchange but also provides access to a high-calibre network of business leaders and innovators in China and beyond. Alumni regularly participate in panels, networking events, and lifelong learning opportunities, fostering strong professional ties across the region.",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.219
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fee for the International Executive MBA HSG (IEMBA HSG) is CHF 84,000 if you apply by the first application deadline on 31 March 2027. After this date, the fee increases to CHF 89,000 for applications submitted by the final deadline on 30 June 2027.\n\nFor emba X (EMBA ETH HSG), the most recent tuition fee was CHF 110,000. However, applications for the current cohort are closed. The next application window and fee will be announced by the programme advisor.\n\nThese fees cover tuition, course materials, and most on-campus activities, but do not include travel or accommodation costs. For further details or to discuss financing options, you can contact Kristin Fuchs for IEMBA HSG (kristin.fuchs@unisg.ch, +41 71 224 75 46) or Teyuna Giger for emba X (teyuna.giger@unisg.ch, +41 71 224 77 65).",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.469
+    },
+    {
+      "turn": 5,
+      "user": "Can you assess whether I am eligible?",
+      "assistant": "I can help you assess your eligibility for the International Executive MBA HSG (IEMBA HSG) and emba X. To provide a precise answer, could you please share:\n\n1. Your years of professional experience (and how many in a leadership role)\n2. Your highest academic qualification (e.g., bachelor’s, master’s, or equivalent)\n3. Your current role or industry\n\nBoth programmes typically require several years of professional experience, a recognised university degree, and strong English proficiency. If you do not have a university degree, some candidates may be considered via an individual assessment process (\"sur dossier\"). The final admission decision is always made by the admissions committee. If your profile is borderline or incomplete, I can connect you with the relevant advisor for a personal assessment.",
+      "additional_details": "For the IEMBA HSG, the admissions team is led by Kristin Fuchs (kristin.fuchs@unisg.ch, +41 71 224 75 46). For emba X, the advisor is Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65).",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.929
+    }
+  ],
+  "error": null
+}

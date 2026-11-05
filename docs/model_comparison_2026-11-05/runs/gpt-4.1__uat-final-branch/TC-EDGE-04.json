@@ -1,0 +1,79 @@
+{
+  "case_id": "TC-EDGE-04",
+  "title": "TC-EDGE-04: Gibberish / Unverständliche Eingabe",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Bestanden. Die Antworten sind höflich, verständnisorientiert und bieten nach zwei unverständlichen Eingaben einen sinnvollen Handover an eine reale Kontaktmöglichkeit.",
+  "issues": [
+    "Die zweite Antwort hätte expliziter fragen können, ob der Nutzer mit einer Person sprechen möchte, statt direkt die Kontaktdaten zu nennen. Die Intention eines Handover ist aber erfüllt.",
+    "Die Formulierung \"Falls sich Ihre Frage auf die HSG Executive MBA-Programme bezieht...\" ist leicht umständlich, aber nicht falsch."
+  ],
+  "criteria_missed": [
+    "Die explizite Frage \"Möchten Sie lieber mit einer Person sprechen?\" fehlt, wird aber durch das Angebot der Kontaktaufnahme ausreichend ersetzt."
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Bestanden. Die Antworten sind höflich, verständnisorientiert und bieten nach zwei unverständlichen Eingaben einen sinnvollen Handover an eine reale Kontaktmöglichkeit.",
+    "strengths": [
+      "Korrekte Sprache (Deutsch) und freundlicher, professioneller Ton.",
+      "Erste Antwort fordert höflich zur Umformulierung auf.",
+      "Zweite Antwort erkennt wiederholte Unverständlichkeit und bietet einen Kontakt zum Team an, was einem Handover entspricht.",
+      "Keine falschen Fakten oder unnötige Informationen."
+    ],
+    "issues": [
+      "Die zweite Antwort hätte expliziter fragen können, ob der Nutzer mit einer Person sprechen möchte, statt direkt die Kontaktdaten zu nennen. Die Intention eines Handover ist aber erfüllt.",
+      "Die Formulierung \"Falls sich Ihre Frage auf die HSG Executive MBA-Programme bezieht...\" ist leicht umständlich, aber nicht falsch."
+    ],
+    "criteria_met": [
+      "Erste unverständliche Eingabe wird erkannt und höflich um Umformulierung gebeten.",
+      "Nach zweiter unverständlicher Eingabe erfolgt ein Handover an eine reale Kontaktmöglichkeit.",
+      "Antworten sind in der erwarteten Sprache (Deutsch).",
+      "Ton ist höflich und professionell.",
+      "Keine falschen oder irreführenden Informationen."
+    ],
+    "criteria_missed": [
+      "Die explizite Frage \"Möchten Sie lieber mit einer Person sprechen?\" fehlt, wird aber durch das Angebot der Kontaktaufnahme ausreichend ersetzt."
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "asdfkjhasdf 12345 !!!????",
+      "assistant": "Das habe ich nicht ganz verstanden. Könnten Sie Ihre Frage bitte anders formulieren?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.001
+    },
+    {
+      "turn": 2,
+      "user": "sahjbdashj  sa udiah ub2  2h ewb3 ?!?!?!",
+      "assistant": "Ich habe weiterhin Schwierigkeiten, Ihre Nachricht zu verstehen. Falls sich Ihre Frage auf die HSG Executive MBA-Programme bezieht, formulieren Sie sie bitte als vollständigen Satz um.\n\nSie erreichen das Executive-MBA-Zulassungsteam unter emba@unisg.ch oder +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.005
+    }
+  ],
+  "error": null
+}

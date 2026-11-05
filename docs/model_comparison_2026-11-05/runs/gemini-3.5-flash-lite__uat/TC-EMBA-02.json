@@ -1,0 +1,121 @@
+{
+  "case_id": "TC-EMBA-02",
+  "title": "TC-EMBA-02: Edge Case - Minimal Qualification",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antworten sind überwiegend korrekt, empathisch und erfüllen die wichtigsten Anforderungen des Szenarios. Die Mindestkriterien werden richtig erklärt, die Grenzen des Bots werden klar kommuniziert, und es wird mehrfach auf die individuelle Prüfung durch das Admissions Team hingewiesen. Die Kosten werden korrekt und aktuell dargestellt. Die Terminvermittlung erfolgt nutzerorientiert und verweist auf die richtige Kontaktmöglichkeit. Kleinere Abweichungen betreffen die Nennung einer generischen E-Mail/Telefonnummer statt der namentlichen Beraterin sowie das Fehlen einer expliziten Datenerfassung für die Weiterleitung.",
+  "issues": [
+    "In den Eskalationsturns (2 und 3) wird nicht explizit die namentliche Beraterin (Cyra von Müller) genannt, sondern eine generische Team-Adresse/Telefonnummer.",
+    "Bei der Terminvermittlung (Turn 5) wird auf einen Bereich unten verwiesen, aber keine expliziten Terminslots oder Datenerfassung angeboten.",
+    "Die im Szenario geforderte explizite Aufzählung der inkludierten Leistungen bei den Gebühren ist nur teilweise erfüllt (Verpflegung, Lehrmaterialien, Unterricht – aber keine vollständige Liste)."
+  ],
+  "criteria_missed": [
+    "Namentliche Nennung der zuständigen Beraterin (Cyra von Müller) bei Handover",
+    "Explizite Anzeige von Terminslots oder aktive Datenerfassung für Weiterleitung",
+    "Vollständige Aufzählung aller inkludierten Leistungen bei den Gebühren"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Die Antworten sind überwiegend korrekt, empathisch und erfüllen die wichtigsten Anforderungen des Szenarios. Die Mindestkriterien werden richtig erklärt, die Grenzen des Bots werden klar kommuniziert, und es wird mehrfach auf die individuelle Prüfung durch das Admissions Team hingewiesen. Die Kosten werden korrekt und aktuell dargestellt. Die Terminvermittlung erfolgt nutzerorientiert und verweist auf die richtige Kontaktmöglichkeit. Kleinere Abweichungen betreffen die Nennung einer generischen E-Mail/Telefonnummer statt der namentlichen Beraterin sowie das Fehlen einer expliziten Datenerfassung für die Weiterleitung.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch)",
+      "Kriterien und Grenzfall werden korrekt erklärt",
+      "Keine Spekulation über Zulassungschancen",
+      "Empathischer, unterstützender Ton",
+      "Proaktive Empfehlung für menschlichen Kontakt",
+      "Aktuelle und differenzierte Darstellung der Studiengebühren",
+      "Klare Kommunikation der Bot-Grenzen"
+    ],
+    "issues": [
+      "In den Eskalationsturns (2 und 3) wird nicht explizit die namentliche Beraterin (Cyra von Müller) genannt, sondern eine generische Team-Adresse/Telefonnummer.",
+      "Bei der Terminvermittlung (Turn 5) wird auf einen Bereich unten verwiesen, aber keine expliziten Terminslots oder Datenerfassung angeboten.",
+      "Die im Szenario geforderte explizite Aufzählung der inkludierten Leistungen bei den Gebühren ist nur teilweise erfüllt (Verpflegung, Lehrmaterialien, Unterricht – aber keine vollständige Liste)."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Grenzfall und erklärt Kriterien",
+      "Keine falschen Versprechungen über Zulassungschancen",
+      "Proaktive Eskalation zu Menschen",
+      "Empathischer, unterstützender Ton",
+      "Klare Kommunikation von Grenzen des Bots",
+      "Keine Spekulation oder unsichere Infos",
+      "Aktuelle, korrekte Gebühreninformation"
+    ],
+    "criteria_missed": [
+      "Namentliche Nennung der zuständigen Beraterin (Cyra von Müller) bei Handover",
+      "Explizite Anzeige von Terminslots oder aktive Datenerfassung für Weiterleitung",
+      "Vollständige Aufzählung aller inkludierten Leistungen bei den Gebühren"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hallo, ich habe 6 Jahre Berufserfahrung und leite seit 3 Jahren ein Team. Komme ich für das Executive MBA infrage? berufsbegleitend.",
+      "assistant": "Mit Ihren 6 Jahren Berufserfahrung und 3 Jahren Führungserfahrung erfüllen Sie die formalen Mindestvoraussetzungen für die Zulassung zu unseren Executive MBA-Programmen an der Universität St.Gallen. Vorausgesetzt werden grundsätzlich ein anerkannter akademischer Erstabschluss, mindestens 5 Jahre Berufserfahrung, mindestens 3 Jahre Führungserfahrung sowie sehr gute Sprachkenntnisse in der jeweiligen Unterrichtssprache. Alle unsere Executive MBA-Programme sind konzipiert, um sie berufsbegleitend zu absolvieren. Die genaue Passung hängt zudem von Ihrer bevorzugten Unterrichtssprache und Ihren inhaltlichen Schwerpunkten ab.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.907
+    },
+    {
+      "turn": 2,
+      "user": "Ich bin mir unsicher, ob meine Führungserfahrung ausreicht.",
+      "assistant": "Mit drei Jahren Führungserfahrung erfüllen Sie das formale Mindestkriterium für unsere Executive MBA-Programme an der Universität St.Gallen. Die Zulassungskommission betrachtet neben der reinen Dauer auch die Qualität und den Kontext Ihrer bisherigen Führungstätigkeit und prüft jedes Profil individuell. Gerne können Sie Ihre Situation in einem persönlichen Gespräch mit unserem Beratungsteam besprechen. Sie erreichen das Executive MBA-Team unter emba@unisg.ch oder telefonisch unter +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.445
+    },
+    {
+      "turn": 3,
+      "user": "Können Sie einschätzen, ob ich gute Chancen habe?",
+      "assistant": "Ich kann Ihre Zulassungschancen nicht bewerten, da die Zulassungskommission der Universität St.Gallen jedes Profil individuell prüft. Sie erfüllen zwar die formalen Mindestvoraussetzungen, aber eine Prognose über den Ausgang des Verfahrens ist nicht möglich. Für eine persönliche Einschätzung Ihres Profils empfehle ich Ihnen ein Gespräch mit unserem Beratungsteam. Sie erreichen das Team unter emba@unisg.ch oder telefonisch unter +41 71 224 27 02.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.973
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühren hängen von dem von Ihnen gewählten Programm ab und sind fristabhängig gestaffelt:\n\n- **EMBA HSG (deutschsprachig)**: Bei einer Bewerbung bis zur ersten Frist am 23. November 2026 betragen die Studiengebühren **CHF 72'500** (gilt heute). Bis zur finalen Frist am 1. Februar 2027 belaufen sie sich auf **CHF 77'500**.\n- **International EMBA HSG (IEMBA, englischsprachig)**: Bei einer Bewerbung bis zur ersten Frist am 31. März 2027 betragen die Gebühren **CHF 84'000** (gilt heute). Bis zur finalen Frist am 30. Juni 2027 liegen sie bei **CHF 89'000**.\n- **EMBA ETH HSG (emba X, englischsprachig)**: Die finale Bewerbungsfrist für die aktuelle Kohorte mit einer Studiengebühr von **CHF 110'000** (bzw. CHF 99'000 bei der ersten Frist) ist am 31. Oktober 2026 abgelaufen.\n\nIn den Studiengebühren sind der Unterricht, die Lehrmaterialien sowie die Verpflegung (Mittagessen und Pausen) während der Präsenztage enthalten. Nach der Zulassung wird zudem eine einmalige, nicht erstattungsfähige Anmeldegebühr von **CHF 3'000** fällig, und die restlichen Studiengebühren werden in vier gleichen Raten über die Studiendauer verteilt.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 8.199
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen für ein Beratungsgespräch mit unseren Studienberaterinnen anzeigen. Die Kontaktdaten und verfügbaren Termine werden Ihnen im Bereich weiter unten angezeigt.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [],
+      "elapsed_s": 3.688
+    }
+  ],
+  "error": null
+}

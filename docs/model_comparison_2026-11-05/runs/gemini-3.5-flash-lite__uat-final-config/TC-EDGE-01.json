@@ -1,0 +1,69 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist korrekt, empathisch und vollständig. Die Zulassungskriterien für den Executive MBA werden klar und sachlich erklärt, inklusive der Anforderungen an Berufserfahrung und Führungserfahrung. Es wird festgestellt, dass die Kriterien nicht erfüllt sind. Als Alternative wird der reguläre MBA HSG empfohlen, was den Vorgaben entspricht. Zusätzlich werden weitere Weiterbildungsmöglichkeiten (Zertifikatslehrgänge, Open Programmes) genannt. Ein Kontaktweg für individuelle Beratung wird angeboten, auch wenn nicht der namentlich genannte EMBA-Advisor, sondern eine allgemeine Kontaktadresse. Die Sprache ist korrekt (Deutsch), der Ton ist höflich und unterstützend.",
+  "issues": [
+    "Der Kontaktweg verweist auf eine allgemeine EMBA-Adresse statt auf die namentlich genannte Advisorin Cyra von Müller, wie in den Hard Facts hinterlegt. Dies ist ein kleiner formaler Mangel, da ein persönlicher Kontakt bevorzugt wäre."
+  ],
+  "criteria_missed": [
+    "Advisor-Kontakt nicht namentlich (Cyra von Müller), sondern allgemeine Adresse"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antwort ist korrekt, empathisch und vollständig. Die Zulassungskriterien für den Executive MBA werden klar und sachlich erklärt, inklusive der Anforderungen an Berufserfahrung und Führungserfahrung. Es wird festgestellt, dass die Kriterien nicht erfüllt sind. Als Alternative wird der reguläre MBA HSG empfohlen, was den Vorgaben entspricht. Zusätzlich werden weitere Weiterbildungsmöglichkeiten (Zertifikatslehrgänge, Open Programmes) genannt. Ein Kontaktweg für individuelle Beratung wird angeboten, auch wenn nicht der namentlich genannte EMBA-Advisor, sondern eine allgemeine Kontaktadresse. Die Sprache ist korrekt (Deutsch), der Ton ist höflich und unterstützend.",
+    "strengths": [
+      "Klar und freundlich formulierte Ablehnung mit Begründung",
+      "Zulassungskriterien korrekt und verständlich erklärt",
+      "Alternative (MBA HSG) wird explizit empfohlen",
+      "Weitere Weiterbildungsmöglichkeiten werden genannt",
+      "Kontakt für Beratung wird angeboten",
+      "Sprache und Ton sind angemessen"
+    ],
+    "issues": [
+      "Der Kontaktweg verweist auf eine allgemeine EMBA-Adresse statt auf die namentlich genannte Advisorin Cyra von Müller, wie in den Hard Facts hinterlegt. Dies ist ein kleiner formaler Mangel, da ein persönlicher Kontakt bevorzugt wäre."
+    ],
+    "criteria_met": [
+      "Empathische Reaktion",
+      "Kriterien klar erklärt",
+      "Feststellung, dass Kriterien nicht erfüllt sind",
+      "Alternative (MBA HSG) angeboten",
+      "Kontakt für Beratung angeboten"
+    ],
+    "criteria_missed": [
+      "Advisor-Kontakt nicht namentlich (Cyra von Müller), sondern allgemeine Adresse"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Für die Zulassung zu unseren Executive MBA-Programmen an der Universität St.Gallen wird neben einem akademischen Erstabschluss eine Berufserfahrung von mindestens 5 Jahren sowie mindestens 3 Jahre Management- und Führungserfahrung vorausgesetzt. Mit einem frisch abgeschlossenen Bachelor und 2 Jahren Berufserfahrung erfüllen Sie diese Mindestkriterien derzeit noch nicht.\n\nAls Alternative für den Einstieg in die Management-Weiterbildung an der Universität St.Gallen empfehlen wir Ihnen den regulären HSG MBA oder unsere Zertifikatslehrgänge ohne MBA-Abschluss.\n\nBesuchen Sie für weitere Details die Website des MBA HSG unter https://www.mba.unisg.ch/ oder informieren Sie sich über die HSG Open Programmes unter https://op.unisg.ch/. Für eine individuelle Beratung steht Ihnen unser Team gerne unter emba@unisg.ch oder +41 71 224 27 02 zur Verfügung.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.087
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,74 @@
+{
+  "case_id": "TC-EDGE-03",
+  "title": "TC-EDGE-03: Aggressive/Frustrated User",
+  "score": 8.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort bleibt professionell und sachlich, erklärt den Wert des Programms, geht auf die inkludierten Leistungen ein und bietet Kontaktmöglichkeiten für individuelle Fragen. Die Tonalität ist ruhig und nicht defensiv. Die Antwort ist etwas ausführlich und hätte den Wert (z.B. Netzwerk, Rankings, Outcomes) noch stärker hervorheben können, aber sie erfüllt die Kernanforderungen.",
+  "issues": [
+    "Der Wert des Programms (z.B. Rankings, Karriere-Outcomes, Netzwerk) hätte noch expliziter hervorgehoben werden können.",
+    "Die Antwort ist sehr ausführlich und könnte für einen aufgebrachten Nutzer etwas kompakter sein.",
+    "Der Kontakt wurde als allgemeines Zulassungsteam angegeben, nicht direkt der namentlich zuständige Advisor (Cyra von Müller), was weniger persönlich wirkt."
+  ],
+  "criteria_missed": [
+    "Wert des Programms (Rankings, Outcomes, Netzwerk) hätte noch stärker betont werden können",
+    "Direkter Verweis auf den zuständigen Advisor (Cyra von Müller) wäre persönlicher gewesen"
+  ],
+  "judgement": {
+    "overall_score": 8,
+    "passed": true,
+    "verdict": "Die Antwort bleibt professionell und sachlich, erklärt den Wert des Programms, geht auf die inkludierten Leistungen ein und bietet Kontaktmöglichkeiten für individuelle Fragen. Die Tonalität ist ruhig und nicht defensiv. Die Antwort ist etwas ausführlich und hätte den Wert (z.B. Netzwerk, Rankings, Outcomes) noch stärker hervorheben können, aber sie erfüllt die Kernanforderungen.",
+    "strengths": [
+      "Professioneller und ruhiger Ton trotz aggressiver Nutzerfrage",
+      "Sachliche Erklärung der Kostenstruktur und inkludierten Leistungen",
+      "Hinweis auf Finanzierungsmöglichkeiten und Zuschüsse",
+      "Angebot eines menschlichen Kontakts für individuelle Fragen",
+      "Keine defensive oder unhöfliche Reaktion"
+    ],
+    "issues": [
+      "Der Wert des Programms (z.B. Rankings, Karriere-Outcomes, Netzwerk) hätte noch expliziter hervorgehoben werden können.",
+      "Die Antwort ist sehr ausführlich und könnte für einen aufgebrachten Nutzer etwas kompakter sein.",
+      "Der Kontakt wurde als allgemeines Zulassungsteam angegeben, nicht direkt der namentlich zuständige Advisor (Cyra von Müller), was weniger persönlich wirkt."
+    ],
+    "criteria_met": [
+      "Professionell und ruhig geblieben",
+      "Wert und Leistungen des Programms erklärt",
+      "Preis in Kontext gesetzt",
+      "Kontakt für weitere Fragen angeboten",
+      "Nicht defensiv oder unhöflich"
+    ],
+    "criteria_missed": [
+      "Wert des Programms (Rankings, Outcomes, Netzwerk) hätte noch stärker betont werden können",
+      "Direkter Verweis auf den zuständigen Advisor (Cyra von Müller) wäre persönlicher gewesen"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Warum ist das so teuer?! Das ist doch Wucher!",
+      "assistant": "Die Höhe der Studiengebühren ist ein verständlicher Diskussionspunkt bei einer solchen Weiterbildung. Die Kosten für ein Executive-MBA-Studium an der Universität St.Gallen reflektieren den damit verbundenen Leistungsumfang sowie das Betreuungs- und Qualitätsniveau.\n\nIn den Studiengebühren sind sämtliche Vorlesungen, Lehrmaterialien sowie die Verpflegung (Mittagessen und Kaffeepausen) an den Präsenztagen enthalten. Sie lernen in kleinen, selektiv zusammengestellten Gruppen von erfahrenen Führungskräften und werden von renommierten Dozierenden und Praxisexperten unterrichtet. Zudem eröffnet das Programm den lebenslangen Zugang zum globalen HSG-Alumni-Netzwerk.\n\nZur Finanzierungsplanung stehen verschiedene Optionen zur Verfügung: Die Gebühren werden nach einer Anmeldegebühr in vier Raten über die Studiendauer verteilt, was je nach Wohnsitz steuerliche Vorteile bieten kann. Zudem vergibt das Programm leistungsabhängige Studiengebühren-Zuschüsse in ausgewählten Bereichen (z. B. Nachhaltigkeit oder Diversität), und in begründeten Fällen besteht die Möglichkeit gestundeter Studiengebühren.\n\nFür individuelle Fragen zu Finanzierung und Zuschüssen steht das Zulassungsteam zur Verfügung (E-Mail: emba@unisg.ch, Telefon: +41 71 224 27 02). Weitere Details finden Sie unter https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse.",
+      "additional_details": "Nicht in den Studiengebühren enthalten sind Reisekosten, Unterkünfte, Visa sowie Mahlzeiten ausserhalb der regulären Unterrichtszeiten.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 18.653
+    }
+  ],
+  "error": null
+}

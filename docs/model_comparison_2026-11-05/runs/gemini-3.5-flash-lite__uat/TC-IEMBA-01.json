@@ -1,0 +1,90 @@
+{
+  "case_id": "TC-IEMBA-01",
+  "title": "TC-IEMBA-01: International Professional - Perfect Fit",
+  "score": 0.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": false,
+  "verdict": "UAT runner or judge error: Error code: 402 - {'error': {'message': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key's total limit\", 'code': 402, 'metadata': {'limit_source': 'openrouter_key_limit', 'remedy_hint': \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", 'provider_name': None, 'previous_errors': [{'code': 402, 'message': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key's total limit\"}]}}, 'user_id': 'user_3BQikKyCNiswU91X2c0wSYUiFqY'}",
+  "issues": [
+    "APIStatusError('Error code: 402 - {\\'error\\': {\\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\", \\'code\\': 402, \\'metadata\\': {\\'limit_source\\': \\'openrouter_key_limit\\', \\'remedy_hint\\': \"Raise or remove this API key\\'s usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", \\'provider_name\\': None, \\'previous_errors\\': [{\\'code\\': 402, \\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\"}]}}, \\'user_id\\': \\'user_3BQikKyCNiswU91X2c0wSYUiFqY\\'}')"
+  ],
+  "criteria_missed": [
+    "UAT case could not complete"
+  ],
+  "judgement": {
+    "passed": false,
+    "verdict": "UAT runner or judge error: Error code: 402 - {'error': {'message': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key's total limit\", 'code': 402, 'metadata': {'limit_source': 'openrouter_key_limit', 'remedy_hint': \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", 'provider_name': None, 'previous_errors': [{'code': 402, 'message': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key's total limit\"}]}}, 'user_id': 'user_3BQikKyCNiswU91X2c0wSYUiFqY'}",
+    "issues": [
+      "APIStatusError('Error code: 402 - {\\'error\\': {\\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\", \\'code\\': 402, \\'metadata\\': {\\'limit_source\\': \\'openrouter_key_limit\\', \\'remedy_hint\\': \"Raise or remove this API key\\'s usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", \\'provider_name\\': None, \\'previous_errors\\': [{\\'code\\': 402, \\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\"}]}}, \\'user_id\\': \\'user_3BQikKyCNiswU91X2c0wSYUiFqY\\'}')"
+    ],
+    "criteria_missed": [
+      "UAT case could not complete"
+    ]
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Welcome! I'm EMBassador, your personal guide to EMBA, IEMBA and emba X at HSG. I'm here to answer your questions and help you explore your EMBA options.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Hi, I'm looking for an MBA program in Switzerland with international focus.",
+      "assistant": "For an MBA programme in Switzerland with a strong international focus, the **International Executive MBA HSG** (**IEMBA HSG**) is specifically designed for this purpose. Taught in English, it features a diverse international curriculum, multinational study locations including modules abroad in locations such as China, Japan, and the USA, and an 18-month duration starting on **30 August 2027**.\n\nIf you would also consider a technology-focused blended programme with international partnerships, the **EMBA ETH HSG** (**emba X**) is another option, though applications for the current cohort are closed. For general discovery, the German-language **EMBA HSG** focuses on the DACH region. The current tuition fee for the **IEMBA HSG** is **CHF 84'000** for applications submitted by the first deadline on **31 March 2027**, and **CHF 89'000** for the final deadline on **30 June 2027**.\n\nYou can read more on the [IEMBA HSG programme page](https://emba.unisg.ch/en/programm/iemba) or view the [brochures and downloads](https://emba.unisg.ch/en/download). For personalised guidance, you can contact our Senior Recruitment & Admissions Manager for the programme, Kristin Fuchs, at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.043
+    },
+    {
+      "turn": 2,
+      "user": "I'm from the US. What about visa requirements?",
+      "assistant": "For visa and permit questions, please contact our admissions team.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.056
+    },
+    {
+      "turn": 3,
+      "user": "How strong is the alumni network in Asia-Pacific?",
+      "assistant": "The International Executive MBA HSG (**IEMBA HSG**) features an international network supported by partnerships with leading institutions in Asia, such as Tsinghua University School of Economics and Management in Beijing, alongside global study modules. While specific regional statistics for the alumni network in Asia-Pacific are not published, the programme incorporates international modules in regions like China and Japan, connecting participants with regional faculty, business leaders, and a globally diverse cohort.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.185
+    },
+    {
+      "turn": 4,
+      "user": "How much does it cost?",
+      "assistant": "The tuition fee for the **International Executive MBA HSG** (**IEMBA HSG**) is **CHF 84'000** for applications submitted by the first deadline on **31 March 2027**, and **CHF 89'000** for the final deadline on **30 June 2027**. This follows a deadline-based fee structure where earlier applications benefit from a reduced tuition rate.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.086
+    },
+    {
+      "turn": 5,
+      "user": "Can you assess whether I am eligible?",
+      "assistant": "To apply for the International Executive MBA HSG (**IEMBA HSG**), candidates must meet the following published criteria:\n\n- Hold a recognised undergraduate degree (sur dossier admissions without a recognised degree are possible upon individual assessment)\n- Have a minimum of 5 years of working experience\n- Have a minimum of 3 years of managerial or leadership experience\n- Maintain employment during the programme\n- Demonstrate English language fluency\n\nThe final admissions decision is made by the admissions committee. You can share your CV with our Senior Recruitment & Admissions Manager, Kristin Fuchs, for a personal profile review at kristin.fuchs@unisg.ch or +41 71 224 75 46.",
+      "additional_details": "",
+      "language": "en",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.995
+    }
+  ],
+  "error": "APIStatusError('Error code: 402 - {\\'error\\': {\\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\", \\'code\\': 402, \\'metadata\\': {\\'limit_source\\': \\'openrouter_key_limit\\', \\'remedy_hint\\': \"Raise or remove this API key\\'s usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\", \\'provider_name\\': None, \\'previous_errors\\': [{\\'code\\': 402, \\'message\\': \"This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 28483. To increase, visit <redacted-openrouter-key-url> and adjust the key\\'s total limit\"}]}}, \\'user_id\\': \\'user_3BQikKyCNiswU91X2c0wSYUiFqY\\'}')"
+}

@@ -1,0 +1,118 @@
+{
+  "case_id": "TC-EMBA-03",
+  "title": "TC-EMBA-03: Cross-Selling Opportunity",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antworten sind korrekt, hilfreich und erfüllen die wichtigsten Akzeptanzkriterien. Die Spezialisierungswünsche des Nutzers werden erkannt, die Programme werden differenziert und cross-sold, und die aktuelle Bewerbungs- und Gebührenlage wird korrekt dargestellt. Die Sprache ist durchgehend Deutsch, der Ton ist professionell und freundlich. Einziger kleiner Abzug: Die Leistungen, die in der Gebühr enthalten sind, werden nicht explizit genannt, und bei der Terminvermittlung wird auf einen unteren Bereich verwiesen, ohne explizit einen Link oder Slot zu nennen oder Userdaten zu erfassen. Dennoch ist die Handover-Logik korrekt und entspricht den Produktvorgaben.",
+  "issues": [
+    "Leistungen, die in der Gebühr enthalten sind, werden nicht explizit aufgezählt",
+    "Bei der Terminvermittlung wird auf einen unteren Bereich verwiesen, ohne explizit einen Link oder Slot zu nennen oder Userdaten zu erfassen"
+  ],
+  "criteria_missed": [
+    "Inkludierte Leistungen bei Gebühr nicht explizit genannt",
+    "Keine explizite Terminslot-Auswahl oder Userdaten-Erfassung"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antworten sind korrekt, hilfreich und erfüllen die wichtigsten Akzeptanzkriterien. Die Spezialisierungswünsche des Nutzers werden erkannt, die Programme werden differenziert und cross-sold, und die aktuelle Bewerbungs- und Gebührenlage wird korrekt dargestellt. Die Sprache ist durchgehend Deutsch, der Ton ist professionell und freundlich. Einziger kleiner Abzug: Die Leistungen, die in der Gebühr enthalten sind, werden nicht explizit genannt, und bei der Terminvermittlung wird auf einen unteren Bereich verwiesen, ohne explizit einen Link oder Slot zu nennen oder Userdaten zu erfassen. Dennoch ist die Handover-Logik korrekt und entspricht den Produktvorgaben.",
+    "strengths": [
+      "Korrekte und differenzierte Vorstellung aller relevanten Programme",
+      "Spezialisierungswunsch (Nachhaltigkeit, Digitalisierung) wird erkannt und emba X passend empfohlen",
+      "Klare Differenzierung zwischen EMBA HSG und emba X, inklusive ETH Zürich-Kooperation",
+      "Korrekte Angabe der Unterrichtssprache und Gebühren (CHF 110'000, aktuelle Frist)",
+      "Korrekte Handover-Logik bei geschlossener Bewerbung und Terminwunsch",
+      "Freundlicher, professioneller Ton"
+    ],
+    "issues": [
+      "Leistungen, die in der Gebühr enthalten sind, werden nicht explizit aufgezählt",
+      "Bei der Terminvermittlung wird auf einen unteren Bereich verwiesen, ohne explizit einen Link oder Slot zu nennen oder Userdaten zu erfassen"
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Spezialisierungswunsch",
+      "Passende Cross-Selling Empfehlung (EMBA X)",
+      "Klare Programm-Differenzierung",
+      "Keine Abwertung anderer Programme",
+      "Bei Unsicherheit: Eskalation",
+      "Korrekte Gebühren- und Fristenkommunikation",
+      "Korrekte Handover-Logik"
+    ],
+    "criteria_missed": [
+      "Inkludierte Leistungen bei Gebühr nicht explizit genannt",
+      "Keine explizite Terminslot-Auswahl oder Userdaten-Erfassung"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich suche ein MBA-Programm mit Fokus auf Nachhaltigkeit und Digitalisierung.",
+      "assistant": "Für die Verbindung von **Nachhaltigkeit und Digitalisierung** passt der **emba X** besonders gut: Das gemeinsame Executive-MBA-Programm der **Universität St.Gallen** und der ETH Zürich verbindet Führung und Management mit Technologie, technologischer Innovation und gesellschaftlicher Verantwortung. Es dauert **18 Monate**, wird auf **Englisch** unterrichtet und kombiniert Präsenz in Zürich und St.Gallen mit Online-Elementen. Der nächste angegebene Start ist **1. Februar 2027**; die Bewerbung für diese Kohorte ist geschlossen. Teyuna Giger informiert über das nächste Bewerbungsfenster: teyuna.giger@unisg.ch oder +41 71 224 77 65.\n\nDie Programmseite finden Sie unter https://embax.ch/.",
+      "additional_details": "Als deutschsprachige Alternative bietet der **EMBA HSG** unter anderem einen Wahlkurs zu Nachhaltigkeit; die digitale Transformation ist in den verfügbaren Programminformationen weniger zentral ausgewiesen.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 12.51
+    },
+    {
+      "turn": 2,
+      "user": "Was unterscheidet EMBA X vom normalen Executive MBA?",
+      "assistant": "Der **klassische EMBA HSG** und der **emba X** sind beide 18-monatige Executive-MBA-Programme mit 75 ECTS. Der Hauptunterschied liegt in ihrer Ausrichtung und Trägerschaft:\n\n- **emba X** wird gemeinsam von der **Universität St.Gallen** und der ETH Zürich angeboten. Er verbindet Management mit Technologie und Technologiemanagement und legt besonderen Wert auf Nachhaltigkeit und gesellschaftliche Wirkung. Das Programm ist auf Englisch und umfasst Präsenz in Zürich und St.Gallen sowie Online-Anteile und zwei Impact-Projekte.\n- **EMBA HSG** wird von der Universität St.Gallen angeboten, ist deutschsprachig und auf General Management mit Fokus auf den deutschsprachigen Raum ausgerichtet. Das modulare Format umfasst neun Pflichtkurse, fünf Wahlkurse und insgesamt 14 Wochen am Campus.\n\nWenn Sie Nachhaltigkeit und Digitalisierung gezielt mit Technologie und Management verknüpfen möchten, ist emba X die thematisch spezifischere Variante. Der EMBA HSG bietet den breiteren General-Management-Fokus auf Deutsch.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 14.922
+    },
+    {
+      "turn": 3,
+      "user": "Wird EMBA X auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "Der **emba X** wird auf **Englisch** unterrichtet.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 3.813
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für die aktuelle **emba X**-Kohorte beträgt **CHF 110’000**. Die Bewerbungsfrist lief vom **31. August bis zum 31. Oktober 2026** und ist geschlossen. Teyuna Giger informiert über das nächste Bewerbungsfenster: teyuna.giger@unisg.ch oder +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.687
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen unten Terminvorschläge für ein Beratungsgespräch mit **Teyuna Giger** zum **emba X** anzeigen. Die Kontaktdaten und verfügbaren Termine finden Sie dort ebenfalls.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba_x"
+      ],
+      "elapsed_s": 2.409
+    }
+  ],
+  "error": null
+}

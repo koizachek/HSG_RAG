@@ -1,0 +1,7 @@
+/opt/anaconda3/lib/python3.13/site-packages/weaviate/warnings.py:93: DeprecationWarning: Dep005: You are using weaviate-client version 4.20.5. The latest version is 4.24.1.
+            Consider upgrading to the latest version. See https://weaviate.io/developers/weaviate/client-libraries/python for details.
+  warnings.warn(
+Rejected probable gibberish input: 'asdfkjhasdf 12345 !!!????'
+Invalid input received: <redacted user input, 25 chars>
+Repeated invalid-looking input received: <redacted user input, 40 chars>
+RESULT {"model": "openai/gpt-5.6-luna", "avg": 9.27, "min": 8.0, "below8": [], "errors": [], "median_s": 6.87, "mean_s": 6.06, "max_s": 14.66, "iemba01": [0.0, 0.0, 0.0, 0.0, 0.0], "edge01": [0.0, 0.0, 0.0, 0.0, 0.0], "edge01_mba": 5, "served": {"openai/gpt-5.6-luna": 101}, "scores": {"TC-EMBA-01": 9.0, "TC-EMBA-02": 9.5, "TC-EMBA-03": 9.5, "TC-IEMBA-01": 8.5, "TC-IEMBA-02": 9.5, "TC-EMBAX-01": 9.5, "TC-EDGE-01": 9.5, "TC-EDGE-02": 10.0, "TC-EDGE-03": 9.0, "TC-EDGE-04": 8.0, "TC-EDGE-05": 10.0}}

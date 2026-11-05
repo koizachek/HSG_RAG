@@ -1,0 +1,119 @@
+{
+  "case_id": "TC-EMBAX-01",
+  "title": "TC-EMBAX-01: Sustainability Leader",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antworten sind sachlich korrekt, sprachlich angemessen und erfüllen die wichtigsten Akzeptanzkriterien. Die Differenzierung der Programme, die ETH-Kooperation und die Kosten werden korrekt dargestellt. Die Handover-Option für die Terminvereinbarung ist nutzerorientiert und klar. Kleinere Verbesserungen wären bei der Herausstellung des USP und der aktiven Empfehlung von emba X möglich, aber keine gravierenden Mängel.",
+  "issues": [
+    "Der USP und die Empfehlung für emba X als ideale Option für Nachhaltigkeit/Technologie/Responsible Leadership könnten noch etwas stärker und expliziter hervorgehoben werden.",
+    "Die Differenzierung zu klassischen EMBA-Programmen ist zwar enthalten, aber nicht explizit als Vorteil für die Nutzerin formuliert.",
+    "Die Terminvereinbarung ist korrekt, aber ein direkter Link oder expliziter Hinweis auf die Buchungsfunktion am Seitenende wäre noch hilfreicher gewesen."
+  ],
+  "criteria_missed": [
+    "USP und Empfehlung für emba X als ideale Option könnten noch expliziter und aktiver formuliert werden",
+    "Noch klarere Differenzierung zu klassischen EMBA-Programmen möglich"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antworten sind sachlich korrekt, sprachlich angemessen und erfüllen die wichtigsten Akzeptanzkriterien. Die Differenzierung der Programme, die ETH-Kooperation und die Kosten werden korrekt dargestellt. Die Handover-Option für die Terminvereinbarung ist nutzerorientiert und klar. Kleinere Verbesserungen wären bei der Herausstellung des USP und der aktiven Empfehlung von emba X möglich, aber keine gravierenden Mängel.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch, mit englischen Begriffen wo nötig)",
+      "Alle Programmfakten (Start, Dauer, Kosten, Sprache, Struktur) korrekt und aktuell",
+      "ETH-Kooperation und USP von emba X werden klar erklärt",
+      "Keine Spekulationen, sondern bei Unsicherheit Verweis auf Ansprechpartner",
+      "Proaktiver Handover zur Terminvereinbarung mit klaren Kontaktwegen",
+      "Vergleich zu anderen Programmen (EMBA HSG, IEMBA HSG) transparent"
+    ],
+    "issues": [
+      "Der USP und die Empfehlung für emba X als ideale Option für Nachhaltigkeit/Technologie/Responsible Leadership könnten noch etwas stärker und expliziter hervorgehoben werden.",
+      "Die Differenzierung zu klassischen EMBA-Programmen ist zwar enthalten, aber nicht explizit als Vorteil für die Nutzerin formuliert.",
+      "Die Terminvereinbarung ist korrekt, aber ein direkter Link oder expliziter Hinweis auf die Buchungsfunktion am Seitenende wäre noch hilfreicher gewesen."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "EMBA X korrekt als passend identifiziert und beschrieben",
+      "USP (ETH, Sustainability, Tech) klar kommuniziert",
+      "Differenzierung zu anderen Programmen vorhanden",
+      "Bei Unsicherheit: Eskalation statt Spekulation",
+      "Keine falschen Programmempfehlungen",
+      "Keine unsicheren Details über ETH Partnership",
+      "Keine Spekulation über Programminhalte",
+      "Freundlicher, professioneller Ton"
+    ],
+    "criteria_missed": [
+      "USP und Empfehlung für emba X als ideale Option könnten noch expliziter und aktiver formuliert werden",
+      "Noch klarere Differenzierung zu klassischen EMBA-Programmen möglich"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich interessiere mich für ein MBA mit Schwerpunkt nachhaltige Unternehmensführung.\nberufsbegleitend.",
+      "assistant": "Nachhaltigkeit ist in allen drei Executive MBA Programmen der Universität St.Gallen ein Bestandteil des Curriculums, jedoch ist kein eigenständiger Schwerpunkt im Sinne einer Vertiefungsrichtung ausgewiesen. Alle drei Programme sind für Berufstätige konzipiert und modular aufgebaut.\n\n**EMBA HSG** (Deutsch): Der Kurs „Nachhaltigkeit im unternehmerischen Kontext“ ist fester Pflichtbestandteil, ergänzt durch das Company Impact Project. Programmstart ist der **8. März 2027**, Dauer **18 Monate**, **75 ECTS**, 14 Wochen am Campus. Die **Studiengebühr** beträgt aktuell **CHF 72'500** bei Bewerbung bis zur 1. Frist am 23. November 2026; die finale Frist ist der 1. Februar 2027 mit **CHF 77'500**.\n\n**IEMBA HSG** (Englisch): Nachhaltigkeit wird im Kurs „Innovation & Entrepreneurship for Sustainable Development“ an der UC Berkeley behandelt. Programmstart ist der **30. August 2027**, Dauer **18 Monate**, **75 ECTS**, 10 Wochen am Campus und 4 Wochen im Ausland. Die **Studiengebühr** beträgt aktuell **CHF 84'000** bei Bewerbung bis zum 31. März 2027; die finale Frist ist der 30. Juni 2027 mit **CHF 89'000**.\n\n**emba X** (Englisch, blended): Der Fokus liegt auf Innovation und Transformation, mit zwei Impact-Projekten. Die aktuelle Kohorte emba X6 startet am **1. Februar 2027** und umfasst 18 Monate und **75 ECTS**. Die Bewerbungsfrist ist geschlossen; die Studiengebühr dieser Kohorte beträgt **CHF 110'000**. Das nächste Bewerbungsfenster wird von der Ansprechpartnerin Teyuna Giger bekanntgegeben.\n\nWenn Ihnen ein Schwerpunkt im Bereich Nachhaltigkeit besonders wichtig ist, empfehle ich ein persönliches Gespräch, in dem Sie die Kursinhalte im Detail besprechen können. Die Kontakte lauten: Cyra von Müller für EMBA HSG (cyra.vonmueller@unisg.ch, +41 71 224 27 12), Kristin Fuchs für IEMBA HSG (kristin.fuchs@unisg.ch, +41 71 224 75 46) und Teyuna Giger für emba X (teyuna.giger@unisg.ch, +41 71 224 77 65).",
+      "additional_details": "Programmunterlagen finden Sie unter https://emba.unisg.ch/download. Die Programmseiten lauten https://emba.unisg.ch/programm/emba, https://emba.unisg.ch/programm/iemba und https://embax.ch/.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.507
+    },
+    {
+      "turn": 2,
+      "user": "Was macht die Kooperation mit der ETH konkret aus?",
+      "assistant": "Der emba X ist der gemeinsame Executive MBA der **ETH Zürich** und der **Universität St.Gallen**. Er ist nach Angaben des Programms die erste Kooperation dieser Art zwischen akademischen Institutionen in der Schweiz. Die Verbindung beruht auf dem Know-how beider Hochschulen: Die Universität St.Gallen bringt ihre Stärken in Unternehmensführung, Nachhaltigkeit, Strategie und Firmentransformation ein, die ETH Zürich ihr Wissen im Technologiemanagement.\n\nDas Programm wurde gemeinsam von der Executive School of Technology, Management and Law der Universität St.Gallen und dem Departement für Management, Technologie und Ökonomie der ETH Zürich entwickelt. Ziel ist es, Führungskräfte auszubilden, die Brücken zwischen Management und Technologie bauen und ihre Entscheidungen auf gesellschaftliche Wirkung ausrichten.\n\nIm Studienbetrieb zeigt sich die Kooperation in der blended Struktur: Präsenz in **Zürich** und **St.Gallen** sowie Online-Phasen, insgesamt **56 Tage am Campus**, **2 Tage Online** und **2 Impact-Projekte**. Die Akademische Leitung liegt bei Prof. Dr. Karolin Frankenberger (Universität St.Gallen) und Prof. Dr. Stefano Brusoni (ETH Zürich).\n\nDer emba X startet mit der Kohorte emba X6 am **1. Februar 2027** und dauert **18 Monate** mit **75 ECTS**. Die Bewerbungsfrist für diese Kohorte ist geschlossen. Die Studiengebühr dieser Kohorte beträgt **CHF 110'000**. Für Fragen zum nächsten Bewerbungsfenster wenden Sie sich bitte an Teyuna Giger (teyuna.giger@unisg.ch, +41 71 224 77 65).",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 9.298
+    },
+    {
+      "turn": 3,
+      "user": "Wird das Programm auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "Der **emba X** wird auf **Englisch** unterrichtet. Das gilt für alle drei Executive MBA Programme der Universität St.Gallen in unterschiedlicher Form: Der **EMBA HSG** wird auf **Deutsch** unterrichtet, das **IEMBA HSG** auf **Englisch**.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 1.624
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Welches Programm meinen Sie? Der emba X ist das Programm der ETH Zürich und der Universität St.Gallen. Die Studiengebühr der aktuellen Kohorte emba X6 beträgt **CHF 110'000**. Die Bewerbungsfrist für diese Kohorte ist geschlossen: Das Bewerbungsfenster lief vom 31. August 2026 (1. Frist) bis zum 31. Oktober 2026 (finale Frist). Das nächste Bewerbungsfenster wird von der Ansprechpartnerin Teyuna Giger bekanntgegeben (teyuna.giger@unisg.ch, +41 71 224 77 65).\n\nZum Vergleich: Der **EMBA HSG** kostet aktuell **CHF 72'500** bei Bewerbung bis zum 23. November 2026, danach **CHF 77'500** bis zur finalen Frist am 1. Februar 2027. Das **IEMBA HSG** kostet aktuell **CHF 84'000** bei Bewerbung bis zum 31. März 2027, danach **CHF 89'000** bis zur finalen Frist am 30. Juni 2027.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.397
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne. Für eine persönliche Beratung können Sie unten die Terminoptionen einsehen. Welches Programm interessiert Sie am meisten? Beim **EMBA HSG** berät Cyra von Müller, beim **IEMBA HSG** Kristin Fuchs und beim **emba X** Teyuna Giger. Ich kann Ihnen die Terminoptionen mit der jeweiligen Ansprechperson für das gewählte Programm anzeigen.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [],
+      "elapsed_s": 1.512
+    }
+  ],
+  "error": null
+}

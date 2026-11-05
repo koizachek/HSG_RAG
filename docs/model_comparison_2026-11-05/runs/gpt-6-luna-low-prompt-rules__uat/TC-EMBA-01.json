@@ -1,0 +1,122 @@
+{
+  "case_id": "TC-EMBA-01",
+  "title": "TC-EMBA-01: Standard Qualification - Perfect Fit",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung. Alle Kernanforderungen werden erfüllt, kleine Abzüge nur für minimale Details beim letzten Turn.",
+  "issues": [
+    "Im letzten Turn wird zwar auf die Terminbuchung und Kontaktdaten verwiesen, aber keine expliziten Terminslots genannt und keine User-Daten für Weiterleitung erfasst. Dies ist jedoch nach aktuellem Produktentscheid kein Muss, sondern optional.",
+    "Der Link zur Bewerbung im Bewerbungsprozess-Turn ist hilfreich, aber nicht explizit gefordert.",
+    "Die Dauer des Programms (18 Monate, max. 48 Monate) wird nicht explizit genannt, aber dies ist kein zwingendes Kriterium in diesem Szenario, da der Fokus auf Bewerbung und Kosten liegt."
+  ],
+  "criteria_missed": [
+    "Keine expliziten Terminslots angeboten (nur Hinweis auf Anzeige unten)",
+    "Keine User-Daten für Weiterleitung erfasst (nach aktuellem Produktentscheid aber nicht zwingend)"
+  ],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung. Alle Kernanforderungen werden erfüllt, kleine Abzüge nur für minimale Details beim letzten Turn.",
+    "strengths": [
+      "Sprache korrekt erkannt und konsequent Deutsch verwendet.",
+      "Alle drei Programme werden zu Beginn kurz und korrekt vorgestellt.",
+      "Berufserfahrung und Führungserfahrung werden aktiv abgefragt und korrekt validiert.",
+      "Empfehlung für EMBA HSG mit klarer Begründung (Erfahrung, Sprache, regionales Netzwerk).",
+      "Bewerbungsprozess und Fristen werden korrekt und strukturiert erklärt.",
+      "Kosten werden korrekt und fristabhängig genannt, inklusive Leistungen und Gebührenstruktur.",
+      "Kein Marketing-Sprech, sachlicher und freundlicher Ton.",
+      "Proaktives Handover mit Kontaktdaten und Hinweis auf Terminbuchung.",
+      "Keine Spekulationen oder unsichere Aussagen."
+    ],
+    "issues": [
+      "Im letzten Turn wird zwar auf die Terminbuchung und Kontaktdaten verwiesen, aber keine expliziten Terminslots genannt und keine User-Daten für Weiterleitung erfasst. Dies ist jedoch nach aktuellem Produktentscheid kein Muss, sondern optional.",
+      "Der Link zur Bewerbung im Bewerbungsprozess-Turn ist hilfreich, aber nicht explizit gefordert.",
+      "Die Dauer des Programms (18 Monate, max. 48 Monate) wird nicht explizit genannt, aber dies ist kein zwingendes Kriterium in diesem Szenario, da der Fokus auf Bewerbung und Kosten liegt."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Passende Programm-Empfehlung (EMBA HSG)",
+      "Eligibility korrekt validiert (3 Jahre Führung = qualified)",
+      "Faktisch korrekte Informationen (Kosten, Termine, Leistungen, Fristen)",
+      "Sachlicher, warmer Ton, keine Marketing-Sprache",
+      "Proaktives Handover-Angebot mit Kontaktdaten",
+      "Keine Spekulation oder unsichere Infos"
+    ],
+    "criteria_missed": [
+      "Keine expliziten Terminslots angeboten (nur Hinweis auf Anzeige unten)",
+      "Keine User-Daten für Weiterleitung erfasst (nach aktuellem Produktentscheid aber nicht zwingend)"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Guten Tag, ich interessiere mich für ein MBA-Studium \nberufsbegleitend.",
+      "assistant": "An der **Universität St.Gallen** werden drei berufsbegleitende Executive-MBA-Programme angeboten. Der **EMBA HSG** wird auf Deutsch unterrichtet und dauert 18 Monate; das modulare Format ist auf die Vereinbarkeit mit Beruf und Privatleben ausgerichtet. Der **International EMBA HSG** dauert ebenfalls 18 Monate, wird auf Englisch unterrichtet und umfasst internationale Module. **emba X** ist ein englischsprachiges, 18-monatiges Programm mit Präsenz- und Online-Anteilen und einem Schwerpunkt auf Führung, Technologie und Nachhaltigkeit.\n\nDamit ich Ihnen die passende Richtung eingrenzen kann: Wie viele Jahre Berufserfahrung und Führungserfahrung haben Sie, in welcher Funktion oder Branche arbeiten Sie, und bevorzugen Sie ein Studium auf Deutsch oder Englisch?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 6.37
+    },
+    {
+      "turn": 2,
+      "user": "Ich arbeite seit 15 Jahren, davon 7 Jahre als \nAbteilungsleiter.",
+      "assistant": "Mit 15 Jahren Berufserfahrung und 7 Jahren Führungserfahrung erfüllen Sie die veröffentlichten Mindestwerte für die **EMBA HSG**-Programme: mindestens 5 Jahre Berufserfahrung und 3 Jahre Management- oder Führungserfahrung. Für den **emba X** liegen die formalen Mindestwerte höher – 10 Jahre Berufserfahrung und 5 Jahre Führungserfahrung –, die Sie ebenfalls erfüllen. Für alle Programme sind zudem ein anerkannter Hochschulabschluss und sehr gute Kenntnisse der jeweiligen Unterrichtssprache erforderlich; emba X verlangt Englisch. Die Zulassung entscheidet die jeweilige Stelle nach Prüfung der vollständigen Bewerbung. Welche Unterrichtssprache bevorzugen Sie – Deutsch oder Englisch? Und haben Sie einen anerkannten Hochschulabschluss?",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.65
+    },
+    {
+      "turn": 3,
+      "user": "Was sind die nächsten Schritte im Bewerbungsprozess?",
+      "assistant": "Für den **EMBA HSG** sind die nächsten Schritte:\n\n- Prüfen Sie die formalen Voraussetzungen: anerkannter Hochschulabschluss, mindestens 5 Jahre Berufserfahrung, mindestens 3 Jahre Führungs- oder Managementerfahrung und sehr gute Deutschkenntnisse. Eine Zulassung ohne anerkannten Hochschulabschluss ist im Einzelfall auf «sur dossier» möglich.\n- Reichen Sie Ihren Lebenslauf ein, um die grundsätzliche Passung abzuklären.\n- Füllen Sie danach die Online-Bewerbung vollständig aus.\n- Nach Einladung absolvieren Sie ein Online-Assessment und ein Online-Interview.\n- Der Zulassungsausschuss trifft den finalen Entscheid. Der Bewerbungsprozess ist kostenlos.\n\nDie nächste Bewerbungsfrist für den EMBA HSG ist der **23. November 2026**. Details und Bewerbung: https://emba.unisg.ch/bewerbung/process. Für eine persönliche Klärung erreichen Sie Cyra von Müller unter cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 7.28
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Für den **EMBA HSG** beträgt die Studiengebühr **CHF 72’500**, wenn Sie sich bis zur ersten Bewerbungsfrist am **23. November 2026** bewerben. Ab der finalen Bewerbungsfrist am **1. Februar 2027** beträgt sie **CHF 77’500**. Nach der Zulassung ist eine Anmeldegebühr von CHF 3’000 fällig; diese wird auf die Gesamtgebühr angerechnet. Die Studiengebühren umfassen Unterricht, Lehrmaterialien sowie Mittagessen und Pausenverpflegung während der Kurstage. An- und Abreise sowie Unterkunft sind nicht enthalten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.87
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen für ein Beratungsgespräch mit **Cyra von Müller** zum **EMBA HSG** anzeigen. Die Kontaktdaten und verfügbaren Termine werden unten eingeblendet.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 1.787
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,72 @@
+{
+  "case_id": "TC-EDGE-01",
+  "title": "TC-EDGE-01: Insufficient Qualification",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antwort ist korrekt, empathisch und vollständig. Die Zulassungskriterien werden klar erklärt, die Ablehnung wird freundlich formuliert, Alternativen werden angeboten und ein Kontaktweg zur Beratung wird genannt. Die Sprache ist angemessen und sachlich.",
+  "issues": [
+    "Der Kontaktweg verweist auf eine allgemeine EMBA-Adresse und Telefonnummer, nicht explizit auf die im Hard Fact genannte Ansprechpartnerin (Cyra von Müller). Ein direkter Verweis auf die namentlich genannte Beraterin wäre noch besser gewesen.",
+    "Die Aussage, dass die Anforderungen \"auch für die anderen Executive MBA Programme\" gelten, ist etwas pauschal – die Programme haben ähnliche, aber nicht identische Anforderungen. Dies ist aber im Kontext nicht gravierend."
+  ],
+  "criteria_missed": [
+    "Namentliche Nennung der offiziellen Ansprechpartnerin (Cyra von Müller) für den EMBA HSG"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antwort ist korrekt, empathisch und vollständig. Die Zulassungskriterien werden klar erklärt, die Ablehnung wird freundlich formuliert, Alternativen werden angeboten und ein Kontaktweg zur Beratung wird genannt. Die Sprache ist angemessen und sachlich.",
+    "strengths": [
+      "Empathische und höfliche Ablehnung",
+      "Korrekte und klare Darstellung der Zulassungskriterien (5 Jahre Berufserfahrung, 3 Jahre Führung)",
+      "Alternativen (MBA, Open Programmes) werden angeboten",
+      "Kontaktweg für individuelle Beratung wird genannt",
+      "Sprache und Ton sind freundlich und professionell"
+    ],
+    "issues": [
+      "Der Kontaktweg verweist auf eine allgemeine EMBA-Adresse und Telefonnummer, nicht explizit auf die im Hard Fact genannte Ansprechpartnerin (Cyra von Müller). Ein direkter Verweis auf die namentlich genannte Beraterin wäre noch besser gewesen.",
+      "Die Aussage, dass die Anforderungen \"auch für die anderen Executive MBA Programme\" gelten, ist etwas pauschal – die Programme haben ähnliche, aber nicht identische Anforderungen. Dies ist aber im Kontext nicht gravierend."
+    ],
+    "criteria_met": [
+      "Empathische Reaktion",
+      "Kriterien klar erklärt",
+      "Feststellung, dass Kriterien nicht erfüllt sind",
+      "Alternative Weiterbildungsmöglichkeiten angeboten",
+      "Kontakt zur Beratung angeboten",
+      "Antwort in korrektem Deutsch",
+      "Freundlicher, professioneller Ton"
+    ],
+    "criteria_missed": [
+      "Namentliche Nennung der offiziellen Ansprechpartnerin (Cyra von Müller) für den EMBA HSG"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich habe gerade meinen Bachelor abgeschlossen und 2 Jahre Berufserfahrung. Kann ich mich für den Executive MBA bewerben?",
+      "assistant": "Mit einem Bachelorabschluss und 2 Jahren Berufserfahrung erfüllst du leider noch nicht die Zulassungsvoraussetzungen für den Executive MBA HSG. Für die Bewerbung sind mindestens 5 Jahre Berufserfahrung sowie mindestens 3 Jahre Management- oder Führungserfahrung erforderlich. Diese Anforderungen gelten auch für die anderen Executive MBA Programme der Universität St.Gallen.\n\nFalls du dich für eine Weiterbildung an der Universität St.Gallen interessierst, empfehle ich dir die regulären MBA-Programme (https://www.mba.unisg.ch/) oder die HSG Open Programmes (https://op.unisg.ch/), die keine langjährige Berufserfahrung voraussetzen. Für eine individuelle Beratung kannst du dich gerne an das EMBA-Team wenden: emba@unisg.ch oder +41 71 224 27 02.",
+      "additional_details": "Die Executive MBA Programme richten sich gezielt an erfahrene Führungskräfte, die ihr Wissen im General Management vertiefen und ihr Netzwerk erweitern möchten. Die Mindestanforderungen sind verbindlich, um einen optimalen Austausch und Lernerfolg im Teilnehmerkreis zu gewährleisten.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.759
+    }
+  ],
+  "error": null
+}

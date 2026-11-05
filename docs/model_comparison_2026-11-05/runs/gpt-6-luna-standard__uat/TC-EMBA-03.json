@@ -1,0 +1,115 @@
+{
+  "case_id": "TC-EMBA-03",
+  "title": "TC-EMBA-03: Cross-Selling Opportunity",
+  "score": 9.0,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die Antworten sind sachlich korrekt, klar differenziert und gehen auf die Interessen des Nutzers ein. Die Spezialisierung von emba X wird hervorgehoben, die Unterschiede zu EMBA HSG werden verständlich erklärt, und alle Programme werden wertschätzend dargestellt. Die Sprache ist durchgehend korrekt (Deutsch), die Fakten stimmen mit den aktuellen Hard Facts überein, und der Ton ist professionell. Die Bewerbungssituation und Gebühren werden korrekt dargestellt, inklusive Hinweis auf die geschlossene Kohorte und Kontakt für weitere Beratung. Beim Terminangebot wird korrekt an die zuständige Person verwiesen. Einzig die explizite Aufzählung der inkludierten Leistungen bei der Gebühr fehlt, was einen kleinen Abzug rechtfertigt.",
+  "issues": [
+    "Bei der Nennung der Studiengebühr werden die inkludierten Leistungen nicht explizit aufgezählt (nur kleiner Abzug, da dies laut Kriterien erwartet wird).",
+    "Keine explizite allgemeine Erwähnung von Stipendien (aber auch nicht gefordert, daher kein Abzug).",
+    "Terminbuchung: Es wird auf die Kontaktperson und Terminoptionen verwiesen, aber keine konkreten Slots oder Datenerfassung angeboten (laut Vorgabe aber ausreichend)."
+  ],
+  "criteria_missed": [
+    "Bei der Gebühr werden die inkludierten Leistungen nicht explizit aufgezählt"
+  ],
+  "judgement": {
+    "overall_score": 9,
+    "passed": true,
+    "verdict": "Die Antworten sind sachlich korrekt, klar differenziert und gehen auf die Interessen des Nutzers ein. Die Spezialisierung von emba X wird hervorgehoben, die Unterschiede zu EMBA HSG werden verständlich erklärt, und alle Programme werden wertschätzend dargestellt. Die Sprache ist durchgehend korrekt (Deutsch), die Fakten stimmen mit den aktuellen Hard Facts überein, und der Ton ist professionell. Die Bewerbungssituation und Gebühren werden korrekt dargestellt, inklusive Hinweis auf die geschlossene Kohorte und Kontakt für weitere Beratung. Beim Terminangebot wird korrekt an die zuständige Person verwiesen. Einzig die explizite Aufzählung der inkludierten Leistungen bei der Gebühr fehlt, was einen kleinen Abzug rechtfertigt.",
+    "strengths": [
+      "Korrekte und aktuelle Fakten zu Programmen, Sprache, Gebühren und Bewerbungsstatus",
+      "Klare Differenzierung und Cross-Selling (emba X als Empfehlung, ohne andere Programme abzuwerten)",
+      "Professioneller, freundlicher und hilfreicher Ton",
+      "Korrekte Sprache (Deutsch), keine unnötigen Sprachwechsel",
+      "Proaktiver Verweis auf zuständige Kontaktperson für Beratungstermin"
+    ],
+    "issues": [
+      "Bei der Nennung der Studiengebühr werden die inkludierten Leistungen nicht explizit aufgezählt (nur kleiner Abzug, da dies laut Kriterien erwartet wird).",
+      "Keine explizite allgemeine Erwähnung von Stipendien (aber auch nicht gefordert, daher kein Abzug).",
+      "Terminbuchung: Es wird auf die Kontaktperson und Terminoptionen verwiesen, aber keine konkreten Slots oder Datenerfassung angeboten (laut Vorgabe aber ausreichend)."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Bot erkennt Spezialisierungswunsch",
+      "Passende Cross-Selling Empfehlung (EMBA X)",
+      "Klare Programm-Differenzierung",
+      "Keine Abwertung anderer Programme",
+      "Bei Unsicherheit: Eskalation (Verweis auf Kontaktperson bei Bewerbungsstatus und Beratung)"
+    ],
+    "criteria_missed": [
+      "Bei der Gebühr werden die inkludierten Leistungen nicht explizit aufgezählt"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich suche ein MBA-Programm mit Fokus auf Nachhaltigkeit und Digitalisierung.",
+      "assistant": "Für die Verbindung von **Nachhaltigkeit und Digitalisierung** ist **emba X** der naheliegendste Schwerpunkt: Das gemeinsame Executive-MBA-Programm der Universität St.Gallen und der ETH Zürich verbindet Führung, Technologie und Management mit nachhaltiger Wirkung. Dazu gehören unter anderem Themen wie KI-gestützte Technologien und Strategie und Innovation. Das Programm wird auf Englisch unterrichtet und dauert 18 Monate. Die Bewerbung für die im Februar 2027 startende Kohorte ist geschlossen; Teyuna Giger informiert über das nächste Bewerbungsfenster.\n\nAuch der **EMBA HSG** behandelt Nachhaltigkeit und digitale Geschäftstransformation, etwa in Kursen zu Nachhaltigkeit, Innovation und Business Transformation. Er wird auf Deutsch unterrichtet. Der **IEMBA HSG** bietet eine internationale Ausrichtung und umfasst ebenfalls Themen wie Nachhaltigkeit, Innovation und Transformation; Unterrichtssprache ist Englisch.\n\nWenn Technologie und Digitalisierung für Sie besonders wichtig sind, dürfte emba X am besten zu Ihrem thematischen Fokus passen. Mehr zu den Programmen: https://emba.unisg.ch/download",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 13.512
+    },
+    {
+      "turn": 2,
+      "user": "Was unterscheidet EMBA X vom normalen Executive MBA?",
+      "assistant": "Der wichtigste Unterschied liegt im **inhaltlichen Schwerpunkt und in der Trägerschaft**: **emba X** ist ein gemeinsames Programm der Universität St.Gallen und der ETH Zürich. Es verbindet General Management gezielt mit Technologiemanagement, Nachhaltigkeit und gesellschaftlicher Wirkung. Der **EMBA HSG** wird von der Universität St.Gallen angeboten und vermittelt General Management mit besonderem Bezug zum deutschsprachigen Raum.\n\n- **Sprache:** emba X auf Englisch; EMBA HSG auf Deutsch.\n- **Studienformat:** Beide dauern **18 Monate** und umfassen **75 ECTS**. Beim emba X gehören Präsenz in Zürich und St.Gallen, Online-Unterricht und zwei Impact-Projekte dazu. Der EMBA HSG umfasst neun Pflicht- und fünf Wahlkurse sowie 14 Wochen am Campus.\n- **Passung:** emba X passt besonders, wenn Sie Management, Technologie und Nachhaltigkeit integrieren möchten. Der EMBA HSG eignet sich eher, wenn Sie ein deutschsprachiges General-Management-Programm mit Fokus auf den DACH-Raum suchen.\n\nDie Bewerbung für die im Februar 2027 startende emba-X-Kohorte ist geschlossen. Programmseiten: [emba X](https://embax.ch/) und [EMBA HSG](https://emba.unisg.ch/programm/emba).",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 13.07
+    },
+    {
+      "turn": 3,
+      "user": "Wird EMBA X auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "**emba X wird auf Englisch unterrichtet.**",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.18
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für die aktuelle emba-X-Kohorte beträgt **CHF 110’000**. Die Bewerbungsfristen für diese Kohorte – vom **31. August 2026** (CHF 99’000) bis zum **31. Oktober 2026** (CHF 110’000) – sind abgelaufen; die Bewerbung ist geschlossen. Teyuna Giger informiert über das nächste Bewerbungsfenster: teyuna.giger@unisg.ch oder +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.33
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Ich kann Ihnen Terminoptionen für ein Beratungsgespräch mit **Teyuna Giger** zum **emba X** anzeigen. Die Kontaktdaten und verfügbaren Termine finden Sie unten.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba_x"
+      ],
+      "elapsed_s": 2.376
+    }
+  ],
+  "error": null
+}

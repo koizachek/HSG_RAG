@@ -165,6 +165,7 @@ class LLMConfig(ConfigBase):
     LANGUAGE_DETECTION_MODEL: tuple[str, str] = _get('LANGUAGE_DETECTION_MODEL', ('openai', 'gpt-4o-mini'))
     CONFIDENCE_SCORING_MODEL: tuple[str, str] = _get('CONFIDENCE_SCORING_MODEL', ('openai', 'gpt-4o-mini'))
     SUMMARIZATION_MODEL: tuple[str, str] = _get('SUMMARIZATION_MODEL', ('openai', 'gpt-4.1'))
+    OPEN_ROUTER_REASONING_EFFORT: dict[str, str] = _get('OPEN_ROUTER_REASONING_EFFORT', {})
     
     # -------------------- Some predefined models for available providers ----------------------
 
@@ -178,9 +179,9 @@ class LLMConfig(ConfigBase):
     OPEN_ROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
 
     # OpenAI settings
-    # Latency fix: gpt-5.1 (reasoning model) replaced with a fast non-reasoning
-    # model. Reasoning added 10-30s per agent loop without quality benefit for
-    # this narrow advisory use case.
+    # Latency fix: gpt-5.1 at its standard reasoning effort added 10-30s per agent
+    # loop without quality benefit for this narrow advisory use case. Reasoning
+    # models must run at an explicit low effort (OPEN_ROUTER_REASONING_EFFORT).
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
     HUGGING_FACE_API_KEY: str = os.getenv("HUGGING_FACE_API_KEY")
     OPENAI_MODEL:   str = MAIN_AGENT_MODEL[1] if MAIN_AGENT_MODEL[0] == "openai" else _get('OPENAI_MODEL', 'gpt-4.1')
