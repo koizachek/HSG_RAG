@@ -2,6 +2,7 @@ import uuid
 import gradio as gr
 from fastapi import FastAPI
 from datetime import datetime
+from pathlib import Path
 
 
 from src.const.agent_response_constants import *
@@ -10,6 +11,8 @@ from src.rag.agent_chain import ExecutiveAgentChain, _redact_user_text
 from src.utils.logging import get_logger, ConsentLogger
 
 logger = get_logger("chatbot_app")
+
+AVATAR_IMAGE = str(Path(__file__).parent / "assets" / "peterli_avatar.png")
 
 def init_fastapi_app(language):
     fastapi_app = FastAPI()
@@ -81,6 +84,11 @@ class ChatbotApplication:
                 " .advisor-chat .message-buttons-left,"
                 " .advisor-chat .message-buttons-right,"
                 " .advisor-chat .message-buttons { display: none !important; }"
+                " .advisor-chat .avatar-container { width: 36px !important; height: 36px !important;"
+                " border: none !important; border-radius: 0 !important; background: transparent !important;"
+                " padding: 0 !important; box-shadow: none !important; flex-shrink: 0; }"
+                " .advisor-chat .avatar-container img { width: 100% !important; height: 100% !important;"
+                " border-radius: 0 !important; object-fit: contain !important; padding: 0 !important; }"
             ),
             footer_links=[],
         )
@@ -129,11 +137,12 @@ class ChatbotApplication:
                     fn=self._chat,
                     additional_inputs=[agent_state],
                     additional_outputs=[agent_state, booking_widget],
-                    title="Executive Education Adviser",
+                    title="EMBassador Admissions Chat",
                     chatbot=gr.Chatbot(
                         show_label=False,
                         buttons=[],
                         elem_classes=["advisor-chat"],
+                        avatar_images=(None, AVATAR_IMAGE),
                     ),
                 )
 

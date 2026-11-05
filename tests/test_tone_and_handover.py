@@ -213,7 +213,8 @@ def test_escalation_language_fallback_preserves_escalation_type():
     assert "questions outside programme information" not in message
 
 
-def test_english_greetings_use_formal_opening():
-    for greeting in GREETING_MESSAGES["en"]:
-        assert "Hello and welcome." in greeting
-        assert "!" not in greeting
+def test_greetings_introduce_embassador_and_all_programmes():
+    for language in ("en", "de"):
+        for greeting in GREETING_MESSAGES[language]:
+            assert "EMBassador" in greeting
+            assert "EMBA, IEMBA" in greeting and "emba X" in greeting
