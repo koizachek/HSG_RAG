@@ -5,7 +5,7 @@ description: Load-bearing design decisions, system invariants, and known weak po
 
 # HSG_RAG Architecture Contract
 
-The one-paragraph system: a **single lead agent** (gpt-4.1 via OpenRouter,
+The one-paragraph system: a **single lead agent** (gemini-3.5-flash-lite at low reasoning effort via OpenRouter,
 structured output) answers advisory questions about three St.Gallen executive
 programmes. Volatile facts (prices, deadlines, starts, advisors) are **injected
 into the system prompt** from an auto-generated facts file; everything else

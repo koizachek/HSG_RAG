@@ -254,8 +254,8 @@ def test_model_config_uses_openrouter_defaults_and_budgets(monkeypatch):
 
     # All roles run through OpenRouter so the app no longer needs a funded
     # OpenAI account.
-    assert config.llm.MAIN_AGENT_MODEL == ("open_router:openai", "openai/gpt-4.1")
-    assert config.llm.FALLBACK_MODELS == [("open_router:openai", "openai/gpt-4o-mini")]
+    assert config.llm.MAIN_AGENT_MODEL == ("open_router:openai", "google/gemini-3.5-flash-lite")
+    assert config.llm.FALLBACK_MODELS == [("open_router:openai", "openai/gpt-5.6-luna")]
     assert ModelConfigurator._openai_budget("main") == {
         "max_tokens": 3072,
         "timeout": 30,
@@ -266,6 +266,6 @@ def test_model_config_uses_openrouter_defaults_and_budgets(monkeypatch):
         "timeout": 10,
         "request_timeout": 10,
     }
-    assert ("open_router:openai", "openai/gpt-4.1", "main") in calls
-    assert ("open_router:openai", "openai/gpt-4o-mini", "language_detector") in calls
-    assert ("open_router:openai", "openai/gpt-4o-mini", "confidence_scoring") in calls
+    assert ("open_router:openai", "google/gemini-3.5-flash-lite", "main") in calls
+    assert ("open_router:openai", "google/gemini-3.5-flash-lite", "language_detector") in calls
+    assert ("open_router:openai", "google/gemini-3.5-flash-lite", "confidence_scoring") in calls

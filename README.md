@@ -16,7 +16,7 @@ A retrieval-augmented chatbot for the University of St.Gallen Executive Educatio
 
 - Programme-specific support for **EMBA HSG**, **IEMBA HSG**, and **emba X**
 - Language handling for **English** and **German**
-- Single lead-agent pipeline (gpt-4.1 via OpenRouter) with token streaming and a verified, auto-updated programme facts base
+- Single lead-agent pipeline (gemini-3.5-flash-lite via OpenRouter) with token streaming and a verified, auto-updated programme facts base
 - Response formatting, ambiguity checks, and scope guarding
 - Booking / handover flow with advisor-specific widgets
 - Consent handling and user-profile tracking

@@ -65,7 +65,7 @@ The opt-in suites call paid LLM APIs and need keys from `.env` /
 
 ## Architecture in one breath
 
-Single lead agent (gpt-4.1 via OpenRouter, structured output) with one
+Single lead agent (gemini-3.5-flash-lite at low reasoning effort via OpenRouter, structured output) with one
 retrieval tool against Weaviate Cloud (EU). Volatile facts (prices, deadlines,
 starts, advisors) are injected into the system prompt from
 `programme_facts.json` — retrieval covers everything else. Token streaming via

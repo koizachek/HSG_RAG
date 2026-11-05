@@ -144,11 +144,13 @@ class ModelConfigurator:
                       | 'open_router:nvidia'
                       | 'open_router:meituan'):
                     from langchain_openai import ChatOpenAI
+                    effort = config.llm.OPEN_ROUTER_REASONING_EFFORT.get(role)
                     return ChatOpenAI(
                         model=model,
                         base_url=config.llm.OPEN_ROUTER_BASE_URL,
                         api_key=config.llm.get_api_key(provider_name),
                         temperature=0.01,
+                        extra_body={"reasoning": {"effort": effort}} if effort else None,
                     )
                 case 'open_router:deepseek':
                     from langchain_deepseek import ChatDeepSeek
