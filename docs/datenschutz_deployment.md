@@ -27,7 +27,7 @@ Registrierung und keine Zahlungsdaten.
 
 | Dienst | Sitz | Zweck | Hinweis |
 |---|---|---|---|
-| **OpenRouter** (LLM gemini-3.5-flash-lite + Embeddings) | **USA** | Beantwortung der Nutzernachrichten | Nutzereingaben werden zur Verarbeitung übermittelt. **Bewusste Entscheidung erforderlich/dokumentieren** (§2 Checkliste); Alternative bei striktem EU-Anspruch: Azure OpenAI EU-Region + No-Training-DPA |
+| **OpenRouter** (LLM gpt-4.1 + Embeddings) | **USA** | Beantwortung der Nutzernachrichten | Nutzereingaben werden zur Verarbeitung übermittelt. **Bewusste Entscheidung erforderlich/dokumentieren** (§2 Checkliste); Alternative bei striktem EU-Anspruch: Azure OpenAI EU-Region + No-Training-DPA |
 | **Weaviate Cloud** | **EU** (Cluster in EU-Region) | Semantische Suche über öffentliche Programminhalte | AVV/DPA abschließen (§2 Checkliste); es werden Suchanfragen übermittelt, keine Profile |
 | **LangSmith** | USA | Tracing/Debugging | **In Produktion deaktiviert** (Umgebungsvariablen nicht gesetzt) |
 | Hetzner (Host + Backups) | DE | Betrieb, tägliche Server-Backups | AVV ist Vertragsbestandteil (Hetzner-Account) |

@@ -16,7 +16,7 @@ Browser auf emba.unisg.ch / embax.ch
         └─ Caddy (TLS, reverse proxy, CSP)        deploy/Caddyfile
              └─ Container: python main.py --app de   →  0.0.0.0:7860  (Gradio/FastAPI, /health)
                   ├─ Weaviate Cloud (EU-Region)                 Retrieval
-                  ├─ OpenRouter gemini-3.5-flash-lite                        Agent (alle LLM-Rollen, config.py)
+                  ├─ OpenRouter gpt-4.1                          Agent (alle LLM-Rollen, config.py)
                   └─ OpenRouter text-embedding-3-small           Embeddings (app-seitig)
 
 GitHub Actions (kein Host-Cron nötig):

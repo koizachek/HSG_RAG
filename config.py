@@ -38,16 +38,17 @@ MAX_CONVERSATION_TURNS = 40
 # Each role-specific model configuration is defined as (PROVIDER, MODEL_NAME).
 # All roles run through OpenRouter (OpenAI-compatible) so the app no longer
 # depends on a separately funded OpenAI account.
-MAIN_AGENT_MODEL = ('open_router:openai', 'google/gemini-3.5-flash-lite')
-FALLBACK_MODELS = [('open_router:openai', 'openai/gpt-5.6-luna')]
-LANGUAGE_DETECTION_MODEL = ('open_router:openai', 'google/gemini-3.5-flash-lite')
-CONFIDENCE_SCORING_MODEL = ('open_router:openai', 'google/gemini-3.5-flash-lite')
-SUMMARIZATION_MODEL = ('open_router:openai', 'google/gemini-3.5-flash-lite')
+MAIN_AGENT_MODEL = ('open_router:openai', 'openai/gpt-4.1')
+FALLBACK_MODELS = [('open_router:openai', 'openai/gpt-4o-mini')]
+LANGUAGE_DETECTION_MODEL = ('open_router:openai', 'openai/gpt-4o-mini')
+CONFIDENCE_SCORING_MODEL = ('open_router:openai', 'openai/gpt-4o-mini')
+SUMMARIZATION_MODEL = ('open_router:openai', 'openai/gpt-4.1')
 
-# OpenRouter reasoning effort per model role. The 'main' role covers the lead
-# agent, its fallback, summarization and the facts pipeline. Model comparison
-# and the effort trade-off: docs/model_comparison_2026-11-05.md.
-OPEN_ROUTER_REASONING_EFFORT = {'main': 'low'}
+# Optional OpenRouter reasoning effort per model role, e.g. {'main': 'low'}.
+# The 'main' role covers the lead agent, its fallback, summarization and the
+# facts pipeline. Empty for the current non-reasoning models. Model comparison
+# for the gpt-4.1 successor: docs/model_comparison_2026-11-05.md.
+OPEN_ROUTER_REASONING_EFFORT = {}
 
 # Legacy defaults retained for compatibility with existing callers.
 LLM_PROVIDER = 'openai'

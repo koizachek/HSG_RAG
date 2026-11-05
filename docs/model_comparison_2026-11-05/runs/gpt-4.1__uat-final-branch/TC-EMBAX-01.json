@@ -1,0 +1,115 @@
+{
+  "case_id": "TC-EMBAX-01",
+  "title": "TC-EMBAX-01: Sustainability Leader",
+  "score": 9.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung mit klarer Differenzierung der Programme, korrekter Sprache und vollständigem Handover. Alle kritischen Anforderungen wurden erfüllt.",
+  "issues": [
+    "Im ersten Turn werden alle drei Programme ausführlich vorgestellt, was zwar informativ ist, aber die Fokussierung auf emba X als \"ideale Option\" für die Nutzerin könnte noch etwas deutlicher sein.",
+    "Im letzten Turn wird auf eingeblendete Termine verwiesen, ohne explizit zu sagen, wie der User einen Termin bucht (z.B. \"unten auf der Seite\" oder \"über den Button\"). Dies ist aber im Rahmen der Produktentscheidung akzeptabel.",
+    "Die Erwähnung von Stipendien im ersten Turn ist etwas ausführlicher als gefordert, aber es werden keine Details genannt, daher kein echter Verstoß."
+  ],
+  "criteria_missed": [],
+  "judgement": {
+    "overall_score": 9.5,
+    "passed": true,
+    "verdict": "Sehr gute, faktenbasierte und nutzerorientierte Beratung mit klarer Differenzierung der Programme, korrekter Sprache und vollständigem Handover. Alle kritischen Anforderungen wurden erfüllt.",
+    "strengths": [
+      "Sprache korrekt erkannt und konsequent Deutsch verwendet.",
+      "EMBA X als ideale Option für Nachhaltigkeit und Responsible Leadership klar hervorgehoben.",
+      "USP und Kooperation mit ETH Zürich präzise und faktenbasiert erklärt.",
+      "Klare Differenzierung zu anderen EMBA-Programmen (Sprache, Inhalte, Ausrichtung).",
+      "Keine Spekulation: Bei Unsicherheit zur nächsten Bewerbungsrunde wird korrekt an die Programmleitung verwiesen.",
+      "Kosten (CHF 110'000) korrekt und mit aktuellem Bewerbungsstatus genannt.",
+      "Proaktiver, höflicher Handover mit Hinweis auf Terminbuchung und Ansprechpartnerin.",
+      "Keine Red Flags (keine falschen Programme, keine Spekulation, keine Verwechslung)."
+    ],
+    "issues": [
+      "Im ersten Turn werden alle drei Programme ausführlich vorgestellt, was zwar informativ ist, aber die Fokussierung auf emba X als \"ideale Option\" für die Nutzerin könnte noch etwas deutlicher sein.",
+      "Im letzten Turn wird auf eingeblendete Termine verwiesen, ohne explizit zu sagen, wie der User einen Termin bucht (z.B. \"unten auf der Seite\" oder \"über den Button\"). Dies ist aber im Rahmen der Produktentscheidung akzeptabel.",
+      "Die Erwähnung von Stipendien im ersten Turn ist etwas ausführlicher als gefordert, aber es werden keine Details genannt, daher kein echter Verstoß."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "EMBA X korrekt als passend identifiziert und hervorgehoben",
+      "USP klar kommuniziert (ETH, Sustainability, Tech)",
+      "Differenzierung zu anderen Programmen",
+      "Bei Unsicherheit: Eskalation statt Spekulation",
+      "Kosten korrekt und mit aktuellem Bewerbungsstatus genannt",
+      "Proaktiver Handover mit Kontaktdaten und Terminangebot"
+    ],
+    "criteria_missed": [],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Ich interessiere mich für ein MBA mit Schwerpunkt nachhaltige Unternehmensführung.\nberufsbegleitend.",
+      "assistant": "Für ein berufsbegleitendes MBA-Studium mit Schwerpunkt nachhaltige Unternehmensführung bietet die Universität St.Gallen drei relevante Executive MBA-Programme an:\n\n**1. EMBA HSG (deutschsprachig, berufsbegleitend)**\n- Enthält einen eigenen Wahlkurs „Nachhaltigkeit“, der von führenden Expertinnen wie Prof. Dr. Karolin Frankenberger und Barbara Kux gestaltet wird. Hier werden nachhaltige Strategien, ESG, Praxisprojekte und Tools zur Umsetzung nachhaltiger Unternehmensführung vermittelt.\n- Nachhaltigkeit ist zudem integraler Bestandteil des St.Galler Managementmodells und zieht sich durch das gesamte Curriculum.\n- Dauer: 18 Monate, Start: 8. März 2027, Studiengebühr: CHF 72'500 (bei Bewerbung bis 23.11.2026).\n\n**2. International EMBA HSG (englischsprachig, international, berufsbegleitend)**\n- Bietet ebenfalls eine Sustainability-Kurswoche und fördert die Entwicklung zu verantwortungsvollen, global denkenden Führungskräften.\n- Dauer: 18 Monate, Start: 30. August 2027, Studiengebühr: CHF 84'000 (bei Bewerbung bis 31.03.2027).\n\n**3. emba X (englischsprachig, gemeinsam mit ETH Zürich, Fokus auf Nachhaltigkeit, Technologie & Leadership)**\n- Nachhaltigkeit, gesellschaftliche Verantwortung und die Integration von Management und Technologie stehen im Mittelpunkt.\n- Blended-Format (Präsenz in Zürich/St.Gallen & Online), 18 Monate. Die nächste Bewerbungsrunde wird von der Programmleitung bekanntgegeben.\n\nAlle Programme sind berufsbegleitend konzipiert und bieten ein starkes Netzwerk sowie praxisnahe Projekte im Bereich nachhaltige Unternehmensführung. \n\nFür eine persönliche Beratung, welches Programm am besten zu Ihren Zielen passt, kontaktieren Sie gerne Cyra von Müller (EMBA HSG), Kristin Fuchs (IEMBA HSG) oder Teyuna Giger (emba X).",
+      "additional_details": "Weitere Informationen und Broschüren finden Sie unter https://emba.unisg.ch/download. \n\nDie Programme bieten zudem Stipendien für Bewerber:innen mit nachgewiesener Erfahrung im Bereich Nachhaltigkeit. Details dazu finden Sie auf der Finanzierungsseite: https://emba.unisg.ch/bewerbung/finanzierung-zuschuesse.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 8.52
+    },
+    {
+      "turn": 2,
+      "user": "Was macht die Kooperation mit der ETH konkret aus?",
+      "assistant": "Die Kooperation zwischen der Universität St.Gallen und der ETH Zürich im Rahmen von emba X ist in der Schweiz einzigartig und verbindet die Stärken beider Institutionen:\n\n- **Inhalte & Lehransatz:** Das Programm vereint das Know-how der ETH Zürich im Technologiemanagement mit der Expertise der Universität St.Gallen in Unternehmensführung, Nachhaltigkeit und Strategie. Die Teilnehmenden profitieren von einem integrativen, innovativen Lernansatz, der klassische Managementlehre mit technologischen und gesellschaftlichen Fragestellungen verbindet.\n\n- **Gemeinsame Entwicklung & Durchführung:** emba X wurde gemeinsam von der Executive School der Universität St.Gallen und dem Departement für Management, Technologie und Ökonomie der ETH Zürich entwickelt. Dozierende beider Hochschulen gestalten das Curriculum und bringen ihre Netzwerke ein.\n\n- **Praxisnähe & Impact:** Im Rahmen von Sprint-Wochen und Impact-Projekten arbeiten die Teilnehmenden an aktuellen Herausforderungen aus Wirtschaft und Gesellschaft. Nachhaltigkeit und gesellschaftliche Verantwortung sind zentrale Bestandteile des Programms.\n\n- **Netzwerk:** Absolvent:innen werden Teil des kombinierten Alumni-Netzwerks beider Hochschulen – das einflussreichste seiner Art in der Schweiz.\n\nDiese Kooperation wurde mehrfach für ihre Innovationskraft ausgezeichnet und bietet Zugang zu zwei führenden akademischen Welten.",
+      "additional_details": "Das Programm richtet sich an Führungskräfte, die lernen möchten, Management- und Technologiefragen zu integrieren und nachhaltige Wirkung zu erzielen. Die Zusammenarbeit ermöglicht es, neue Fähigkeiten für die Herausforderungen des 21. Jahrhunderts zu entwickeln und traditionelle Lehrmethoden durch innovative Formate wie Skill Building Interventions und emba eXplore Events zu ergänzen.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 14.186
+    },
+    {
+      "turn": 3,
+      "user": "Wird das Programm auf Deutsch oder Englisch unterrichtet?",
+      "assistant": "Das emba X Programm wird vollständig auf Englisch unterrichtet. Alle Lehrveranstaltungen, Materialien und Prüfungen finden in englischer Sprache statt. Dies ermöglicht eine internationale Ausrichtung und fördert die Zusammenarbeit mit Teilnehmenden und Dozierenden aus unterschiedlichen Ländern und Branchen.",
+      "additional_details": "Wenn Sie ein deutschsprachiges Executive MBA-Programm bevorzugen, ist der EMBA HSG die passende Alternative. Für emba X ist Englisch Voraussetzung.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.378
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für die aktuelle emba X Kohorte beträgt CHF 110'000. Die Bewerbungsfrist für diese Kohorte ist jedoch bereits abgelaufen (erste Frist: 31.08.2026, finale Frist: 31.10.2026). Diese Gebühr dient als Referenzwert für die nächste Bewerbungsrunde.\n\nDas nächste Bewerbungsfenster wird von der Programmleitung bekanntgegeben. Für aktuelle Informationen und individuelle Beratung wenden Sie sich bitte an Teyuna Giger (emba X): teyuna.giger@unisg.ch, +41 71 224 77 65.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.559
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne! Ich kann Ihnen direkt Terminoptionen für ein Beratungsgespräch mit Teyuna Giger, der Ansprechpartnerin für das emba X Programm, anzeigen. Die verfügbaren Kontaktmöglichkeiten und Termine werden Ihnen unten eingeblendet. \n\nTeyuna Giger beantwortet alle Fragen rund um das Programm, die Bewerbung und Ihre individuellen Ziele.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba_x"
+      ],
+      "elapsed_s": 2.247
+    }
+  ],
+  "error": null
+}

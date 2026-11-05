@@ -4,11 +4,13 @@
 to third-party sources, OpenAI removes `gpt-4.1` and `gpt-4o-mini` from its API on
 2027-01-14 (official page not checked directly; the OpenRouter date is unknown).
 
-**Decision (approved 2026-11-05):** `google/gemini-3.5-flash-lite` as lead agent,
-`openai/gpt-5.6-luna` as fallback. Implementation and gates: section 11.
+**Decision (2026-11-05, revised):** stay on `gpt-4.1` and keep looking for a successor
+until the shutdown. `gemini-3.5-flash-lite` was approved first, but in CI and in 10
+repeats it quoted an outdated fee on a price complaint; `gpt-5.6-luna` did the same and
+`gpt-4.1` did not (section 12). The trial configuration is in section 11 and not merged.
 
 Raw data (transcripts, judge verdicts, logs, test harness):
-[`docs/model_comparison_2026-11-05/`](model_comparison_2026-11-05/), see section 13.
+[`docs/model_comparison_2026-11-05/`](model_comparison_2026-11-05/), see section 14.
 
 ## 1. Results at a glance
 
@@ -18,8 +20,8 @@ Median and mean: answers with a model call (over 0.5 s).
 | Model (effort) | Price | UAT avg | Worst case | Median | Mean | Fact eval | Status |
 |---|---|---|---|---|---|---|---|
 | `gpt-4.1` (current) | $2 / $8 | 9.09 | 8.0 | 3.44 s | 5.74 s | 34/34 | baseline |
-| `gemini-3.5-flash-lite` (low) | $0.30 / $2.50 | 9.14 | 8.5 | 3.54 s | 3.94 s | 34/34 | **chosen** |
-| `gpt-5.6-luna` (low) | $0.20 / $1.20 | 9.27 | 8.0 | 6.87 s | 6.06 s | 34/34 | fallback; 1 wrong value in the facts pipeline |
+| `gemini-3.5-flash-lite` (low) | $0.30 / $2.50 | 9.14 | 8.5 | 3.54 s | 3.94 s | 34/34 | rejected: outdated fee on price complaint (section 12) |
+| `gpt-5.6-luna` (low) | $0.20 / $1.20 | 9.27 | 8.0 | 6.87 s | 6.06 s | 34/34 | rejected: outdated fee on price complaint, 1 wrong value in the facts pipeline |
 | `gemini-3.8-flash` (low) | $0.825 / $4.125 | 9.41 | 8.0 | 7.80 s | 8.31 s | not run | passed, slow, expensive |
 | `claude-haiku-5.5` (low) | $0.10 / $0.50 | 9.14 | 7.5 | 3.11 s | 4.59 s | not run | rejected |
 | `gpt-6-luna` (low) | $0.10 / $0.50 | 9.23 / 9.00 | 7.5 | 5.38–5.83 s | 5.30–6.66 s | 34/34 | rejected |
@@ -204,7 +206,7 @@ Existing answers were re-judged, one answer per case, judged twice. No new lead-
 | TC-IEMBA-01 below 8.0 (old expectation) | 2 of 6 | 0 of 6 | `gpt-5.6-luna` |
 | Cost (in/out) | $0.30 / $2.50 | $0.20 / $1.20 | `gpt-5.6-luna` |
 
-**Reasoning:** quality is level. Flash Lite is almost twice as fast and keeps today's
+**Reasoning (before section 12):** quality is level. Flash Lite is almost twice as fast and keeps today's
 `gpt-4.1` speed, and it produced no wrong value in the pipeline. Costs drop sharply
 compared with `gpt-4.1`. With the `gemini-2.5-flash` judge, `gpt-4.1` is still ahead of
 both candidates (section 7).
@@ -223,9 +225,10 @@ The same 10 answers re-judged: before, nine times 8.5 and once 7.5; after, ten t
 (`runs/gemini-3.5-flash-lite__iemba01-10-runs-with-judge.json`). Earlier TC-IEMBA-01 scores
 of all models in this document still use the old expectation.
 
-## 11. Implementation (branch `chore/migrate-to-gemini-flash-lite`)
+## 11. Trial configuration (not merged)
 
-Approved by the maintainer on 2026-11-05.
+Approved by the maintainer on 2026-11-05 and withdrawn the same day after the finding in
+section 12. The configuration was reverted to `gpt-4.1`.
 
 | Role | Model |
 |---|---|
@@ -244,17 +247,63 @@ Gates with this configuration:
 | Facts pipeline (dry run) | no differences from `programme_facts.json` |
 | Shutdown date | Gemini API: none announced; [Google Cloud](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions): 2027-07-21 or later |
 
-## 12. Open items
+## 12. Price complaint: outdated fee (TC-EDGE-03)
 
-- [ ] PR check (UAT judge in CI)
-- [ ] Simulate an outage of the main model to verify the `gpt-5.6-luna` fallback end to end
-- [ ] Clarify the emba X start date in `programme_facts.json` (2027-02-01 vs 2 February 2027); Flash Lite does not correct it
+**Trigger:** the CI UAT of the trial configuration failed once: TC-EDGE-03 at 7.0 (run
+[42094060632](https://github.com/koizachek/HSG_RAG/actions/runs/42094060632)); the next run
+on unchanged code passed. The user writes "Warum ist das so teuer?! Das ist doch Wucher!"
+without naming a programme.
+
+**Finding:** until 2026-11-23 the EMBA HSG fee is CHF 72'500; CHF 77'500 applies only
+after that. Answers that state only CHF 77'500 convey an outdated price. A new prompt rule
+for price complaints was added (`src/rag/prompts.py`, TONE & FORMAT): explain value with
+retrieved facts, quote only the fee that applies today, end with the named advisor.
+
+TC-EDGE-03, 10 runs each (judge `gpt-4.1`):
+
+| | Flash Lite, before rule | Flash Lite, with rule | `gpt-5.6-luna`, with rule | `gpt-4.1`, with rule |
+|---|---|---|---|---|
+| Average | 8.20 | 8.85 | 9.15 | 9.45 |
+| Below 8.0 | 1 | 1 | 0 | 0 |
+| Named advisor | 1 | 10 | 10 | 9 |
+| Only CHF 77'500 stated | 1 | **3** | **3** | 0 |
+
+**New fact-eval case `de_price_complaint`** (`tests/test_llm_fact_eval.py`): same question;
+while a programme's first deadline is open, its final-deadline fee may only appear together
+with the first-deadline fee. 10 runs each without retry:
+
+| Model | Passed |
+|---|---|
+| `gpt-4.1` | 10 of 10 |
+| `gemini-3.5-flash-lite` | 10 of 10 |
+| `gpt-5.6-luna` | 9 of 10 |
+
+The case did not reproduce the Flash Lite error seen in the UAT (3 of 10), so it is a
+partial guard only. With one retry per case in the eval, an error rate around 15 % mostly
+goes unnoticed. With "der EMBA" in the question, Flash Lite passed 10 of 10.
+
+**Combined:** outdated fee in 3 of 20 Flash Lite answers, 4 of 20 `gpt-5.6-luna` answers
+and 0 of 20 `gpt-4.1` answers. Prompt rules did not prevent it.
+
+**Gates on the kept branch state (`gpt-4.1`, new prompt rule, corrected TC-IEMBA-01, new eval case):**
+
+| Gate | Result |
+|---|---|
+| Offline suite | 391 passed, 1 skipped |
+| Fact eval | 35/35 |
+| UAT | passed: avg 9.36, worst case 8.5 |
+
+## 13. Open items
+
+- [ ] Find a `gpt-4.1` successor before 2027-01-14; every candidate must pass TC-EDGE-03 repeatedly without an outdated fee
+- [ ] Make the price-complaint eval case reproduce the error reliably (e.g. several samples per case)
+- [ ] Clarify the emba X start date in `programme_facts.json` (2027-02-01 vs 2 February 2027)
 - [ ] Switch the CI judge (`UAT_JUDGE_MODEL`) and `scripts/rubric_judge.py` before `gpt-4.1`/`gpt-4o-mini` shut down
 - [ ] Set a timeout and `max_tokens` on the OpenRouter path
 - [ ] Confirm the `gpt-4.1` shutdown date officially
-- [ ] Rework `docs/datenschutz_deployment.md` (maintainer); requests are now forwarded via OpenRouter to Google
+- [ ] Rework `docs/datenschutz_deployment.md` (maintainer) once the successor is chosen
 
-## 13. Raw data
+## 14. Raw data
 
 Folder [`docs/model_comparison_2026-11-05/`](model_comparison_2026-11-05/):
 
@@ -263,7 +312,9 @@ Folder [`docs/model_comparison_2026-11-05/`](model_comparison_2026-11-05/):
 | `runs/<model>__<run>/TC-*.json` | per case: transcript, judge verdict, score (format of `tests/test_uat_llm_judge.py`) |
 | `runs/gpt-6-luna-low-prompt-rules__repeat-transcripts/` | all 20 transcripts of the repeats with the reverted prompt rules |
 | `runs/gemini-3.5-flash-lite__iemba01-10-runs-with-judge.json` | 10 TC-IEMBA-01 runs with full judge output |
-| `runs/gemini-3.5-flash-lite__uat-final-config/` | UAT of the final configuration (section 11) |
+| `runs/gemini-3.5-flash-lite__uat-final-config/` | UAT of the trial configuration (section 11) |
+| `runs/*__edge03-10-runs-*.json` | 10 TC-EDGE-03 runs per model with answer, score and judge output (section 12) |
+| `runs/gpt-4.1__uat-final-branch/` | UAT of the kept branch state (section 12) |
 | `logs/*.out` | console output of UAT, fact eval, facts dry runs, streaming check, Mistral trace |
 | `harness/*.py` | scripts used for overrides, repeats, re-judging and latency measurements |
 | `openrouter_prices_2026-11-05.json` | price snapshot of the compared labs |

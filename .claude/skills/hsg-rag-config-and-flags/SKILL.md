@@ -55,11 +55,11 @@ Model tuples are `('<provider>:<subprovider>', '<model-id>')`.
 
 | Name | Default (config.py) | Gates | Status |
 |---|---|---|---|
-| `MAIN_AGENT_MODEL` | `('open_router:openai', 'google/gemini-3.5-flash-lite')` | The single lead agent (`src/rag/models.py:73`) | **Production** |
-| `FALLBACK_MODELS` | `[('open_router:openai', 'openai/gpt-5.6-luna')]` | Runtime fallback chain (`src/rag/models.py:101`) — deliberately ONE model (latency: retries × fallbacks multiply) | **Production** |
-| `LANGUAGE_DETECTION_MODEL` | `('open_router:openai', 'google/gemini-3.5-flash-lite')` | LLM fallback for ambiguous language only; primary detection is a local heuristic (`src/utils/lang.py`) | **Production** (rarely invoked) |
-| `CONFIDENCE_SCORING_MODEL` | `('open_router:openai', 'google/gemini-3.5-flash-lite')` | Quality-eval model — dead path while `ENABLE_EVALUATE_RESPONSE_QUALITY=False` | Legacy-parked |
-| `SUMMARIZATION_MODEL` | `('open_router:openai', 'google/gemini-3.5-flash-lite')` | History summarization model (`src/rag/models.py:54`) | Production |
+| `MAIN_AGENT_MODEL` | `('open_router:openai', 'openai/gpt-4.1')` | The single lead agent (`src/rag/models.py:73`) | **Production** |
+| `FALLBACK_MODELS` | `[('open_router:openai', 'openai/gpt-4o-mini')]` | Runtime fallback chain (`src/rag/models.py:101`) — deliberately ONE model (latency: retries × fallbacks multiply) | **Production** |
+| `LANGUAGE_DETECTION_MODEL` | `('open_router:openai', 'openai/gpt-4o-mini')` | LLM fallback for ambiguous language only; primary detection is a local heuristic (`src/utils/lang.py`) | **Production** (rarely invoked) |
+| `CONFIDENCE_SCORING_MODEL` | `('open_router:openai', 'openai/gpt-4o-mini')` | Quality-eval model — dead path while `ENABLE_EVALUATE_RESPONSE_QUALITY=False` | Legacy-parked |
+| `SUMMARIZATION_MODEL` | `('open_router:openai', 'openai/gpt-4.1')` | History summarization model (`src/rag/models.py:54`) | Production |
 | `LLM_PROVIDER`, `OPENAI_MODEL` | `'openai'`, `'gpt-4.1'` | Compatibility shims for old callers | Legacy |
 | `MODEL_MAX_RETRIES` | `2` | Retry loop in `src/rag/middleware.py` (`config.chain.MAX_RETRIES`) — reduced from 3 as a latency fix | **Production** |
 

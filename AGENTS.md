@@ -55,7 +55,7 @@ venv/bin/python main.py --scrape full         # full scrape + import (slow, hits
 
 /opt/anaconda3/bin/python -m pytest -q        # offline suite (default: no network/integration)
 RUN_LLM_EVAL=1 /opt/anaconda3/bin/python -m pytest tests/test_llm_fact_eval.py -v
-                                              # 34 LLM eval cases — release gate: 34/34
+                                              # 35 LLM eval cases — release gate: 35/35
 RUN_UAT_LLM_JUDGE=1 ... tests/test_uat_llm_judge.py   # UAT judge suite (opt-in, paid)
 ```
 
@@ -65,7 +65,7 @@ The opt-in suites call paid LLM APIs and need keys from `.env` /
 
 ## Architecture in one breath
 
-Single lead agent (gemini-3.5-flash-lite at low reasoning effort via OpenRouter, structured output) with one
+Single lead agent (gpt-4.1 via OpenRouter, structured output) with one
 retrieval tool against Weaviate Cloud (EU). Volatile facts (prices, deadlines,
 starts, advisors) are injected into the system prompt from
 `programme_facts.json` — retrieval covers everything else. Token streaming via

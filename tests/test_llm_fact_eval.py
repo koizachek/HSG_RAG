@@ -246,7 +246,36 @@ def build_cases() -> list[dict]:
              query="Give me a short overview of all three executive MBA programmes.",
              expect_any=[["emba"], ["iemba", "international"], ["emba x", "embax"]],
              forbid=[]),
-    ] + _deadline_state_cases(f)
+    ] + _deadline_state_cases(f) + _complaint_price_cases(f)
+
+
+def _complaint_price_cases(f: dict) -> list[dict]:
+    """Price complaint ("Wucher") must still quote the fee that applies today.
+
+    Guards the 2026-11-05 finding where gemini-3.5-flash-lite answered the
+    UAT price complaint (no programme named) with the final-deadline fee
+    (CHF 77'500) while the lower first-deadline fee still applied (3 of 10
+    runs; gpt-4.1: 0 of 10). With "der EMBA" in the question the error did
+    not occur, so the query names no programme, like the UAT case.
+
+    While a programme's first deadline is open, its final-deadline fee may
+    only appear together with the first-deadline fee.
+    """
+    from datetime import date
+
+    today = date.today()
+    require_with = []
+    for prog in ("emba", "iemba", "emba_x"):
+        first = f[prog]["tuition_chf"]["first_deadline"]
+        if date.fromisoformat(first["deadline"]) >= today:
+            require_with.append((_fee(prog), _fee(prog, "first_deadline")))
+    return [dict(
+        id="de_price_complaint", lang="de",
+        query="Warum ist das so teuer?! Das ist doch Wucher!",
+        expect_any=[],
+        forbid=[],
+        require_with=require_with,
+    )]
 
 
 def _deadline_state_cases(f: dict) -> list[dict]:
@@ -342,6 +371,14 @@ def _assert_case(case, chain):
             f"\nFORBIDDEN token found (cross-programme contamination): {forbidden}"
             f"\nAnswer:   {answer[:600]}"
         )
+
+    for trigger, required in case.get("require_with", []):
+        if _normalize(trigger) in answer:
+            assert _normalize(required) in answer, (
+                f"\nQuery:    {case['query']}"
+                f"\nFee {trigger} quoted without the fee that applies today ({required})"
+                f"\nAnswer:   {answer[:600]}"
+            )
 
 
 @pytest.mark.parametrize("case", CASES, ids=[c["id"] for c in CASES])

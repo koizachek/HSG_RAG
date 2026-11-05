@@ -20,7 +20,7 @@ assuming the anaconda path exists on your machine.
 | Layer | Command | Cost | What it proves |
 |---|---|---|---|
 | Offline suite (default) | `/opt/anaconda3/bin/python -m pytest -q` | free, ~16 s | invariants, parsers, consent, prompts, facts-file sanity |
-| LLM fact eval (34 cases) | `RUN_LLM_EVAL=1 /opt/anaconda3/bin/python -m pytest tests/test_llm_fact_eval.py -v` | paid, ~3 min | live chain answers facts correctly, no cross-programme contamination, latency cap |
+| LLM fact eval (35 cases) | `RUN_LLM_EVAL=1 /opt/anaconda3/bin/python -m pytest tests/test_llm_fact_eval.py -v` | paid, ~3 min | live chain answers facts correctly, no cross-programme contamination, latency cap |
 | UAT LLM judge | `RUN_UAT_LLM_JUDGE=1 /opt/anaconda3/bin/python -m pytest tests/test_uat_llm_judge.py -v -s` | paid, ~10 min | full conversations meet quality bar (avg ≥ 8.5, every case ≥ 8.0) |
 | Live probes (streaming, smoke over public domain) | see `hsg-rag-diagnostics-and-tooling` | free/cheap | production actually behaves as the code claims |
 
@@ -51,12 +51,12 @@ dependency makes tests silently vanish, not fail — after dependency changes,
 compare the collected count against the baseline above. (Known drift: the map
 still lists `tests/test_chatbot_improvements.py`, which no longer exists.)
 
-### 1.2 LLM fact eval — the 34/34 release gate
+### 1.2 LLM fact eval — the 35/35 release gate
 
 File: `tests/test_llm_fact_eval.py`. Opt-in via `RUN_LLM_EVAL=1`
 (module-level `skipif`). Needs `OPEN_ROUTER_API_KEY` + `WEAVIATE_*` in `.env`
 (the module docstring still says "30 questions" and "OPENAI_API_KEY" — both
-stale; there are 34 cases (31 until 2026-07-08, +3 deadline-state cases) and the chain runs on OpenRouter).
+stale; there are 35 cases (31 until 2026-07-08, +3 deadline-state cases, +1 price-complaint case on 2026-11-05) and the chain runs on OpenRouter).
 
 Mechanics you must preserve when touching it:
 
@@ -139,7 +139,7 @@ already be running the bad commit: treat as incident, fix or roll back
 Minimum evidence per change class (details and rationale in
 `hsg-rag-change-control`):
 
-| Change | Offline suite | 34/34 fact eval | UAT judge | Live probe |
+| Change | Offline suite | 35/35 fact eval | UAT judge | Live probe |
 |---|---|---|---|---|
 | Prompts / model / chain / middleware | required | required (PR merge triggers it on main anyway — run locally first) | required (runs on PR) | streaming + latency probe |
 | Facts pipeline / `programme_facts.json` schema | required | required (soll-values must stay dynamic) | — | alert-chain awareness |

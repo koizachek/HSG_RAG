@@ -42,7 +42,7 @@ other machine, any Python ≥3.11 with `requirements.txt` + pytest works.
 # 2. Fast release-gate pair from the deployment checklist (73 tests, as of 2026-07-07)
 /opt/anaconda3/bin/python -m pytest tests/test_verified_facts.py tests/test_stream_parser.py -q
 
-# 3. LLM fact eval — REQUIRED all-pass (34 cases as of 2026-07-08) for prompt/model/facts-shaping changes (paid API calls)
+# 3. LLM fact eval — REQUIRED all-pass (35 cases as of 2026-11-05) for prompt/model/facts-shaping changes (paid API calls)
 RUN_LLM_EVAL=1 /opt/anaconda3/bin/python -m pytest tests/test_llm_fact_eval.py -v
 
 # 4. UAT LLM judge (paid; CI runs this on every PR anyway)

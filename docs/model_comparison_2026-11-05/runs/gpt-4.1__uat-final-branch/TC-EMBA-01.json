@@ -1,0 +1,118 @@
+{
+  "case_id": "TC-EMBA-01",
+  "title": "TC-EMBA-01: Standard Qualification - Perfect Fit",
+  "score": 8.5,
+  "minimum_score": 8.0,
+  "average_min_score": 8.5,
+  "case_min_score": 8.0,
+  "passed": true,
+  "verdict": "Die meisten Anforderungen wurden erfüllt. Die Antworten sind sachlich, korrekt, freundlich und bieten eine klare Orientierung. Ein kleiner Abzug erfolgt wegen der wiederholt falschen Nennung der aktuell buchbaren Gebühr (CHF 72’500 statt CHF 72’500 als Early-Bird, was korrekt ist, aber die Formulierung \"aktuell\" ist missverständlich, da sie suggeriert, dass dies die heute fällige Gebühr ist, obwohl es sich um die Early-Bird-Gebühr handelt, die aber tatsächlich heute gilt). Die Terminvermittlung ist korrekt gelöst, die Sprache ist durchgehend Deutsch, und die Programmempfehlung ist passend.",
+  "issues": [
+    "Die Formulierung zur Studiengebühr ist leicht missverständlich: Die Gebühr von CHF 72’500 ist zwar korrekt und heute buchbar, aber die wiederholte Formulierung \"aktuell\" könnte als generelle Gebühr verstanden werden, obwohl sie fristgebunden ist. Die Deadline wird aber jeweils korrekt genannt.",
+    "Die Leistungen der Gebühr werden nur knapp aufgezählt (Kurskosten, Materialien, Verpflegung), aber das ist ausreichend.",
+    "Keine explizite Abfrage oder Erfassung von Userdaten für die Weiterleitung, aber dies ist laut Vorgabe kein Muss."
+  ],
+  "criteria_missed": [
+    "Leistungen der Gebühr könnten noch etwas ausführlicher sein (aber ausreichend)",
+    "Userdaten für Weiterleitung werden nicht explizit erfasst (laut Vorgabe aber kein Muss)"
+  ],
+  "judgement": {
+    "overall_score": 8.5,
+    "passed": true,
+    "verdict": "Die meisten Anforderungen wurden erfüllt. Die Antworten sind sachlich, korrekt, freundlich und bieten eine klare Orientierung. Ein kleiner Abzug erfolgt wegen der wiederholt falschen Nennung der aktuell buchbaren Gebühr (CHF 72’500 statt CHF 72’500 als Early-Bird, was korrekt ist, aber die Formulierung \"aktuell\" ist missverständlich, da sie suggeriert, dass dies die heute fällige Gebühr ist, obwohl es sich um die Early-Bird-Gebühr handelt, die aber tatsächlich heute gilt). Die Terminvermittlung ist korrekt gelöst, die Sprache ist durchgehend Deutsch, und die Programmempfehlung ist passend.",
+    "strengths": [
+      "Sprache korrekt erkannt und verwendet (Deutsch)",
+      "Passende Programmempfehlung (EMBA HSG, deutschsprachig, DACH-Fokus)",
+      "Eligibility korrekt validiert (Berufserfahrung und Führungserfahrung ausreichend)",
+      "Faktisch korrekte Informationen zu Dauer, Starttermin, Bewerbungsprozess und Fristen",
+      "Sachlicher, freundlicher Ton, keine Marketing-Sprache",
+      "Proaktives Handover mit Hinweis auf Kontakt und Terminoptionen"
+    ],
+    "issues": [
+      "Die Formulierung zur Studiengebühr ist leicht missverständlich: Die Gebühr von CHF 72’500 ist zwar korrekt und heute buchbar, aber die wiederholte Formulierung \"aktuell\" könnte als generelle Gebühr verstanden werden, obwohl sie fristgebunden ist. Die Deadline wird aber jeweils korrekt genannt.",
+      "Die Leistungen der Gebühr werden nur knapp aufgezählt (Kurskosten, Materialien, Verpflegung), aber das ist ausreichend.",
+      "Keine explizite Abfrage oder Erfassung von Userdaten für die Weiterleitung, aber dies ist laut Vorgabe kein Muss."
+    ],
+    "criteria_met": [
+      "Sprache korrekt erkannt (Deutsch)",
+      "Passende Programm-Empfehlung (EMBA HSG)",
+      "Eligibility korrekt validiert",
+      "Faktisch korrekte Informationen (Kosten, Termine, Dauer, Fristen)",
+      "Sachlicher, warmer Ton",
+      "Proaktives Handover-Angebot"
+    ],
+    "criteria_missed": [
+      "Leistungen der Gebühr könnten noch etwas ausführlicher sein (aber ausreichend)",
+      "Userdaten für Weiterleitung werden nicht explizit erfasst (laut Vorgabe aber kein Muss)"
+    ],
+    "language_ok": true,
+    "factuality_ok": true,
+    "tone_ok": true
+  },
+  "transcript": [
+    {
+      "turn": 0,
+      "message_type": "greeting",
+      "user": null,
+      "assistant": "Willkommen! Ich bin EMBassador, Ihr persönlicher Begleiter für EMBA, IEMBA und emba X an der HSG. Ich beantworte gerne Ihre Fragen und helfe Ihnen, Ihre EMBA-Optionen zu erkunden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 0.0
+    },
+    {
+      "turn": 1,
+      "user": "Guten Tag, ich interessiere mich für ein MBA-Studium \nberufsbegleitend.",
+      "assistant": "Für ein berufsbegleitendes MBA-Studium an der Universität St.Gallen stehen Ihnen drei Executive MBA-Programme zur Auswahl:\n\n1. **EMBA HSG**: Das deutschsprachige Executive MBA-Programm richtet sich an erfahrene Führungskräfte mit Fokus auf den deutschsprachigen Raum. Die Studiendauer beträgt 18 Monate (bis max. 48 Monate), der nächste Start ist am 8. März 2027. Die aktuelle Studiengebühr beträgt CHF 72’500 bei Bewerbung bis 23.11.2026, danach CHF 77’500.\n\n2. **International EMBA HSG (IEMBA HSG)**: Dieses englischsprachige Programm ist international ausgerichtet und bietet Module in verschiedenen Ländern. Die Studiendauer beträgt 18 Monate, Start ist am 30. August 2027. Die Studiengebühr beträgt CHF 84’000 bei Bewerbung bis 31.03.2027, danach CHF 89’000.\n\n3. **emba X**: Ein innovatives, englischsprachiges Programm in Kooperation mit der ETH Zürich, mit Fokus auf Transformation und Technologie. Die Bewerbung für die aktuelle Kohorte ist geschlossen; die letzte Studiengebühr lag bei CHF 110’000. Die nächste Bewerbungsrunde wird von der Programmleitung bekannt gegeben.\n\nWenn Sie mir noch kurz mitteilen, wie viele Jahre Berufserfahrung und Führungserfahrung Sie mitbringen und welche Sprache Sie bevorzugen, kann ich Ihnen gezielt das passende Programm empfehlen.",
+      "additional_details": "Weitere Informationen zu den Programmen finden Sie unter:\n- EMBA HSG: https://emba.unisg.ch/programm/emba\n- IEMBA HSG: https://emba.unisg.ch/programm/iemba\n- emba X: https://embax.ch/\n\nFür individuelle Beratung können Sie sich auch direkt an das EMBA-Team wenden: emba@unisg.ch oder +41 71 224 27 02.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.08
+    },
+    {
+      "turn": 2,
+      "user": "Ich arbeite seit 15 Jahren, davon 7 Jahre als \nAbteilungsleiter.",
+      "assistant": "Mit 15 Jahren Berufserfahrung und 7 Jahren Führungserfahrung erfüllen Sie die Zulassungsvoraussetzungen für den **Executive MBA HSG** (deutschsprachig, berufsbegleitend). Voraussetzungen sind:\n\n- Anerkannter Hochschulabschluss (Bachelor/Master)\n- Mindestens 5 Jahre Berufserfahrung\n- Mindestens 3 Jahre Führungserfahrung\n- Sehr gute Deutschkenntnisse\n\nDas Programm startet am **8. März 2027**, dauert 18 Monate (bis max. 48 Monate) und kostet bei Bewerbung bis 23.11.2026 **CHF 72’500** (danach CHF 77’500). Es ist speziell für erfahrene Führungskräfte konzipiert, die ihr Wissen im General Management vertiefen und das HSG-Netzwerk nutzen möchten.\n\nWenn Sie Interesse an einem englischsprachigen oder international ausgerichteten Programm haben, wäre der **International EMBA HSG** ebenfalls passend. Für beide Programme können Sie sich direkt online bewerben oder ein Beratungsgespräch mit Cyra von Müller (EMBA HSG) oder Kristin Fuchs (IEMBA HSG) vereinbaren.",
+      "additional_details": "Sollten Sie keinen anerkannten Hochschulabschluss besitzen, ist eine \"sur dossier\"-Zulassung nach individueller Prüfung möglich. Für weitere Informationen oder eine persönliche Einschätzung Ihres Profils wenden Sie sich gerne an cyra.vonmueller@unisg.ch oder +41 71 224 27 12.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 5.819
+    },
+    {
+      "turn": 3,
+      "user": "Was sind die nächsten Schritte im Bewerbungsprozess?",
+      "assistant": "Die nächsten Schritte im Bewerbungsprozess für den Executive MBA HSG sind:\n\n1. Kontaktaufnahme: Senden Sie Ihren Lebenslauf an das EMBA HSG Team, um eine erste Einschätzung zu erhalten, ob Ihr Profil passt. Dies ist unverbindlich und kostenlos.\n2. Online-Bewerbung: Füllen Sie das Bewerbungsformular auf der offiziellen Website aus.\n3. Online-Assessment: Nach Prüfung Ihrer Unterlagen werden Sie zu einem Online-Assessment eingeladen.\n4. Online-Interview: Im Anschluss folgt ein persönliches Online-Interview.\n5. Entscheid: Der Zulassungsausschuss prüft Ihre Bewerbung und trifft die finale Entscheidung.\n\nDie erste Bewerbungsfrist für den Start am 8. März 2027 endet am 23. November 2026. Bei Fragen oder für eine persönliche Beratung wenden Sie sich an Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12).",
+      "additional_details": "Der Bewerbungsprozess ist kostenlos. Auch Bewerbungen ohne formalen Hochschulabschluss können im Einzelfall („sur dossier“) geprüft werden. Während des Studiums sollten Sie weiterhin berufstätig sein, um das Gelernte direkt anwenden zu können.",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 4.519
+    },
+    {
+      "turn": 4,
+      "user": "Was kostet das Programm?",
+      "assistant": "Die Studiengebühr für den Executive MBA HSG beträgt aktuell **CHF 72’500**, wenn Sie sich bis zur ersten Bewerbungsfrist am **23. November 2026** bewerben. Nach Ablauf dieser Frist und bis zur finalen Bewerbungsfrist am 1. Februar 2027 beträgt die Gebühr **CHF 77’500**.\n\nIn der Studiengebühr enthalten sind die Kurskosten, Kursmaterialien sowie die meisten Verpflegungsleistungen während der Präsenzmodule. Reise- und Übernachtungskosten sind nicht enthalten.\n\nBei weiteren Fragen zur Finanzierung oder zu möglichen Zuschüssen können Sie sich direkt an Cyra von Müller (cyra.vonmueller@unisg.ch, +41 71 224 27 12) wenden.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": false,
+      "relevant_programs": [],
+      "elapsed_s": 2.91
+    },
+    {
+      "turn": 5,
+      "user": "Können Sie mir einen Termin für eine Beratung vermitteln?",
+      "assistant": "Gerne! Ich kann Ihnen direkt Terminoptionen für ein Beratungsgespräch mit Cyra von Müller, der Senior Recruitment & Admissions Managerin für den Executive MBA HSG, anzeigen. Die verfügbaren Kontaktmöglichkeiten und Terminzeiten werden Ihnen unten eingeblendet. \n\nCyra von Müller beantwortet alle Ihre Fragen zum Programm, zur Bewerbung und zur individuellen Passung.",
+      "additional_details": "",
+      "language": "de",
+      "appointment_requested": true,
+      "relevant_programs": [
+        "emba"
+      ],
+      "elapsed_s": 1.884
+    }
+  ],
+  "error": null
+}
