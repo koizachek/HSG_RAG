@@ -84,7 +84,7 @@ class ChatbotApplication:
                 " .advisor-chat .message-buttons-left,"
                 " .advisor-chat .message-buttons-right,"
                 " .advisor-chat .message-buttons { display: none !important; }"
-                " .advisor-chat .avatar-container { width: 36px !important; height: 36px !important;"
+                " .advisor-chat .avatar-container { width: 29px !important; height: 29px !important;"
                 " border: none !important; border-radius: 0 !important; background: transparent !important;"
                 " padding: 0 !important; box-shadow: none !important; flex-shrink: 0; }"
                 " .advisor-chat .avatar-container img { width: 100% !important; height: 100% !important;"
