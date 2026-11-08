@@ -4,6 +4,7 @@ Written automatically by `.github/workflows/scrape.yml` after every successful w
 
 | Run (UTC) | Week | Sitemap pages | DE objects | EN objects | embax.ch (EN) |
 |---|---|---|---|---|---|
+| 2026-11-08 12:26 | 2026-W45 | 262 | 233 | 148 | 12 |
 | 2026-11-01 12:21 | 2026-W44 | 262 | 233 | 148 | 12 |
 | 2026-10-25 10:22 | 2026-W43 | 263 | 233 | 149 | 13 |
 | 2026-10-18 09:39 | 2026-W42 | 261 | 233 | 149 | 13 |
