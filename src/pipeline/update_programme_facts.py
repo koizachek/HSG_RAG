@@ -475,7 +475,9 @@ def _extract_locations_from_html(text: str) -> BilingualText | None:
         return None
 
     items = []
-    for item_html in re.findall(r'<li>(.*?)</li>', match.group(1), flags=re.IGNORECASE | re.DOTALL):
+    # The site renders <li id="term-…">; a bare '<li>' pattern found nothing
+    # and fell through to the text parser, which swallowed half the page.
+    for item_html in re.findall(r'<li\b[^>]*>(.*?)</li>', match.group(1), flags=re.IGNORECASE | re.DOTALL):
         is_elective = re.search(r'<small[^>]*>\s*Wahlkurs\s*</small>', item_html, flags=re.IGNORECASE)
         location_de = _clean_html_fragment(
             re.sub(r'<small[^>]*>.*?</small>', '', item_html, flags=re.IGNORECASE | re.DOTALL)
