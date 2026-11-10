@@ -747,6 +747,25 @@ class TestFactExtractionFallbacks:
         assert "USA (UC Berkeley)" in locations.en
         assert "South Africa (elective)" in locations.en
 
+    def test_locations_are_parsed_when_list_items_have_attributes(self):
+        # Markup of emba.unisg.ch/programm/emba as of 2026-11-10.
+        from src.pipeline.update_programme_facts import _extract_locations_from_programme_page
+
+        html = (
+            '<div class="locations">\n  <small>Orte</small>\n'
+            '  <ul class="items-amount-3"><li id="term-191">Schweiz (St. Gallen)</li>'
+            '<li id="term-224">Schweiz (Zürich) <small class=\'type\'>Wahlkurs</small></li>'
+            '<li id="term-214">Belgien <small class=\'type\'>Wahlkurs</small></li></ul>\n</div>\n'
+            '<table><tr><td class="obligatory">9 Pflichtkurse</td></tr></table>\n'
+            'Kontakt\nCyra von Müller\nGebühr\nCHF 77’500\n'
+        )
+
+        locations = _extract_locations_from_programme_page(html)
+
+        assert locations is not None
+        assert locations.de == "Schweiz (St. Gallen), Schweiz (Zürich) (Wahlkurs), Belgien (Wahlkurs)"
+        assert "CHF" not in locations.de and "Cyra" not in locations.de
+
     def test_locations_are_parsed_from_visible_text_fallback(self):
         from src.pipeline.update_programme_facts import _extract_locations_from_programme_page
 
