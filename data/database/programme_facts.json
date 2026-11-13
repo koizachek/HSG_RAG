@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-11",
+  "generated_at": "2026-11-13",
   "generator": "src/pipeline/update_programme_facts.py",
   "sources": [
     "https://emba.unisg.ch/",
@@ -112,7 +112,7 @@
         "de": "Englisch",
         "en": "English"
       },
-      "programme_start": "2027-02-01",
+      "programme_start": "2027-02-02",
       "duration": {
         "de": "18 Monate",
         "en": "18 months"
